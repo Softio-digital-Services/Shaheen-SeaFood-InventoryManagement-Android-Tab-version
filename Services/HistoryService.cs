@@ -1,0 +1,94 @@
+using System;
+using System.Data;
+using GenericInventorySystem.Helpers;
+
+namespace GenericInventorySystem.Services
+{
+    public class HistoryService
+    {
+        public DataTable GetInventoryLogs()
+        {
+            return DatabaseHelper.ExecuteDataTable("SELECT timestamp as 'Date', action_type as 'Action', part_name as 'Item', description as 'Details', username as 'User' FROM transactions WHERE action_type IN ('ADD', 'EDIT', 'DELETE', 'QUICK_ADD', 'QUICK_SUB', 'STOCK_UPDATE') ORDER BY timestamp DESC");
+        }
+
+        public DataTable GetCustomerHistory()
+        {
+            string sql = @"
+                SELECT order_date as 'Date', 'Order' as 'Type', c.full_name as 'Customer', total_amount as 'Amount', 'Order #' + CAST(order_id AS VARCHAR) as 'Details' 
+                FROM orders o
+                JOIN customers c ON o.customer_id = c.customer_id
+                UNION ALL
+                SELECT payment_date as 'Date', 'Payment' as 'Type', c.full_name as 'Customer', amount as 'Amount', notes as 'Details' 
+                FROM payments p
+                JOIN customers c ON p.entity_id = c.customer_id
+                UNION ALL
+                SELECT timestamp as 'Date', REPLACE(action_type, 'CUSTOMER_', '') as 'Type', 
+                       CASE WHEN part_name = 'N/A' THEN 'System' ELSE part_name END as 'Customer', 
+                       CAST(0 AS DECIMAL(18,2)) as 'Amount', description as 'Details'
+                FROM transactions
+                WHERE action_type LIKE 'CUSTOMER_%'
+                ORDER BY 1 DESC
+            ";
+            return DatabaseHelper.ExecuteDataTable(sql);
+        }
+
+        public DataTable GetOrderHistory()
+        {
+             string sql = @"
+                SELECT o.order_id as 'Order ID', o.order_date as 'Date', ISNULL(c.full_name, 'Walk-in') as 'Customer', o.total_amount as 'Total', o.status as 'Status', 
+                       (SELECT COUNT(*) FROM order_items i WHERE i.order_id = o.order_id) as 'Items'
+                FROM orders o
+                LEFT JOIN customers c ON o.customer_id = c.customer_id
+                WHERE o.status != 'Quotation' AND o.status != 'Draft'
+                ORDER BY o.order_date DESC";
+             return DatabaseHelper.ExecuteDataTable(sql);
+        }
+
+        public DataTable GetQuotationHistory()
+        {
+             string sql = @"
+                SELECT o.order_id as 'ID', o.order_date as 'Date', ISNULL(c.full_name, 'Walk-in') as 'Customer', o.total_amount as 'Total', 
+                       (SELECT COUNT(*) FROM order_items i WHERE i.order_id = o.order_id) as 'Items'
+                FROM orders o
+                LEFT JOIN customers c ON o.customer_id = c.customer_id
+                WHERE o.status = 'Quotation'
+                ORDER BY o.order_date DESC";
+             return DatabaseHelper.ExecuteDataTable(sql);
+        }
+
+        public DataTable GetSupplierHistory()
+        {
+            string sql = @"
+                SELECT payment_date as 'Date', 
+                       CASE WHEN notes LIKE '%Bill%' THEN 'Bill (Owing)' ELSE 'Payment (Paid)' END as 'Type', 
+                       s.supplier_name as 'Supplier', 
+                       amount as 'Amount', 
+                       notes as 'Details'
+                FROM payments p
+                JOIN suppliers s ON p.entity_id = s.id
+                WHERE p.entity_type = 'Supplier'
+                
+                UNION ALL
+                
+                SELECT timestamp as 'Date',
+                       REPLACE(action_type, 'SUPPLIER_', '') as 'Type',
+                       CASE WHEN part_name = 'N/A' THEN 'System' ELSE part_name END as 'Supplier',
+                       CAST(0 AS DECIMAL(18,2)) as 'Amount',
+                       description as 'Details'
+                FROM transactions
+                WHERE action_type LIKE 'SUPPLIER_%'
+                
+                ORDER BY 1 DESC
+            ";
+            return DatabaseHelper.ExecuteDataTable(sql);
+        }
+
+        public (int actions, int orders, int payments) GetTodayStats()
+        {
+            int actions = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM transactions WHERE CAST(timestamp as DATE) = CAST(GETDATE() as DATE)");
+            int orders = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM orders WHERE CAST(order_date as DATE) = CAST(GETDATE() as DATE)");
+            int payments = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM payments WHERE CAST(payment_date as DATE) = CAST(GETDATE() as DATE)");
+            return (actions, orders, payments);
+        }
+    }
+}

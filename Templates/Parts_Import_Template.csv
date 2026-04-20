@@ -1,0 +1,6 @@
+PartNumber,PartName,Category,Quantity,MinimumStock,UnitPrice,Location,Status
+P001,Brake Pad Set,Brakes,50,10,45.99,A1-Shelf2,Active
+P002,Oil Filter,Filters,100,20,8.99,B2-Shelf1,Active
+P003,Air Filter,Filters,75,15,12.50,B2-Shelf2,Active
+P004,Spark Plug Set,Ignition,60,10,25.00,C1-Shelf1,Active
+P005,Windshield Wiper Blades,Accessories,40,8,18.75,D3-Shelf3,Active

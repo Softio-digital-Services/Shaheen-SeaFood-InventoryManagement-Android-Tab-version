@@ -1,0 +1,302 @@
+using System;
+using System.Windows.Forms;
+using GenericInventorySystem.Data;
+using GenericInventorySystem;
+using GenericInventorySystem.Services;
+using GenericInventorySystem.Helpers; // Also good to have explicit
+
+namespace GenericInventorySystem.Forms
+{
+    public partial class AddPartForm : BaseModalForm
+    {
+        public int? EditPartId { get; set; } = null;
+        private int _minStock = 5; // Default
+
+        public AddPartForm()
+        {
+            InitializeComponent();
+            this.TitleText = "Add New Part";
+            ApplyTheme();
+            ApplyLocalization();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            
+            // Disable MouseWheel on NumericUpDowns to prevent accidental scrolling
+            numQuantity.MouseWheel += PreventNumericScroll;
+            numPrice.MouseWheel += PreventNumericScroll;
+            numMinStock.MouseWheel += PreventNumericScroll;
+        }
+
+        private void PreventNumericScroll(object sender, MouseEventArgs e)
+        {
+            // Handled = true stops the built-in numeric scrolling
+            if (e is HandledMouseEventArgs handledArgs)
+            {
+                handledArgs.Handled = true;
+            }
+        }
+
+        private void ApplyTheme()
+        {
+            this.BackColor = ThemeConfig.SurfaceColor;
+            
+            btnSave.BackColor = ThemeConfig.PrimaryColor;
+            btnCancel.BackColor = ThemeConfig.SecondaryColor;
+            
+            ThemeConfig.ApplyComboBoxStyle(cmbCategory);
+            ThemeConfig.ApplyComboBoxStyle(cmbStatus);
+
+            // Wrap for consistent borders
+            WrapControl(cmbCategory);
+            WrapControl(cmbStatus);
+        }
+
+        private void WrapControl(Control c)
+        {
+            if (c == null || c.Parent == null) return;
+            var pos = c.Location;
+            var width = c.Width;
+            var parent = c.Parent;
+            
+            parent.Controls.Remove(c);
+            var wrapper = ThemeConfig.WrapInStyledInput(c, 40);
+            wrapper.Location = pos;
+            wrapper.Width = width;
+            parent.Controls.Add(wrapper);
+        }
+
+
+        public void LoadPartData(string id, string name, string number, int qty, decimal price, int minStock, string status, string barcode, string location, string shelf, string imagePath, string category)
+        {
+            EditPartId = int.Parse(id);
+            _minStock = minStock;
+            
+            this.TitleText = "Edit Part";
+            btnSave.Text = "Update Part";
+            txtPartName.Text = name;
+            txtPartNumber.Text = number;
+            numQuantity.Value = qty;
+            numMinStock.Value = minStock;
+            numPrice.Value = price;
+            cmbStatus.SelectedItem = status;
+            txtBarcode.Text = barcode;
+            txtLocation.Text = location;
+            txtShelf.Text = shelf;
+            
+            // Handle Category Selection
+            int index = cmbCategory.FindStringExact(category);
+            if (index >= 0)
+            {
+                cmbCategory.SelectedIndex = index;
+            }
+            else
+            {
+                cmbCategory.SelectedIndex = -1;
+                cmbCategory.Text = category; // Allow custom text
+            }
+
+            _currentImagePath = imagePath;
+            
+            if(!string.IsNullOrEmpty(imagePath))
+            {
+                 try
+                 {
+                     string fullPath = System.IO.Path.Combine(Application.StartupPath, imagePath); 
+                     if(System.IO.File.Exists(fullPath))
+                     {
+                         // Use MemoryStream to avoid file locking
+                         byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
+                         using (var ms = new System.IO.MemoryStream(bytes))
+                         {
+                             if(pbImage.Image != null) pbImage.Image.Dispose();
+                             pbImage.Image = System.Drawing.Image.FromStream(ms);
+                         }
+                     }
+                 }
+                 catch { /* Silently fail and use placeholder / empty */ }
+            }
+        }
+
+        private void LoadCategories()
+        {
+            try
+            {
+                var categories = CategoryData.GetAllCategories();
+                cmbCategory.DisplayMember = "CategoryName";
+                cmbCategory.ValueMember = "CategoryName"; // Or Id if FK used, but schema said Name
+                cmbCategory.DataSource = categories;
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.ShowError("Error loading categories: " + ex.Message);
+            }
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            LoadCategories();
+        }
+
+        public void SetBarcode(string barcode)
+        {
+            txtBarcode.Text = barcode;
+            // Focus part name so user can start typing name immediately after scan
+            this.ActiveControl = txtPartName;
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtPartName.Text))
+            {
+                MessageHelper.ShowWarning("Please enter Part Name.");
+                return;
+            }
+
+            // Validation
+            if (!ValidationHelper.ValidateInteger(txtPartNumber.Text, "Part Number", out int partNumInt))
+            {
+                return; 
+            }
+
+            try
+            {
+                string name = txtPartName.Text.Trim();
+                string number = partNumInt.ToString(); 
+                int qty = (int)numQuantity.Value;
+                decimal price = numPrice.Value;
+                string status = cmbStatus.SelectedItem?.ToString() ?? "Active";
+                string barcode = txtBarcode.Text.Trim();
+                string location = txtLocation.Text.Trim();
+                string shelf = txtShelf.Text.Trim();
+                string category = cmbCategory.Text; // Use Text to allow new categories or typed ones
+                
+                string image = _currentImagePath; 
+                if(string.IsNullOrEmpty(image)) image = null;
+
+                // Instantiate service locally or via property if available (PartsForm has it, but this is a different form)
+                InventoryService service = new InventoryService();
+
+                _minStock = (int)numMinStock.Value;
+                
+                if (EditPartId == null)
+                {
+                    // ADD
+                   service.AddPart(name, number, category, qty, price, _minStock, image, barcode, location, shelf, status);
+                   MessageHelper.ShowSuccess("Part added successfully!");
+                }
+                else
+                {
+                    // UPDATE
+                    // service.UpdatePart(id, name, number, category, price, stock, minStock, image, barcode, loc, shelf, status)
+                    service.UpdatePart(EditPartId.Value, name, number, category, price, qty, _minStock, image, barcode, location, shelf, status);
+                    MessageHelper.ShowSuccess("Part updated successfully!");
+                }
+                
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.ShowError("Error saving part: " + ex.Message);
+            }
+        }
+
+        private string _currentImagePath = "";
+
+        private void btnUpload_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
+            if(ofd.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    // Copy to Assets/Products
+                    string assetsDir = System.IO.Path.Combine(Application.StartupPath, "Assets", "Products");
+                    if(!System.IO.Directory.Exists(assetsDir)) System.IO.Directory.CreateDirectory(assetsDir);
+                    
+                    string ext = System.IO.Path.GetExtension(ofd.FileName);
+                    string newName = Guid.NewGuid().ToString() + ext;
+                    string destPath = System.IO.Path.Combine(assetsDir, newName);
+                    
+                    System.IO.File.Copy(ofd.FileName, destPath, true);
+                    
+                    // Show preview using MemoryStream to avoid file locking
+                    byte[] bytes = System.IO.File.ReadAllBytes(destPath);
+                    using (var ms = new System.IO.MemoryStream(bytes))
+                    {
+                        if(pbImage.Image != null) pbImage.Image.Dispose();
+                        pbImage.Image = System.Drawing.Image.FromStream(ms);
+                    }
+                    
+                    // Store relative path "Assets/Products/filename.ext"
+                    _currentImagePath = "Assets/Products/" + newName;
+                }
+                catch(Exception ex)
+                {
+                    MessageHelper.ShowError("Error uploading image: " + ex.Message);
+                }
+            }
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
+        }
+        private void btnScan_Click(object sender, EventArgs e)
+        {
+            txtBarcode.Text = "";
+            txtBarcode.Focus();
+            MessageHelper.ShowInfo(LocalizationManager.IsArabic ? "جاهز للمسح! يرجى استخدام ماسح الباركود الآن." : "Ready to scan! Please use your barcode scanner now.");
+        }
+
+        private void ApplyLocalization()
+        {
+            bool isArabic = LocalizationManager.IsArabic;
+            this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
+
+            // Form Title
+            this.TitleText = EditPartId == null ? LocalizationManager.GetString("AddPart_TitleNew") : LocalizationManager.GetString("AddPart_TitleEdit");
+
+            // ModernTextBox Labels
+            txtBarcode.LabelText = LocalizationManager.GetString("AddPart_Barcode");
+            txtPartName.LabelText = LocalizationManager.GetString("AddPart_Product");
+            txtPartNumber.LabelText = LocalizationManager.GetString("AddPart_SKU");
+            txtLocation.LabelText = LocalizationManager.GetString("AddPart_Location");
+            txtShelf.LabelText = LocalizationManager.GetString("AddPart_Shelf");
+
+            // Labels
+            string currSymbol = GenericInventorySystem.Services.CurrencyService.GetSymbol("USD");
+            lblQuantity.Text = LocalizationManager.GetString("AddPart_Stock");
+            lblMinStock.Text = LocalizationManager.GetString("AddPart_MinStock");
+            lblPrice.Text = string.Format(LocalizationManager.GetString("AddPart_Price"), "USD", currSymbol);
+            lblCategory.Text = LocalizationManager.GetString("AddPart_Category");
+            lblStatus.Text = LocalizationManager.GetString("AddPart_Status");
+
+            // Buttons
+            btnScan.Text = LocalizationManager.GetString("AddPart_Scan");
+            btnUpload.Text = LocalizationManager.GetString("AddPart_Upload");
+            btnSave.Text = EditPartId == null ? LocalizationManager.GetString("AddPart_Save") : LocalizationManager.GetString("AddPart_Update");
+            btnCancel.Text = LocalizationManager.GetString("AddPart_Cancel");
+
+            // Dropdown items translation
+            string currentStatus = cmbStatus.SelectedItem?.ToString();
+            cmbStatus.Items.Clear();
+            if (isArabic)
+            {
+                cmbStatus.Items.AddRange(new object[] { LocalizationManager.GetString("Status_Active"), LocalizationManager.GetString("Status_Inactive") });
+                if (currentStatus == "Active" || currentStatus == LocalizationManager.GetString("Status_Active")) cmbStatus.SelectedIndex = 0;
+                else if (currentStatus == "Inactive" || currentStatus == LocalizationManager.GetString("Status_Inactive")) cmbStatus.SelectedIndex = 1;
+                else cmbStatus.SelectedIndex = 0;
+            }
+            else
+            {
+                cmbStatus.Items.AddRange(new object[] { "Active", "Inactive" });
+                if (currentStatus == LocalizationManager.GetString("Status_Active") || currentStatus == "Active") cmbStatus.SelectedIndex = 0;
+                else if (currentStatus == LocalizationManager.GetString("Status_Inactive") || currentStatus == "Inactive") cmbStatus.SelectedIndex = 1;
+                else cmbStatus.SelectedIndex = 0;
+            }
+        }
+    }
+}

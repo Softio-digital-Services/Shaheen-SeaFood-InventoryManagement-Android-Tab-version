@@ -1,0 +1,24 @@
+﻿# Build output
+bin/
+obj/
+publish/
+build_output.txt
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Database files (local only - don't commit .mdf/.ldf)
+Database/*.mdf
+Database/*.ldf
+Database/*.log
+
+# NuGet
+packages/
+*.nupkg
+
+# User-specific files
+*.rsuser
