@@ -19,6 +19,12 @@ namespace GenericInventorySystem.Controls
             set => txtInput.Text = value;
         }
 
+        public new event KeyEventHandler KeyDown
+        {
+            add => txtInput.KeyDown += value;
+            remove => txtInput.KeyDown -= value;
+        }
+
         [Category("Appearance")]
         public string LabelText
         {

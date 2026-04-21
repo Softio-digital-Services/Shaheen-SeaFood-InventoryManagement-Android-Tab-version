@@ -165,6 +165,8 @@ namespace GenericInventorySystem.Forms
             this.cmbCategory.Location = new System.Drawing.Point(25, 425);
             this.cmbCategory.Size = new System.Drawing.Size(325, 25);
             this.cmbCategory.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown;
+            this.cmbCategory.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.cmbCategory.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             this.cmbCategory.TabIndex = 8;
 
             // 

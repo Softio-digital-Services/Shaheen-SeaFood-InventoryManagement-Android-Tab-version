@@ -876,6 +876,14 @@ namespace GenericInventorySystem
                     else if (name == "check" || name == "success") { c1 = Color.FromArgb(16, 185, 129); c2 = Color.FromArgb(52, 211, 153); }
                     else if (name == "add" || name == "plus") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(147, 51, 234); }
                     else if (name == "pos") { c1 = Color.FromArgb(5, 205, 153); c2 = Color.FromArgb(20, 184, 166); }
+                    else if (name == "inventory") { c1 = Color.FromArgb(99, 102, 241); c2 = Color.FromArgb(168, 85, 247); } // Indigo to Purple
+                    else if (name == "customers") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(37, 99, 235); } // Blue to Dark Blue
+                    else if (name == "suppliers") { c1 = Color.FromArgb(20, 184, 166); c2 = Color.FromArgb(5, 150, 105); } // Teal to Green
+                    else if (name == "reports") { c1 = Color.FromArgb(16, 185, 129); c2 = Color.FromArgb(5, 150, 105); } // Emerald
+                    else if (name == "history" || name == "expenses") { c1 = Color.FromArgb(244, 63, 94); c2 = Color.FromArgb(225, 29, 72); } // Rose to Crimson
+                    else if (name == "quotations") { c1 = Color.FromArgb(14, 165, 233); c2 = Color.FromArgb(2, 132, 199); } // Sky Blue
+                    else if (name == "currencies") { c1 = Color.FromArgb(245, 158, 11); c2 = Color.FromArgb(217, 119, 6); } // Amber to Orange
+                    else if (name == "user") { c1 = Color.FromArgb(79, 70, 229); c2 = Color.FromArgb(67, 56, 202); } // Indigo
 
                     using (var brush = new System.Drawing.Drawing2D.LinearGradientBrush(new Rectangle(8, 8, 48, 48), c1, c2, 45f))
                     {
@@ -1009,6 +1017,80 @@ namespace GenericInventorySystem
                                 // Simple cash register / screen shape
                                 g.FillRectangle(whiteBrush, 20, 22, 24, 16); // Screen
                                 g.FillRectangle(whiteBrush, 18, 38, 28, 4);  // Base
+                            }
+                        }
+                        else if (name == "inventory")
+                        {
+                            g.FillEllipse(brush, 8, 8, 48, 48);
+                            using (var whitePen = new Pen(Color.White, 3) { LineJoin = System.Drawing.Drawing2D.LineJoin.Round })
+                            {
+                                // Modern Box/Cube in white
+                                Point[] p = { new Point(32, 18), new Point(48, 26), new Point(48, 42), new Point(32, 50), new Point(16, 42), new Point(16, 26) };
+                                g.DrawPolygon(whitePen, p);
+                                g.DrawLine(whitePen, 32, 18, 32, 34);
+                                g.DrawLine(whitePen, 32, 34, 48, 26);
+                                g.DrawLine(whitePen, 32, 34, 16, 26);
+                                g.DrawLine(whitePen, 32, 34, 32, 50);
+                            }
+                        }
+                        else if (name == "customers" || name == "user")
+                        {
+                            g.FillEllipse(brush, 8, 8, 48, 48);
+                            using (var whiteBrush = new SolidBrush(Color.White))
+                            {
+                                g.FillEllipse(whiteBrush, 24, 18, 16, 16); // Head
+                                g.FillPie(whiteBrush, 16, 34, 32, 32, 180, 180); // Shoulders
+                            }
+                        }
+                        else if (name == "suppliers")
+                        {
+                            g.FillEllipse(brush, 8, 8, 48, 48);
+                            using (var whiteBrush = new SolidBrush(Color.White))
+                            {
+                                g.FillRectangle(whiteBrush, 16, 26, 24, 16); // Truck body
+                                g.FillRectangle(whiteBrush, 40, 32, 8, 10);  // Truck head
+                                g.FillEllipse(whiteBrush, 20, 42, 6, 6);     // Wheel 1
+                                g.FillEllipse(whiteBrush, 36, 42, 6, 6);     // Wheel 2
+                            }
+                        }
+                        else if (name == "reports")
+                        {
+                            g.FillEllipse(brush, 8, 8, 48, 48);
+                            using (var whiteBrush = new SolidBrush(Color.White))
+                            {
+                                g.FillRectangle(whiteBrush, 18, 38, 8, 12); // Bar 1
+                                g.FillRectangle(whiteBrush, 28, 28, 8, 22); // Bar 2
+                                g.FillRectangle(whiteBrush, 38, 18, 8, 32); // Bar 3
+                            }
+                        }
+                        else if (name == "history")
+                        {
+                            g.FillEllipse(brush, 8, 8, 48, 48);
+                            using (var whitePen = new Pen(Color.White, 4) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
+                            {
+                                g.DrawArc(whitePen, 18, 18, 28, 28, 45, 270);
+                                g.DrawLine(whitePen, 32, 22, 32, 32);
+                                g.DrawLine(whitePen, 32, 32, 40, 32);
+                            }
+                        }
+                        else if (name == "quotations")
+                        {
+                            g.FillEllipse(brush, 8, 8, 48, 48);
+                            using (var whiteBrush = new SolidBrush(Color.White))
+                            {
+                                g.FillRectangle(whiteBrush, 20, 18, 24, 28); // Paper
+                                g.FillRectangle(new SolidBrush(c1), 24, 24, 16, 2); // Line 1
+                                g.FillRectangle(new SolidBrush(c1), 24, 30, 16, 2); // Line 2
+                            }
+                        }
+                        else if (name == "currencies" || name == "expenses")
+                        {
+                            g.FillEllipse(brush, 8, 8, 48, 48);
+                            using (var whiteBrush = new SolidBrush(Color.White))
+                            using (Font f = new Font("Segoe UI", 24, FontStyle.Bold))
+                            {
+                                StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                                g.DrawString("$", f, whiteBrush, new Rectangle(0, 0, 64, 64), sf);
                             }
                         }
                         else

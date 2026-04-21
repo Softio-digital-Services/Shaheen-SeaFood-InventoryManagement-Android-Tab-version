@@ -24,24 +24,25 @@ namespace GenericInventorySystem.Forms
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.CenterParent;
             this.BackColor = ThemeConfig.SurfaceColor;
-            this.Padding = new Padding(2); // Border space
+            this.Padding = new Padding(2, 52, 2, 8); // Top for header, bottom for rounded corners safety
 
             this.DoubleBuffered = true;
             this.Size = new Size(500, 600); // Default
 
             ThemeConfig.ApplyFormIcon(this);
             InitializeBaseComponents();
-
         }
 
         private void InitializeBaseComponents()
         {
             // Header Panel (Clickable for dragging)
             pnlHeader = new Panel();
-            pnlHeader.Dock = DockStyle.Top;
             pnlHeader.Height = 50;
             pnlHeader.BackColor = Color.Transparent;
             pnlHeader.MouseDown += Header_MouseDown;
+            pnlHeader.Location = new Point(0, 0);
+            pnlHeader.Width = this.Width;
+            pnlHeader.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
             // Title
             lblTitle = new Label();
@@ -65,21 +66,13 @@ namespace GenericInventorySystem.Forms
             pnlHeader.Controls.Add(btnClose);
             this.Controls.Add(pnlHeader);
 
-            // Content Panel - starts immediately below header, fills rest of form
+            // Content Panel - fills rest of form via Dock
             ContentPanel = new Panel();
             ContentPanel.BackColor = Color.Transparent;
-            ContentPanel.AutoScroll = false;
-            // Position explicitly below header with small margins
-            ContentPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            ContentPanel.Location = new Point(2, 52); // 2px border left, 50px header + 2px
-            ContentPanel.Size = new Size(this.ClientSize.Width - 4, this.ClientSize.Height - 54); // full width minus borders, height minus header+borders
+            ContentPanel.AutoScroll = true; // Safety measure
+            ContentPanel.Dock = DockStyle.Fill;
             this.Controls.Add(ContentPanel);
             ContentPanel.BringToFront();
-
-            // Keep ContentPanel sized correctly on resize
-            this.Resize += (s, e) => {
-                ContentPanel.Size = new Size(this.ClientSize.Width - 4, this.ClientSize.Height - 54);
-            };
         }
 
         protected override void OnPaint(PaintEventArgs e)

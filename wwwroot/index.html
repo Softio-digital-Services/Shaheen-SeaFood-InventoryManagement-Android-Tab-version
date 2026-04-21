@@ -74,8 +74,19 @@
                     <span id="subTotal">$0.00</span>
                 </div>
                 <div class="summary-line">
-                    <span>Tax (10%)</span>
+                    <span>
+                        <input type="checkbox" id="applyTax" checked style="margin-right: 8px; cursor: pointer;">
+                        Tax (10%)
+                    </span>
                     <span id="taxTotal">$0.00</span>
+                </div>
+                <div class="summary-line">
+                    <span>
+                        <input type="checkbox" id="applyShipping" style="margin-right: 8px; cursor: pointer;">
+                        Shipping
+                    </span>
+                    <span id="shippingTotal">$0.00</span>
+                    <input type="number" id="shipAmount" value="0" step="0.01" style="width: 60px; display: none; margin-left: auto;">
                 </div>
                 <div class="summary-line total">
                     <span>Total</span>

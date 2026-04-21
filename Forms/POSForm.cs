@@ -19,6 +19,8 @@ namespace GenericInventorySystem.Forms
         private TextBox txtShippingAddress;
         private Label lblSubtotalVal, lblTaxVal, lblShippingVal, lblTotalVal;
         private ModernTextBox txtBarcodeScan;
+        private CheckBox chkApplyVAT, chkApplyShipping;
+        private NumericUpDown numShipping;
         private Button btnCheckout, btnAddItem, btnManageDrafts, btnClearCart, btnQuotation;
         private StatCard cardTodayOrders, cardTodaySales, cardPending;
         private DataTable cartTable;
@@ -107,7 +109,7 @@ namespace GenericInventorySystem.Forms
 
             Panel pnlDate2 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0,0,10,0) };
             pnlDate2.Controls.Add(new Label { Text = "Delivery", Name = "lblDelTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
-            dtDeliveryDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Value = DateTime.Now.AddDays(7) };
+            dtDeliveryDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Value = null, MinDate = DateTime.Today };
             Panel pnlDelWrapper = ThemeConfig.WrapInStyledInput(dtDeliveryDate, 40); pnlDelWrapper.Dock = DockStyle.Fill;
             pnlDate2.Controls.Add(pnlDelWrapper); pnlDelWrapper.BringToFront(); tblInfo.Controls.Add(pnlDate2, 0, 2);
 
@@ -153,7 +155,30 @@ namespace GenericInventorySystem.Forms
                  Label val = new Label { Text = v, Location = new Point(250, y), Size = new Size(130, 20), TextAlign = ContentAlignment.MiddleRight, Font = b ? ThemeConfig.SubHeaderFont : ThemeConfig.StandardFont, ForeColor = ThemeConfig.TextColorDark };
                  pnlTotals.Controls.Add(val); if(l == "Subtotal") lblSubtotalVal = val; else if(l.Contains("VAT")) lblTaxVal = val; else if(l == "Shipping") lblShippingVal = val; else if(l.Contains("Grand")) lblTotalVal = val;
              };
-             addTotalRow("Subtotal", "$0.00", 78, false); addTotalRow("VAT (11%)", "$0.00", 103, false); addTotalRow("Shipping", "$0.00", 128, false);
+             addTotalRow("Subtotal", "$0.00", 78, false); 
+             
+             // Add VAT Checkbox
+             chkApplyVAT = new CheckBox { Text = "", Checked = true, AutoSize = true, Location = new Point(20, 105), Cursor = Cursors.Hand };
+             chkApplyVAT.CheckedChanged += (s, e) => UpdateTotal();
+             pnlTotals.Controls.Add(chkApplyVAT);
+             
+             addTotalRow("VAT (11%)", "$0.00", 103, false); 
+             var lblTax = pnlTotals.Controls.Find("lblTotal_VAT (11%)", true)[0];
+             lblTax.Location = new Point(45, 103); 
+             
+             // Add Shipping Toggle and Input
+             chkApplyShipping = new CheckBox { Text = "", Checked = false, AutoSize = true, Location = new Point(20, 130), Cursor = Cursors.Hand };
+             chkApplyShipping.CheckedChanged += (s, e) => { numShipping.Visible = chkApplyShipping.Checked; UpdateTotal(); };
+             pnlTotals.Controls.Add(chkApplyShipping);
+
+             addTotalRow("Shipping", "$0.00", 128, false);
+             var lblShip = pnlTotals.Controls.Find("lblTotal_Shipping", true)[0];
+             lblShip.Location = new Point(45, 128);
+
+             numShipping = new NumericUpDown { DecimalPlaces = 2, Width = 80, Location = new Point(250, 126), Visible = false, Font = ThemeConfig.StandardFont };
+             numShipping.ValueChanged += (s, e) => UpdateTotal();
+             pnlTotals.Controls.Add(numShipping); numShipping.BringToFront();
+
              addTotalRow("Grand Total", "$0.00", 168, true);
              
              Button btnDraft = new ModernButton { Name = "btnDraft", Size = new Size(145, 40), Location = new Point(80, 205), Text = "Save Draft", Cursor = Cursors.Hand };
@@ -321,9 +346,18 @@ namespace GenericInventorySystem.Forms
         private void UpdateTotal()
         {
             decimal s = 0; foreach(DataRow r in cartTable.Rows) if (r.RowState != DataRowState.Deleted) s += (decimal)r["Total"];
-            decimal t = s * 0.11m; decimal g = s + t;
-            lblSubtotalVal.Text = CurrencyService.Format(s); lblTaxVal.Text = CurrencyService.Format(t);
-            lblShippingVal.Text = CurrencyService.Format(0); lblTotalVal.Text = CurrencyService.Format(g);
+            decimal t = chkApplyVAT.Checked ? (s * 0.11m) : 0; 
+            decimal ship = chkApplyShipping.Checked ? numShipping.Value : 0;
+            decimal g = s + t + ship;
+            
+            lblSubtotalVal.Text = CurrencyService.Format(s); 
+            lblTaxVal.Text = CurrencyService.Format(t);
+            lblTaxVal.ForeColor = chkApplyVAT.Checked ? ThemeConfig.TextColorDark : Color.Gray;
+            
+            lblShippingVal.Text = CurrencyService.Format(ship);
+            lblShippingVal.Visible = !chkApplyShipping.Checked; // Hide static label if input is visible
+            
+            lblTotalVal.Text = CurrencyService.Format(g);
         }
 
         private void BtnSaveDraft_Click(object sender, EventArgs e)

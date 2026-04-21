@@ -7,7 +7,8 @@ namespace GenericInventorySystem.Controls
 {
     public class CustomCalendarForm : Form
     {
-        public DateTime SelectedDate { get; private set; }
+        public DateTime? SelectedDate { get; private set; }
+        public DateTime MinDate { get; set; } = DateTime.MinValue;
         private DateTime _currentViewDate;
         
         private Label lblMonthYear;
@@ -17,10 +18,11 @@ namespace GenericInventorySystem.Controls
         
         public event EventHandler DateSelected;
 
-        public CustomCalendarForm(DateTime initialDate)
+        public CustomCalendarForm(DateTime? initialDate, DateTime minDate)
         {
             this.SelectedDate = initialDate;
-            this._currentViewDate = initialDate;
+            this.MinDate = minDate;
+            this._currentViewDate = initialDate ?? DateTime.Today;
             
             InitializeComponent();
             RenderCalendar();
@@ -60,9 +62,14 @@ namespace GenericInventorySystem.Controls
             btnNext.FlatAppearance.BorderSize = 0;
             btnNext.Click += (s, e) => { _currentViewDate = _currentViewDate.AddMonths(1); RenderCalendar(); };
 
+            Button btnClear = new Button { Text = "Clear", Width = 45, Dock = DockStyle.Right, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 8), ForeColor = ThemeConfig.DangerColor };
+            btnClear.FlatAppearance.BorderSize = 0;
+            btnClear.Click += (s, e) => { SelectedDate = null; DateSelected?.Invoke(this, EventArgs.Empty); this.Close(); };
+
             lblMonthYear = new Label { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 10, FontStyle.Bold) };
             
             pnlHeader.Controls.Add(lblMonthYear);
+            pnlHeader.Controls.Add(btnClear);
             pnlHeader.Controls.Add(btnNext);
             pnlHeader.Controls.Add(btnPrev);
             this.Controls.Add(pnlHeader);
@@ -123,7 +130,14 @@ namespace GenericInventorySystem.Controls
                 
                 DateTime btnDate = new DateTime(_currentViewDate.Year, _currentViewDate.Month, day);
                 
-                if (btnDate.Date == SelectedDate.Date)
+                if (btnDate.Date < MinDate.Date)
+                {
+                    btn.BackColor = Color.FromArgb(240, 240, 240);
+                    btn.ForeColor = Color.LightGray;
+                    btn.Cursor = Cursors.Default;
+                    btn.Enabled = false;
+                }
+                else if (SelectedDate.HasValue && btnDate.Date == SelectedDate.Value.Date)
                 {
                     btn.BackColor = ThemeConfig.PrimaryColor;
                     btn.ForeColor = Color.White;
@@ -133,7 +147,6 @@ namespace GenericInventorySystem.Controls
                     btn.ForeColor = ThemeConfig.PrimaryColor;
                     btn.Font = new Font("Segoe UI", 9, FontStyle.Bold);
                 }
-
                 else
                 {
                     btn.BackColor = Color.White;

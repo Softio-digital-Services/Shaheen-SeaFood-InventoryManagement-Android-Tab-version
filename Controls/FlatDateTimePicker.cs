@@ -11,11 +11,11 @@ namespace GenericInventorySystem.Controls
     {
         private Label lblDate;
         private Panel pnlContainer;
-        private DateTime _value = DateTime.Now;
+        private DateTime? _value = null;
 
         public event EventHandler ValueChanged;
 
-        public DateTime Value
+        public DateTime? Value
         {
             get => _value;
             set
@@ -25,6 +25,8 @@ namespace GenericInventorySystem.Controls
                 ValueChanged?.Invoke(this, EventArgs.Empty);
             }
         }
+
+        public DateTime MinDate { get; set; } = DateTime.MinValue;
 
         // Maintain compatibility with POsForm code
         public DateTimePickerFormat Format { get; set; } = DateTimePickerFormat.Short;
@@ -62,7 +64,7 @@ namespace GenericInventorySystem.Controls
             lblDate.Dock = DockStyle.Fill;
             lblDate.TextAlign = ContentAlignment.MiddleLeft;
             lblDate.Font = new Font("Segoe UI", 9.5F);
-            lblDate.Text = _value.ToShortDateString();
+            lblDate.Text = _value.HasValue ? _value.Value.ToShortDateString() : "No Date";
             lblDate.Click += OpenCalendar; // Pass click through
             
             Label lblIcon = new Label();
@@ -83,11 +85,19 @@ namespace GenericInventorySystem.Controls
 
         private void OpenCalendar(object sender, EventArgs e)
         {
-            CustomCalendarForm calendar = new CustomCalendarForm(Value);
+            CustomCalendarForm calendar = new CustomCalendarForm(Value, MinDate);
             
             // Center the popup relative to the input control
             int xOffset = (this.Width - calendar.Width) / 2;
             Point screenPoint = this.PointToScreen(new Point(xOffset, this.Height));
+            
+            // Prevent opening off-screen
+            var screenBounds = Screen.FromPoint(screenPoint).WorkingArea;
+            if (screenPoint.Y + calendar.Height > screenBounds.Bottom)
+            {
+                // Open upwards above the control
+                screenPoint.Y = this.PointToScreen(new Point(xOffset, -calendar.Height)).Y;
+            }
             
             calendar.Location = screenPoint;
             calendar.DateSelected += (s, args) => 
@@ -100,7 +110,7 @@ namespace GenericInventorySystem.Controls
         private void UpdateLabel()
         {
             if(lblDate != null)
-                lblDate.Text = _value.ToShortDateString();
+                lblDate.Text = _value.HasValue ? _value.Value.ToShortDateString() : "No Date";
         }
     }
 }

@@ -280,7 +280,8 @@ function updateCartUI() {
     } else {
         cartContainer.innerHTML = '';
         cart.forEach(item => {
-            const itemTotal = item.price * item.qty;
+            const price = Number(item.price) || 0;
+            const itemTotal = price * item.qty;
             subtotal += itemTotal;
 
             const div = document.createElement('div');
@@ -300,12 +301,39 @@ function updateCartUI() {
         });
     }
 
-    const tax   = subtotal * 0.10;
-    const total = subtotal + tax;
+    const applyTax = document.getElementById('applyTax').checked;
+    const tax   = applyTax ? (subtotal * 0.10) : 0;
+    
+    const applyShip = document.getElementById('applyShipping').checked;
+    const shipAmount = parseFloat(document.getElementById('shipAmount').value) || 0;
+    const ship = applyShip ? shipAmount : 0;
+
+    const total = subtotal + tax + ship;
+    
     document.getElementById('subTotal').innerText  = `$${subtotal.toFixed(2)}`;
     document.getElementById('taxTotal').innerText  = `$${tax.toFixed(2)}`;
+    document.getElementById('taxTotal').style.color = applyTax ? 'inherit' : '#94a3b8';
+    
+    document.getElementById('shippingTotal').innerText = `$${ship.toFixed(2)}`;
+    document.getElementById('shippingTotal').style.display = applyShip ? 'none' : 'inline';
+    document.getElementById('shipAmount').style.display = applyShip ? 'inline' : 'none';
+    
     document.getElementById('grandTotal').innerText = `$${total.toFixed(2)}`;
 }
+
+// Global Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // These listeners are already in the main block at line 13, 
+    // but we need to ensure the toggles specifically trigger UI updates.
+    const taxToggle = document.getElementById('applyTax');
+    if (taxToggle) taxToggle.addEventListener('change', updateCartUI);
+
+    const shipToggle = document.getElementById('applyShipping');
+    if (shipToggle) shipToggle.addEventListener('change', updateCartUI);
+
+    const shipInput = document.getElementById('shipAmount');
+    if (shipInput) shipInput.addEventListener('input', updateCartUI);
+});
 
 function showToast(msg, type = 'info') {
     let toast = document.getElementById('posToast');

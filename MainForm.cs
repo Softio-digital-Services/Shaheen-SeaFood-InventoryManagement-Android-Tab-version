@@ -221,7 +221,7 @@ namespace GenericInventorySystem
             {
                 AddNavButton(pnlNav, "Suppliers", "suppliers", "btnSuppliers", () => ShowForm(suppliersForm));
                 AddNavButton(pnlNav, "Purchase Orders", "inventory", "btnPO", () => ShowForm(purchaseOrdersForm));
-                AddNavButton(pnlNav, "Monthly Expenses", "history", "btnExpenses", () => { monthlyExpensesForm.LoadData(); ShowForm(monthlyExpensesForm); });
+                AddNavButton(pnlNav, "Monthly Expenses", "expenses", "btnExpenses", () => { monthlyExpensesForm.LoadData(); ShowForm(monthlyExpensesForm); });
                 AddNavButton(pnlNav, "Reports", "reports", "btnReports", () => { reportsForm.RefreshData(); ShowForm(reportsForm); });
                 AddNavButton(pnlNav, "History", "history", "btnHistory", () => { historyForm.LoadHistory(); ShowForm(historyForm); });
             }
