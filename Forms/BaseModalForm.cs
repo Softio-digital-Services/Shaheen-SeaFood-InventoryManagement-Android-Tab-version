@@ -65,12 +65,21 @@ namespace GenericInventorySystem.Forms
             pnlHeader.Controls.Add(btnClose);
             this.Controls.Add(pnlHeader);
 
-            // Content Panel
+            // Content Panel - starts immediately below header, fills rest of form
             ContentPanel = new Panel();
-            ContentPanel.Dock = DockStyle.Fill;
             ContentPanel.BackColor = Color.Transparent;
+            ContentPanel.AutoScroll = false;
+            // Position explicitly below header with small margins
+            ContentPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            ContentPanel.Location = new Point(2, 52); // 2px border left, 50px header + 2px
+            ContentPanel.Size = new Size(this.ClientSize.Width - 4, this.ClientSize.Height - 54); // full width minus borders, height minus header+borders
             this.Controls.Add(ContentPanel);
             ContentPanel.BringToFront();
+
+            // Keep ContentPanel sized correctly on resize
+            this.Resize += (s, e) => {
+                ContentPanel.Size = new Size(this.ClientSize.Width - 4, this.ClientSize.Height - 54);
+            };
         }
 
         protected override void OnPaint(PaintEventArgs e)

@@ -107,7 +107,7 @@ namespace GenericInventorySystem.Forms
             lblSection.Name = "lblSection";
             lblSection.Text = "Customer Information";
             lblSection.Font = ThemeConfig.SubHeaderFont;
-            lblSection.Location = new System.Drawing.Point(30, 70);
+            lblSection.Location = new System.Drawing.Point(30, 10);
             lblSection.AutoSize = true;
             lblSection.ForeColor = ThemeConfig.SecondaryColor;
             this.ContentPanel.Controls.Add(lblSection);
@@ -115,7 +115,7 @@ namespace GenericInventorySystem.Forms
             // 
             // Fields Configuration
             // 
-            int startY = 110;
+            int startY = 50;
             int gap = 85;
             int w = 420;
 
@@ -192,13 +192,13 @@ namespace GenericInventorySystem.Forms
             btnCancel = new ModernButton();
             btnCancel.Text = "Cancel";
             btnCancel.Size = new System.Drawing.Size(120, 40);
-            btnCancel.Location = new System.Drawing.Point(210, 640); 
+            btnCancel.Location = new System.Drawing.Point(210, 590); 
             btnCancel.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
 
             btnSave = new ModernButton();
             btnSave.Text = "Save Customer";
             btnSave.Size = new System.Drawing.Size(140, 40);
-            btnSave.Location = new System.Drawing.Point(340, 640);
+            btnSave.Location = new System.Drawing.Point(340, 590);
             btnSave.Click += (s, e) => 
             { 
                  Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;

@@ -191,18 +191,17 @@ namespace GenericInventorySystem
             // Dashboard_btn
             // 
             this.Dashboard_btn.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.Dashboard_btn.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(192)))));
-            this.Dashboard_btn.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(192)))));
+            this.Dashboard_btn.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent;
+            this.Dashboard_btn.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Transparent;
             this.Dashboard_btn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.Dashboard_btn.ForeColor = System.Drawing.Color.White;
-            this.Dashboard_btn.ForeColor = System.Drawing.Color.White;
+            this.Dashboard_btn.ForeColor = System.Drawing.Color.FromArgb(31, 41, 55);
             this.Dashboard_btn.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.Dashboard_btn.Location = new System.Drawing.Point(12, 174);
             this.Dashboard_btn.Name = "Dashboard_btn";
-            this.Dashboard_btn.Size = new System.Drawing.Size(200, 40);
+            this.Dashboard_btn.Size = new System.Drawing.Size(200, 50);
             this.Dashboard_btn.TabIndex = 2;
             this.Dashboard_btn.Text = "Dashboard";
-            this.Dashboard_btn.UseVisualStyleBackColor = true;
+            this.Dashboard_btn.UseVisualStyleBackColor = false;
             this.Dashboard_btn.Click += new System.EventHandler(this.button1_Click);
             // 
             // label1

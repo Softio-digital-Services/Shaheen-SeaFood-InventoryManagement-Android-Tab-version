@@ -43,35 +43,35 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.Size = new Size(450, 540);
+            this.Size = new Size(450, 480);
             
             lblPrompt = new Label();
-            lblPrompt.Location = new Point(30, 60); // Below Header
+            lblPrompt.Location = new Point(30, 10);
             lblPrompt.AutoSize = true;
-            lblPrompt.Font = ThemeConfig.SubHeaderFont; // Smaller than main header
+            lblPrompt.Font = ThemeConfig.SubHeaderFont;
             lblPrompt.ForeColor = ThemeConfig.SecondaryColor;
             this.ContentPanel.Controls.Add(lblPrompt);
 
             // Amount
             txtAmount = new ModernTextBox();
             txtAmount.LabelText = "Transaction Amount ($)";
-            txtAmount.Location = new Point(30, 100);
+            txtAmount.Location = new Point(30, 45);
             txtAmount.Width = 380;
             this.ContentPanel.Controls.Add(txtAmount);
 
             // Notes
             txtNotes = new ModernTextBox();
             txtNotes.LabelText = "Notes (Optional)";
-            txtNotes.Location = new Point(30, 180);
+            txtNotes.Location = new Point(30, 125);
             txtNotes.Width = 380;
             txtNotes.Multiline = true;
-            txtNotes.Height = 120; // Taller for notes
+            txtNotes.Height = 120;
             this.ContentPanel.Controls.Add(txtNotes);
 
             // Error Label
             lblError = new Label() 
             { 
-                Location = new Point(30, 310), 
+                Location = new Point(30, 260), 
                 AutoSize = true, 
                 ForeColor = ThemeConfig.DangerColor, 
                 Visible = false, 
@@ -80,10 +80,10 @@ namespace GenericInventorySystem.Forms
             this.ContentPanel.Controls.Add(lblError);
 
             // Buttons
-            btnSave = new ModernButton() { Text = "Confirm", Location = new Point(270, 420), Size = new Size(140, 40) };
+            btnSave = new ModernButton() { Text = "Confirm", Location = new Point(270, 370), Size = new Size(140, 40) };
             btnSave.Click += BtnSave_Click;
 
-            btnCancel = new ModernButton() { Text = "Cancel", Location = new Point(120, 420), Size = new Size(140, 40) };
+            btnCancel = new ModernButton() { Text = "Cancel", Location = new Point(120, 370), Size = new Size(140, 40) };
             btnCancel.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
 
             this.ContentPanel.Controls.Add(btnSave);

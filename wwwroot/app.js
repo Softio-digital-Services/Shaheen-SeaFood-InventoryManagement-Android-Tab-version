@@ -34,6 +34,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     setupBarcodeScanner();
+    
+    // Notification Toggle
+    const btnNotif = document.getElementById('btnNotifications');
+    const panel = document.getElementById('notifPanel');
+    if(btnNotif && panel) {
+        btnNotif.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panel.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if(!panel.contains(e.target) && !btnNotif.contains(e.target)) {
+                panel.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Start Polling (every 10 seconds)
+    setInterval(async () => {
+        // Skip polling if checkout is happening to avoid conflicts
+        const checkoutBtn = document.getElementById('btnCheckout');
+        if(checkoutBtn && checkoutBtn.disabled) return;
+        
+        const dot = document.getElementById('syncDot');
+        if(dot) dot.classList.add('syncing');
+        
+        await loadProducts();
+        
+        if(dot) dot.classList.remove('syncing');
+    }, 10000);
 });
 
 // ── Fetch products from real API ────────────────────────────
@@ -209,11 +238,36 @@ async function processCheckout() {
 
 // ── UI helpers ──────────────────────────────────────────────
 function checkLowStockAlerts() {
-    const lowCount = allProducts.filter(p => !p.isService && p.stock <= (p.minStock || 5)).length;
+    const lowItems = allProducts.filter(p => !p.isService && p.stock <= (p.minStock || 5));
     const badge = document.getElementById('outOfStockBadge');
+    
     if (badge) {
-        badge.innerText = lowCount;
-        badge.classList.toggle('hidden', lowCount === 0);
+        badge.innerText = lowItems.length;
+        badge.classList.toggle('hidden', lowItems.length === 0);
+    }
+    
+    const notifList = document.getElementById('notifList');
+    if (!notifList) return;
+    
+    if (lowItems.length === 0) {
+        notifList.innerHTML = '<div class="notif-empty">All stock levels OK ✓</div>';
+    } else {
+        notifList.innerHTML = '';
+        lowItems.forEach(p => {
+            const isOut = p.stock === 0;
+            const div = document.createElement('div');
+            div.className = 'notif-item';
+            div.innerHTML = `
+                <div>
+                    <div class="notif-name">${p.name}</div>
+                    <div class="notif-sku">${p.sku || p.barcode || "No SKU"}</div>
+                </div>
+                <span class="stock-badge ${isOut ? "low" : "warn"}" style="background: ${isOut ? "#fee2e2" : "#fef3c7"}; color: ${isOut ? "#ef4444" : "#d97706"}">
+                    ${isOut ? "Out of Stock" : `Low: ${p.stock}`}
+                </span>
+            `;
+            notifList.appendChild(div);
+        });
     }
 }
 

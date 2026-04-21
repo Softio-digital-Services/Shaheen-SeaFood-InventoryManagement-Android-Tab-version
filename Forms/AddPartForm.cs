@@ -152,16 +152,13 @@ namespace GenericInventorySystem.Forms
                 return;
             }
 
-            // Validation
-            if (!ValidationHelper.ValidateInteger(txtPartNumber.Text, "Part Number", out int partNumInt))
-            {
-                return; 
-            }
+            // Validation - SKU is a free-text field (e.g. OIL-001), not a number
+            string partNum = txtPartNumber.Text.Trim();
 
             try
             {
                 string name = txtPartName.Text.Trim();
-                string number = partNumInt.ToString(); 
+                string number = partNum;
                 int qty = (int)numQuantity.Value;
                 decimal price = numPrice.Value;
                 string status = cmbStatus.SelectedItem?.ToString() ?? "Active";
