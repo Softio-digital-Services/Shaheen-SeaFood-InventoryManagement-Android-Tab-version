@@ -1,17 +1,30 @@
 // ============================================================
-//  Garage POS – app.js  (live DB version)
+//  Garage POS – app.js  (live DB version + Role Management)
 // ============================================================
 
 let allProducts = [];
 let cart = [];
+let currentUser = JSON.parse(localStorage.getItem('pos_user')) || null;
 
 // ── Boot ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadProducts();
-    updateCartUI();
-
+    initAuth();
+    
+    // UI Event Listeners
+    document.getElementById('btnLogin').addEventListener('click', handleLogin);
+    document.getElementById('btnLogout').addEventListener('click', handleLogout);
     document.getElementById('btnClearCart').addEventListener('click', clearCart);
     document.getElementById('btnCheckout').addEventListener('click', processCheckout);
+    
+    // Admin Modal listeners
+    document.getElementById('btnOpenAddModal').addEventListener('click', () => {
+        document.getElementById('addItemModal').classList.remove('hidden');
+        document.getElementById('newItemName').focus();
+    });
+    document.getElementById('btnCloseAddModal').addEventListener('click', () => {
+        document.getElementById('addItemModal').classList.add('hidden');
+    });
+    document.getElementById('btnSubmitItem').addEventListener('click', submitNewItem);
 
     // Search
     document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -23,49 +36,82 @@ document.addEventListener('DOMContentLoaded', async () => {
         ) : allProducts);
     });
 
-    // Category filter
-    document.querySelectorAll('.cat-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            const cat = e.target.innerText.trim();
-            renderProducts(cat === 'All Parts' ? allProducts : allProducts.filter(p => p.category === cat));
-        });
-    });
-
     setupBarcodeScanner();
+    setupNotificationSystem();
     
-    // Notification Toggle
-    const btnNotif = document.getElementById('btnNotifications');
-    const panel = document.getElementById('notifPanel');
-    if(btnNotif && panel) {
-        btnNotif.addEventListener('click', (e) => {
-            e.stopPropagation();
-            panel.classList.toggle('hidden');
-        });
-        document.addEventListener('click', (e) => {
-            if(!panel.contains(e.target) && !btnNotif.contains(e.target)) {
-                panel.classList.add('hidden');
-            }
-        });
-    }
-    
-    // Start Polling (every 10 seconds)
-    setInterval(async () => {
-        // Skip polling if checkout is happening to avoid conflicts
-        const checkoutBtn = document.getElementById('btnCheckout');
-        if(checkoutBtn && checkoutBtn.disabled) return;
-        
-        const dot = document.getElementById('syncDot');
-        if(dot) dot.classList.add('syncing');
-        
+    // Initial Load if logged in
+    if(currentUser) {
         await loadProducts();
-        
-        if(dot) dot.classList.remove('syncing');
-    }, 10000);
+        startPolling();
+    }
 });
 
-// ── Fetch products from real API ────────────────────────────
+// ── Authentication ───────────────────────────────────────────
+function initAuth() {
+    const loginScreen = document.getElementById('loginScreen');
+    const container = document.querySelector('.pos-container');
+    
+    if(!currentUser) {
+        loginScreen.classList.remove('hidden');
+        container.classList.add('blur');
+    } else {
+        loginScreen.classList.add('hidden');
+        container.classList.remove('blur');
+        applyRolePermissions();
+    }
+}
+
+async function handleLogin() {
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value.trim();
+    const errEl = document.getElementById('loginError');
+    const btn = document.getElementById('btnLogin');
+
+    if(!user || !pass) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Authenticating...';
+    errEl.classList.add('hidden');
+
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user, password: pass })
+        });
+
+        if(!res.ok) throw new Error("Invalid credentials");
+
+        currentUser = await res.json();
+        localStorage.setItem('pos_user', JSON.stringify(currentUser));
+        
+        initAuth();
+        await loadProducts();
+        startPolling();
+        showToast(`Welcome, ${currentUser.fullName}!`, 'success');
+    } catch(err) {
+        errEl.classList.remove('hidden');
+        errEl.textContent = err.message;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+    }
+}
+
+function handleLogout() {
+    currentUser = null;
+    localStorage.removeItem('pos_user');
+    location.reload();
+}
+
+function applyRolePermissions() {
+    const isAdmin = currentUser && currentUser.role === 'Admin';
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.classList.toggle('hidden', !isAdmin);
+    });
+}
+
+// ── Products ────────────────────────────────────────────────
 async function loadProducts() {
     try {
         const res = await fetch('/api/products');
@@ -77,29 +123,10 @@ async function loadProducts() {
     } catch (err) {
         console.error('Failed to load products:', err);
         document.getElementById('productGrid').innerHTML =
-            `<p style="color:#ef4444;padding:20px">⚠️ Could not connect to server.<br>${err.message}</p>`;
+            `<p style="color:#ef4444;padding:20px">⚠️ Connection lost. Retrying...</p>`;
     }
 }
 
-// ── Dynamically populate category buttons from real data ───
-function updateCategoryButtons() {
-    const cats = ['All Parts', ...new Set(allProducts.map(p => p.category))];
-    const container = document.querySelector('.categories');
-    container.innerHTML = '';
-    cats.forEach((cat, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'cat-btn' + (i === 0 ? ' active' : '');
-        btn.textContent = cat;
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderProducts(cat === 'All Parts' ? allProducts : allProducts.filter(p => p.category === cat));
-        });
-        container.appendChild(btn);
-    });
-}
-
-// ── Render product grid ─────────────────────────────────────
 function renderProducts(products) {
     const grid = document.getElementById('productGrid');
     grid.innerHTML = '';
@@ -110,8 +137,8 @@ function renderProducts(products) {
     }
 
     products.forEach(p => {
-        const isLow  = !p.isService && p.stock > 0 && p.stock <= (p.minStock || 5);
         const isOut  = !p.isService && p.stock === 0;
+        const isLow  = !p.isService && p.stock > 0 && p.stock <= (p.minStock || 5);
 
         const card = document.createElement('div');
         card.className = 'product-card';
@@ -133,30 +160,68 @@ function renderProducts(products) {
             </div>
         `;
 
-        if (!isOut) {
-            card.addEventListener('click', () => addToCart(p));
-        }
+        if (!isOut) card.addEventListener('click', () => addToCart(p));
         grid.appendChild(card);
     });
 }
 
 function getCategoryIcon(cat) {
-    const map = { Engine: '⚙️', Brakes: '🛑', Suspension: '🔩', Electrical: '⚡',
-                  Body: '🚗', Interior: '💺', Accessories: '🧰', Services: '🔧', General: '📦' };
+    const map = { Engine: '⚙️', Brakes: '🛑', Suspension: '🔩', Electrical: '⚡', Accessories: '🧰', Services: '🔧' };
     return map[cat] || '📦';
 }
 
-// ── Barcode scanner ─────────────────────────────────────────
+async function updateCategoryButtons() {
+    try {
+        const res = await fetch('/api/categories');
+        let cats = ['All Parts'];
+        if (res.ok) {
+            const apiCats = await res.json();
+            cats = [...cats, ...apiCats];
+        } else {
+            // Fallback to deriving from products if API fails
+            cats = ['All Parts', ...new Set(allProducts.map(p => p.category))];
+        }
+
+        const container = document.querySelector('.categories');
+        if(!container) return;
+        container.innerHTML = '';
+        cats.forEach((cat, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'cat-btn' + (i === 0 ? ' active' : '');
+            btn.textContent = cat;
+            btn.onclick = () => {
+                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderProducts(cat === 'All Parts' ? allProducts : allProducts.filter(p => p.category === cat));
+            };
+            container.appendChild(btn);
+        });
+    } catch (err) {
+        console.error('Failed to update categories:', err);
+    }
+}
+
+// ── Scanner Logic ───────────────────────────────────────────
 let barcodeBuffer = '';
 let barcodeTimer  = null;
 
 function setupBarcodeScanner() {
     document.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        // Allow normal input if focused on specific fields
+        if (e.target.tagName === 'INPUT' && e.target.id !== 'newItemBarcode') return;
+        
         if (barcodeTimer) clearTimeout(barcodeTimer);
 
         if (e.key === 'Enter') {
-            if (barcodeBuffer.length > 3) handleBarcodeScan(barcodeBuffer);
+            if (barcodeBuffer.length > 3) {
+                const modal = document.getElementById('addItemModal');
+                if(!modal.classList.contains('hidden')) {
+                    document.getElementById('newItemBarcode').value = barcodeBuffer;
+                    showToast("Barcode captured!", "info");
+                } else {
+                    handleBarcodeScan(barcodeBuffer);
+                }
+            }
             barcodeBuffer = '';
             e.preventDefault();
             return;
@@ -172,15 +237,61 @@ function handleBarcodeScan(barcode) {
         if (product.stock > 0 || product.isService) addToCart(product);
         else showToast(`⛔ Out of Stock: ${product.name}`, 'error');
     } else {
-        showToast(`❓ Barcode not found: ${barcode}`, 'warn');
+        showToast(`❓ Barcode unknown: ${barcode}`, 'warn');
     }
 }
 
-// ── Cart ────────────────────────────────────────────────────
+// ── Admin: Add Item ────────────────────────────────────────
+async function submitNewItem() {
+    const name = document.getElementById('newItemName').value.trim();
+    const cat = document.getElementById('newItemCategory').value;
+    const price = parseFloat(document.getElementById('newItemPrice').value);
+    const stock = parseInt(document.getElementById('newItemStock').value);
+    const barcode = document.getElementById('newItemBarcode').value.trim();
+
+    if(!name || isNaN(price) || isNaN(stock)) {
+        showToast("Please fill all required fields correctly.", "warn");
+        return;
+    }
+
+    const btn = document.getElementById('btnSubmitItem');
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+
+    try {
+        const res = await fetch('/api/add-item', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, category: cat, price, stock, barcode })
+        });
+
+        if(!res.ok) throw new Error("Failed to add item");
+
+        showToast("✅ Item added to inventory!", "success");
+        document.getElementById('addItemModal').classList.add('hidden');
+        resetAddItemForm();
+        await loadProducts();
+    } catch(err) {
+        showToast(err.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Add to Inventory";
+    }
+}
+
+function resetAddItemForm() {
+    document.getElementById('newItemName').value = '';
+    document.getElementById('newItemPrice').value = '';
+    document.getElementById('newItemStock').value = '0';
+    document.getElementById('newItemBarcode').value = '';
+}
+
+// ── Cart & Checkout ────────────────────────────────────────
 function addToCart(product) {
     const existing = cart.find(i => i.id === product.id);
     if (existing) {
         if (product.isService || existing.qty < product.stock) existing.qty++;
+        else showToast("Maximum stock reached", "warn");
     } else {
         cart.push({ ...product, qty: 1 });
     }
@@ -197,37 +308,24 @@ function updateCartQty(id, delta) {
 
 function clearCart() { cart = []; updateCartUI(); }
 
-// ── Checkout (real API call) ────────────────────────────────
 async function processCheckout() {
     if (cart.length === 0) return;
-
     const btn = document.getElementById('btnCheckout');
     btn.disabled = true;
     btn.textContent = 'PROCESSING…';
 
     try {
-        const payload = { items: cart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty })) };
-
         const res = await fetch('/api/checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ items: cart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty })) })
         });
-
-        if (!res.ok) {
-            const err = await res.text();
-            throw new Error(err);
-        }
-
+        if (!res.ok) throw new Error(await res.text());
+        
         const result = await res.json();
-
-        showToast(`✅ Sale Complete! Order #${result.orderId} — $${Number(result.total).toFixed(2)}`, 'success');
-
+        showToast(`✅ Sale Complete! Order #${result.orderId}`, 'success');
         clearCart();
-
-        // Refresh product list so stock counts update live
         await loadProducts();
-
     } catch (err) {
         showToast(`❌ Checkout failed: ${err.message}`, 'error');
     } finally {
@@ -236,54 +334,18 @@ async function processCheckout() {
     }
 }
 
-// ── UI helpers ──────────────────────────────────────────────
-function checkLowStockAlerts() {
-    const lowItems = allProducts.filter(p => !p.isService && p.stock <= (p.minStock || 5));
-    const badge = document.getElementById('outOfStockBadge');
-    
-    if (badge) {
-        badge.innerText = lowItems.length;
-        badge.classList.toggle('hidden', lowItems.length === 0);
-    }
-    
-    const notifList = document.getElementById('notifList');
-    if (!notifList) return;
-    
-    if (lowItems.length === 0) {
-        notifList.innerHTML = '<div class="notif-empty">All stock levels OK ✓</div>';
-    } else {
-        notifList.innerHTML = '';
-        lowItems.forEach(p => {
-            const isOut = p.stock === 0;
-            const div = document.createElement('div');
-            div.className = 'notif-item';
-            div.innerHTML = `
-                <div>
-                    <div class="notif-name">${p.name}</div>
-                    <div class="notif-sku">${p.sku || p.barcode || "No SKU"}</div>
-                </div>
-                <span class="stock-badge ${isOut ? "low" : "warn"}" style="background: ${isOut ? "#fee2e2" : "#fef3c7"}; color: ${isOut ? "#ef4444" : "#d97706"}">
-                    ${isOut ? "Out of Stock" : `Low: ${p.stock}`}
-                </span>
-            `;
-            notifList.appendChild(div);
-        });
-    }
-}
-
+// ── UI State ────────────────────────────────────────────────
 function updateCartUI() {
-    const cartContainer = document.getElementById('cartItems');
+    const container = document.getElementById('cartItems');
     let subtotal = 0;
 
     if (cart.length === 0) {
-        cartContainer.innerHTML = '<div class="empty-cart-state">Cart is empty</div>';
+        container.innerHTML = '<div class="empty-cart-state">Cart is empty</div>';
     } else {
-        cartContainer.innerHTML = '';
+        container.innerHTML = '';
         cart.forEach(item => {
-            const price = Number(item.price) || 0;
-            const itemTotal = price * item.qty;
+            const itemTotal = item.price * item.qty;
             subtotal += itemTotal;
-
             const div = document.createElement('div');
             div.className = 'cart-item';
             div.innerHTML = `
@@ -297,57 +359,62 @@ function updateCartUI() {
                     <button class="qty-btn" onclick="updateCartQty(${item.id}, 1)">+</button>
                 </div>
             `;
-            cartContainer.appendChild(div);
+            container.appendChild(div);
         });
     }
 
     const applyTax = document.getElementById('applyTax').checked;
-    const tax   = applyTax ? (subtotal * 0.10) : 0;
-    
-    const applyShip = document.getElementById('applyShipping').checked;
-    const shipAmount = parseFloat(document.getElementById('shipAmount').value) || 0;
-    const ship = applyShip ? shipAmount : 0;
+    const tax = applyTax ? (subtotal * 0.10) : 0;
+    const total = subtotal + tax;
 
-    const total = subtotal + tax + ship;
-    
-    document.getElementById('subTotal').innerText  = `$${subtotal.toFixed(2)}`;
-    document.getElementById('taxTotal').innerText  = `$${tax.toFixed(2)}`;
-    document.getElementById('taxTotal').style.color = applyTax ? 'inherit' : '#94a3b8';
-    
-    document.getElementById('shippingTotal').innerText = `$${ship.toFixed(2)}`;
-    document.getElementById('shippingTotal').style.display = applyShip ? 'none' : 'inline';
-    document.getElementById('shipAmount').style.display = applyShip ? 'inline' : 'none';
-    
+    document.getElementById('subTotal').innerText = `$${subtotal.toFixed(2)}`;
+    document.getElementById('taxTotal').innerText = `$${tax.toFixed(2)}`;
     document.getElementById('grandTotal').innerText = `$${total.toFixed(2)}`;
 }
 
-// Global Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-    // These listeners are already in the main block at line 13, 
-    // but we need to ensure the toggles specifically trigger UI updates.
+// ── Notifications & Polling ──────────────────────────────────
+function setupNotificationSystem() {
+    const btnNotif = document.getElementById('btnNotifications');
+    const panel = document.getElementById('notifPanel');
+    if(!btnNotif || !panel) return;
+    
+    btnNotif.onclick = (e) => { e.stopPropagation(); panel.classList.toggle('hidden'); };
+    document.onclick = (e) => { if(!panel.contains(e.target)) panel.classList.add('hidden'); };
+    
     const taxToggle = document.getElementById('applyTax');
-    if (taxToggle) taxToggle.addEventListener('change', updateCartUI);
+    if (taxToggle) taxToggle.onchange = updateCartUI;
+}
 
-    const shipToggle = document.getElementById('applyShipping');
-    if (shipToggle) shipToggle.addEventListener('change', updateCartUI);
+function checkLowStockAlerts() {
+    const lowItems = allProducts.filter(p => !p.isService && p.stock <= (p.minStock || 5));
+    const badge = document.getElementById('outOfStockBadge');
+    if (badge) {
+        badge.innerText = lowItems.length;
+        badge.classList.toggle('hidden', lowItems.length === 0);
+    }
+}
 
-    const shipInput = document.getElementById('shipAmount');
-    if (shipInput) shipInput.addEventListener('input', updateCartUI);
-});
+function startPolling() {
+    setInterval(async () => {
+        if(!document.getElementById('btnCheckout')) return;
+        if(document.getElementById('btnCheckout').disabled) return;
+        const dot = document.getElementById('syncDot');
+        if(dot) dot.classList.add('syncing');
+        await loadProducts();
+        if(dot) dot.classList.remove('syncing');
+    }, 15000);
+}
 
 function showToast(msg, type = 'info') {
     let toast = document.getElementById('posToast');
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'posToast';
-        toast.style.cssText = `
-            position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
-            padding:14px 28px; border-radius:12px; font-weight:700; font-size:1rem;
-            color:#fff; z-index:9999; transition:opacity .3s; white-space:nowrap;`;
+        toast.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:16px 32px;border-radius:16px;font-weight:700;color:#fff;z-index:9999;transition:opacity .3s;backdrop-filter:blur(10px);`;
         document.body.appendChild(toast);
     }
     const colors = { success: '#10b981', error: '#ef4444', warn: '#f59e0b', info: '#3b82f6' };
-    toast.style.background = colors[type] || colors.info;
+    toast.style.background = (colors[type] || colors.info) + 'dd';
     toast.style.opacity = '1';
     toast.textContent = msg;
     setTimeout(() => { toast.style.opacity = '0'; }, 4000);

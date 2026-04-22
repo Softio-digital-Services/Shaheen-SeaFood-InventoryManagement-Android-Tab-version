@@ -52,7 +52,7 @@ namespace GenericInventorySystem.Forms
             GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
 
-            var ctrlTitle = this.Controls.Find("lblTitle", true);
+            var ctrlTitle = this.Controls.Find("lblInventoryTitle", true);
             if (ctrlTitle.Length > 0) ctrlTitle[0].Text = L("Parts_Title");
 
             if (txtSearch != null)
@@ -119,9 +119,9 @@ namespace GenericInventorySystem.Forms
             mainContainer.Padding = new Padding(20);
 
             // Title
-            Label lblTitle = ThemeConfig.CreateStandardHeader("Inventory Management");
-            lblTitle.Name = "lblTitle";
-            mainContainer.Controls.Add(lblTitle); // Note: mainContainer has Padding(20), so Location(0,0) works perfectly.
+            Label lblInventoryTitle = ThemeConfig.CreateStandardHeader("Inventory Management");
+            lblInventoryTitle.Name = "lblInventoryTitle";
+            mainContainer.Controls.Add(lblInventoryTitle); // Note: mainContainer has Padding(20), so Location(0,0) works perfectly.
 
             // Search Bar Panel (Rounded & Modern)
             Panel searchPanel = new Panel();

@@ -60,7 +60,7 @@ namespace GenericInventorySystem.Forms
             btnClose.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
             
             // Anchor right - Flush to top right corner
-            btnClose.Location = new Point(this.Width - 45, 0);
+            btnClose.Location = new Point(this.Width - 45, (pnlHeader.Height - 32) / 2);
             btnClose.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             
             pnlHeader.Controls.Add(btnClose);
@@ -69,7 +69,7 @@ namespace GenericInventorySystem.Forms
             // Content Panel - fills rest of form via Dock
             ContentPanel = new Panel();
             ContentPanel.BackColor = Color.Transparent;
-            ContentPanel.AutoScroll = true; // Safety measure
+            ContentPanel.AutoScroll = false; // Disable scrolling to encourage proper sizing
             ContentPanel.Dock = DockStyle.Fill;
             this.Controls.Add(ContentPanel);
             ContentPanel.BringToFront();

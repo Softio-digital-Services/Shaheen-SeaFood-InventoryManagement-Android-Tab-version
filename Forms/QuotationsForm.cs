@@ -11,6 +11,7 @@ namespace GenericInventorySystem.Forms
 {
     public class QuotationsForm : UserControl
     {
+        private Label lblQuotationsTitle;
         private DataGridView dgvQuotes;
         private OrderService _orderService;
         private int _hoveredRow = -1;
@@ -40,6 +41,7 @@ namespace GenericInventorySystem.Forms
                 if (dgvQuotes.Columns.Contains("total_amount")) dgvQuotes.Columns["total_amount"].HeaderText = LocalizationManager.IsArabic ? "الإجمالي" : "Total";
                 if (dgvQuotes.Columns.Contains("colActions"))   dgvQuotes.Columns["colActions"].HeaderText  = LocalizationManager.IsArabic ? "الإجراءات" : "Actions";
             }
+            if (lblQuotationsTitle != null) lblQuotationsTitle.Text = LocalizationManager.IsArabic ? "عروض الأسعار للعملاء" : "Customer Quotations";
         }
 
         private void InitializeComponent()
@@ -60,9 +62,10 @@ namespace GenericInventorySystem.Forms
 
             // ─── Header ───────────────────────────────────────────────────
             Panel pnlHeader = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.BackgroundColor };
-            Label lblTitle  = ThemeConfig.CreateStandardHeader(
+            lblQuotationsTitle = ThemeConfig.CreateStandardHeader(
                 LocalizationManager.IsArabic ? "عروض الأسعار للعملاء" : "Customer Quotations");
-            pnlHeader.Controls.Add(lblTitle);
+            lblQuotationsTitle.Name = "lblQuotationsTitle";
+            pnlHeader.Controls.Add(lblQuotationsTitle);
 
             // ─── Currency selector (aligned right) ────────────────────────
             ComboBox cboCurrency = new ComboBox();

@@ -31,7 +31,7 @@ namespace GenericInventorySystem.Forms
         
         private Panel _feedPanel; // For Recent Activity or Top Items
         private DataGridView _gridTopItems; // If using grid
-        private Label lblTitle;
+        private Label lblDashboardTitle;
         private Label _lblTop;
         private Label _lblTrend;
         private System.ComponentModel.IContainer components = null;
@@ -60,7 +60,7 @@ namespace GenericInventorySystem.Forms
             GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
 
-            if (this.lblTitle != null) this.lblTitle.Text = L("Dash_Title");
+            if (this.lblDashboardTitle != null) this.lblDashboardTitle.Text = L("Dash_Title");
             
             if (_cardInventory != null) _cardInventory.Title = L("Dash_TotalInventory");
             if (_cardRevenue != null) _cardRevenue.Title = L("Dash_TotalRevenue");
@@ -111,10 +111,10 @@ namespace GenericInventorySystem.Forms
             this.Controls.Add(_mainLayout);
 
             // 0. Title
-            lblTitle = ThemeConfig.CreateStandardHeader("Performance Dashboard");
-            lblTitle.Name = "lblTitle";
-            lblTitle.Location = new Point(0, 0); // Reset to 0,0 because parent _mainLayout has Padding(20)
-            _mainLayout.Controls.Add(lblTitle, 0, 0);
+            lblDashboardTitle = ThemeConfig.CreateStandardHeader("Performance Dashboard");
+            lblDashboardTitle.Name = "lblDashboardTitle";
+            lblDashboardTitle.Location = new Point(0, 0); // Reset to 0,0 because parent _mainLayout has Padding(20)
+            _mainLayout.Controls.Add(lblDashboardTitle, 0, 0);
 
             // 1. Cards Layout (Top)
             _cardsLayout = new TableLayoutPanel

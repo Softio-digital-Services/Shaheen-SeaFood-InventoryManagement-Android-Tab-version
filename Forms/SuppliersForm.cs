@@ -15,7 +15,7 @@ namespace GenericInventorySystem.Forms
         private Button btnDetails;
         private Button btnImport;
         private Button btnExport;
-        private Label lblTitle;
+        private Label lblSuppliersTitle;
 
         public SuppliersForm()
         {
@@ -33,7 +33,7 @@ namespace GenericInventorySystem.Forms
             GenericInventorySystem.Helpers.LocalizationManager.TranslateControl(this);
             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
 
-            if (lblTitle != null) lblTitle.Text = L("Sup_Title");
+            if (lblSuppliersTitle != null) lblSuppliersTitle.Text = L("Sup_Title");
 
             var ctrlSearch = this.Controls.Find("txtSearch", true);
             if (ctrlSearch.Length > 0 && ctrlSearch[0] is TextBox txtSearch)
@@ -79,7 +79,7 @@ namespace GenericInventorySystem.Forms
             this.btnDetails = new System.Windows.Forms.Button();
             this.btnImport = new System.Windows.Forms.Button();
             this.btnExport = new System.Windows.Forms.Button();
-            this.lblTitle = new System.Windows.Forms.Label();
+            this.lblSuppliersTitle = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dgvSuppliers)).BeginInit();
             this.SuspendLayout();
 
@@ -99,8 +99,9 @@ namespace GenericInventorySystem.Forms
             panelTop.BackColor = ThemeConfig.BackgroundColor;
             panelTop.Padding = new Padding(20);
 
-            // lblTitle
-            this.lblTitle = ThemeConfig.CreateStandardHeader("Supplier Management");
+            // lblSuppliersTitle
+            this.lblSuppliersTitle = ThemeConfig.CreateStandardHeader("Supplier Management");
+            this.lblSuppliersTitle.Name = "lblSuppliersTitle";
 
             // Search Bar
             Panel searchPanel = new Panel();
@@ -239,7 +240,7 @@ namespace GenericInventorySystem.Forms
             panelButtons.Controls.Add(this.btnDetails);
             panelButtons.Controls.Add(this.btnAdd);
 
-            panelTop.Controls.Add(this.lblTitle);
+            panelTop.Controls.Add(this.lblSuppliersTitle);
             panelTop.Controls.Add(searchPanel);
             panelTop.Controls.Add(panelButtons);
 

@@ -13,7 +13,7 @@ namespace GenericInventorySystem.Forms
     public class MonthlyExpensesForm : UserControl
     {
         private DataGridView dgvExpenses;
-        private Label lblTitle;
+        private Label lblExpensesTitle;
         private ModernTextBox txtAmount;
         private ModernTextBox txtDescription;
         private ComboBox cmbCategory;
@@ -25,6 +25,8 @@ namespace GenericInventorySystem.Forms
             InitializeComponent();
             ApplyTheme();
             LoadData();
+            ApplyLocalization();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
         }
 
         private void InitializeComponent()
@@ -41,8 +43,9 @@ namespace GenericInventorySystem.Forms
 
             // Header
             Panel pnlHeader = new Panel { Dock = DockStyle.Fill };
-            lblTitle = ThemeConfig.CreateStandardHeader("Monthly Expenses Alignment");
-            pnlHeader.Controls.Add(lblTitle);
+            lblExpensesTitle = ThemeConfig.CreateStandardHeader("Monthly Expenses Alignment");
+            lblExpensesTitle.Name = "lblExpensesTitle";
+            pnlHeader.Controls.Add(lblExpensesTitle);
             
             lblTotal = new Label { Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.DangerColor, AutoSize = true, Location = new Point(700, 0) };
             pnlHeader.Controls.Add(lblTotal);
@@ -83,6 +86,14 @@ namespace GenericInventorySystem.Forms
         }
 
         private void ApplyTheme() { ThemeConfig.ApplyGridTheme(dgvExpenses); }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            bool isAr = LocalizationManager.IsArabic;
+            lblExpensesTitle.Text = isAr ? "إدارة المصاريف الشهرية" : "Monthly Expenses Alignment";
+            btnAdd.Text = isAr ? "+ تسجيل مصاريف" : "+ Log Expense";
+        }
 
         public void LoadData()
         {

@@ -12,7 +12,7 @@ namespace GenericInventorySystem.Forms
     {
         private DataGridView dgvUsers;
         private Button btnAddUser;
-        private Label lblTitle;
+        private Label lblUsersTitle;
 
         public UsersForm()
         {
@@ -44,9 +44,10 @@ namespace GenericInventorySystem.Forms
             pnlHeader.Dock = DockStyle.Fill;
             pnlHeader.Margin = new Padding(0, 0, 0, 10);
 
-            lblTitle = ThemeConfig.CreateStandardHeader("User Management");
-            lblTitle.Location = new Point(0, 0); 
-            pnlHeader.Controls.Add(lblTitle);
+            lblUsersTitle = ThemeConfig.CreateStandardHeader("User Management");
+            lblUsersTitle.Name = "lblUsersTitle";
+            lblUsersTitle.Location = new Point(0, 0); 
+            pnlHeader.Controls.Add(lblUsersTitle);
 
             btnAddUser = new ModernButton();
             btnAddUser.Text = "+ Add User";
@@ -118,7 +119,7 @@ namespace GenericInventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            lblTitle.Text = isArabic ? "إدارة المستخدمين" : "User Management";
+            lblUsersTitle.Text = isArabic ? "إدارة المستخدمين" : "User Management";
             btnAddUser.Text = isArabic ? "+ إضافة مستخدم" : "+ Add User";
 
             if (dgvUsers.Columns["id"] != null)

@@ -344,6 +344,40 @@ namespace GenericInventorySystem
             btn.Paint += Btn_PaintEmojiButton;
         }
 
+        public static void ApplyHeaderIconStyle(Control c)
+        {
+            c.Cursor = Cursors.Hand;
+            c.BackColor = Color.Transparent;
+            
+            c.MouseEnter += (s, e) => { c.Tag = true; c.Invalidate(); };
+            c.MouseLeave += (s, e) => { c.Tag = false; c.Invalidate(); };
+            
+            if (c is PictureBox pb)
+            {
+                Image icon = pb.Image;
+                pb.Image = null; // Prevent double-drawing (ghosting)
+
+                pb.Paint += (s, e) => {
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+
+                    if (pb.Tag != null && (bool)pb.Tag)
+                    {
+                        Rectangle r = new Rectangle(0, 0, pb.Width - 1, pb.Height - 1);
+                        using (var path = GetRoundedPath(r, 6))
+                        using (var b = new SolidBrush(Color.FromArgb(240, 245, 255))) e.Graphics.FillPath(b, path);
+                    }
+                    
+                    if (icon != null)
+                    {
+                        float ratio = Math.Min((float)pb.Width / icon.Width, (float)pb.Height / icon.Height) * 0.7f;
+                        int nw = (int)(icon.Width * ratio), nh = (int)(icon.Height * ratio);
+                        e.Graphics.DrawImage(icon, (pb.Width - nw) / 2, (pb.Height - nh) / 2, nw, nh);
+                    }
+                };
+            }
+        }
+
         public static void ApplyWindowControl(Button btn, string type)
         {
             btn.FlatStyle = FlatStyle.Flat;
@@ -361,20 +395,19 @@ namespace GenericInventorySystem
             if (type == "Close")
             {
                 btn.Paint += WinCtrl_PaintClose;
-                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(232, 17, 35); btn.Invalidate(); };
+                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(251, 230, 230); btn.Invalidate(); };
                 btn.MouseLeave += (s, e) => { btn.BackColor = Color.Transparent; btn.Invalidate(); };
             }
             else if (type == "Maximize" || type == "Restore")
             {
-                btn.Tag = type; // Store so painter knows which to draw
-                btn.Paint += WinCtrl_PaintMaximize;
-                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(229, 229, 229); btn.Invalidate(); };
+                btn.Paint += WinCtrl_PaintMax;
+                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(244, 247, 254); btn.Invalidate(); };
                 btn.MouseLeave += (s, e) => { btn.BackColor = Color.Transparent; btn.Invalidate(); };
             }
             else if (type == "Minimize")
             {
-                btn.Paint += WinCtrl_PaintMinimize;
-                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(229, 229, 229); btn.Invalidate(); };
+                btn.Paint += WinCtrl_PaintMin;
+                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(244, 247, 254); btn.Invalidate(); };
                 btn.MouseLeave += (s, e) => { btn.BackColor = Color.Transparent; btn.Invalidate(); };
             }
         }
@@ -384,14 +417,53 @@ namespace GenericInventorySystem
             var btn = sender as Button; if (btn == null) return;
             var g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            // Background
-            using (var b = new SolidBrush(btn.BackColor)) g.FillRectangle(b, btn.ClientRectangle);
-            // Draw a clean horizontal line in center
+            if (btn.BackColor != Color.Transparent)
+            {
+                Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (var path = GetRoundedPath(r, 6))
+                using (var b = new SolidBrush(btn.BackColor)) g.FillPath(b, path);
+            }
             int cx = btn.Width / 2, cy = btn.Height / 2;
             int lineW = 10;
-            Color iconColor = btn.BackColor == Color.Transparent ? TextColorDark : (btn.BackColor.GetBrightness() < 0.5f ? Color.White : TextColorDark);
+            Color iconColor = TextColorDark;
             using (var p = new Pen(iconColor, 1.5f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
                 g.DrawLine(p, cx - lineW, cy + 2, cx + lineW, cy + 2);
+        }
+
+        private static void WinCtrl_PaintMax(object sender, PaintEventArgs e)
+        {
+            var btn = sender as Button; if (btn == null) return;
+            var g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            if (btn.BackColor != Color.Transparent)
+            {
+                Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (var path = GetRoundedPath(r, 6))
+                using (var b = new SolidBrush(btn.BackColor)) g.FillPath(b, path);
+            }
+
+            int cx = btn.Width / 2, cy = btn.Height / 2;
+            int s = 5;
+            using (var p = new Pen(TextColorDark, 1.5f)) g.DrawRectangle(p, cx - s, cy - s, s * 2, s * 2);
+        }
+
+        private static void WinCtrl_PaintMin(object sender, PaintEventArgs e)
+        {
+            var btn = sender as Button; if (btn == null) return;
+            var g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            if (btn.BackColor != Color.Transparent)
+            {
+                Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (var path = GetRoundedPath(r, 6))
+                using (var b = new SolidBrush(btn.BackColor)) g.FillPath(b, path);
+            }
+
+            int cx = btn.Width / 2, cy = btn.Height / 2;
+            int s = 5;
+            using (var p = new Pen(TextColorDark, 1.5f)) g.DrawLine(p, cx - s, cy + s, cx + s, cy + s);
         }
 
         private static void WinCtrl_PaintMaximize(object sender, PaintEventArgs e)
@@ -399,23 +471,25 @@ namespace GenericInventorySystem
             var btn = sender as Button; if (btn == null) return;
             var g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using (var b = new SolidBrush(btn.BackColor)) g.FillRectangle(b, btn.ClientRectangle);
+            if (btn.BackColor != Color.Transparent)
+            {
+                Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (var path = GetRoundedPath(r, 6))
+                using (var b = new SolidBrush(btn.BackColor)) g.FillPath(b, path);
+            }
             int cx = btn.Width / 2, cy = btn.Height / 2;
             bool isRestore = (btn.Tag as string) == "Restore";
-            Color iconColor = btn.BackColor == Color.Transparent ? TextColorDark : (btn.BackColor.GetBrightness() < 0.5f ? Color.White : TextColorDark);
+            Color iconColor = TextColorDark;
             using (var p = new Pen(iconColor, 1.5f))
             {
                 if (isRestore)
                 {
-                    // Two overlapping squares (restore icon)
                     g.DrawRectangle(p, cx - 5, cy - 3, 8, 7);
                     g.DrawRectangle(p, cx - 2, cy - 6, 8, 7);
                 }
                 else
                 {
-                    // Single square (maximize icon)
                     g.DrawRectangle(p, cx - 6, cy - 5, 12, 10);
-                    // Top border accent
                     using (var p2 = new Pen(iconColor, 2.5f))
                         g.DrawLine(p2, cx - 6, cy - 5, cx + 6, cy - 5);
                 }
@@ -427,12 +501,21 @@ namespace GenericInventorySystem
             var btn = sender as Button; if (btn == null) return;
             var g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using (var b = new SolidBrush(btn.BackColor)) g.FillRectangle(b, btn.ClientRectangle);
+
+            bool isHot = btn.ClientRectangle.Contains(btn.PointToClient(Control.MousePosition));
+            if (isHot || btn.BackColor != Color.Transparent)
+            {
+                Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (var path = GetRoundedPath(r, 6))
+                using (var b = new SolidBrush(isHot ? Color.FromArgb(251, 230, 230) : btn.BackColor)) 
+                    g.FillPath(b, path);
+            }
+
             int cx = btn.Width / 2, cy = btn.Height / 2;
-            int s = 6;
-            bool isHot = btn.BackColor.R > 200 && btn.BackColor.G < 50; // Red hover
-            Color iconColor = isHot ? Color.White : TextColorDark;
-            using (var p = new Pen(iconColor, 1.5f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
+            int s = 6; // Slightly larger for better visibility
+            Color iconColor = isHot ? Color.FromArgb(239, 68, 68) : TextColorDark; // Vibrant Red on hover, Navy otherwise
+            
+            using (var p = new Pen(iconColor, 2f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
             {
                 g.DrawLine(p, cx - s, cy - s, cx + s, cy + s);
                 g.DrawLine(p, cx + s, cy - s, cx - s, cy + s);

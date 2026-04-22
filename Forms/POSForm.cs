@@ -32,7 +32,7 @@ namespace GenericInventorySystem.Forms
             LocalizationManager.ApplyRTL(this); LocalizationManager.TranslateControl(this);
             Func<string, string> L = LocalizationManager.GetString;
             Action<string, string> setText = (name, key) => { var ctrls = this.Controls.Find(name, true); if (ctrls.Length > 0) ctrls[0].Text = L(key); };
-            setText("lblTitle", "POS_Title"); setText("lblCust", "POS_Customer"); setText("lblDateTitle", "POS_OrderDate"); setText("lblDelTitle", "POS_DeliveryDate"); setText("lblAddrTitle", "POS_ShippingTo"); setText("lblLineItems", "POS_LineItems"); setText("lblTotalsTitle", "POS_OrderSummary"); setText("btnDraft", "POS_SaveDraft");
+            setText("lblPOSTitle", "POS_Title"); setText("lblCust", "POS_Customer"); setText("lblDateTitle", "POS_OrderDate"); setText("lblDelTitle", "POS_DeliveryDate"); setText("lblAddrTitle", "POS_ShippingTo"); setText("lblLineItems", "POS_LineItems"); setText("lblTotalsTitle", "POS_OrderSummary"); setText("btnDraft", "POS_SaveDraft");
             if(btnQuotation != null) btnQuotation.Text = L("POS_SaveQuotation");
             if(btnAddItem != null) btnAddItem.Text = L("POS_AddItem");
             if(btnCheckout != null) btnCheckout.Text = L("POS_Checkout");
@@ -61,9 +61,9 @@ namespace GenericInventorySystem.Forms
             this.Controls.Add(tlpRoot);
 
             Panel pnlHeader = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
-            Label headerLabel = ThemeConfig.CreateStandardHeader("Create Sales Order");
-            headerLabel.Name = "lblTitle";
-            pnlHeader.Controls.Add(headerLabel);
+            Label lblPOSTitle = ThemeConfig.CreateStandardHeader("Create Sales Order");
+            lblPOSTitle.Name = "lblPOSTitle";
+            pnlHeader.Controls.Add(lblPOSTitle);
             tlpRoot.Controls.Add(pnlHeader, 0, 0);
 
             btnManageDrafts = new ModernButton { Text = "Manage Drafts", Size = new Size(140, 34), Anchor = AnchorStyles.Top | AnchorStyles.Right };

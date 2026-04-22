@@ -138,6 +138,112 @@ namespace GenericInventorySystem
                     }
                 });
 
+                // ── Categories ────────────────────────────────────────────────
+                app.MapGet("/api/categories", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable("SELECT category_name FROM categories ORDER BY category_name");
+                        var categories = new System.Collections.Generic.List<string>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                            categories.Add(row["category_name"].ToString());
+                        
+                        // Ensure "Services" is included as it's a special category in the API
+                        if (!categories.Contains("Services")) categories.Add("Services");
+                        
+                        return Microsoft.AspNetCore.Http.Results.Ok(categories);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem("DB error: " + ex.Message);
+                    }
+                });
+
+                // ── Login (POST) ─────────────────────────────────────────────
+                app.MapPost("/api/login", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<LoginPayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                        if (body == null || string.IsNullOrEmpty(body.Username) || string.IsNullOrEmpty(body.Password))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest("Missing credentials");
+
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            "SELECT username, role, full_name FROM users WHERE username = @u AND password = @p",
+                            new System.Data.SqlClient.SqlParameter("@u", body.Username),
+                            new System.Data.SqlClient.SqlParameter("@p", body.Password));
+
+                        if (dt.Rows.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.Unauthorized();
+
+                        var row = dt.Rows[0];
+                        return Microsoft.AspNetCore.Http.Results.Ok(new {
+                            username = row["username"].ToString(),
+                            role = row["role"].ToString(),
+                            fullName = row["full_name"].ToString()
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem("Login error: " + ex.Message);
+                    }
+                });
+
+                // ── Add Item (POST) ───────────────────────────────────────────
+                app.MapPost("/api/add-item", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<AddItemPayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                        if (body == null || string.IsNullOrEmpty(body.Name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest("Missing name");
+
+                        // 0. Check Barcode Uniqueness
+                        if (!string.IsNullOrEmpty(body.Barcode))
+                        {
+                            int existingCount = DatabaseHelper.ExecuteScalar<int>(
+                                "SELECT COUNT(*) FROM parts WHERE barcode = @b AND date_deleted IS NULL",
+                                new System.Data.SqlClient.SqlParameter("@b", body.Barcode));
+                            
+                            if (existingCount > 0)
+                                return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
+                        }
+
+                        // 1. Get Category ID (or default to General)
+                        int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c", 
+                                    new System.Data.SqlClient.SqlParameter("@c", body.Category ?? "General"));
+                        if (catId == 0) catId = 1; // Fallback to first category
+
+                        // 2. Insert Part
+                        string sql = @"
+                            INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status)
+                            VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active')";
+
+                        DatabaseHelper.ExecuteNonQuery(sql,
+                            new System.Data.SqlClient.SqlParameter("@name",    body.Name),
+                            new System.Data.SqlClient.SqlParameter("@sku",     body.Sku ?? ""),
+                            new System.Data.SqlClient.SqlParameter("@cat",     catId),
+                            new System.Data.SqlClient.SqlParameter("@p_price", body.Price * 0.7m), // Estimate cost
+                            new System.Data.SqlClient.SqlParameter("@s_price", body.Price),
+                            new System.Data.SqlClient.SqlParameter("@stock",   body.Stock),
+                            new System.Data.SqlClient.SqlParameter("@barcode", body.Barcode ?? ""));
+
+                        DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via WebPOS (Qty: {body.Stock})");
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem("Failed to add item: " + ex.Message);
+                    }
+                });
+
                 // ── Checkout (POST) ───────────────────────────────────────────
                 app.MapPost("/api/checkout", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
@@ -201,7 +307,23 @@ namespace GenericInventorySystem
             }
         }
 
-        // Payload model for /api/checkout
+        // Payload models for API
+        private class LoginPayload
+        {
+            public string Username { get; set; }
+            public string Password { get; set; }
+        }
+
+        private class AddItemPayload
+        {
+            public string Name { get; set; }
+            public string Category { get; set; }
+            public decimal Price { get; set; }
+            public int Stock { get; set; }
+            public string Barcode { get; set; }
+            public string Sku { get; set; }
+        }
+
         private class CheckoutPayload
         {
             public System.Collections.Generic.List<CheckoutItem> Items { get; set; }

@@ -31,6 +31,7 @@ namespace GenericInventorySystem
         private Services.DashboardService _dashboardService;
         private System.Windows.Forms.Timer _notificationTimer;
         private int _lowStockCount = 0;
+        private Helpers.Plugins.PluginContext _pluginContext;
 
         public MainForm()
         {
@@ -54,7 +55,7 @@ namespace GenericInventorySystem
         private void LoadPlugins()
         {
             var pnlNav = this.Controls.Find("pnlNav", true).FirstOrDefault() as FlowLayoutPanel;
-            var context = new Helpers.Plugins.PluginContext
+            _pluginContext = new Helpers.Plugins.PluginContext
             {
                 ConnectionString = DatabaseConfig.ConnectionString,
                 CurrentUser      = UserSession.Username,
@@ -64,6 +65,9 @@ namespace GenericInventorySystem
                 ShowError        = (msg) => MessageHelper.ShowError(msg),
                 ShowInfo         = (msg) => MessageHelper.ShowInfo(msg),
                 AddTab = (tabTitle, iconName, tabOrder, contentFactory) => {
+                    // Filter out Calculator and Backup from sidebar as they are now in the header
+                    if (tabTitle.Contains("Calculator") || tabTitle.Contains("Backup") || tabTitle.Contains("\u062d\u0627\u0633\u0628\u0629") || tabTitle.Contains("\u0646\u0633\u062e\u0629")) return;
+
                     if (this.InvokeRequired) this.Invoke((Action)(() => AddPluginTab(tabTitle, iconName, contentFactory, pnlNav)));
                     else AddPluginTab(tabTitle, iconName, contentFactory, pnlNav);
                 },
@@ -72,7 +76,7 @@ namespace GenericInventorySystem
                     else AddPluginMenuItem(group, item);
                 }
             };
-            Helpers.Plugins.PluginManager.DiscoverAndLoad(context);
+            Helpers.Plugins.PluginManager.DiscoverAndLoad(_pluginContext);
         }
 
         private void AddPluginTab(string tabTitle, string iconName, Func<UserControl> contentFactory, FlowLayoutPanel pnlNav)
@@ -141,7 +145,7 @@ namespace GenericInventorySystem
             if(itemAddUser != null) itemAddUser.Text = L("Nav_AddUser");
             if(itemLicenseInfo != null) itemLicenseInfo.Text = L("Nav_LicenseInfo");
             if(itemLogout != null) itemLogout.Text = L("Nav_Logout");
-            if(btnUserProfile != null) btnUserProfile.Text = "  " + L("Nav_UserProfile");
+            if(itemLogout != null) itemLogout.Text = L("Nav_Logout");
             if(btnLock != null) btnLock.Text = ""; // Icon is set via btnLock.Image below
 
             var pnlHeaderIcons = this.Controls.Find("rightPanel", true).FirstOrDefault() as Panel;
@@ -205,6 +209,14 @@ namespace GenericInventorySystem
             monthlyExpensesForm = InitializeForm<Forms.MonthlyExpensesForm>();
 
             // Navigation Buttons
+            Dashboard_btn.Height = 50;
+            Dashboard_btn.Width = pnlNav.Width;
+            Dashboard_btn.Margin = new Padding(0);
+            Dashboard_btn.Dock = DockStyle.Top;
+            Dashboard_btn.Text = "  Dashboard";
+            Dashboard_btn.Image = ResizeImage(ThemeConfig.GetNuricon("dashboard"), 22, 22);
+            ThemeConfig.ApplySidebarButtonIcon(Dashboard_btn, Dashboard_btn.Image, false);
+            Dashboard_btn.Click += (s, e) => HighlightSelectedButton(Dashboard_btn);
             pnlNav.Controls.Add(Dashboard_btn);
             
             bool isAdmin = UserSession.IsAdmin;
@@ -230,7 +242,6 @@ namespace GenericInventorySystem
             if (isAdmin)
             {
                 AddNavButton(pnlNav, "Quotations", "quotations", "btnQuotations", () => { quotationsForm.LoadQuotations(); ShowForm(quotationsForm); });
-                AddNavButton(pnlNav, "Currencies", "currencies", "btnCurrencies", () => { using (var f = new Forms.CurrencySettingsForm()) f.ShowDialog(this); });
             }
 
             ShowForm(dashboardForm);
@@ -252,7 +263,6 @@ namespace GenericInventorySystem
         private void RefineNavigationLayout()
         {
             panel2.Controls.Remove(label4); label4.Visible = false;
-            panel2.Controls.Remove(btnUserProfile); btnUserProfile.Visible = false;
             button3.Dock = DockStyle.Bottom; button3.Height = 45; button3.Text = "  Logout"; button3.ForeColor = ThemeConfig.DangerColor;
             Image logoutIcon = ThemeConfig.GetNuricon("logout");
             if (logoutIcon != null) { button3.Image = ResizeImage(logoutIcon, 22, 22); button3.ImageAlign = ContentAlignment.MiddleLeft; button3.TextImageRelation = TextImageRelation.ImageBeforeText; }
@@ -260,43 +270,97 @@ namespace GenericInventorySystem
             button3.FlatAppearance.MouseOverBackColor = ThemeConfig.DangerLight;
             button3.BringToFront();
             SetupHeaderIcons();
-            label3.Text = "x"; label3.Font = ThemeConfig.SubHeaderFont;
-            label3.Location = new Point(panel1.Width - 40, (panel1.Height - 25) / 2); label3.BringToFront();
         }
 
         private void SetupHeaderIcons()
         {
-            Panel rightPanel = new Panel { Name = "rightPanel", Size = new Size(350, 60), BackColor = Color.Transparent, Dock = DockStyle.Right };
+            Panel rightPanel = new Panel { Name = "rightPanel", Size = new Size(500, 50), BackColor = Color.Transparent, Dock = DockStyle.Right };
             int w = rightPanel.Width;
             AddHeaderButton(rightPanel, w - 45, "Close", "btnWinClose", () => Application.Exit());
             AddHeaderButton(rightPanel, w - 90, "Maximize", "btnWinMax", () => { this.WindowState = this.WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized; });
             AddHeaderButton(rightPanel, w - 135, "Minimize", "btnWinMin", () => this.WindowState = FormWindowState.Minimized);
             
-            pbUserAvatar = new PictureBox { Size = new Size(38, 38), Location = new Point(w - 185, 11), Cursor = Cursors.Hand, SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("user") };
-            pbUserAvatar.Click += BtnUserProfile_Click;
+            pbUserAvatar = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 185, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("user") };
+            ThemeConfig.ApplyHeaderIconStyle(pbUserAvatar);
+            pbUserAvatar.Click += (s, e) => menuUser.Show(pbUserAvatar, new Point(0, pbUserAvatar.Height));
             rightPanel.Controls.Add(pbUserAvatar);
 
-            pbNotification = new PictureBox { Size = new Size(38, 38), Location = new Point(w - 235, 11), Cursor = Cursors.Hand, SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("bell") };
+            pbNotification = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 235, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("bell") };
+            ThemeConfig.ApplyHeaderIconStyle(pbNotification);
             pbNotification.Paint += (s, e) => { if (_lowStockCount > 0) { e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias; using (SolidBrush b = new SolidBrush(ThemeConfig.DangerColorBright)) e.Graphics.FillEllipse(b, 24, 6, 8, 8); } };
             pbNotification.Click += (s, e) => ShowNotifications(s, e);
             rightPanel.Controls.Add(pbNotification);
 
-            btnLock.Location = new Point(w - 285, 11);
-            btnLock.Size = new Size(38, 38);
-            btnLock.Image = ResizeImage(ThemeConfig.GetNuricon("lock"), 22, 22);
-            btnLock.FlatStyle = FlatStyle.Flat; btnLock.FlatAppearance.BorderSize = 0;
+            btnLock.Location = new Point(w - 285, 4);
+            btnLock.Size = new Size(42, 42);
+            btnLock.Image = ThemeConfig.GetNuricon("lock");
+            btnLock.SizeMode = PictureBoxSizeMode.Zoom;
+            ThemeConfig.ApplyHeaderIconStyle(btnLock);
+            btnLock.Click += (s, e) => BtnLock_Click(s, e);
             rightPanel.Controls.Add(btnLock);
+
+            // Calculator
+            PictureBox pbCalc = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 335, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("calculator") };
+            ThemeConfig.ApplyHeaderIconStyle(pbCalc);
+            pbCalc.Click += (s, e) => ShowInPopup(new Plugins.CalculatorPanel(), LocalizationManager.IsArabic ? "\u062d\u0627\u0633\u0628\u0629" : "Calculator", 380, 580);
+            rightPanel.Controls.Add(pbCalc);
+
+            // Backup
+            PictureBox pbBackup = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 385, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("backup") };
+            ThemeConfig.ApplyHeaderIconStyle(pbBackup);
+            pbBackup.Click += (s, e) => ShowInPopup(new Plugins.BackupPanel(_pluginContext), LocalizationManager.IsArabic ? "\u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629" : "Backup & Restore", 520, 500);
+            rightPanel.Controls.Add(pbBackup);
+
+            // Currencies
+            PictureBox pbCurrencies = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 435, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("currencies") };
+            ThemeConfig.ApplyHeaderIconStyle(pbCurrencies);
+            pbCurrencies.Click += (s, e) => { using (var f = new Forms.CurrencySettingsForm()) f.ShowDialog(this); };
+            rightPanel.Controls.Add(pbCurrencies);
 
             panel1.Controls.Add(rightPanel);
         }
 
+        private void ShowInPopup(UserControl control, string title, int width, int height)
+        {
+            using (var f = new Forms.BaseModalForm())
+            {
+                f.TitleText = title;
+                // Add header height to requested height to ensure content fits without scrolling
+                f.Size = new Size(width, height + 60); 
+                control.Dock = DockStyle.Fill;
+                f.ContentPanel.Controls.Add(control);
+                f.ShowDialog(this);
+            }
+        }
+
         private void AddHeaderButton(Panel p, int x, string type, string name, Action click) {
-            Button b = new Button { Name = name, Size = new Size(45, 38), Location = new Point(x, 11) };
+            Button b = new Button { Name = name, Size = new Size(45, 38), Location = new Point(x, 6) };
             ThemeConfig.ApplyWindowControl(b, type); b.Click += (s, e) => click();
             p.Controls.Add(b);
         }
 
-        private void BtnLock_Click(object sender, EventArgs e) { using (var lockScreen = new Forms.LockScreenForm()) lockScreen.ShowDialog(); }
+        private LockOverlay _lockOverlay;
+        private void BtnLock_Click(object sender, EventArgs e) 
+        { 
+            if (_lockOverlay == null)
+            {
+                _lockOverlay = new LockOverlay();
+                _lockOverlay.Unlocked += (s, ev) => {
+                    _lockOverlay.Visible = false;
+                    this.Controls.Remove(_lockOverlay);
+                    _lockOverlay.Dispose();
+                    _lockOverlay = null;
+                };
+            }
+            
+            if (!this.Controls.Contains(_lockOverlay))
+            {
+                this.Controls.Add(_lockOverlay);
+                _lockOverlay.BringToFront();
+            }
+            _lockOverlay.Visible = true;
+            _lockOverlay.Focus();
+        }
 
         private void ShowNotifications(object sender, EventArgs e)
         {
@@ -326,9 +390,32 @@ namespace GenericInventorySystem
         }
 
         private void ApplyTheme() {
-            this.Text = ThemeConfig.AppTitle; label2.Text = ThemeConfig.AppTitle; label1.Text = "Welcome, " + UserSession.FullName;
-            panel1.BackColor = ThemeConfig.SurfaceColor; panel2.BackColor = Color.White; panel3.BackColor = ThemeConfig.BackgroundColor;
-            itemAddUser.Click += ItemAddUser_Click; itemLicenseInfo.Click += ItemLicenseInfo_Click; itemLogout.Click += ItemLogout_Click; btnLock.Click += BtnLock_Click;
+            this.Text = ThemeConfig.AppTitle; 
+            
+            label2.Text = ThemeConfig.AppTitle; 
+            label2.Font = ThemeConfig.HeaderFont;
+            label2.ForeColor = ThemeConfig.TextColorDark;
+            label2.Padding = new Padding(15, 0, 0, 0);
+
+            label1.Text = "Welcome, " + UserSession.FullName;
+            label1.Font = ThemeConfig.SmallBoldFont;
+            label1.ForeColor = ThemeConfig.SecondaryColor;
+
+            panel1.BackColor = ThemeConfig.SurfaceColor; 
+            panel1.Paint += (s, e) => {
+                using (var p = new Pen(ThemeConfig.BorderColor, 1))
+                {
+                    e.Graphics.DrawLine(p, 0, panel1.Height - 1, panel1.Width, panel1.Height - 1);
+                }
+            };
+
+            panel2.BackColor = Color.White; 
+            panel3.BackColor = ThemeConfig.BackgroundColor;
+            
+            itemAddUser.Click += ItemAddUser_Click; 
+            itemLicenseInfo.Click += ItemLicenseInfo_Click; 
+            itemLogout.Click += ItemLogout_Click; 
+            btnLock.Click += BtnLock_Click;
         }
 
         private Button CreateNavigationButton(string text, string iconName, EventHandler clickHandler) {
@@ -352,10 +439,7 @@ namespace GenericInventorySystem
                 using (Pen pen = new Pen(ThemeConfig.PrimaryColor, 4)) e.Graphics.DrawLine(pen, 0, 0, 0, btn.Height);
         }
 
-        private void BtnUserProfile_Click(object sender, EventArgs e) {
-            if (usersForm == null) { usersForm = InitializeForm<Forms.UsersForm>(); }
-            ShowForm(usersForm); HighlightSelectedButton(btnUserProfile);
-        }
+
 
         private void ShowForm(UserControl form) {
             foreach(Control c in panel3.Controls) if(c is UserControl) c.Visible = false;
@@ -414,9 +498,8 @@ namespace GenericInventorySystem
         private extern static void ReleaseCapture();
         [System.Runtime.InteropServices.DllImport("user32.DLL", EntryPoint = "SendMessage")]
         private extern static void SendMessage(System.IntPtr hWnd, int wMsg, int wParam, int lParam);
-        private void Header_MouseDown(object sender, MouseEventArgs e) { if (e.Button == MouseButtons.Left) { ReleaseCapture(); SendMessage(this.Handle, 0x112, 0xf012, 0); } }
 
-        private void label3_Click(object sender, EventArgs e) { Application.Exit(); }
+        private void Header_MouseDown(object sender, MouseEventArgs e) { if (e.Button == MouseButtons.Left) { ReleaseCapture(); SendMessage(this.Handle, 0x112, 0xf012, 0); } }
 
         private Image ResizeImage(Image img, int width, int height)
         {

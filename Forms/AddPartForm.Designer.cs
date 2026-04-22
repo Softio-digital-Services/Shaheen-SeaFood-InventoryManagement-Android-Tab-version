@@ -222,7 +222,7 @@ namespace GenericInventorySystem.Forms
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(580, 600); // Expanded Size
+            this.ClientSize = new System.Drawing.Size(580, 680); // Increased to avoid scrolling
             this.ContentPanel.Controls.Add(this.btnCancel);
             this.ContentPanel.Controls.Add(this.btnSave);
             this.ContentPanel.Controls.Add(this.btnUpload);

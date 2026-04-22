@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
@@ -39,7 +39,7 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.Size = new System.Drawing.Size(450, 600);
+            this.Size = new System.Drawing.Size(450, 650);
             this.TitleText = _userId.HasValue ? "Edit User" : "Add New User";
 
             this.txtUsername = new ModernTextBox();

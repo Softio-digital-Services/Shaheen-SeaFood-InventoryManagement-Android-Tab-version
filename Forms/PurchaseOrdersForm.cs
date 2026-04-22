@@ -15,7 +15,7 @@ namespace GenericInventorySystem.Forms
         private Panel pnlContent;
         private Panel pnlCard;
         private PurchaseService _purchaseService;
-        private Label lblTitle;
+        private Label lblPOTitle;
 
         public PurchaseOrdersForm()
         {
@@ -28,7 +28,7 @@ namespace GenericInventorySystem.Forms
         private void ApplyLocalization()
         {
             LocalizationManager.ApplyRTL(this);
-            if (lblTitle != null) lblTitle.Text = LocalizationManager.GetString("PO_Title");
+            if (lblPOTitle != null) lblPOTitle.Text = LocalizationManager.GetString("PO_Title");
         }
 
         private void InitializeComponent()
@@ -43,8 +43,9 @@ namespace GenericInventorySystem.Forms
             this.Controls.Add(mainLayout);
 
             Panel pnlHeader = new Panel { Dock = DockStyle.Fill };
-            lblTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("PO_Title"));
-            pnlHeader.Controls.Add(lblTitle);
+            lblPOTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("PO_Title"));
+            lblPOTitle.Name = "lblPOTitle";
+            pnlHeader.Controls.Add(lblPOTitle);
 
             Button btnNewPO = new ModernButton { Text = "+ " + LocalizationManager.GetString("PO_New"), Size = new Size(200, 40), Location = new Point(800, 10), Anchor = AnchorStyles.Top | AnchorStyles.Right };
             ThemeConfig.ApplyPrimaryButton(btnNewPO);

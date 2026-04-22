@@ -31,7 +31,6 @@ namespace GenericInventorySystem
         {
             this.components = new System.ComponentModel.Container();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
             this.label4 = new System.Windows.Forms.Label();
@@ -52,57 +51,22 @@ namespace GenericInventorySystem
             this.panel1.BackColor = System.Drawing.Color.White;
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel1.Controls.Add(this.label2);
-            this.panel1.Controls.Add(this.label3);
-            this.panel1.Controls.Add(this.btnUserProfile); 
-            this.btnLock = new System.Windows.Forms.Button();
+            this.btnLock = new System.Windows.Forms.PictureBox();
             this.btnLock.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             this.btnLock.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnLock.Location = new System.Drawing.Point(970, 0); 
             this.btnLock.Size = new System.Drawing.Size(40, 25);
-            this.btnLock.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnLock.FlatAppearance.BorderSize = 0;
             this.btnLock.BackColor = System.Drawing.Color.Transparent;
             this.panel1.Controls.Add(this.btnLock);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1100, 60);
+            this.panel1.Size = new System.Drawing.Size(1100, 50);
             this.panel1.TabIndex = 0;
             // 
-            // label3
-            // 
-            this.label3.AutoSize = false;
-            this.label3.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.label3.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.ForeColor = System.Drawing.Color.Red;
-            this.label3.Location = new System.Drawing.Point(1070, 0); // Top aligned
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(30, 25);
-            this.label3.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            this.label3.TabIndex = 1;
-            this.label3.Text = "X";
-            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.label3.Click += new System.EventHandler(this.label3_Click);
-            this.label3.MouseEnter += (s, e) => { label3.BackColor = System.Drawing.Color.Red; label3.ForeColor = System.Drawing.Color.White; };
-            this.label3.MouseLeave += (s, e) => { label3.BackColor = System.Drawing.Color.Transparent; label3.ForeColor = System.Drawing.Color.Red; };
+
             
-            // 
-            // btnUserProfile
-            // 
-            this.btnUserProfile = new System.Windows.Forms.Button();
-            this.btnUserProfile.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnUserProfile.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnUserProfile.Location = new System.Drawing.Point(1020, 0); 
-            this.btnUserProfile.Name = "btnUserProfile";
-            this.btnUserProfile.Size = new System.Drawing.Size(50, 25);
-            this.btnUserProfile.TabIndex = 2;
-            this.btnUserProfile.Text = "User Profile";
-            this.btnUserProfile.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnUserProfile.FlatAppearance.BorderSize = 0;
-            this.btnUserProfile.BackColor = System.Drawing.Color.Transparent;
-            this.btnUserProfile.ForeColor = System.Drawing.Color.Black;
-            this.btnUserProfile.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.btnUserProfile.UseVisualStyleBackColor = false;
+
             
             // 
             // menuUser
@@ -156,7 +120,7 @@ namespace GenericInventorySystem
             this.panel2.Controls.Add(this.label1);
             this.panel2.Controls.Add(this.pictureBox1);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Left;
-            this.panel2.Location = new System.Drawing.Point(0, 60);
+            this.panel2.Location = new System.Drawing.Point(0, 50);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(225, 575);
             this.panel2.TabIndex = 1;
@@ -227,9 +191,9 @@ namespace GenericInventorySystem
             // 
 
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel3.Location = new System.Drawing.Point(225, 60);
+            this.panel3.Location = new System.Drawing.Point(225, 50);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(875, 575);
+            this.panel3.Size = new System.Drawing.Size(875, 585);
             this.panel3.TabIndex = 2;
 
             // 
@@ -264,17 +228,16 @@ namespace GenericInventorySystem
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Button button3;
-        private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Panel panel3;
 
-        private System.Windows.Forms.Button btnUserProfile;
+
         private System.Windows.Forms.ContextMenuStrip menuUser;
         private System.Windows.Forms.ToolStripMenuItem itemCurrentUser;
         private System.Windows.Forms.ToolStripMenuItem itemAddUser;
         private System.Windows.Forms.ToolStripMenuItem itemLicenseInfo;
         private System.Windows.Forms.ToolStripMenuItem itemLogout;
-        private System.Windows.Forms.Button btnLock;
+        private System.Windows.Forms.PictureBox btnLock;
     }
 }

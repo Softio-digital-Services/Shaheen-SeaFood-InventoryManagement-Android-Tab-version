@@ -13,7 +13,7 @@ namespace GenericInventorySystem.Forms
     public partial class HistoryForm : UserControl
     {
         // UI Controls
-        private Label lblTitle;
+        private Label lblHistoryTitle;
         private Panel pnlTabs;
         private Button btnTabInventory;
         private Button btnTabCustomers;
@@ -64,7 +64,7 @@ namespace GenericInventorySystem.Forms
             GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
 
-            if (lblTitle != null) lblTitle.Text = L("Hist_Title");
+            if (lblHistoryTitle != null) lblHistoryTitle.Text = L("Hist_Title");
 
             var ctrlRefresh = this.Controls.Find("btnRefresh", true);
             if (ctrlRefresh.Length > 0 && ctrlRefresh[0] is Button btnRefresh)
@@ -158,8 +158,9 @@ namespace GenericInventorySystem.Forms
             pnlHeader.Margin = new Padding(0);
             pnlHeader.Padding = new Padding(0, 20, 0, 0); // Add top padding for title alignment
             
-            lblTitle = ThemeConfig.CreateStandardHeader("System History Logs");
-            lblTitle.Location = new Point(0, 0); // Override default
+            lblHistoryTitle = ThemeConfig.CreateStandardHeader("System History Logs");
+            lblHistoryTitle.Name = "lblHistoryTitle";
+            lblHistoryTitle.Location = new Point(0, 0); // Override default
 
             
             Button btnRefresh = new Button();
@@ -173,7 +174,7 @@ namespace GenericInventorySystem.Forms
             btnRefresh.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
             btnRefresh.Size = new Size(110, 35);
 
-            pnlHeader.Controls.Add(lblTitle);
+            pnlHeader.Controls.Add(lblHistoryTitle);
             
             // Standard Search Panel
             searchPanel = new Panel();

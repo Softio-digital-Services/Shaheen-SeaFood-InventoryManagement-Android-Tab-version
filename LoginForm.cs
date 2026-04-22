@@ -43,33 +43,39 @@ namespace GenericInventorySystem
             
             // Add Logo
             PictureBox pbLogo = new PictureBox();
-            pbLogo.Size = new Size(80, 80);
-            pbLogo.SizeMode = PictureBoxSizeMode.Zoom;
-            pbLogo.Location = new Point((panelLoginCard.Width - 80) / 2, 10); // Top Center
-            try 
-            { 
-                 string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png");
-                 if(System.IO.File.Exists(logoPath))
-                     pbLogo.Image = Image.FromFile(logoPath);
-            } catch { }
-            panelLoginCard.Controls.Add(pbLogo);
+             pbLogo.Size = new Size(120, 120);
+             pbLogo.SizeMode = PictureBoxSizeMode.Zoom;
+             pbLogo.Anchor = AnchorStyles.Top; 
+             try 
+             { 
+                  string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png");
+                  if(System.IO.File.Exists(logoPath))
+                      pbLogo.Image = Image.FromFile(logoPath);
+             } catch { }
+             panelLoginCard.Controls.Add(pbLogo);
+
+             // Center Logo on Resize
+             panelLoginCard.Resize += (s, e) => {
+                 pbLogo.Location = new Point((panelLoginCard.Width - 120) / 2, 15);
+             };
+             pbLogo.Location = new Point((panelLoginCard.Width - 120) / 2, 15);
 
             // Shift All Elements Down to accommodate Logo (80px + 10px padding = 90px shift)
             
             // We need to move Title, Subtitle, Inputs.
             // Absolute positioning requires manual adjustment.
             
-            labelTitle.Top = 100;
-            labelSubtitle.Top = 145;
+            labelTitle.Top = 135;
+            labelSubtitle.Top = 180;
             
-            lblUsername.Top = 180;
-            txtUsername.Top = 205;
+            lblUsername.Top = 220;
+            txtUsername.Top = 245;
             
-            lblPassword.Top = 250;
-            txtPassword.Top = 275;
+            lblPassword.Top = 295;
+            txtPassword.Top = 320;
             
-            chkShowPass.Top = 315;
-            btnLogin.Top = 350;
+            chkShowPass.Top = 365;
+            btnLogin.Top = 410;
             
             // Resize Panel if needed?
             // Designer set Absolute 450 Height. Content ends at 350+45+padding ~400. Safe.
@@ -93,11 +99,11 @@ namespace GenericInventorySystem
             // Inputs
             txtUsername.BackColor = ThemeConfig.SurfaceColor; // Keeping light scheme for inputs
             txtUsername.ForeColor = ThemeConfig.TextColorDark;
-            txtUsername.Font = ThemeConfig.StandardFont;
+            txtUsername.Font = new Font("Segoe UI", 12F);
 
             txtPassword.BackColor = ThemeConfig.SurfaceColor;
             txtPassword.ForeColor = ThemeConfig.TextColorDark;
-            txtPassword.Font = ThemeConfig.StandardFont;
+            txtPassword.Font = new Font("Segoe UI", 12F);
 
             // Keyboard Navigation
             txtUsername.KeyDown += txtUsername_KeyDown;
