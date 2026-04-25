@@ -23,7 +23,7 @@ namespace GenericInventorySystem.Forms
         private Button btnFilter;
         private Button btnImport;
         private Button btnExport;
-        private TextBox txtSearch;
+        private ModernTextBox txtSearch;
         private InventoryService _inventoryService;
 
         public PartsForm()
@@ -57,10 +57,7 @@ namespace GenericInventorySystem.Forms
 
             if (txtSearch != null)
             {
-                if (txtSearch.Text == "Search..." || txtSearch.Text == "Ø¨Ø­Ø«...")
-                {
-                    txtSearch.Text = L("Parts_Search");
-                }
+                txtSearch.PlaceholderText = L("Parts_Search");
             }
 
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
@@ -107,7 +104,7 @@ namespace GenericInventorySystem.Forms
             this.btnFilter = new Button();
             this.btnImport = new Button();
             this.btnExport = new Button();
-            this.txtSearch = new TextBox();
+            this.txtSearch = new ModernTextBox();
 
             ((System.ComponentModel.ISupportInitialize)(this.dgvParts)).BeginInit();
             this.SuspendLayout();
@@ -123,43 +120,18 @@ namespace GenericInventorySystem.Forms
             lblInventoryTitle.Name = "lblInventoryTitle";
             mainContainer.Controls.Add(lblInventoryTitle); // Note: mainContainer has Padding(20), so Location(0,0) works perfectly.
 
-            // Search Bar Panel (Rounded & Modern)
-            Panel searchPanel = new Panel();
-            searchPanel.Location = new Point(20, 60);
-            searchPanel.Size = new Size(320, 35); 
-            searchPanel.BackColor = ThemeConfig.SurfaceColor;
-            searchPanel.Padding = new Padding(0);
-            
-            // Text Box inside (shifted for icon)
-            txtSearch.Location = new Point(40, 11);
-            txtSearch.Size = new Size(260, 20);
-            txtSearch.Font = ThemeConfig.StandardFont;
-            txtSearch.BorderStyle = BorderStyle.None;
-            txtSearch.Text = "Search...";
-            txtSearch.ForeColor = ThemeConfig.SecondaryColor;
-            
-            // Search Panel Paint (Rounded Border + Icon)
-            searchPanel.Paint += (s, e) => 
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                Rectangle r = new Rectangle(0, 0, searchPanel.Width - 1, searchPanel.Height - 1);
-                
-                // Rounded Border
-                using (GraphicsPath path = GetRoundedRect(r, 12)) 
-                using (Pen pen = new Pen(ThemeConfig.BorderColor, 1.5f)) 
-                {
-                    e.Graphics.DrawPath(pen, path);
-                }
-                
-                // Search Icon
-                Image imgSearch = ThemeConfig.GetNuricon("search");
-                if (imgSearch != null) e.Graphics.DrawImage(imgSearch, new Rectangle(10, 8, 20, 20));
+            // Search Bar (Upgraded to ModernTextBox)
+            txtSearch.IsSearch = true;
+            txtSearch.ShowLabel = false;
+            txtSearch.PlaceholderText = "Search Inventory...";
+            txtSearch.Size = new Size(320, 40);
+            txtSearch.Location = new Point(20, 58);
+            txtSearch.TextChanged += (s, e) => { 
+                string ph = GenericInventorySystem.Helpers.LocalizationManager.GetString("Parts_Search");
+                if (txtSearch.Text != ph && txtSearch.Text != "Search...") 
+                    LoadData(txtSearch.Text); 
             };
-            
-            txtSearch.Enter += (s, e) => { string ph = Properties.Resources.Parts_Search; if (txtSearch.Text == ph) { txtSearch.Text = ""; txtSearch.ForeColor = ThemeConfig.TextColorDark; } };
-            txtSearch.Leave += (s, e) => { string ph = Properties.Resources.Parts_Search; if (string.IsNullOrWhiteSpace(txtSearch.Text)) { txtSearch.Text = ph; txtSearch.ForeColor = ThemeConfig.SecondaryColor; } };
-            txtSearch.TextChanged += (s, e) => { string ph = Properties.Resources.Parts_Search; if (txtSearch.Text != ph && txtSearch.Text != "Search..." && txtSearch.Text != "Ø¨Ø­Ø«...") LoadData(txtSearch.Text); };
-            searchPanel.Controls.Add(txtSearch);
+            mainContainer.Controls.Add(txtSearch);
 
 
             // Filter Button (Rounded Outline)
@@ -359,7 +331,7 @@ namespace GenericInventorySystem.Forms
             // Apply Theme LAST to ensure header styles override defaults
             ThemeConfig.ApplyGridTheme(dgvParts);
 
-            mainContainer.Controls.Add(searchPanel);
+            mainContainer.Controls.Add(txtSearch);
             mainContainer.Controls.Add(btnFilter);
             mainContainer.Controls.Add(btnExport);
             mainContainer.Controls.Add(btnImport);

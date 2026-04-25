@@ -74,8 +74,8 @@ namespace GenericInventorySystem
             lblPassword.Top = 295;
             txtPassword.Top = 320;
             
-            chkShowPass.Top = 365;
-            btnLogin.Top = 410;
+            chkShowPass.Visible = false; // Hide old checkbox
+            btnLogin.Top = 370; // Shifted up to fill the gap
             
             // Resize Panel if needed?
             // Designer set Absolute 450 Height. Content ends at 350+45+padding ~400. Safe.
@@ -113,9 +113,37 @@ namespace GenericInventorySystem
             // Buttons
             ThemeConfig.ApplyPrimaryButton(btnLogin);
             
-            // Checkbox
-            chkShowPass.ForeColor = ThemeConfig.TextColorDark;
-            chkShowPass.Font = ThemeConfig.StandardFont;
+            // Checkbox (Hidden, but keeping code for compatibility if needed elsewhere)
+            chkShowPass.Visible = false;
+            
+            // Password Toggle Eye Icon
+            PictureBox pbTogglePass = new PictureBox {
+                Name = "pbTogglePass",
+                Size = new Size(24, 24),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Cursor = Cursors.Hand,
+                BackColor = txtPassword.BackColor,
+                Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("view"), ThemeConfig.SecondaryColor)
+            };
+            panelLoginCard.Controls.Add(pbTogglePass);
+            pbTogglePass.BringToFront();
+            
+            // Initial positioning
+            void AlignEye() {
+                pbTogglePass.Location = new Point(txtPassword.Right - 30, txtPassword.Top + (txtPassword.Height - 24) / 2 + 1);
+            }
+            AlignEye();
+            txtPassword.SizeChanged += (s, e) => AlignEye();
+            panelLoginCard.Resize += (s, e) => AlignEye();
+
+            bool passVisible = false;
+            pbTogglePass.Click += (s, e) => {
+                passVisible = !passVisible;
+                txtPassword.PasswordChar = passVisible ? '\0' : '\u2022';
+                pbTogglePass.Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("view"), passVisible ? ThemeConfig.PrimaryColor : ThemeConfig.SecondaryColor);
+            };
+            pbTogglePass.MouseEnter += (s, e) => pbTogglePass.Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("view"), ThemeConfig.PrimaryColor);
+            pbTogglePass.MouseLeave += (s, e) => pbTogglePass.Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("view"), passVisible ? ThemeConfig.PrimaryColor : ThemeConfig.SecondaryColor);
             
             // Close and Minimize Buttons
             btnClose.ForeColor = ThemeConfig.SecondaryColor;

@@ -159,6 +159,11 @@ namespace GenericInventorySystem
                     pnlHeaderIcons.Dock = DockStyle.Right;
                 }
             }
+            var pbLogo = panel1.Controls.Find("pbLogo", true).FirstOrDefault() as PictureBox;
+            if (pbLogo != null)
+            {
+                pbLogo.Location = isAr ? new Point(panel1.Width - pbLogo.Width - 0, Math.Max(0, (panel1.Height - pbLogo.Height) / 2)) : new Point(0, Math.Max(0, (panel1.Height - pbLogo.Height) / 2));
+            }
             label2.Location = isAr ? new Point(panel1.Width - label2.Width - 20, (panel1.Height - label2.Height) / 2) : new Point(20, (panel1.Height - label2.Height) / 2);
         }
 
@@ -288,7 +293,7 @@ namespace GenericInventorySystem
             Panel pnlBranding = new Panel { 
                 Name = "pnlBranding",
                 Dock = DockStyle.Bottom, 
-                Height = 140, 
+                Height = 60, 
                 BackColor = Color.Transparent,
                 Padding = new Padding(0)
             };
@@ -312,21 +317,6 @@ namespace GenericInventorySystem
             button3.TextAlign = ContentAlignment.MiddleLeft; button3.Padding = new Padding(15, 0, 0, 0); button3.Font = ThemeConfig.ButtonFont;
             button3.FlatAppearance.MouseOverBackColor = ThemeConfig.DangerLight;
 
-            // Softio Logo - Anchor to the absolute bottom of the branding panel
-            PictureBox pbSoftio = new PictureBox { 
-                Name = "pbSoftio",
-                Parent = pnlBranding,
-                Size = new Size(pnlBranding.Width, 80), 
-                SizeMode = PictureBoxSizeMode.Zoom, 
-                Dock = DockStyle.Bottom, 
-                Padding = new Padding(10),
-                Cursor = Cursors.Hand
-            };
-            try { 
-                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png"); 
-                if(System.IO.File.Exists(logoPath)) pbSoftio.Image = Image.FromFile(logoPath); 
-            } catch { }
-            
             SetupHeaderIcons();
         }
 
@@ -338,12 +328,12 @@ namespace GenericInventorySystem
             AddHeaderButton(rightPanel, w - 90, "Maximize", "btnWinMax", () => { this.WindowState = this.WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized; });
             AddHeaderButton(rightPanel, w - 135, "Minimize", "btnWinMin", () => this.WindowState = FormWindowState.Minimized);
             
-            pbUserAvatar = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 185, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("user") };
+            pbUserAvatar = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 185, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("user"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbUserAvatar);
             pbUserAvatar.Click += (s, e) => menuUser.Show(pbUserAvatar, new Point(0, pbUserAvatar.Height));
             rightPanel.Controls.Add(pbUserAvatar);
 
-            pbNotification = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 235, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("bell") };
+            pbNotification = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 235, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("bell"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbNotification);
             pbNotification.Paint += (s, e) => { if (_lowStockCount > 0) { e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias; using (SolidBrush b = new SolidBrush(ThemeConfig.DangerColorBright)) e.Graphics.FillEllipse(b, 24, 6, 8, 8); } };
             pbNotification.Click += (s, e) => ShowNotifications(s, e);
@@ -351,26 +341,26 @@ namespace GenericInventorySystem
 
             btnLock.Location = new Point(w - 285, 4);
             btnLock.Size = new Size(42, 42);
-            btnLock.Image = ThemeConfig.GetNuricon("lock");
+            btnLock.Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("lock"), Color.White);
             btnLock.SizeMode = PictureBoxSizeMode.Zoom;
             ThemeConfig.ApplyHeaderIconStyle(btnLock);
             btnLock.Click += (s, e) => BtnLock_Click(s, e);
             rightPanel.Controls.Add(btnLock);
 
             // Calculator
-            PictureBox pbCalc = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 335, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("calculator") };
+            PictureBox pbCalc = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 335, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("calculator"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbCalc);
             pbCalc.Click += (s, e) => ShowInPopup(new Plugins.CalculatorPanel(), LocalizationManager.IsArabic ? "\u062d\u0627\u0633\u0628\u0629" : "Calculator", 380, 580);
             rightPanel.Controls.Add(pbCalc);
 
             // Backup
-            PictureBox pbBackup = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 385, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("backup") };
+            PictureBox pbBackup = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 385, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("backup"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbBackup);
             pbBackup.Click += (s, e) => ShowInPopup(new Plugins.BackupPanel(_pluginContext), LocalizationManager.IsArabic ? "\u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629" : "Backup & Restore", 520, 500);
             rightPanel.Controls.Add(pbBackup);
 
             // Currencies
-            PictureBox pbCurrencies = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 435, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.GetNuricon("currencies") };
+            PictureBox pbCurrencies = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 435, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("currencies"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbCurrencies);
             pbCurrencies.Click += (s, e) => { using (var f = new Forms.CurrencySettingsForm()) f.ShowDialog(this); };
             rightPanel.Controls.Add(pbCurrencies);
@@ -446,7 +436,11 @@ namespace GenericInventorySystem
         }
 
         private void InitializeNotificationSystem() {
-            _dashboardService = new Services.DashboardService(); _notificationTimer = new System.Windows.Forms.Timer { Interval = 30000 };
+            _dashboardService = new Services.DashboardService(); 
+            var expenseService = new Services.ExpenseService();
+            expenseService.ProcessRecurringExpenses(); // Check for month-end expenses
+
+            _notificationTimer = new System.Windows.Forms.Timer { Interval = 30000 };
             _notificationTimer.Tick += (s, e) => RefreshNotificationBadge(); _notificationTimer.Start(); RefreshNotificationBadge();
         }
 
@@ -461,22 +455,45 @@ namespace GenericInventorySystem
             
             label2.Text = ThemeConfig.AppTitle; 
             label2.Font = ThemeConfig.HeaderFont;
-            label2.ForeColor = ThemeConfig.TextColorDark;
+            label2.ForeColor = Color.White; // New: White on Blue
             label2.Padding = new Padding(15, 0, 0, 0);
+            label2.Visible = false; // Hide text title, use logo instead
+
+            panel1.Height = 70; // Increased height for larger logo
+            // Header Logo
+            if (panel1.Controls.Find("pbLogo", true).Length == 0)
+            {
+                PictureBox pbLogo = new PictureBox {
+                    Name = "pbLogo",
+                    Size = new Size(400, 84), // Doubled size
+                    SizeMode = PictureBoxSizeMode.Zoom,
+                    BackColor = Color.Transparent
+                };
+                try { 
+                    string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png");
+                    if(System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath); 
+                    // Fallback to white version if it exists or use tinted if we had one
+                } catch { }
+                panel1.Controls.Add(pbLogo);
+                pbLogo.BringToFront();
+                pbLogo.MouseDown += Header_MouseDown;
+            }
+
+            var existingLogo = panel1.Controls.Find("pbLogo", true).FirstOrDefault() as PictureBox;
+            if (existingLogo != null) {
+                existingLogo.Location = new Point(0, Math.Max(0, (panel1.Height - existingLogo.Height) / 2));
+            }
 
             label1.Text = "Welcome, " + UserSession.FullName;
             label1.Font = ThemeConfig.SmallBoldFont;
-            label1.ForeColor = ThemeConfig.SecondaryColor;
+            label1.ForeColor = Color.FromArgb(180, 255, 255, 255); // Subtle white
 
-            panel1.BackColor = ThemeConfig.SurfaceColor; 
+            panel1.BackColor = Color.FromArgb(25, 118, 210); // Deep Blue Header
             panel1.Paint += (s, e) => {
-                using (var p = new Pen(ThemeConfig.BorderColor, 1))
-                {
-                    e.Graphics.DrawLine(p, 0, panel1.Height - 1, panel1.Width, panel1.Height - 1);
-                }
+                // No border needed for deep blue header
             };
 
-            panel2.BackColor = Color.White; 
+            panel2.BackColor = Color.FromArgb(248, 250, 252); // Light Gray Sidebar
             panel3.BackColor = ThemeConfig.BackgroundColor;
             
             itemAddUser.Click += ItemAddUser_Click; 
@@ -513,7 +530,7 @@ namespace GenericInventorySystem
 
         private void DrawSelectionBorder(object sender, PaintEventArgs e) {
             if (sender is Button btn && btn.Tag != null && (bool)btn.Tag)
-                using (Pen pen = new Pen(ThemeConfig.PrimaryColor, 4)) e.Graphics.DrawLine(pen, 0, 0, 0, btn.Height);
+                using (Pen pen = new Pen(ThemeConfig.PrimaryColor, 5)) e.Graphics.DrawLine(pen, 0, 0, 0, btn.Height);
         }
 
 

@@ -25,6 +25,8 @@ namespace GenericInventorySystem.Forms
         private Button btnAdd;
         private Button btnDelete;
         private Label lblTotal;
+        private CheckBox chkRecurring;
+        private ExpenseService _expenseService = new ExpenseService();
 
         public MonthlyExpensesForm()
         {
@@ -58,62 +60,92 @@ namespace GenericInventorySystem.Forms
             mainLayout.Controls.Add(pnlHeader, 0, 0);
 
             // Entry Panel
-            Panel pnlEntry = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor };
+            Panel pnlEntry = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor, Padding = new Padding(15) };
             
-            lblCategory = new Label { Text = "Category", Location = new Point(20, 10), AutoSize = true, Font = ThemeConfig.SmallBoldFont };
-            cmbCategory = new ModernComboBox { Location = new Point(20, 30), Width = 200 };
+            // Main Grid for Entry
+            TableLayoutPanel grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 3 };
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F)); // Category
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200F)); // Date
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F)); // Amount
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));   // Description (Takes rest)
+            grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F)); // Spacing
+            grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 75F)); // Inputs (Increased for built-in labels)
+            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Buttons
+
+            cmbCategory = new ModernComboBox { Dock = DockStyle.Fill };
+            cmbCategory.PlaceholderText = "Category";
             cmbCategory.Items.AddRange(new object[] { "Rent", "Utilities", "Wages", "Supplies", "Maintenance", "Other" });
             
-            lblDate = new Label { Text = "Date", Location = new Point(240, 10), AutoSize = true, Font = ThemeConfig.SmallBoldFont };
-            dtpDate = new FlatDateTimePicker { Location = new Point(240, 30), Width = 150 };
+            dtpDate = new FlatDateTimePicker { Dock = DockStyle.Fill };
             
-            lblAmount = new Label { Text = "Amount", Location = new Point(410, 10), AutoSize = true, Font = ThemeConfig.SmallBoldFont };
-            txtAmount = new ModernTextBox { Location = new Point(410, 30), Width = 150 };
+            txtAmount = new ModernTextBox { Dock = DockStyle.Fill };
+            txtAmount.PlaceholderText = "Amount";
             
-            lblDescription = new Label { Text = "Description", Location = new Point(580, 10), AutoSize = true, Font = ThemeConfig.SmallBoldFont };
-            txtDescription = new ModernTextBox { Location = new Point(580, 30), Width = 300 };
+            txtDescription = new ModernTextBox { Dock = DockStyle.Fill };
+            txtDescription.PlaceholderText = "Description";
             
-            btnAdd = new Button { Text = "+ Log Expense", Location = new Point(20, 100), Size = new Size(150, 40) };
+            grid.Controls.Add(cmbCategory, 0, 1);
+            grid.Controls.Add(dtpDate, 1, 1);
+            grid.Controls.Add(txtAmount, 2, 1);
+            grid.Controls.Add(txtDescription, 3, 1);
+
+            FlowLayoutPanel buttonGroup = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 10, 0, 0) };
+            btnAdd = new Button { Text = "+ Log Expense", Size = new Size(150, 40) };
             ThemeConfig.ApplyPrimaryButton(btnAdd);
             btnAdd.Click += BtnAdd_Click;
 
-            btnDelete = new Button { Text = "Delete Selected", Location = new Point(180, 100), Size = new Size(150, 40) };
+            btnDelete = new Button { Text = "Delete Selected", Size = new Size(150, 40) };
             ThemeConfig.ApplyDangerButton(btnDelete);
             btnDelete.Click += BtnDelete_Click;
 
-            pnlEntry.Controls.Add(lblCategory);
-            pnlEntry.Controls.Add(cmbCategory);
-            pnlEntry.Controls.Add(lblDate);
-            pnlEntry.Controls.Add(dtpDate);
-            pnlEntry.Controls.Add(lblAmount);
-            pnlEntry.Controls.Add(txtAmount);
-            pnlEntry.Controls.Add(lblDescription);
-            pnlEntry.Controls.Add(txtDescription);
-            pnlEntry.Controls.Add(btnAdd);
-            pnlEntry.Controls.Add(btnDelete);
+            chkRecurring = new CheckBox { Text = "Recurring (Auto-Add)", Font = ThemeConfig.SmallBoldFont, AutoSize = true, Margin = new Padding(10, 10, 0, 0) };
+            
+            buttonGroup.Controls.Add(btnAdd);
+            buttonGroup.Controls.Add(btnDelete);
+            buttonGroup.Controls.Add(chkRecurring);
+            grid.Controls.Add(buttonGroup, 0, 2);
+            grid.SetColumnSpan(buttonGroup, 4);
+
+            pnlEntry.Controls.Add(grid);
             mainLayout.Controls.Add(pnlEntry, 0, 1);
 
             // Grid
             dgvExpenses = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, AllowUserToAddRows = false, ReadOnly = true, AutoGenerateColumns = false };
-            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Id", HeaderText = "ID", DataPropertyName = "expense_id", Width = 80 });
-            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", HeaderText = "Date", DataPropertyName = "expense_date", Width = 150 });
-            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Category", HeaderText = "Category", DataPropertyName = "category", Width = 150 });
-            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Amount", HeaderText = "Amount", DataPropertyName = "amount", Width = 150 });
+            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Id", HeaderText = "ID", DataPropertyName = "expense_id", Width = 60 });
+            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", HeaderText = "Date", DataPropertyName = "expense_date", Width = 130 });
+            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Category", HeaderText = "Category", DataPropertyName = "category", Width = 120 });
+            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Amount", HeaderText = "Amount", DataPropertyName = "amount", Width = 100 });
             dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Description", HeaderText = "Description", DataPropertyName = "description", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "RecordedBy", HeaderText = "Recorded By", DataPropertyName = "recorded_by", Width = 150 });
             
+            // Hidden data columns
+            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "is_paid", DataPropertyName = "is_paid", Visible = false });
+            
+            // New Status Columns
+            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", HeaderText = "Status", Width = 100 });
+            dgvExpenses.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Recurring", HeaderText = "Auto", DataPropertyName = "is_recurring", Width = 60 });
+            
+            DataGridViewButtonColumn btnPaid = new DataGridViewButtonColumn { 
+                Name = "Action", 
+                HeaderText = "Action", 
+                Text = "Pay Now", 
+                UseColumnTextForButtonValue = true, 
+                Width = 120 
+            };
+            dgvExpenses.Columns.Add(btnPaid);
+            dgvExpenses.CellContentClick += DgvExpenses_CellContentClick;
+
             mainLayout.Controls.Add(dgvExpenses, 0, 2);
         }
 
         private void ApplyLocalization()
         {
             lblExpensesTitle.Text = LocalizationManager.GetString("Exp_Title");
-            lblCategory.Text = LocalizationManager.GetString("Exp_Category");
-            lblDate.Text = LocalizationManager.GetString("Exp_Date");
-            lblAmount.Text = LocalizationManager.GetString("Exp_Amount");
-            lblDescription.Text = LocalizationManager.GetString("Exp_Description");
             btnAdd.Text = LocalizationManager.GetString("Exp_Add");
             btnDelete.Text = LocalizationManager.GetString("Exp_Delete");
+            
+            if (txtAmount != null) txtAmount.PlaceholderText = LocalizationManager.GetString("Exp_Amount");
+            if (txtDescription != null) txtDescription.PlaceholderText = LocalizationManager.GetString("Exp_Description");
+            if (cmbCategory != null) cmbCategory.PlaceholderText = LocalizationManager.GetString("Exp_Category");
             
             if (dgvExpenses.Columns.Contains("Category")) dgvExpenses.Columns["Category"].HeaderText = LocalizationManager.GetString("Exp_Category");
             if (dgvExpenses.Columns.Contains("Date")) dgvExpenses.Columns["Date"].HeaderText = LocalizationManager.GetString("Exp_Date");
@@ -139,15 +171,34 @@ namespace GenericInventorySystem.Forms
             if (!ValidationHelper.ValidateRequired(txtAmount, LocalizationManager.GetString("Exp_Amount"))) return;
             if (!ValidationHelper.ValidateNumeric(txtAmount.Text, LocalizationManager.GetString("Exp_Amount"), out decimal amount)) return;
 
-            DatabaseHelper.ExecuteNonQuery("INSERT INTO expenses (category, expense_date, amount, description, recorded_by) VALUES (@cat, @date, @amt, @desc, @usr)",
+            DatabaseHelper.ExecuteNonQuery("INSERT INTO expenses (category, expense_date, amount, description, recorded_by, is_recurring, is_paid) VALUES (@cat, @date, @amt, @desc, @usr, @rec, 1)",
                 new SqlParameter("@cat", cmbCategory.SelectedItem.ToString()),
                 new SqlParameter("@date", dtpDate.Value),
                 new SqlParameter("@amt", amount),
                 new SqlParameter("@desc", txtDescription.Text),
-                new SqlParameter("@usr", UserSession.Username));
+                new SqlParameter("@usr", UserSession.Username),
+                new SqlParameter("@rec", chkRecurring.Checked));
             
             ClearForm();
             LoadData();
+        }
+
+        private void DgvExpenses_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+            if (dgvExpenses.Columns[e.ColumnIndex].Name == "Action")
+            {
+                var drv = dgvExpenses.Rows[e.RowIndex].DataBoundItem as DataRowView;
+                if (drv == null) return;
+
+                int id = Convert.ToInt32(drv["expense_id"]);
+                bool isPaid = drv["is_paid"] != DBNull.Value ? Convert.ToBoolean(drv["is_paid"]) : true;
+                
+                if (!isPaid) {
+                    _expenseService.MarkAsPaid(id);
+                    LoadData();
+                }
+            }
         }
 
         private void BtnDelete_Click(object sender, EventArgs e)
@@ -175,7 +226,17 @@ namespace GenericInventorySystem.Forms
             dgvExpenses.DataSource = dt;
             
             decimal total = 0;
-            foreach (DataRow r in dt.Rows) total += Convert.ToDecimal(r["amount"]);
+            foreach (DataGridViewRow row in dgvExpenses.Rows) {
+                var drv = row.DataBoundItem as DataRowView;
+                if (drv == null) continue;
+
+                bool isPaid = drv["is_paid"] != DBNull.Value ? Convert.ToBoolean(drv["is_paid"]) : true;
+                row.Cells["Status"].Value = isPaid ? "Paid" : "UNPAID";
+                row.DefaultCellStyle.ForeColor = isPaid ? Color.Black : Color.Red;
+                
+                total += drv["amount"] != DBNull.Value ? Convert.ToDecimal(drv["amount"]) : 0;
+            }
+
             lblTotal.Text = $"{LocalizationManager.GetString("Exp_Total")}: {CurrencyService.Format(total, "USD")}";
         }
 

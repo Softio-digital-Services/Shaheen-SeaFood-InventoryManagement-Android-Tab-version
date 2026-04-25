@@ -13,6 +13,7 @@ namespace GenericInventorySystem.Forms
         private DataGridView dgvUsers;
         private Button btnAddUser;
         private Label lblUsersTitle;
+        private ModernTextBox txtSearch;
 
         public UsersForm()
         {
@@ -50,6 +51,15 @@ namespace GenericInventorySystem.Forms
             lblUsersTitle.Name = "lblUsersTitle";
             pnlHeader.Controls.Add(lblUsersTitle);
 
+            txtSearch = new ModernTextBox();
+            txtSearch.IsSearch = true;
+            txtSearch.ShowLabel = false;
+            txtSearch.PlaceholderText = "Search users...";
+            txtSearch.Size = new Size(320, 40);
+            txtSearch.Location = new Point(20, 70);
+            txtSearch.TextChanged += (s, e) => LoadData(txtSearch.Text);
+            pnlHeader.Controls.Add(txtSearch);
+
             btnAddUser = new ModernButton();
             btnAddUser.Text = "+ Add User";
             btnAddUser.Size = new Size(150, 40);
@@ -64,9 +74,15 @@ namespace GenericInventorySystem.Forms
             // Handle responsive positioning for the button
             pnlHeader.Resize += (s, e) => {
                 if (LocalizationManager.IsArabic)
+                {
+                    txtSearch.Location = new Point(pnlHeader.Width - txtSearch.Width - 20, 70);
                     btnAddUser.Location = new Point(20, 70);
+                }
                 else
+                {
+                    txtSearch.Location = new Point(20, 70);
                     btnAddUser.Location = new Point(pnlHeader.Width - btnAddUser.Width - 20, 70);
+                }
             };
             
             mainLayout.Controls.Add(pnlHeader, 0, 0);
@@ -138,11 +154,15 @@ namespace GenericInventorySystem.Forms
                 dgvUsers.Columns["actions"].HeaderText = isArabic ? "الإجراءات" : "Actions";
         }
 
-        public void LoadData()
+        public void LoadData(string search = "")
         {
             try
             {
                 string sql = "SELECT id, username FROM users";
+                if (!string.IsNullOrEmpty(search))
+                {
+                    sql += $" WHERE username LIKE '%{search}%'";
+                }
                 DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
                 dgvUsers.DataSource = dt;
             }

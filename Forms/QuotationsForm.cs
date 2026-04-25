@@ -13,6 +13,7 @@ namespace GenericInventorySystem.Forms
     {
         private Label lblQuotationsTitle;
         private DataGridView dgvQuotes;
+        private ModernTextBox txtSearch;
         private OrderService _orderService;
         private int _hoveredRow = -1;
 
@@ -67,6 +68,16 @@ namespace GenericInventorySystem.Forms
             lblQuotationsTitle.Name = "lblQuotationsTitle";
             pnlHeader.Controls.Add(lblQuotationsTitle);
 
+            // Search Bar (Harmonized)
+            txtSearch = new ModernTextBox();
+            txtSearch.IsSearch = true;
+            txtSearch.ShowLabel = false;
+            txtSearch.PlaceholderText = "Search quotations...";
+            txtSearch.Size = new Size(320, 40);
+            txtSearch.Location = new Point(0, 45);
+            txtSearch.TextChanged += (s, e) => LoadQuotations(txtSearch.Text);
+            pnlHeader.Controls.Add(txtSearch);
+
             // ─── Currency selector (aligned right) ────────────────────────
             ComboBox cboCurrency = new ComboBox();
             ThemeConfig.ApplyComboBoxStyle(cboCurrency);
@@ -88,10 +99,19 @@ namespace GenericInventorySystem.Forms
                     CurrencyService.ActiveCurrency = sel.Code;
             };
 
-            // Keep currency panel right-aligned on Resize
+            // Keep panels aligned on Resize
             pnlHeader.Resize += (s, e) =>
             {
-                currPanel.Location = new Point(pnlHeader.Width - 130, 45);
+                if (LocalizationManager.IsArabic)
+                {
+                    txtSearch.Location = new Point(pnlHeader.Width - txtSearch.Width, 45);
+                    currPanel.Location = new Point(0, 45);
+                }
+                else
+                {
+                    txtSearch.Location = new Point(0, 45);
+                    currPanel.Location = new Point(pnlHeader.Width - currPanel.Width, 45);
+                }
             };
             
             pnlHeader.Controls.Add(currPanel);
@@ -311,9 +331,16 @@ namespace GenericInventorySystem.Forms
         }
 
         // ─── Data loading ─────────────────────────────────────────────────
-        public void LoadQuotations()
+        public void LoadQuotations(string search = "")
         {
             DataTable dt = _orderService.GetQuotations();
+            if (!string.IsNullOrEmpty(search))
+            {
+                // Simple client-side filter for now
+                DataView dv = dt.DefaultView;
+                dv.RowFilter = string.Format("CustomerName LIKE '%{0}%' OR order_id = {1}", search, int.TryParse(search, out int id) ? id : -1);
+                dt = dv.ToTable();
+            }
             dgvQuotes.DataSource = dt;
 
             // Ensure hidden columns stay hidden even after DataSource rebind

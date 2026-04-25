@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using GenericInventorySystem.Data;
 using GenericInventorySystem.Helpers;
 using GenericInventorySystem.Services;
+using GenericInventorySystem.Controls;
 
 namespace GenericInventorySystem.Forms
 {
@@ -18,6 +19,7 @@ namespace GenericInventorySystem.Forms
         private Button btnImport;
         private Button btnExport;
         private Label lblSuppliersTitle;
+        private ModernTextBox txtSearch;
 
         public SuppliersForm()
         {
@@ -37,13 +39,9 @@ namespace GenericInventorySystem.Forms
 
             if (lblSuppliersTitle != null) lblSuppliersTitle.Text = L("Sup_Title");
 
-            var ctrlSearch = this.Controls.Find("txtSearch", true);
-            if (ctrlSearch.Length > 0 && ctrlSearch[0] is TextBox txtSearch)
+            if (txtSearch != null)
             {
-                if (txtSearch.Text == "Search..." || txtSearch.Text == "\u0628\u062d\u062b...")
-                {
-                    txtSearch.Text = L("Sup_Search");
-                }
+                txtSearch.PlaceholderText = L("Sup_Search");
             }
 
             if (btnAdd != null) btnAdd.Invalidate(); 
@@ -106,39 +104,19 @@ namespace GenericInventorySystem.Forms
             this.lblSuppliersTitle = ThemeConfig.CreateStandardHeader("Supplier Management");
             this.lblSuppliersTitle.Name = "lblSuppliersTitle";
 
-            // Search Bar
-            Panel searchPanel = new Panel();
-            searchPanel.Location = new Point(20, 75);
-            searchPanel.Size = new Size(320, 35); 
-            searchPanel.BackColor = Color.White;
-            searchPanel.Padding = new Padding(0);
-
-            TextBox txtSearch = new TextBox();
-            txtSearch.Name = "txtSearch";
-            txtSearch.Location = new Point(40, 8);
-            txtSearch.Size = new Size(260, 20);
-            txtSearch.Font = ThemeConfig.StandardFont;
-            txtSearch.BorderStyle = BorderStyle.None;
-            txtSearch.Text = "Search...";
-            txtSearch.ForeColor = ThemeConfig.SecondaryColor;
-
-            searchPanel.Paint += (s, e) => 
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                Rectangle r = new Rectangle(0, 0, searchPanel.Width - 1, searchPanel.Height - 1);
-                using (GraphicsPath path = GetRoundedRect(r, 8)) 
-                using (Pen pen = new Pen(ThemeConfig.BorderColor, 1.5f)) 
-                {
-                    e.Graphics.DrawPath(pen, path);
-                }
-                Image imgSearch = ThemeConfig.GetNuricon("search");
-                if (imgSearch != null) e.Graphics.DrawImage(imgSearch, new Rectangle(10, 8, 20, 20));
+            // Search Bar (Upgraded to ModernTextBox)
+            this.txtSearch = new ModernTextBox();
+            txtSearch.IsSearch = true;
+            txtSearch.ShowLabel = false;
+            txtSearch.PlaceholderText = "Search Suppliers...";
+            txtSearch.Size = new Size(320, 40);
+            txtSearch.Location = new Point(20, 75);
+            txtSearch.TextChanged += (s, e) => { 
+                string ph = GenericInventorySystem.Helpers.LocalizationManager.GetString("Sup_Search");
+                if (txtSearch.Text != ph && txtSearch.Text != "Search...") 
+                    LoadData(txtSearch.Text); 
             };
-
-            txtSearch.Enter += (s, e) => { string ph = Properties.Resources.Sup_Search; if (txtSearch.Text == ph) { txtSearch.Text = ""; txtSearch.ForeColor = ThemeConfig.TextColorDark; } };
-            txtSearch.Leave += (s, e) => { string ph = Properties.Resources.Sup_Search; if (string.IsNullOrWhiteSpace(txtSearch.Text)) { txtSearch.Text = ph; txtSearch.ForeColor = ThemeConfig.SecondaryColor; } };
-            txtSearch.TextChanged += (s, e) => { string ph = Properties.Resources.Sup_Search; if (txtSearch.Text != ph && txtSearch.Text != "Search..." && txtSearch.Text != "\u0628\u062d\u062b...") LoadData(txtSearch.Text); };
-            searchPanel.Controls.Add(txtSearch);
+            panelTop.Controls.Add(txtSearch);
 
             // Actions Panel (FlowLayout for Buttons)
             FlowLayoutPanel panelButtons = new FlowLayoutPanel();
@@ -250,19 +228,19 @@ namespace GenericInventorySystem.Forms
             panelButtons.Controls.Add(this.btnAdd);
 
             panelTop.Controls.Add(this.lblSuppliersTitle);
-            panelTop.Controls.Add(searchPanel);
+            panelTop.Controls.Add(txtSearch);
             panelTop.Controls.Add(panelButtons);
 
             panelTop.Resize += (s, e) =>
             {
                 if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
                 {
-                    searchPanel.Location = new Point(panelTop.Width - searchPanel.Width - 20, 75);
+                    txtSearch.Location = new Point(panelTop.Width - txtSearch.Width - 20, 75);
                     panelButtons.Location = new Point(20, 70);
                 }
                 else
                 {
-                    searchPanel.Location = new Point(20, 75);
+                    txtSearch.Location = new Point(20, 75);
                     panelButtons.Location = new Point(panelTop.Width - panelButtons.Width - 20, 70);
                 }
             };

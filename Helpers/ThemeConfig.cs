@@ -49,23 +49,25 @@ namespace GenericInventorySystem
         
         // Primary Brand Color (Royal Blue)
         // Primary Brand Color (Royal Blue - Horizon Standard)
-        public static Color PrimaryColor { get; } = Color.FromArgb(59, 130, 246); // #3B82F6 (Blue 500)
-        public static Color PrimaryHoverColor { get; } = Color.FromArgb(37, 99, 235);  // #2563EB (Blue 600)
+        public static Color PrimaryColor { get; } = Color.FromArgb(25, 118, 210); // Deep Blue
+        public static Color PrimaryHoverColor { get; } = Color.FromArgb(13, 71, 161);
 
         // Gradient Colors for Primary Buttons
-        public static Color GradientStart { get; } = Color.FromArgb(59, 130, 246); 
-        public static Color GradientEnd { get; } = Color.FromArgb(37, 99, 235);   
+        public static Color GradientStart { get; } = Color.FromArgb(25, 118, 210); 
+        public static Color GradientEnd { get; } = Color.FromArgb(13, 71, 161);   
 
         // Secondary / Text Colors
-        public static Color SecondaryColor { get; } = Color.FromArgb(163, 174, 208); // Gray Text #A3AED0
-        public static Color SecondaryHoverColor { get; } = Color.FromArgb(210, 210, 220); // Darker Gray
-        public static Color TextColorDark { get; } = Color.FromArgb(43, 54, 116);    // Navy Dark #2B3674
+        public static Color SecondaryColor { get; } = Color.FromArgb(100, 116, 139); // Slate Gray
+        public static Color SecondaryHoverColor { get; } = Color.FromArgb(210, 210, 220); 
+        public static Color TextColorDark { get; } = Color.FromArgb(15, 23, 42);    
         public static Color TextColorLight { get; } = Color.White;
+        public static Color TextColorWhite { get; } = Color.White;
 
         // Backgrounds
-        public static Color BackgroundColor { get; } = Color.FromArgb(244, 247, 254); // Light Blue-Gray #F4F7FE
-        public static Color SidebarColor { get; } = Color.White;                        // White Sidebar
-        public static Color ActiveBackColor { get; } = Color.FromArgb(227, 242, 253); // Light Blue (Selected/Active)
+        public static Color BackgroundColor { get; } = Color.FromArgb(241, 245, 249); 
+        public static Color SidebarColor { get; } = Color.FromArgb(248, 250, 252);     
+        public static Color HeaderColor { get; } = Color.FromArgb(25, 118, 210);      
+        public static Color ActiveBackColor { get; } = Color.FromArgb(232, 240, 254); 
         
         // Semantic Token Mapping
         public static Color SelectionBackColor { get; } = Color.FromArgb(237, 242, 247); // Light Gray-Blue selection
@@ -100,6 +102,10 @@ namespace GenericInventorySystem
         public static Color InfoBadgeBg { get; } = Color.FromArgb(239, 246, 255);    // Light Blue
         public static Color InfoBadgeText { get; } = Color.FromArgb(29, 78, 216);    // Dark Blue
         public static Color InfoBorder { get; } = Color.FromArgb(59, 130, 246);      // Blue-500
+        
+        // Neon / Premium Accents
+        public static Color NeonBlue { get; } = Color.FromArgb(0, 245, 255); // Vibrant Neon Blue
+        public static Color NeonBlueAlpha { get; } = Color.FromArgb(100, 0, 245, 255);
 
         // Card Surface
         public static Color SurfaceColor { get; } = Color.White;
@@ -370,7 +376,7 @@ namespace GenericInventorySystem
                     {
                         Rectangle r = new Rectangle(0, 0, pb.Width - 1, pb.Height - 1);
                         using (var path = GetRoundedPath(r, 6))
-                        using (var b = new SolidBrush(Color.FromArgb(240, 245, 255))) e.Graphics.FillPath(b, path);
+                        using (var b = new SolidBrush(Color.FromArgb(40, 255, 255, 255))) e.Graphics.FillPath(b, path);
                     }
                     
                     if (icon != null)
@@ -400,19 +406,14 @@ namespace GenericInventorySystem
             if (type == "Close")
             {
                 btn.Paint += WinCtrl_PaintClose;
-                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(251, 230, 230); btn.Invalidate(); };
+                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(30, PrimaryColor); btn.Invalidate(); };
                 btn.MouseLeave += (s, e) => { btn.BackColor = Color.Transparent; btn.Invalidate(); };
             }
-            else if (type == "Maximize" || type == "Restore")
+            else if (type == "Maximize" || type == "Restore" || type == "Minimize")
             {
-                btn.Paint += WinCtrl_PaintMax;
-                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(244, 247, 254); btn.Invalidate(); };
-                btn.MouseLeave += (s, e) => { btn.BackColor = Color.Transparent; btn.Invalidate(); };
-            }
-            else if (type == "Minimize")
-            {
-                btn.Paint += WinCtrl_PaintMin;
-                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(244, 247, 254); btn.Invalidate(); };
+                if (type == "Minimize") btn.Paint += WinCtrl_PaintMinimize;
+                else btn.Paint += WinCtrl_PaintMaximize;
+                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(30, PrimaryColor); btn.Invalidate(); };
                 btn.MouseLeave += (s, e) => { btn.BackColor = Color.Transparent; btn.Invalidate(); };
             }
         }
@@ -429,47 +430,12 @@ namespace GenericInventorySystem
                 using (var b = new SolidBrush(btn.BackColor)) g.FillPath(b, path);
             }
             int cx = btn.Width / 2, cy = btn.Height / 2;
-            int lineW = 10;
-            Color iconColor = TextColorDark;
+            int lineW = 6;
+            Color iconColor = ThemeConfig.TextColorDark;
             using (var p = new Pen(iconColor, 1.5f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
                 g.DrawLine(p, cx - lineW, cy + 2, cx + lineW, cy + 2);
         }
 
-        private static void WinCtrl_PaintMax(object sender, PaintEventArgs e)
-        {
-            var btn = sender as Button; if (btn == null) return;
-            var g = e.Graphics;
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-            if (btn.BackColor != Color.Transparent)
-            {
-                Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
-                using (var path = GetRoundedPath(r, 6))
-                using (var b = new SolidBrush(btn.BackColor)) g.FillPath(b, path);
-            }
-
-            int cx = btn.Width / 2, cy = btn.Height / 2;
-            int s = 5;
-            using (var p = new Pen(TextColorDark, 1.5f)) g.DrawRectangle(p, cx - s, cy - s, s * 2, s * 2);
-        }
-
-        private static void WinCtrl_PaintMin(object sender, PaintEventArgs e)
-        {
-            var btn = sender as Button; if (btn == null) return;
-            var g = e.Graphics;
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-            if (btn.BackColor != Color.Transparent)
-            {
-                Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
-                using (var path = GetRoundedPath(r, 6))
-                using (var b = new SolidBrush(btn.BackColor)) g.FillPath(b, path);
-            }
-
-            int cx = btn.Width / 2, cy = btn.Height / 2;
-            int s = 5;
-            using (var p = new Pen(TextColorDark, 1.5f)) g.DrawLine(p, cx - s, cy + s, cx + s, cy + s);
-        }
 
         private static void WinCtrl_PaintMaximize(object sender, PaintEventArgs e)
         {
@@ -484,19 +450,17 @@ namespace GenericInventorySystem
             }
             int cx = btn.Width / 2, cy = btn.Height / 2;
             bool isRestore = (btn.Tag as string) == "Restore";
-            Color iconColor = TextColorDark;
+            Color iconColor = ThemeConfig.TextColorDark;
             using (var p = new Pen(iconColor, 1.5f))
             {
                 if (isRestore)
                 {
-                    g.DrawRectangle(p, cx - 5, cy - 3, 8, 7);
-                    g.DrawRectangle(p, cx - 2, cy - 6, 8, 7);
+                    g.DrawRectangle(p, cx - 4, cy - 2, 7, 6);
+                    g.DrawRectangle(p, cx - 2, cy - 4, 7, 6);
                 }
                 else
                 {
-                    g.DrawRectangle(p, cx - 6, cy - 5, 12, 10);
-                    using (var p2 = new Pen(iconColor, 2.5f))
-                        g.DrawLine(p2, cx - 6, cy - 5, cx + 6, cy - 5);
+                    g.DrawRectangle(p, cx - 5, cy - 4, 10, 8);
                 }
             }
         }
@@ -507,20 +471,19 @@ namespace GenericInventorySystem
             var g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-            bool isHot = btn.ClientRectangle.Contains(btn.PointToClient(Control.MousePosition));
-            if (isHot || btn.BackColor != Color.Transparent)
+            if (btn.BackColor != Color.Transparent)
             {
                 Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
                 using (var path = GetRoundedPath(r, 6))
-                using (var b = new SolidBrush(isHot ? Color.FromArgb(251, 230, 230) : btn.BackColor)) 
+                using (var b = new SolidBrush(btn.BackColor)) 
                     g.FillPath(b, path);
             }
 
             int cx = btn.Width / 2, cy = btn.Height / 2;
-            int s = 6; // Slightly larger for better visibility
-            Color iconColor = isHot ? Color.FromArgb(239, 68, 68) : TextColorDark; // Vibrant Red on hover, Navy otherwise
+            int s = 4; 
+            Color iconColor = ThemeConfig.TextColorDark;
             
-            using (var p = new Pen(iconColor, 2f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
+            using (var p = new Pen(iconColor, 1.5f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
             {
                 g.DrawLine(p, cx - s, cy - s, cx + s, cy + s);
                 g.DrawLine(p, cx + s, cy - s, cx - s, cy + s);
@@ -873,6 +836,27 @@ namespace GenericInventorySystem
             };
             
             grid.Visible = true;
+        }
+
+        public static Image TintImage(Image source, Color tintColor)
+        {
+            if (source == null) return null;
+            Bitmap bmp = new Bitmap(source.Width, source.Height);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                var cm = new System.Drawing.Imaging.ColorMatrix(new float[][]
+                {
+                    new float[] {0, 0, 0, 0, 0},
+                    new float[] {0, 0, 0, 0, 0},
+                    new float[] {0, 0, 0, 0, 0},
+                    new float[] {0, 0, 0, 1, 0},
+                    new float[] {tintColor.R/255f, tintColor.G/255f, tintColor.B/255f, 0, 1}
+                });
+                var attributes = new System.Drawing.Imaging.ImageAttributes();
+                attributes.SetColorMatrix(cm);
+                g.DrawImage(source, new Rectangle(0, 0, bmp.Width, bmp.Height), 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, attributes);
+            }
+            return bmp;
         }
 
         public static void ApplySidebarButton(Button btn, bool isActive)

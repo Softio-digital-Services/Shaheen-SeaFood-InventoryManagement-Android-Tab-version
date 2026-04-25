@@ -63,7 +63,11 @@ namespace GenericInventorySystem.Services
         public decimal GetSales(string scope = "Today")
         {
              if(scope == "Today")
-                return DatabaseHelper.ExecuteScalar<decimal>("SELECT ISNULL(SUM(total_amount),0) FROM orders WHERE CAST(order_date AS DATE) = CAST(GETDATE() AS DATE)");
+             {
+                decimal revenue = DatabaseHelper.ExecuteScalar<decimal>("SELECT ISNULL(SUM(total_amount),0) FROM orders WHERE CAST(order_date AS DATE) = CAST(GETDATE() AS DATE)");
+                decimal expenses = DatabaseHelper.ExecuteScalar<decimal>("SELECT ISNULL(SUM(amount),0) FROM expenses WHERE CAST(expense_date AS DATE) = CAST(GETDATE() AS DATE) AND date_deleted IS NULL");
+                return revenue - expenses;
+             }
              return 0;
         }
 
@@ -117,20 +121,17 @@ namespace GenericInventorySystem.Services
         public Dictionary<string, decimal> GetWeeklyRevenue()
         {
             string sql = @"
-                SELECT 
-                    CAST(order_date AS DATE) as Date, 
-                    SUM(total_amount) as Total 
-                FROM orders 
-                WHERE order_date >= DATEADD(day, -7, GETDATE()) 
-                GROUP BY CAST(order_date AS DATE) 
-                ORDER BY Date";
+                SELECT Date, SUM(Total) as NetTotal FROM (
+                    SELECT CAST(order_date AS DATE) as Date, SUM(total_amount) as Total FROM orders WHERE order_date >= DATEADD(day, -7, GETDATE()) GROUP BY CAST(order_date AS DATE)
+                    UNION ALL
+                    SELECT CAST(expense_date AS DATE) as Date, -SUM(amount) as Total FROM expenses WHERE expense_date >= DATEADD(day, -7, GETDATE()) AND date_deleted IS NULL GROUP BY CAST(expense_date AS DATE)
+                ) t GROUP BY Date ORDER BY Date";
+            
             DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
             Dictionary<string, decimal> data = new Dictionary<string, decimal>();
-            
-            // Fill in missing days if needed, but for now just return what we have
             foreach (DataRow row in dt.Rows)
             {
-                 data[((DateTime)row["Date"]).ToString("dd/MM")] = Convert.ToDecimal(row["Total"]);
+                 data[((DateTime)row["Date"]).ToString("dd/MM")] = Convert.ToDecimal(row["NetTotal"]);
             }
             return data;
         }
@@ -171,19 +172,17 @@ namespace GenericInventorySystem.Services
         public Dictionary<string, decimal> GetMonthlyRevenue()
         {
             string sql = @"
-                SELECT 
-                    FORMAT(order_date, 'MMM') as Month,
-                    SUM(total_amount) as Total,
-                    MIN(order_date) as SortDate
-                FROM orders 
-                WHERE order_date >= DATEADD(month, -6, GETDATE())
-                GROUP BY FORMAT(order_date, 'MMM')
-                ORDER BY SortDate";
+                SELECT Month, SUM(Total) as NetTotal, MIN(SortDate) as SortDate FROM (
+                    SELECT FORMAT(order_date, 'MMM') as Month, SUM(total_amount) as Total, MIN(order_date) as SortDate FROM orders WHERE order_date >= DATEADD(month, -6, GETDATE()) GROUP BY FORMAT(order_date, 'MMM')
+                    UNION ALL
+                    SELECT FORMAT(expense_date, 'MMM') as Month, -SUM(amount) as Total, MIN(expense_date) as SortDate FROM expenses WHERE expense_date >= DATEADD(month, -6, GETDATE()) AND date_deleted IS NULL GROUP BY FORMAT(expense_date, 'MMM')
+                ) t GROUP BY Month ORDER BY SortDate";
+            
             DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
             Dictionary<string, decimal> data = new Dictionary<string, decimal>();
             foreach (DataRow row in dt.Rows)
             {
-                data[row["Month"].ToString()] = Convert.ToDecimal(row["Total"]);
+                data[row["Month"].ToString()] = Convert.ToDecimal(row["NetTotal"]);
             }
             return data;
         }
@@ -279,6 +278,19 @@ namespace GenericInventorySystem.Services
                     Message = $"{row["supplier_name"]} - {statusMsg} ({CurrencyService.Format(Convert.ToDecimal(row["balance_due"]))})",
                     Target = "btnSuppliers",
                     Timestamp = dueDate
+                });
+            }
+
+            // 5. Unpaid Expenses
+            int unpaidCount = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM expenses WHERE is_paid = 0 AND date_deleted IS NULL");
+            if (unpaidCount > 0)
+            {
+                notifications.Add(new Notification {
+                    Type = "Alert",
+                    Title = "Unpaid Expenses",
+                    Message = $"You have {unpaidCount} unpaid expenses to review for this month.",
+                    Target = "btnMonthlyExpenses",
+                    Timestamp = DateTime.Now
                 });
             }
 

@@ -247,6 +247,26 @@ namespace GenericInventorySystem
                 };
                 foreach (var q in paymentQueries) ExecuteNonQuery(q);
 
+                // Ensure expenses table and columns exist
+                string sqlExpenses = @"
+                    IF OBJECT_ID('expenses', 'U') IS NULL
+                    BEGIN
+                        CREATE TABLE expenses (
+                            expense_id INT IDENTITY(1,1) PRIMARY KEY,
+                            category NVARCHAR(100),
+                            expense_date DATETIME,
+                            amount DECIMAL(18,2),
+                            description NVARCHAR(MAX),
+                            recorded_by NVARCHAR(100)
+                        );
+                    END
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('expenses') AND name = 'is_paid') ALTER TABLE expenses ADD is_paid BIT DEFAULT 1;
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('expenses') AND name = 'is_recurring') ALTER TABLE expenses ADD is_recurring BIT DEFAULT 0;
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('expenses') AND name = 'last_processed_month') ALTER TABLE expenses ADD last_processed_month NVARCHAR(10) NULL;
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('expenses') AND name = 'date_deleted') ALTER TABLE expenses ADD date_deleted DATETIME NULL;
+                ";
+                ExecuteNonQuery(sqlExpenses);
+
                 // Ensure order_items exists
                 string sqlItems = @"
                     IF OBJECT_ID('order_items', 'U') IS NULL
@@ -262,6 +282,28 @@ namespace GenericInventorySystem
                         );
                     END";
                 ExecuteNonQuery(sqlItems);
+
+                // Ensure users table and columns exist
+                string sqlUsers = @"
+                    IF OBJECT_ID('users', 'U') IS NULL
+                    BEGIN
+                        CREATE TABLE users (
+                            id INT IDENTITY(1,1) PRIMARY KEY,
+                            username NVARCHAR(100) UNIQUE,
+                            password NVARCHAR(200),
+                            role NVARCHAR(50),
+                            full_name NVARCHAR(200),
+                            date_created DATETIME DEFAULT GETDATE()
+                        );
+                        -- Add default admin if not exists
+                        IF NOT EXISTS (SELECT * FROM users WHERE username = 'admin')
+                            INSERT INTO users (username, password, role, full_name) VALUES ('admin', 'admin123', 'Admin', 'Super Admin');
+                    END
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'full_name') ALTER TABLE users ADD full_name NVARCHAR(200) NULL;
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'date_created') ALTER TABLE users ADD date_created DATETIME DEFAULT GETDATE();
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'is_active') ALTER TABLE users ADD is_active BIT DEFAULT 1;
+                ";
+                ExecuteNonQuery(sqlUsers);
             }
             catch (Exception ex)
             {

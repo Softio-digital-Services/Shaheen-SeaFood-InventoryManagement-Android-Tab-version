@@ -36,6 +36,57 @@ namespace GenericInventorySystem.Controls
 
         public ComboBox.ObjectCollection Items => cmbInput.Items;
 
+        public object DataSource
+        {
+            get => cmbInput.DataSource;
+            set => cmbInput.DataSource = value;
+        }
+
+        public string DisplayMember
+        {
+            get => cmbInput.DisplayMember;
+            set => cmbInput.DisplayMember = value;
+        }
+
+        public string ValueMember
+        {
+            get => cmbInput.ValueMember;
+            set => cmbInput.ValueMember = value;
+        }
+
+        public object SelectedValue
+        {
+            get => cmbInput.SelectedValue;
+            set => cmbInput.SelectedValue = value;
+        }
+
+        private string _placeholderText = "";
+        [Category("Appearance")]
+        public string PlaceholderText 
+        { 
+            get => _placeholderText;
+            set 
+            { 
+                _placeholderText = value; 
+                if (lblTitle != null && _showLabel) lblTitle.Text = value;
+            } 
+        }
+
+        private bool _showLabel = true;
+        [Category("Appearance")]
+        public bool ShowLabel
+        {
+            get => _showLabel;
+            set
+            {
+                _showLabel = value;
+                if (lblTitle != null) lblTitle.Visible = value;
+                UpdateLayout();
+            }
+        }
+
+        private bool _isFocused = false;
+
         public ModernComboBox()
         {
             this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
@@ -54,7 +105,7 @@ namespace GenericInventorySystem.Controls
         {
             // Label
             lblTitle = new Label();
-            lblTitle.Text = "Category";
+            lblTitle.Text = "";
             lblTitle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             lblTitle.ForeColor = ThemeConfig.TextColorDark;
             lblTitle.AutoSize = true;
@@ -78,17 +129,28 @@ namespace GenericInventorySystem.Controls
             cmbInput.ForeColor = ThemeConfig.TextColorDark;
             cmbInput.Dock = DockStyle.Fill;
             cmbInput.BackColor = Color.White;
-            
+
+            cmbInput.GotFocus += (s, e) => { _isFocused = true; pnlContainer.Invalidate(); };
+            cmbInput.LostFocus += (s, e) => { _isFocused = false; pnlContainer.Invalidate(); };
+
             pnlContainer.Controls.Add(cmbInput);
+            UpdateLayout();
+        }
+
+        private void UpdateLayout()
+        {
+            if (pnlContainer == null) return;
+            int labelHeight = _showLabel ? 25 : 0;
+            pnlContainer.Location = new Point(0, labelHeight);
+            pnlContainer.Size = new Size(this.Width, this.Height - labelHeight);
         }
 
         private void PnlContainer_Paint(object sender, PaintEventArgs e)
         {
             var pnl = sender as Panel;
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            
-            using (var path = GetRoundedPath(new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1), 8))
-            using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f))
+            // Draw Rounded Border
+            using (var path = GetRoundedPath(new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1), 12))
+            using (var pen = new Pen(_isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor, _isFocused ? 2f : 1.5f))
             {
                 e.Graphics.DrawPath(pen, path);
             }

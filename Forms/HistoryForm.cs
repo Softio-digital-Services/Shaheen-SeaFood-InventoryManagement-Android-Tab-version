@@ -35,8 +35,7 @@ namespace GenericInventorySystem.Forms
         private DataGridView dgvSuppliers;
         private DataGridView dgvQuotations; // NEW
 
-        private TextBox txtSearch; // Standard TextBox for filtering
-        private Panel searchPanel; // Rounded panel with icon
+        private ModernTextBox txtSearch; 
         
         // Stats
         private StatCard cardActions;
@@ -78,8 +77,7 @@ namespace GenericInventorySystem.Forms
 
             if (txtSearch != null) 
             {
-                txtSearch.Text = L("Hist_Search");
-                txtSearch.ForeColor = ThemeConfig.SecondaryColor;
+                txtSearch.PlaceholderText = L("Hist_Search");
             }
 
             if (cardActions != null) cardActions.Title = L("Hist_StatActivity");
@@ -171,39 +169,18 @@ namespace GenericInventorySystem.Forms
 
             pnlHeader.Controls.Add(lblHistoryTitle);
             
-            // Standard Search Panel
-            searchPanel = new Panel();
-            searchPanel.Location = new Point(20, 60);
-            searchPanel.Size = new Size(320, 35);
-            searchPanel.BackColor = ThemeConfig.SurfaceColor;
-            
-            txtSearch = new TextBox();
-            txtSearch.Name = "txtSearch";
-            txtSearch.Location = new Point(40, 11);
-            txtSearch.Size = new Size(260, 20);
-            txtSearch.Font = ThemeConfig.StandardFont;
-            txtSearch.BorderStyle = BorderStyle.None;
-            txtSearch.Text = "Search...";
-            txtSearch.ForeColor = ThemeConfig.SecondaryColor;
-
-            searchPanel.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                Rectangle r = new Rectangle(0, 0, searchPanel.Width - 1, searchPanel.Height - 1);
-                using (GraphicsPath path = GetRoundedRect(r, 12)) 
-                using (Pen pen = new Pen(ThemeConfig.BorderColor, 1.5f)) 
-                    e.Graphics.DrawPath(pen, path);
-                
-                Image imgSearch = ThemeConfig.GetNuricon("search");
-                if (imgSearch != null) e.Graphics.DrawImage(imgSearch, new Rectangle(10, 8, 20, 20));
+            // Search Bar (Upgraded to ModernTextBox)
+            txtSearch = new ModernTextBox();
+            txtSearch.IsSearch = true;
+            txtSearch.ShowLabel = false;
+            txtSearch.PlaceholderText = "Search history...";
+            txtSearch.Size = new Size(320, 40);
+            txtSearch.Location = new Point(20, 60);
+            txtSearch.TextChanged += (s, e) => {
+                string ph = LocalizationManager.GetString("Hist_Search");
+                if (txtSearch.Text != ph && txtSearch.Text != "Search...") ApplyFilter();
             };
-
-            txtSearch.Enter += (s, e) => { string ph = LocalizationManager.GetString("Hist_Search"); if (txtSearch.Text == ph) { txtSearch.Text = ""; txtSearch.ForeColor = ThemeConfig.TextColorDark; } };
-            txtSearch.Leave += (s, e) => { string ph = LocalizationManager.GetString("Hist_Search"); if (string.IsNullOrWhiteSpace(txtSearch.Text)) { txtSearch.Text = ph; txtSearch.ForeColor = ThemeConfig.SecondaryColor; } };
-            txtSearch.TextChanged += (s, e) => { string ph = LocalizationManager.GetString("Hist_Search"); if (txtSearch.Text != ph && txtSearch.Text != "Search...") ApplyFilter(); };
-            
-            searchPanel.Controls.Add(txtSearch);
-            pnlHeader.Controls.Add(searchPanel);
+            pnlHeader.Controls.Add(txtSearch);
 
             // Refresh Button Placement
             btnRefresh.Location = new Point(pnlHeader.Width - 130, 60);
@@ -212,7 +189,16 @@ namespace GenericInventorySystem.Forms
             pnlHeader.Controls.Add(btnRefresh);
 
             pnlHeader.Resize += (s, e) => {
-                btnRefresh.Location = new Point(pnlHeader.Width - 130, 60);
+                if (LocalizationManager.IsArabic)
+                {
+                    txtSearch.Location = new Point(pnlHeader.Width - txtSearch.Width - 20, 60);
+                    btnRefresh.Location = new Point(20, 60);
+                }
+                else
+                {
+                    txtSearch.Location = new Point(20, 60);
+                    btnRefresh.Location = new Point(pnlHeader.Width - btnRefresh.Width - 20, 60);
+                }
             };
             
             mainLayout.Controls.Add(pnlHeader, 0, 0);

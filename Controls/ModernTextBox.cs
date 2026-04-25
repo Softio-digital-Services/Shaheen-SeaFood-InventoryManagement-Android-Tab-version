@@ -58,6 +58,11 @@ namespace GenericInventorySystem.Controls
         [Category("Appearance")]
         public string PlaceholderText { get; set; } = "";
 
+        [Category("Appearance")]
+        public bool IsSearch { get; set; } = false;
+
+        private bool _isFocused = false;
+
         private bool _showLabel = true;
         [Category("Appearance")]
         public bool ShowLabel
@@ -89,7 +94,7 @@ namespace GenericInventorySystem.Controls
         {
             // Label
             lblTitle = new Label();
-            lblTitle.Text = "Input Label";
+            lblTitle.Text = ""; 
             lblTitle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             lblTitle.ForeColor = ThemeConfig.TextColorDark;
             lblTitle.AutoSize = true;
@@ -121,8 +126,8 @@ namespace GenericInventorySystem.Controls
                 UpdatePlaceholder();
             };
             
-            txtInput.GotFocus += (s, e) => UpdatePlaceholder();
-            txtInput.LostFocus += (s, e) => UpdatePlaceholder();
+            txtInput.GotFocus += (s, e) => { _isFocused = true; pnlContainer.Invalidate(); UpdatePlaceholder(); };
+            txtInput.LostFocus += (s, e) => { _isFocused = false; pnlContainer.Invalidate(); UpdatePlaceholder(); };
 
             pnlContainer.Controls.Add(txtInput);
             UpdateLayout();
@@ -139,11 +144,11 @@ namespace GenericInventorySystem.Controls
 
         private void UpdatePlaceholder()
         {
-            if (string.IsNullOrEmpty(txtInput.Text) && !txtInput.Focused)
+            // Simple placeholder logic
+            if (string.IsNullOrEmpty(txtInput.Text) && !_isFocused)
             {
-                // We don't have a real placeholder implementation in standard TextBox without PInvoke 
-                // but we can simulate it by changing text/color if we were more advanced.
-                // For now, let's just leave it as a property for future-proofing or use the LabelText effectively.
+                // Note: Real WinForms placeholder requires SendMessage EM_SETCUEBANNER
+                // For now we rely on the Label or external logic, but we'll reserve the property.
             }
         }
 
@@ -159,8 +164,9 @@ namespace GenericInventorySystem.Controls
                 {
                      // Center Vertically manually if dock behaves weirdly with single line in large panel
                      txtInput.Dock = DockStyle.None;
-                     txtInput.Width = pnlContainer.Width - 20;
-                     txtInput.Location = new Point(10, (pnlContainer.Height - txtInput.Height) / 2);
+                     int leftPadding = IsSearch ? 40 : 10;
+                     txtInput.Width = pnlContainer.Width - leftPadding - 10;
+                     txtInput.Location = new Point(leftPadding, (pnlContainer.Height - txtInput.Height) / 2);
                      txtInput.Anchor = AnchorStyles.Left | AnchorStyles.Right;
                 }
             }
@@ -179,10 +185,20 @@ namespace GenericInventorySystem.Controls
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             
             // Draw Rounded Border
-            using (var path = GetRoundedPath(new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1), 8))
-            using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f))
+            using (var path = GetRoundedPath(new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1), 12))
+            using (var pen = new Pen(_isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor, _isFocused ? 2f : 1.5f))
             {
                 e.Graphics.DrawPath(pen, path);
+            }
+
+            // Draw Search Icon
+            if (IsSearch)
+            {
+                Image searchIcon = ThemeConfig.GetNuricon("search");
+                if (searchIcon != null)
+                {
+                    e.Graphics.DrawImage(searchIcon, new Rectangle(12, (pnl.Height - 20) / 2, 20, 20));
+                }
             }
 
         }
