@@ -10,16 +10,19 @@ namespace GenericInventorySystem.Forms
     {
         public decimal Amount { get; private set; }
         public string Notes { get; private set; }
+        public DateTime? DueDate { get; private set; }
 
         private ModernTextBox txtAmount;
         private ModernTextBox txtNotes;
+        private FlatDateTimePicker dtDueDate;
+        private Label lblDueDate;
         private Label lblError;
         private Label lblPrompt;
-        private Button btnSave;
-        private Button btnCancel;
+        private bool _showDueDate;
 
-        public TransactionEntryForm(string title, string prompt, string initialValue = "0.00")
+        public TransactionEntryForm(string title, string prompt, string initialValue = "0.00", bool showDueDate = false)
         {
+            _showDueDate = showDueDate;
             InitializeComponent();
             this.TitleText = title; // BaseModalForm Title
             lblPrompt.Text = prompt;
@@ -36,58 +39,58 @@ namespace GenericInventorySystem.Forms
 
             if (txtAmount != null) txtAmount.LabelText = L("Tran_AmountLabel");
             if (txtNotes != null) txtNotes.LabelText = L("Tran_NotesLabel");
+            if (lblDueDate != null) lblDueDate.Text = L("Tran_DueDateLabel") ?? "Payment Due Date";
             
-            if (btnCancel != null) btnCancel.Text = L("Tran_Cancel");
-            if (btnSave != null) btnSave.Text = L("Tran_Confirm");
+            SetFooterButtons(
+                L("Tran_Confirm") ?? "Confirm",
+                L("Tran_Cancel") ?? "Cancel",
+                BtnSave_Click,
+                (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); }
+            );
         }
 
         private void InitializeComponent()
         {
-            this.Size = new Size(450, 480);
             
-            lblPrompt = new Label();
-            lblPrompt.Location = new Point(30, 10);
-            lblPrompt.AutoSize = true;
-            lblPrompt.Font = ThemeConfig.SubHeaderFont;
-            lblPrompt.ForeColor = ThemeConfig.SecondaryColor;
-            this.ContentPanel.Controls.Add(lblPrompt);
+            lblPrompt = new Label { AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.SecondaryColor, Margin = new Padding(0, 0, 0, 10) };
+            txtAmount = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
+            txtNotes = new ModernTextBox { Dock = DockStyle.Fill, Multiline = true, Height = 120, Margin = new Padding(0, 0, 0, 15) };
+            lblError = new Label { AutoSize = true, ForeColor = ThemeConfig.DangerColor, Visible = false, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 5, 0, 5) };
+            
+            this.SuspendLayout();
 
-            // Amount
-            txtAmount = new ModernTextBox();
-            txtAmount.LabelText = "Transaction Amount ($)";
-            txtAmount.Location = new Point(30, 45);
-            txtAmount.Width = 380;
-            this.ContentPanel.Controls.Add(txtAmount);
-
-            // Notes
-            txtNotes = new ModernTextBox();
-            txtNotes.LabelText = "Notes (Optional)";
-            txtNotes.Location = new Point(30, 125);
-            txtNotes.Width = 380;
-            txtNotes.Multiline = true;
-            txtNotes.Height = 120;
-            this.ContentPanel.Controls.Add(txtNotes);
-
-            // Error Label
-            lblError = new Label() 
-            { 
-                Location = new Point(30, 260), 
-                AutoSize = true, 
-                ForeColor = ThemeConfig.DangerColor, 
-                Visible = false, 
-                Font = ThemeConfig.StandardFont 
+            TableLayoutPanel tlpMain = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = _showDueDate ? 7 : 5,
+                Padding = new Padding(25),
+                AutoSize = true
             };
-            this.ContentPanel.Controls.Add(lblError);
+            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
-            // Buttons
-            btnSave = new ModernButton() { Text = "Confirm", Location = new Point(270, 370), Size = new Size(140, 40) };
-            btnSave.Click += BtnSave_Click;
+            tlpMain.Controls.Add(lblPrompt, 0, 0);
+            tlpMain.Controls.Add(txtAmount, 0, 1);
 
-            btnCancel = new ModernButton() { Text = "Cancel", Location = new Point(120, 370), Size = new Size(140, 40) };
-            btnCancel.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
+            int nextRow = 2;
+            if (_showDueDate)
+            {
+                lblDueDate = new Label { AutoSize = true, Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, Margin = new Padding(0, 5, 0, 5) };
+                dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Height = 40, Margin = new Padding(0, 0, 0, 15), Value = DateTime.Today.AddDays(30) };
+                
+                tlpMain.Controls.Add(lblDueDate, 0, nextRow++);
+                tlpMain.Controls.Add(dtDueDate, 0, nextRow++);
+            }
 
-            this.ContentPanel.Controls.Add(btnSave);
-            this.ContentPanel.Controls.Add(btnCancel);
+            tlpMain.Controls.Add(txtNotes, 0, nextRow++);
+            tlpMain.Controls.Add(lblError, 0, nextRow++);
+
+            this.ContentPanel.Controls.Add(tlpMain);
+
+            ApplyLocalization(); // To set initial button text
+
+            this.ResumeLayout(false);
+            this.PerformLayout();
             
             ApplyTheme();
         }
@@ -95,25 +98,30 @@ namespace GenericInventorySystem.Forms
         private void ApplyTheme()
         {
             // Background is White (BaseModalForm)
-            ThemeConfig.ApplyPrimaryButton(btnSave);
-            ThemeConfig.ApplySecondaryButton(btnCancel);
+            // Footer buttons are styled automatically by SetFooterButtons
         }
 
         private void BtnSave_Click(object sender, EventArgs e)
         {
-             string clean = txtAmount.Text.Replace("$", "").Replace(",", ".").Trim();
-             if(decimal.TryParse(clean, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal val) && val > 0)
-             {
-                 this.Amount = val;
-                 this.Notes = txtNotes.Text.Trim();
-                 this.DialogResult = DialogResult.OK;
-                 this.Close();
-             }
-             else
-             {
-                 lblError.Text = Properties.Resources.Tran_ErrorInvalid;
-                 lblError.Visible = true;
-             }
+            string clean = txtAmount.Text.Replace("$", "").Replace(",", "").Trim();
+            if (ValidationHelper.ValidateDecimal(clean, LocalizationManager.GetString("Tran_AmountLabel"), out decimal val))
+            {
+                if (val <= 0)
+                {
+                    string msg = LocalizationManager.IsArabic ? "يجب أن يكون المبلغ أكبر من صفر" : "Amount must be greater than zero.";
+                    MessageHelper.ShowWarning(msg);
+                    return;
+                }
+
+                this.Amount = val;
+                this.Notes = txtNotes.Text.Trim();
+                if (_showDueDate && dtDueDate != null)
+                {
+                    this.DueDate = dtDueDate.Value;
+                }
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
         }
     }
 }

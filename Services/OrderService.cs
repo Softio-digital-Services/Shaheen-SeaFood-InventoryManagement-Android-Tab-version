@@ -24,7 +24,7 @@ namespace GenericInventorySystem.Services
         /// <param name="totalAmount">Total amount of the order</param>
         /// <param name="isPaid">Whether the order is fully paid</param>
         /// <returns>The ID of the created order</returns>
-        public int PlaceOrder(int customerId, List<OrderItem> items, decimal totalAmount, bool isPaid, string orderStatus = "Completed")
+        public int PlaceOrder(int customerId, List<OrderItem> items, decimal totalAmount, bool isPaid, string orderStatus = "Completed", DateTime? dueDate = null)
         {
             // 1. Determine Status
             // Walk-in is always paid (enforced by UI, but logic here: if walk-in, force paid?)
@@ -96,22 +96,32 @@ namespace GenericInventorySystem.Services
             // 4. Update Customer Balance (if unpaid)
             if (!isPaid && !isWalkIn)
             {
-                string sqlBalance = "UPDATE customers SET current_balance = current_balance + @total WHERE customer_id = @cid";
-                DatabaseHelper.ExecuteNonQuery(sqlBalance,
+                string sqlBalance = "UPDATE customers SET current_balance = current_balance + @total";
+                List<SqlParameter> parameters = new List<SqlParameter> {
                     new SqlParameter("@total", totalAmount),
                     new SqlParameter("@cid", customerId)
-                );
+                };
+
+                if (dueDate.HasValue)
+                {
+                    sqlBalance += ", payment_due_date = @dueDate";
+                    parameters.Add(new SqlParameter("@dueDate", dueDate.Value));
+                }
+
+                sqlBalance += " WHERE customer_id = @cid";
+                DatabaseHelper.ExecuteNonQuery(sqlBalance, parameters.ToArray());
             }
 
             // 5. Record in Customer History (if not Walk-in)
             if (!isWalkIn)
             {
                 // Record the Sale (Payment Due)
-                string sqlSaleRecord = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Customer', @cid, @amount, GETDATE(), @notes)";
+                string sqlSaleRecord = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes, due_date) VALUES ('Customer', @cid, @amount, GETDATE(), @notes, @ddate)";
                 DatabaseHelper.ExecuteNonQuery(sqlSaleRecord,
                     new SqlParameter("@cid", customerId),
                     new SqlParameter("@amount", totalAmount),
-                    new SqlParameter("@notes", "[Sale] Order #" + orderId)
+                    new SqlParameter("@notes", "[Sale] Order #" + orderId),
+                    new SqlParameter("@ddate", (object)dueDate ?? DBNull.Value)
                 );
 
                 if (isPaid)

@@ -13,7 +13,7 @@ namespace GenericInventorySystem.Forms
     /// <summary>
     /// Settings panel for managing supported currencies and their exchange rates.
     /// </summary>
-    public class CurrencySettingsForm : Form
+    public class CurrencySettingsForm : BaseModalForm
     {
         private DataGridView dgvRates;
         private Label lblStatus;
@@ -21,6 +21,7 @@ namespace GenericInventorySystem.Forms
 
         public CurrencySettingsForm()
         {
+            this.Width = 800;
             InitializeForm();
             LoadRates();
         }
@@ -30,122 +31,157 @@ namespace GenericInventorySystem.Forms
             GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
             bool ar = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
             
-            this.Text            = ar ? "\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0627\u0644\u0639\u0645\u0644\u0629" : "Currency Settings";
-            this.Size            = new Size(700, 500);
-            this.StartPosition   = FormStartPosition.CenterParent;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox     = false;
-            this.BackColor       = ThemeConfig.BackgroundColor;
-            this.Font            = ThemeConfig.StandardFont;
+            // Adaptive sizing handled by BaseModalForm.OnLoad
+            this.TitleText = ar ? "إعدادات العملة" : "Currency Settings";
 
-            // ─── Title ────────────────────────────────────────────────────
-            Label lblTitle = ThemeConfig.CreateStandardHeader(ar ? "\u0627\u0644\u0639\u0645\u0644\u0627\u062A \u0648\u0623\u0633\u0639\u0627\u0631 \u0627\u0644\u0635\u0631\u0641" : "Currency & Exchange Rates");
-            lblTitle.Location = new Point(20, 16);
-            this.Controls.Add(lblTitle);
+            this.SuspendLayout();
 
-            // ─── Subtitle ─────────────────────────────────────────────────
-            Label lblSub = new Label
+            TableLayoutPanel tlpMain = new TableLayoutPanel
             {
-                Text      = ar ? "\u0627\u0644\u0623\u0633\u0639\u0627\u0631 \u0628\u0627\u0644\u0646\u0633\u0628\u0629 \u0644\u0644\u062F\u0648\u0644\u0627\u0631. \u0627\u0646\u0642\u0631 \u062A\u062D\u062F\u064A\u062B \u0644\u062C\u0644\u0628 \u0623\u062D\u062F\u062B \u0627\u0644\u0623\u0633\u0639\u0627\u0631." : "Rates are relative to USD. Click Refresh to fetch live rates.",
-                Font      = ThemeConfig.StandardFont,
-                ForeColor = ThemeConfig.SecondaryColor,
-                Location  = new Point(22, 55),
-                AutoSize  = true
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 4,
+                Padding = new Padding(25)
             };
-            this.Controls.Add(lblSub);
+            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 90F)); // Header
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F)); // Status
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Grid
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F)); // Info
 
-            // ─── Refresh button ───────────────────────────────────────────
+            // ─── Header ──────────────────────────────────────────────────
+            TableLayoutPanel tlpHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1 };
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160F));
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200F));
+
+            tlpHeader.Controls.Add(new Control(), 0, 0); // Spacer
+
+            Button btnAdd = new ModernButton
+            {
+                Text = ar ? "إضافة عملة" : "Add Currency",
+                Height = 45,
+                Dock = DockStyle.Top,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(0, 10, 10, 0)
+            };
+            ThemeConfig.ApplySecondaryButton(btnAdd);
+            btnAdd.Click += BtnAdd_Click;
+            tlpHeader.Controls.Add(btnAdd, 1, 0);
+
             btnRefresh = new ModernButton
             {
-                Text      = ar ? "\u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0623\u0633\u0639\u0627\u0631" : "Refresh Live Rates",
-                Size      = new Size(175, 38),
-                Location  = new Point(490, 38), // Aligned with table right edge
-                Cursor    = Cursors.Hand
+                Text = ar ? "تحديث الأسعار" : "Refresh Live Rates",
+                Height = 45,
+                Dock = DockStyle.Top,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(0, 10, 0, 0)
             };
             ThemeConfig.ApplyPrimaryButton(btnRefresh);
             btnRefresh.Click += BtnRefresh_Click;
-            this.Controls.Add(btnRefresh);
+            tlpHeader.Controls.Add(btnRefresh, 2, 0);
+
+            tlpMain.Controls.Add(tlpHeader, 0, 0);
 
             // ─── Status label ─────────────────────────────────────────────
             lblStatus = new Label
             {
-                Location  = new Point(22, 85),
-                AutoSize  = true,
+                Dock = DockStyle.Fill,
+                AutoSize = true,
                 ForeColor = ThemeConfig.SecondaryColor,
-                Font      = new Font("Segoe UI", 8f, FontStyle.Italic)
+                Font = new Font("Segoe UI", 8f, FontStyle.Italic),
+                TextAlign = ContentAlignment.BottomLeft
             };
-            this.Controls.Add(lblStatus);
+            tlpMain.Controls.Add(lblStatus, 0, 1);
 
             // ─── Grid ─────────────────────────────────────────────────────
-            Panel pnlCard = new Panel
-            {
-                Location  = new Point(20, 110),
-                Size      = new Size(645, 240),
-                BackColor = Color.White
-            };
-            pnlCard.Paint += (s, e) =>
-            {
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-                    e.Graphics.DrawRectangle(pen, 0, 0, pnlCard.Width - 1, pnlCard.Height - 1);
-            };
-            this.Controls.Add(pnlCard);
-
             dgvRates = new DataGridView
             {
-                Dock                  = DockStyle.Fill,
-                AllowUserToAddRows    = false,
-                RowHeadersVisible     = false,
-                SelectionMode         = DataGridViewSelectionMode.FullRowSelect,
-                BackgroundColor       = Color.White,
-                BorderStyle           = BorderStyle.None,
-                AutoGenerateColumns   = false,
-                AutoSizeColumnsMode   = DataGridViewAutoSizeColumnsMode.Fill
+                Dock = DockStyle.Fill,
+                AllowUserToAddRows = false,
+                RowHeadersVisible = false,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                BackgroundColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle,
+                AutoGenerateColumns = false,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
             };
             dgvRates.DataError += (s, e) => { e.ThrowException = false; };
             ThemeConfig.ApplyGridTheme(dgvRates);
 
-            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "code",         HeaderText = ar ? "\u0627\u0644\u0631\u0645\u0632" : "Code",        DataPropertyName = "code",         Width = 60, ReadOnly = true });
-            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "name",         HeaderText = ar ? "\u0627\u0644\u0627\u0633\u0645" : "Name",        DataPropertyName = "name",         AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
-            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "symbol",       HeaderText = ar ? "\u0627\u0644\u0639\u0644\u0627\u0645\u0629" : "Symbol",      DataPropertyName = "symbol",       Width = 70, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
-            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate_vs_usd",  HeaderText = ar ? "\u0627\u0644\u0633\u0639\u0631 \u0645\u0642\u0627\u0628\u0644 USD" : "Rate vs USD", DataPropertyName = "rate_vs_usd",  Width = 130, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
-            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "last_updated", HeaderText = ar ? "\u0622\u062E\u0631 \u062A\u062D\u062F\u064A\u062B" : "Last Updated",DataPropertyName = "last_updated",  Width = 150, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "g" } });
+            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "code", HeaderText = ar ? "الرمز" : "Code", DataPropertyName = "code", Width = 60, ReadOnly = true });
+            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "name", HeaderText = ar ? "الاسم" : "Name", DataPropertyName = "name", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = false });
+            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "symbol", HeaderText = ar ? "العلامة" : "Symbol", DataPropertyName = "symbol", Width = 70, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
+            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate_vs_usd", HeaderText = ar ? "السعر مقابل USD" : "Rate vs USD", DataPropertyName = "rate_vs_usd", Width = 130, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
+            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "last_updated", HeaderText = ar ? "آخر تحديث" : "Last Updated", DataPropertyName = "last_updated", Width = 150, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "g" } });
 
-            pnlCard.Controls.Add(dgvRates);
+            // Context Menu for Deletion
+            ContextMenuStrip cms = new ContextMenuStrip();
+            var tsmiDelete = new ToolStripMenuItem(ar ? "حذف" : "Delete");
+            tsmiDelete.Click += (s, e) => {
+                if (dgvRates.CurrentRow != null) {
+                    string code = dgvRates.CurrentRow.Cells["code"].Value.ToString();
+                    if (code == "USD") {
+                        MessageHelper.ShowWarning(ar ? "لا يمكن حذف العملة الأساسية (USD)" : "Cannot delete base currency (USD)");
+                        return;
+                    }
+                    if (MessageHelper.ShowConfirm(ar ? $"هل أنت متأكد من حذف {code}؟" : $"Are you sure you want to delete {code}?")) {
+                        DatabaseHelper.ExecuteNonQuery($"DELETE FROM currency_rates WHERE code = '{code}'");
+                        CurrencyService.LoadRatesFromDb();
+                        LoadRates();
+                    }
+                }
+            };
+            cms.Items.Add(tsmiDelete);
+            dgvRates.ContextMenuStrip = cms;
+
+            tlpMain.Controls.Add(dgvRates, 0, 2);
 
             // ─── Info box ─────────────────────────────────────────────────
             Label lblInfo = new Label
             {
-                Text      = ar ? "\u064A\u0645\u0643\u0646\u0643 \u062A\u0639\u062F\u064A\u0644 '\u0627\u0644\u0633\u0639\u0631 \u0645\u0642\u0627\u0628\u0644 USD' \u064A\u062F\u0648\u064A\u0627\u064B \u0648\u0627\u0636\u063A\u0637 Enter \u0644\u0644\u062D\u0641\u0638." : "You can manually edit the 'Rate vs USD' column and press Enter to save.",
-                Location  = new Point(22, 360),
-                Size      = new Size(645, 24),
-                Font      = new Font("Segoe UI", 8.5f, FontStyle.Italic),
-                ForeColor = ThemeConfig.SecondaryColor
+                Text = ar 
+                    ? "الأسعار بالنسبة للدولار. يمكنك تعديل الحقول واضغط Enter للحفظ. انقر بزر الماوس الأيمن للحذف." 
+                    : "Rates are relative to USD. You can edit cells and press Enter. Right-click to delete.",
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
+                ForeColor = ThemeConfig.SecondaryColor,
+                TextAlign = ContentAlignment.MiddleLeft
             };
-            this.Controls.Add(lblInfo);
+            tlpMain.Controls.Add(lblInfo, 0, 3);
 
-            // ─── Save / Close buttons ─────────────────────────────────────
-            Button btnSave = new ModernButton
-            {
-                Text      = ar ? "\u062D\u0641\u0638 \u0627\u0644\u0623\u0633\u0639\u0627\u0631 \u0627\u0644\u064A\u062F\u0648\u064A\u0629" : "Save Manual Rates",
-                Size      = new Size(160, 38),
-                Location  = new Point(20, 390),
-                Cursor    = Cursors.Hand
-            };
-            ThemeConfig.ApplyPrimaryButton(btnSave);
-            btnSave.BackColor = ThemeConfig.SuccessColor; // Override color to green for save
-            btnSave.Click += BtnSave_Click;
-            this.Controls.Add(btnSave);
+            this.ContentPanel.Controls.Add(tlpMain);
 
-            Button btnClose = new ModernButton
-            {
-                Text      = ar ? "\u0625\u063A\u0644\u0627\u0642" : "Close",
-                Size      = new Size(90, 38),
-                Location  = new Point(575, 390),
-                Cursor    = Cursors.Hand,
-                DialogResult = DialogResult.Cancel
-            };
-            ThemeConfig.ApplySecondaryButton(btnClose);
-            this.Controls.Add(btnClose);
+            SetFooterButtons(
+                ar ? "حفظ التعديلات" : "Save Changes",
+                ar ? "إغلاق" : "Close",
+                BtnSave_Click,
+                (s, e) => this.Close()
+            );
+
+            this.ResumeLayout(false);
+            this.PerformLayout();
+        }
+
+        private void BtnAdd_Click(object sender, EventArgs e)
+        {
+            bool ar = LocalizationManager.IsArabic;
+            string code = Microsoft.VisualBasic.Interaction.InputBox(ar ? "أدخل رمز العملة (مثلاً SAR):" : "Enter Currency Code (e.g., SAR):", ar ? "إضافة عملة" : "Add Currency", "").ToUpper();
+            if (string.IsNullOrWhiteSpace(code) || code.Length > 10) return;
+
+            // Check if exists
+            var check = DatabaseHelper.ExecuteScalar<int>($"SELECT COUNT(*) FROM currency_rates WHERE code = '{code}'");
+            if (Convert.ToInt32(check) > 0) {
+                MessageHelper.ShowWarning(ar ? "هذه العملة موجودة بالفعل" : "This currency already exists");
+                return;
+            }
+
+            string name = Microsoft.VisualBasic.Interaction.InputBox(ar ? "أدخل اسم العملة:" : "Enter Currency Name:", ar ? "إضافة عملة" : "Add Currency", code);
+            string symbol = Microsoft.VisualBasic.Interaction.InputBox(ar ? "أدخل رمز العملة:" : "Enter Currency Symbol:", ar ? "إضافة عملة" : "Add Currency", "$");
+
+            DatabaseHelper.ExecuteNonQuery($"INSERT INTO currency_rates (code, name, symbol, rate_vs_usd) VALUES ('{code}', '{name}', '{symbol}', 1)");
+            CurrencyService.LoadRatesFromDb();
+            LoadRates();
         }
 
         private void LoadRates()
@@ -165,11 +201,11 @@ namespace GenericInventorySystem.Forms
                         break;
                     }
                 }
-                lblStatus.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? $"\u0622\u062E\u0631 \u062A\u062D\u062F\u064A\u062B: {lastUpdate}" : $"Last rate update: {lastUpdate}";
+                lblStatus.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? $"آخر تحديث: {lastUpdate}" : $"Last rate update: {lastUpdate}";
             }
             catch (Exception ex)
             {
-                lblStatus.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? $"\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u062C\u0644\u0628: {ex.Message}" : "Could not load rates: " + ex.Message;
+                lblStatus.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? $"لم يتم الجلب: {ex.Message}" : "Could not load rates: " + ex.Message;
             }
         }
 
@@ -177,9 +213,9 @@ namespace GenericInventorySystem.Forms
         {
             bool ar = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
             btnRefresh.Enabled = false;
-            btnRefresh.Text    = ar ? "\u062C\u0627\u0631\u064A \u0627\u0644\u062C\u0644\u0628..." : "Fetching...";
+            btnRefresh.Text    = ar ? "جاري الجلب..." : "Fetching...";
             lblStatus.ForeColor = ThemeConfig.SecondaryColor;
-            lblStatus.Text     = ar ? "\u062C\u0627\u0631\u064A \u0627\u0644\u0627\u062A\u0635\u0627\u0644 \u0628\u062E\u062F\u0645\u0629 \u0627\u0644\u0623\u0633\u0639\u0627\u0631..." : "Connecting to exchange rate service...";
+            lblStatus.Text     = ar ? "جاري الاتصال بخدمة الأسعار..." : "Connecting to exchange rate service...";
 
             var rates = await CurrencyService.FetchLiveRatesAsync();
 
@@ -188,45 +224,39 @@ namespace GenericInventorySystem.Forms
                 CurrencyService.SaveRatesToDb(rates);
                 LoadRates();
                 lblStatus.ForeColor = ThemeConfig.SuccessColor;
-                lblStatus.Text      = ar ? $"\u062A\u0645 \u0627\u0644\u062A\u062D\u062F\u064A\u062B: {DateTime.Now:g}" : $"Rates updated at {DateTime.Now:g}";
+                lblStatus.Text      = ar ? $"تم التحديث: {DateTime.Now:g}" : $"Rates updated at {DateTime.Now:g}";
             }
             else
             {
                 lblStatus.ForeColor = ThemeConfig.DangerColor;
-                lblStatus.Text      = ar ? "\u062A\u0639\u0630\u0631 \u0627\u0644\u0627\u062A\u0635\u0627\u0644. \u064A\u062A\u0645 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u0623\u0633\u0639\u0627\u0631 \u0627\u0644\u0645\u062E\u0632\u0646\u0629." : "Could not reach server. Using cached rates.";
+                lblStatus.Text      = ar ? "تعذر الاتصال. يتم استخدام الأسعار المخزنة." : "Could not reach server. Using cached rates.";
             }
 
             btnRefresh.Enabled = true;
-            btnRefresh.Text    = ar ? "\u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0623\u0633\u0639\u0627\u0631" : "Refresh Live Rates";
+            btnRefresh.Text    = ar ? "تحديث الأسعار" : "Refresh Live Rates";
         }
 
         private void BtnSave_Click(object sender, EventArgs e)
         {
-            // Commit any in-progress edit
             dgvRates.EndEdit();
-            if (dgvRates.BindingContext != null && dgvRates.DataSource != null)
-                dgvRates.BindingContext[dgvRates.DataSource].EndCurrentEdit();
-
-            var updated = new Dictionary<string, decimal>();
             foreach (DataGridViewRow row in dgvRates.Rows)
             {
                 if (row.IsNewRow) continue;
                 string code = row.Cells["code"].Value?.ToString();
-                if (string.IsNullOrEmpty(code)) continue;
+                string name = row.Cells["name"].Value?.ToString();
+                string symbol = row.Cells["symbol"].Value?.ToString();
+                
                 if (decimal.TryParse(row.Cells["rate_vs_usd"].Value?.ToString(),
                     System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.CurrentCulture, out decimal rate))
                 {
-                    updated[code] = rate;
+                    CurrencyService.UpdateCurrency(code, name, symbol, rate);
                 }
             }
-
-            if (updated.Count > 0)
-            {
-                CurrencyService.SaveRatesToDb(updated);
-                lblStatus.ForeColor = ThemeConfig.SuccessColor;
-                lblStatus.Text      = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? $"\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0623\u0633\u0639\u0627\u0631 \u0627\u0644\u064A\u062F\u0648\u064A\u0629: {DateTime.Now:g}" : $"Manual rates saved at {DateTime.Now:g}";
-            }
+            
+            lblStatus.ForeColor = ThemeConfig.SuccessColor;
+            lblStatus.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? "تم حفظ جميع التعديلات" : "All changes saved successfully";
+            LoadRates();
         }
     }
 }

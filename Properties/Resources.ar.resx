@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -297,7 +297,94 @@
   <data name="WelcomeUser" xml:space="preserve"><value>Ù…Ø±Ø­Ø¨Ø§Ù‹ØŒ {0} ({1})</value></data>
   <data name="Msg_ConfirmLogout" xml:space="preserve"><value>Ù‡Ù„ ØªØ±ÙŠØ¯ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø®Ø±ÙˆØ¬ØŸ</value></data>
   <data name="Main_NoNotifications" xml:space="preserve">
-    <value>?? ???? ???????</value>
+    <value>لا توجد تنبيهات جديدة</value>
   </data>
+  <data name="Nav_Users" xml:space="preserve">
+    <value>إدارة المستخدمين</value>
+  </data>
+  <data name="POS_PayLater" xml:space="preserve"><value>الدفع لاحقاً</value></data>
+  <data name="AddSup_DueDate" xml:space="preserve">
+    <value>تاريخ الاستحقاق</value>
+  </data>
+  <data name="AddSup_ReminderDays" xml:space="preserve">
+    <value>تنبيه (قبل أيام)</value>
+  </data>
+  <data name="AddSup_EnableReminder" xml:space="preserve">
+    <value>تفعيل تنبيه الدفع</value>
+  </data>
+  <data name="colDueDate" xml:space="preserve">
+    <value>تاريخ الاستحقاق</value>
+  </data>
+  <data name="reminder_days" xml:space="preserve">
+    <value>أيام التنبيه</value>
+  </data>
+  <data name="AddCust_DueDate" xml:space="preserve">
+    <value>تاريخ الاستحقاق</value>
+  </data>
+  <data name="AddCust_ReminderDays" xml:space="preserve">
+    <value>تنبيه (قبل أيام)</value>
+  </data>
+  <data name="AddCust_EnableReminder" xml:space="preserve">
+    <value>تفعيل تنبيه الدفع</value>
+  </data>
+  <data name="Notif_LowStock" xml:space="preserve">
+    <value>تنبيه نقص المخزون</value>
+  </data>
+  <data name="Notif_Payment" xml:space="preserve">
+    <value>تنبيه الدفع</value>
+  </data>
+  <data name="Label_Customer" xml:space="preserve">
+    <value>عميل</value>
+  </data>
+  <data name="Label_Supplier" xml:space="preserve">
+    <value>مورد</value>
+  </data>
+  <data name="Notif_Overdue" xml:space="preserve">
+    <value>متأخر</value>
+  </data>
+  <data name="Notif_DueIn" xml:space="preserve">
+    <value>بعد {0} يوم</value>
+  </data>
+  <data name="Notif_LowStockMsg" xml:space="preserve">
+    <value>{0} قارب على النفاد ({1} متبقي)</value>
+  </data>
+  <data name="Notif_RecentOrder" xml:space="preserve">
+    <value>طلب حديث</value>
+  </data>
+  <data name="Notif_RecentOrderMsg" xml:space="preserve">
+    <value>طلب #{0} بواسطة {1} - {2}</value>
+  </data>
+  <data name="Notif_WalkIn" xml:space="preserve">
+    <value>عميل مباشر</value>
+  </data>
+  <data name="Notif_CustomerPaymentDue" xml:space="preserve">
+    <value>دفعة عميل مستحقة</value>
+  </data>
+  <data name="Notif_SupplierPaymentDue" xml:space="preserve">
+    <value>دفعة مورد مستحقة</value>
+  </data>
+  <data name="Tran_DueDateLabel" xml:space="preserve">
+    <value>تاريخ استحقاق الدفع</value>
+  </data>
+  <data name="Exp_Title" xml:space="preserve"><value>المصروفات الشهرية</value></data>
+  <data name="Exp_Add" xml:space="preserve"><value>إضافة مصروف</value></data>
+  <data name="Exp_Export" xml:space="preserve"><value>تصدير</value></data>
+  <data name="Exp_GridDescription" xml:space="preserve"><value>البيان</value></data>
+  <data name="Exp_GridAmount" xml:space="preserve"><value>المبلغ</value></data>
+  <data name="Exp_GridDate" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Exp_GridCategory" xml:space="preserve"><value>الفئة</value></data>
+  <data name="Exp_MsgReqDesc" xml:space="preserve"><value>يرجى إدخال وصف المصروف.</value></data>
+  <data name="Exp_MsgReqAmount" xml:space="preserve"><value>يرجى إدخال مبلغ صحيح.</value></data>
+  <data name="Exp_Title" xml:space="preserve"><value>المصاريف الشهرية</value></data>
+  <data name="Exp_Category" xml:space="preserve"><value>فئة المصاريف</value></data>
+  <data name="Exp_Date" xml:space="preserve"><value>تاريخ المصاريف</value></data>
+  <data name="Exp_Amount" xml:space="preserve"><value>المبلغ</value></data>
+  <data name="Exp_Description" xml:space="preserve"><value>الوصف</value></data>
+  <data name="Exp_Add" xml:space="preserve"><value>إضافة مصروف</value></data>
+  <data name="Exp_Delete" xml:space="preserve"><value>حذف مصروف</value></data>
+  <data name="Exp_ReqCategory" xml:space="preserve"><value>يرجى اختيار الفئة.</value></data>
+  <data name="Exp_ReqAmount" xml:space="preserve"><value>يرجى إدخال مبلغ صالح.</value></data>
+  <data name="Exp_ConfirmDelete" xml:space="preserve"><value>هل أنت متأكد أنك تريد حذف هذا المصروف؟</value></data>
+  <data name="POS_ReqCustomer" xml:space="preserve"><value>يرجى اختيار عميل لعملية البيع الآجل هذه.</value></data>
 </root>
 

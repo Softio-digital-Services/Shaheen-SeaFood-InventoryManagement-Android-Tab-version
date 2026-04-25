@@ -680,8 +680,13 @@ namespace GenericInventorySystem.Forms
 
                     string name = row.Cells["colName"].Value?.ToString() ?? "";
                     string sku = row.Cells["colSKU"].Value?.ToString() ?? "";
-                    int qty = int.Parse(row.Cells["colStock"].Value?.ToString() ?? "0");
-                    decimal price = decimal.Parse(row.Cells["colPrice"].Value?.ToString() ?? "0");
+                    
+                    object qtyVal = row.Cells["colStock"].Value;
+                    int qty = (qtyVal == null || qtyVal == DBNull.Value) ? 0 : Convert.ToInt32(qtyVal);
+                    
+                    object priceVal = row.Cells["colPrice"].Value;
+                    decimal price = (priceVal == null || priceVal == DBNull.Value) ? 0 : Convert.ToDecimal(priceVal);
+                    
                     string status = row.Cells["colStatus"].Value?.ToString() ?? "Active";
                     string barcode = row.Cells["colBarcode"].Value?.ToString() ?? "";
                     string location = row.Cells["colLocation"].Value?.ToString() ?? "";
@@ -689,7 +694,8 @@ namespace GenericInventorySystem.Forms
                     string image = row.Cells["part_image"].Value?.ToString() ?? "";
                     string category = row.Cells["colCategory"].Value?.ToString() ?? "";
                     
-                    int minStock = int.Parse(row.Cells["minimum_stock_level"].Value?.ToString() ?? "0");
+                    object minVal = row.Cells["minimum_stock_level"].Value;
+                    int minStock = (minVal == null || minVal == DBNull.Value) ? 0 : Convert.ToInt32(minVal);
 
                     using (AddPartForm form = new AddPartForm())
                     {
@@ -718,36 +724,56 @@ namespace GenericInventorySystem.Forms
 
         private void ShowAdjustmentDialog(int partId, string partName)
         {
-            BaseModalForm f = new BaseModalForm { TitleText = "Adjust Stock: " + partName, Size = new Size(400, 300) };
+            string title = (LocalizationManager.IsArabic ? "تعديل المخزون: " : "Adjust Stock: ") + partName;
+            BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(450, 420) };
             
-            Label lblInstr = new Label { Text = "Enter quantity to add (+) or subtract (-):", Location = new Point(20, 20), AutoSize = true, Font = ThemeConfig.StandardFont };
-            NumericUpDown numQty = new NumericUpDown { Location = new Point(20, 50), Width = 150, Minimum = -99999, Maximum = 99999, Font = ThemeConfig.SubHeaderFont };
+            TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 1, RowCount = 5, AutoSize = true, Padding = new Padding(10) };
+            tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
+
+            string instrText = LocalizationManager.IsArabic ? "أدخل الكمية للإضافة (+) أو الطرح (-):" : "Enter quantity to add (+) or subtract (-):";
+            Label lblInstr = new Label { Text = instrText, AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 10, 0, 5) };
+            NumericUpDown numQty = new NumericUpDown { Width = 200, Minimum = -99999, Maximum = 99999, Font = ThemeConfig.SubHeaderFont, Margin = new Padding(0, 0, 0, 20) };
             
-            Label lblReason = new Label { Text = "Reason:", Location = new Point(20, 100), AutoSize = true, Font = ThemeConfig.StandardFont };
-            TextBox txtReasonAdjust = new TextBox { Location = new Point(20, 130), Width = 340, Font = ThemeConfig.StandardFont };
+            string reasonLabelText = LocalizationManager.IsArabic ? "السبب:" : "Reason:";
+            Label lblReason = new Label { Text = reasonLabelText, AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 5) };
+            TextBox txtReasonAdjust = new TextBox { Width = 380, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 20), Multiline = true, Height = 80 };
             
-            Button btnSaveAdj = new ModernButton { Text = "Adjust", Location = new Point(240, 180), Size = new Size(120, 40) };
+            Button btnSaveAdj = new ModernButton { Text = LocalizationManager.IsArabic ? "تعديل" : "Adjust", Size = new Size(120, 40), Anchor = AnchorStyles.Right };
             ThemeConfig.ApplyPrimaryButton(btnSaveAdj);
             
             btnSaveAdj.Click += (s, e) => {
-                if (numQty.Value == 0) { MessageHelper.ShowWarning("Adjustment cannot be zero."); return; }
-                if (string.IsNullOrWhiteSpace(txtReasonAdjust.Text)) { MessageHelper.ShowWarning("Please provide a reason."); return; }
+                if (numQty.Value == 0) 
+                { 
+                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا يمكن أن يكون التعديل صفراً." : "Adjustment cannot be zero."); 
+                    return; 
+                }
+                if (string.IsNullOrWhiteSpace(txtReasonAdjust.Text)) 
+                { 
+                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يرجى تقديم سبب." : "Please provide a reason."); 
+                    return; 
+                }
                 
                 try {
                     _inventoryService.AdjustStock(partId, (int)numQty.Value, txtReasonAdjust.Text);
-                    MessageHelper.ShowSuccess("Stock adjusted successfully.");
+                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم تعديل المخزون بنجاح!" : "Stock adjusted successfully.");
                     f.DialogResult = DialogResult.OK;
                     f.Close();
                     LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
                 } catch(Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
             };
 
-            f.ContentPanel.Controls.Add(lblInstr);
-            f.ContentPanel.Controls.Add(numQty);
-            f.ContentPanel.Controls.Add(lblReason);
-            f.ContentPanel.Controls.Add(txtReasonAdjust);
-            f.ContentPanel.Controls.Add(btnSaveAdj);
+            tlp.Controls.Add(lblInstr, 0, 0);
+            tlp.Controls.Add(numQty, 0, 1);
+            tlp.Controls.Add(lblReason, 0, 2);
+            tlp.Controls.Add(txtReasonAdjust, 0, 3);
+            tlp.Controls.Add(btnSaveAdj, 0, 4);
             
+            f.ContentPanel.Controls.Add(tlp);
+            LocalizationManager.ApplyRTL(f);
             f.ShowDialog();
         }
         

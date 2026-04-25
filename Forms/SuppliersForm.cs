@@ -5,6 +5,8 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
 using GenericInventorySystem.Data;
+using GenericInventorySystem.Helpers;
+using GenericInventorySystem.Services;
 
 namespace GenericInventorySystem.Forms
 {
@@ -59,6 +61,7 @@ namespace GenericInventorySystem.Forms
                 if (dgvSuppliers.Columns.Contains("colPhone")) dgvSuppliers.Columns["colPhone"].HeaderText = L("Sup_GridPhone");
                 if (dgvSuppliers.Columns.Contains("colEmail")) dgvSuppliers.Columns["colEmail"].HeaderText = L("Sup_GridEmail");
                 if (dgvSuppliers.Columns.Contains("colActiveOrders")) dgvSuppliers.Columns["colActiveOrders"].HeaderText = L("Sup_GridActiveOrders");
+                if (dgvSuppliers.Columns.Contains("colDueDate")) dgvSuppliers.Columns["colDueDate"].HeaderText = L("AddSup_DueDate") ?? "Due Date";
                 if (dgvSuppliers.Columns.Contains("colActions")) dgvSuppliers.Columns["colActions"].HeaderText = L("Sup_GridActions");
             }
         }
@@ -221,14 +224,20 @@ namespace GenericInventorySystem.Forms
                 }
                 if (checkedIds.Count == 0)
                 {
-                    MessageHelper.ShowWarning("Please select at least one supplier to delete.");
+                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يرجى تحديد مورد واحد على الأقل لحذفه." : "Please select at least one supplier to delete.");
                     return;
                 }
-                if (MessageHelper.ConfirmAction($"Are you sure you want to delete {checkedIds.Count} selected suppliers?"))
+                string confirmMsg = LocalizationManager.IsArabic 
+                    ? $"هل أنت متأكد من رغبتك في حذف {checkedIds.Count} من الموردين المحددين؟" 
+                    : $"Are you sure you want to delete {checkedIds.Count} selected suppliers?";
+                if (MessageHelper.ConfirmAction(confirmMsg))
                 {
                     Services.SupplierService supplierService = new Services.SupplierService();
                     foreach(int i in checkedIds) supplierService.DeleteSupplier(i);
-                    MessageHelper.ShowSuccess($"{checkedIds.Count} suppliers deleted successfully.");
+                    string successMsg = LocalizationManager.IsArabic 
+                        ? $"تم حذف {checkedIds.Count} من الموردين بنجاح." 
+                        : $"{checkedIds.Count} suppliers deleted successfully.";
+                    MessageHelper.ShowSuccess(successMsg);
                     LoadData();
                 }
             };
@@ -303,10 +312,14 @@ namespace GenericInventorySystem.Forms
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPhone", HeaderText = "Phone", DataPropertyName = "phone", Width = 120, ReadOnly = true });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmail", HeaderText = "Email", DataPropertyName = "email", Width = 200, ReadOnly = true });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActiveOrders", HeaderText = "Active Orders", DataPropertyName = "active_orders", Width = 100, ReadOnly = true });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colDueDate", HeaderText = "Due Date", DataPropertyName = "payment_due_date", Width = 100, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "yyyy-MM-dd" } });
             dgvSuppliers.Columns.Add(new DataGridViewButtonColumn { Name = "colActions", HeaderText = "Actions", Width = 100, ReadOnly = true });
 
-            // Hidden ID
+            // Hidden Fields
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "ID", DataPropertyName = "id", Visible = false });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "reminder_days", DataPropertyName = "reminder_days", Visible = false });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "address", DataPropertyName = "address", Visible = false });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "type", DataPropertyName = "type", Visible = false });
 
             panelGrid.Controls.Add(this.dgvSuppliers);
 
@@ -374,14 +387,21 @@ namespace GenericInventorySystem.Forms
                     return;
                 }
 
-                string name = dgvSuppliers.Rows[e.RowIndex].Cells["colCompany"].Value.ToString();
-                string phone = dgvSuppliers.Rows[e.RowIndex].Cells["colPhone"].Value.ToString();
-                string email = dgvSuppliers.Rows[e.RowIndex].Cells["colEmail"].Value.ToString();
+                string name = dgvSuppliers.Rows[e.RowIndex].Cells["colCompany"].Value?.ToString() ?? "";
+                string phone = dgvSuppliers.Rows[e.RowIndex].Cells["colPhone"].Value?.ToString() ?? "";
+                string email = dgvSuppliers.Rows[e.RowIndex].Cells["colEmail"].Value?.ToString() ?? "";
                 string contact = dgvSuppliers.Rows[e.RowIndex].Cells["colContact"].Value?.ToString() ?? "";
-                AddSupplierForm form = new AddSupplierForm(id, name, phone, email, "", "Company", contact);
+                string address = dgvSuppliers.Rows[e.RowIndex].Cells["address"].Value?.ToString() ?? "";
+                string type = dgvSuppliers.Rows[e.RowIndex].Cells["type"].Value?.ToString() ?? "Company";
+                DateTime? dueDate = dgvSuppliers.Rows[e.RowIndex].Cells["colDueDate"].Value as DateTime?;
+                
+                object remVal = dgvSuppliers.Rows[e.RowIndex].Cells["reminder_days"].Value;
+                int reminderDays = (remVal == null || remVal == DBNull.Value) ? 0 : Convert.ToInt32(remVal);
+
+                AddSupplierForm form = new AddSupplierForm(id, name, phone, email, address, type, dueDate, reminderDays, contact);
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    SupplierData.UpdateSupplier(id, form.SupplierName, form.Phone, form.Email, form.Address, form.SupplierType, form.ContactPerson);
+                    SupplierData.UpdateSupplier(id, form.SupplierName, form.Phone, form.Email, form.Address, form.SupplierType, form.ContactPerson, form.DueDate, form.ReminderDays);
                     LoadData();
                 }
             }
@@ -394,7 +414,8 @@ namespace GenericInventorySystem.Forms
                     return;
                 }
 
-                if (MessageHelper.ShowConfirm("Are you sure you want to delete this supplier?"))
+                string deleteConfirm = LocalizationManager.IsArabic ? "هل أنت متأكد من رغبتك في حذف هذا المورد؟" : "Are you sure you want to delete this supplier?";
+                if (MessageHelper.ConfirmAction(deleteConfirm))
                 {
                     SupplierData.DeleteSupplier(id);
                     LoadData();
@@ -451,7 +472,7 @@ namespace GenericInventorySystem.Forms
         {
             try
             {
-                string sql = "SELECT id as ID, supplier_name, contact_person, phone, email, 0 as active_orders FROM suppliers WHERE date_deleted IS NULL";
+                string sql = "SELECT id, supplier_name, contact_person, phone, email, address, type, 0 as active_orders, payment_due_date, reminder_days FROM suppliers WHERE date_deleted IS NULL";
                 
                 if (!string.IsNullOrEmpty(search))
                 {
@@ -463,10 +484,10 @@ namespace GenericInventorySystem.Forms
                 DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
                 dgvSuppliers.DataSource = dt;
             }
-            catch(Exception ex) 
-            { 
-                 MessageHelper.ShowError("Error loading data: " + ex.Message); 
-            }
+             catch(Exception ex) 
+             { 
+                  MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في تحميل البيانات: " : "Error loading data: ") + ex.Message); 
+             }
         }
 
         private void BtnAdd_Click(object sender, EventArgs e)
@@ -474,14 +495,14 @@ namespace GenericInventorySystem.Forms
             AddSupplierForm form = new AddSupplierForm();
             if(form.ShowDialog() == DialogResult.OK)
             {
-                SupplierData.AddSupplier(form.SupplierName, form.Phone, form.Email, form.Address, form.SupplierType, form.ContactPerson);
+                SupplierData.AddSupplier(form.SupplierName, form.Phone, form.Email, form.Address, form.SupplierType, form.ContactPerson, form.DueDate, form.ReminderDays);
                 LoadData();
             }
         }
 
         private void BtnDetails_Click(object sender, EventArgs e)
         {
-            if(dgvSuppliers.SelectedRows.Count == 0) { MessageHelper.ShowInfo("Select a supplier."); return; }
+            if(dgvSuppliers.SelectedRows.Count == 0) { MessageHelper.ShowInfo(LocalizationManager.IsArabic ? "يرجى تحديد مورد." : "Select a supplier."); return; }
             int id = Convert.ToInt32(dgvSuppliers.SelectedRows[0].Cells["ID"].Value);
             string name = dgvSuppliers.SelectedRows[0].Cells["colCompany"].Value.ToString();
             var form = new SupplierDetailsForm(id, name);
@@ -515,7 +536,7 @@ namespace GenericInventorySystem.Forms
                     
                     if (dt == null || dt.Rows.Count == 0)
                     {
-                        MessageHelper.ShowWarning("No data to export.");
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات للتصدير." : "No data to export.");
                         return;
                     }
 
@@ -547,17 +568,20 @@ namespace GenericInventorySystem.Forms
 
                     if (Helpers.ImportExportHelper.ExportToCsv(exportDt, saveDialog.FileName))
                     {
-                        MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} suppliers to CSV successfully!");
+                        string successMsg = LocalizationManager.IsArabic 
+                            ? $"تم تصدير {exportDt.Rows.Count} من الموردين إلى ملف CSV بنجاح!" 
+                            : $"Exported {exportDt.Rows.Count} suppliers to CSV successfully!";
+                        MessageHelper.ShowSuccess(successMsg);
                     }
                     else
                     {
-                        MessageHelper.ShowError("Failed to export data.");
+                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "فشل تصدير البيانات." : "Failed to export data.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError($"Export error: {ex.Message}");
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في التصدير: " : "Export error: ") + ex.Message);
             }
         }
 
@@ -577,7 +601,7 @@ namespace GenericInventorySystem.Forms
                     
                     if (dt == null || dt.Rows.Count == 0)
                     {
-                        MessageHelper.ShowWarning("No data to export.");
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات للتصدير." : "No data to export.");
                         return;
                     }
 
@@ -609,17 +633,20 @@ namespace GenericInventorySystem.Forms
 
                     if (Helpers.ImportExportHelper.ExportToExcel(exportDt, saveDialog.FileName, "Suppliers"))
                     {
-                        MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} suppliers to Excel successfully!");
+                        string successMsg = LocalizationManager.IsArabic 
+                            ? $"تم تصدير {exportDt.Rows.Count} من الموردين إلى ملف Excel بنجاح!" 
+                            : $"Exported {exportDt.Rows.Count} suppliers to Excel successfully!";
+                        MessageHelper.ShowSuccess(successMsg);
                     }
                     else
                     {
-                        MessageHelper.ShowError("Failed to export data.");
+                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "فشل تصدير البيانات." : "Failed to export data.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError($"Export error: {ex.Message}");
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في التصدير: " : "Export error: ") + ex.Message);
             }
         }
 
@@ -635,15 +662,17 @@ namespace GenericInventorySystem.Forms
                 {
                     DataTable dt = Helpers.ImportExportHelper.ImportFromCsv(openDialog.FileName);
                     
-                    if (dt == null || dt.Rows.Count == 0)
+                     if (dt == null || dt.Rows.Count == 0)
                     {
-                        MessageHelper.ShowWarning("No data found in the file.");
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات في الملف." : "No data found in the file.");
                         return;
                     }
 
-                    if (!dt.Columns.Contains("SupplierName"))
+                     if (!dt.Columns.Contains("SupplierName"))
                     {
-                        MessageHelper.ShowError("Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes");
+                        MessageHelper.ShowError(LocalizationManager.IsArabic 
+                            ? "تنسيق ملف غير صالح. الأعمدة المطلوبة: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes" 
+                            : "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes");
                         return;
                     }
 
@@ -689,12 +718,15 @@ namespace GenericInventorySystem.Forms
                     }
 
                     LoadData();
-                    MessageHelper.ShowSuccess($"Import complete!\nImported: {imported}\nSkipped: {skipped}");
+                    string completeMsg = LocalizationManager.IsArabic 
+                        ? $"اكتمل الاستيراد!\nتم استيراد: {imported}\nتم تخطي: {skipped}" 
+                        : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
+                    MessageHelper.ShowSuccess(completeMsg);
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError($"Import error: {ex.Message}");
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في الاستيراد: " : "Import error: ") + ex.Message);
             }
         }
 
@@ -710,15 +742,17 @@ namespace GenericInventorySystem.Forms
                 {
                     DataTable dt = Helpers.ImportExportHelper.ImportFromExcel(openDialog.FileName);
                     
-                    if (dt == null || dt.Rows.Count == 0)
+                     if (dt == null || dt.Rows.Count == 0)
                     {
-                        MessageHelper.ShowWarning("No data found in the file.");
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات في الملف." : "No data found in the file.");
                         return;
                     }
 
-                    if (!dt.Columns.Contains("SupplierName"))
+                     if (!dt.Columns.Contains("SupplierName"))
                     {
-                        MessageHelper.ShowError("Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes");
+                        MessageHelper.ShowError(LocalizationManager.IsArabic 
+                            ? "تنسيق ملف غير صالح. الأعمدة المطلوبة: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes" 
+                            : "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes");
                         return;
                     }
 
@@ -764,7 +798,10 @@ namespace GenericInventorySystem.Forms
                     }
 
                     LoadData();
-                    MessageHelper.ShowSuccess($"Import complete!\nImported: {imported}\nSkipped: {skipped}");
+                    string completeMsg = LocalizationManager.IsArabic 
+                        ? $"اكتمل الاستيراد!\nتم استيراد: {imported}\nتم تخطي: {skipped}" 
+                        : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
+                    MessageHelper.ShowSuccess(completeMsg);
                 }
             }
             catch (Exception ex)

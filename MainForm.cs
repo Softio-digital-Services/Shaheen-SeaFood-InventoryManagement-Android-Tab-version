@@ -54,7 +54,7 @@ namespace GenericInventorySystem
 
         private void LoadPlugins()
         {
-            var pnlNav = this.Controls.Find("pnlNav", true).FirstOrDefault() as FlowLayoutPanel;
+            var pnlNav = this.Controls.Find("pnlNav", true).FirstOrDefault() as Panel;
             _pluginContext = new Helpers.Plugins.PluginContext
             {
                 ConnectionString = DatabaseConfig.ConnectionString,
@@ -79,7 +79,7 @@ namespace GenericInventorySystem
             Helpers.Plugins.PluginManager.DiscoverAndLoad(_pluginContext);
         }
 
-        private void AddPluginTab(string tabTitle, string iconName, Func<UserControl> contentFactory, FlowLayoutPanel pnlNav)
+        private void AddPluginTab(string tabTitle, string iconName, Func<UserControl> contentFactory, Panel pnlNav)
         {
             UserControl cachedContent = null;
             Button btn = CreateNavigationButton(tabTitle, iconName, (s, e) => {
@@ -92,7 +92,7 @@ namespace GenericInventorySystem
             });
             btn.Dock = DockStyle.Top;
             btn.Margin = new Padding(0);
-            if (pnlNav != null) pnlNav.Controls.Add(btn);
+            if (pnlNav != null) { pnlNav.Controls.Add(btn); btn.BringToFront(); }
         }
 
         private void AddPluginMenuItem(string group, Helpers.Plugins.PluginMenuItem item)
@@ -140,6 +140,7 @@ namespace GenericInventorySystem
             UpdateNavText("btnCurrencies", "Nav_Currencies");
             UpdateNavText("btnPO", "Nav_PurchaseOrders");
             UpdateNavText("btnExpenses", "Nav_Expenses");
+            UpdateNavText("btnUsers", "Nav_Users");
 
             button3.Text = "  " + L("Nav_Logout");
             if(itemAddUser != null) itemAddUser.Text = L("Nav_AddUser");
@@ -169,13 +170,23 @@ namespace GenericInventorySystem
         private void InitializeNavigation()
         {
             ThemeConfig.ApplyFormIcon(this);
-            FlowLayoutPanel pnlNav = new FlowLayoutPanel { Name = "pnlNav", Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(0), BackColor = Color.Transparent };
+            Panel pnlNav = new Panel { Name = "pnlNav", Dock = DockStyle.Fill, Padding = new Padding(0), BackColor = Color.Transparent, AutoScroll = true };
             panel2.Controls.Add(pnlNav);
             pnlNav.BringToFront();
 
-            PictureBox pbSidebarLogo = new PictureBox { Size = new Size(140, 140), SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding((panel2.Width - 140) / 2, 20, 0, 20) };
+            PictureBox pbSidebarLogo = new PictureBox { Name = "pbSidebarLogo", Size = new Size(140, 160), SizeMode = PictureBoxSizeMode.Zoom, Dock = DockStyle.Top, Padding = new Padding(0, 20, 0, 20) };
             try { string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png"); if(System.IO.File.Exists(logoPath)) pbSidebarLogo.Image = Image.FromFile(logoPath); } catch { }
             pnlNav.Controls.Add(pbSidebarLogo);
+            pbSidebarLogo.BringToFront(); // Highest index in Dock=Top is top, index 0 is bottom. No, wait. 
+            // In WinForms Dock=Top: The control with the HIGHEST z-order index is at the top.
+            // BringToFront sets index to 0. SendToBack sets to last.
+            // So for A to be above B: A should have higher index than B.
+            // A.SendToBack() makes it top if it's the first one. 
+            // Let's just use the simplest logic: Add them and BringToFront each.
+            // If I add Logo then BringToFront: Logo is index 0.
+            // If I add Dashboard then BringToFront: Dashboard is 0, Logo is 1.
+            // Now Logo (1) is ABOVE Dashboard (0).
+            // This is exactly what we want.
 
             // Dashboard - wrapped in try/catch so a DB error never crashes MainForm
             try
@@ -198,6 +209,7 @@ namespace GenericInventorySystem
             Dashboard_btn.Click += (s, e) => HighlightSelectedButton(Dashboard_btn);
 
             // Forms Setup
+            usersForm = InitializeForm<Forms.UsersForm>();
             partsForm = InitializeForm<Forms.PartsForm>();
             customersForm = InitializeForm<Forms.CustomersForm>();
             suppliersForm = InitializeForm<Forms.SuppliersForm>();
@@ -210,14 +222,16 @@ namespace GenericInventorySystem
 
             // Navigation Buttons
             Dashboard_btn.Height = 50;
-            Dashboard_btn.Width = pnlNav.Width;
+            Dashboard_btn.Width = 225; // Force exact width matching panel2
             Dashboard_btn.Margin = new Padding(0);
             Dashboard_btn.Dock = DockStyle.Top;
             Dashboard_btn.Text = "  Dashboard";
             Dashboard_btn.Image = ResizeImage(ThemeConfig.GetNuricon("dashboard"), 22, 22);
             ThemeConfig.ApplySidebarButtonIcon(Dashboard_btn, Dashboard_btn.Image, false);
             Dashboard_btn.Click += (s, e) => HighlightSelectedButton(Dashboard_btn);
+            Dashboard_btn.BringToFront(); // Place below logo
             pnlNav.Controls.Add(Dashboard_btn);
+            Dashboard_btn.BringToFront(); 
             
             bool isAdmin = UserSession.IsAdmin;
             bool isAccountant = UserSession.IsAccountant;
@@ -242,6 +256,7 @@ namespace GenericInventorySystem
             if (isAdmin)
             {
                 AddNavButton(pnlNav, "Quotations", "quotations", "btnQuotations", () => { quotationsForm.LoadQuotations(); ShowForm(quotationsForm); });
+                AddNavButton(pnlNav, "Users Management", "user", "btnUsers", () => ShowForm(usersForm));
             }
 
             ShowForm(dashboardForm);
@@ -254,21 +269,64 @@ namespace GenericInventorySystem
             return f;
         }
 
-        private void AddNavButton(FlowLayoutPanel pnl, string text, string icon, string name, Action clickAction) {
+        private void AddNavButton(Panel pnl, string text, string icon, string name, Action clickAction) {
             Button btn = CreateNavigationButton(text, icon, (s, e) => clickAction());
             btn.Name = name; btn.Dock = DockStyle.Top; btn.Margin = new Padding(0);
             pnl.Controls.Add(btn);
+            btn.BringToFront(); // Stack below previous items
         }
 
         private void RefineNavigationLayout()
         {
             panel2.Controls.Remove(label4); label4.Visible = false;
-            button3.Dock = DockStyle.Bottom; button3.Height = 45; button3.Text = "  Logout"; button3.ForeColor = ThemeConfig.DangerColor;
+            
+            // Re-order panel2 to ensure pnlBranding is NOT covered by pnlNav
+            Panel pnlNav = panel2.Controls.Find("pnlNav", true).FirstOrDefault() as Panel;
+            if(pnlNav != null) panel2.Controls.Remove(pnlNav);
+
+            // Create a dedicated branding panel at the bottom
+            Panel pnlBranding = new Panel { 
+                Name = "pnlBranding",
+                Dock = DockStyle.Bottom, 
+                Height = 140, 
+                BackColor = Color.Transparent,
+                Padding = new Padding(0)
+            };
+            panel2.Controls.Add(pnlBranding);
+            
+            // Now re-add pnlNav to fill the REMAINING space
+            if(pnlNav != null) {
+                panel2.Controls.Add(pnlNav);
+                pnlNav.Dock = DockStyle.Fill;
+                pnlNav.BringToFront();
+            }
+
+            // Logout Button - Moved into the branding panel
+            button3.Parent = pnlBranding;
+            button3.Dock = DockStyle.Top; 
+            button3.Height = 50; 
+            button3.Text = "  Logout"; 
+            button3.ForeColor = ThemeConfig.DangerColor;
             Image logoutIcon = ThemeConfig.GetNuricon("logout");
             if (logoutIcon != null) { button3.Image = ResizeImage(logoutIcon, 22, 22); button3.ImageAlign = ContentAlignment.MiddleLeft; button3.TextImageRelation = TextImageRelation.ImageBeforeText; }
             button3.TextAlign = ContentAlignment.MiddleLeft; button3.Padding = new Padding(15, 0, 0, 0); button3.Font = ThemeConfig.ButtonFont;
             button3.FlatAppearance.MouseOverBackColor = ThemeConfig.DangerLight;
-            button3.BringToFront();
+
+            // Softio Logo - Anchor to the absolute bottom of the branding panel
+            PictureBox pbSoftio = new PictureBox { 
+                Name = "pbSoftio",
+                Parent = pnlBranding,
+                Size = new Size(pnlBranding.Width, 80), 
+                SizeMode = PictureBoxSizeMode.Zoom, 
+                Dock = DockStyle.Bottom, 
+                Padding = new Padding(10),
+                Cursor = Cursors.Hand
+            };
+            try { 
+                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png"); 
+                if(System.IO.File.Exists(logoPath)) pbSoftio.Image = Image.FromFile(logoPath); 
+            } catch { }
+            
             SetupHeaderIcons();
         }
 
@@ -325,10 +383,13 @@ namespace GenericInventorySystem
             using (var f = new Forms.BaseModalForm())
             {
                 f.TitleText = title;
-                // Add header height to requested height to ensure content fits without scrolling
-                f.Size = new Size(width, height + 60); 
+                f.Width = width;
+                f.Height = height + 70; // Header offset
+                
                 control.Dock = DockStyle.Fill;
                 f.ContentPanel.Controls.Add(control);
+                
+                // BaseModalForm.OnLoad will call FitToContent() which will expand if needed
                 f.ShowDialog(this);
             }
         }
@@ -372,7 +433,12 @@ namespace GenericInventorySystem
             else {
                 foreach (var n in notifications) {
                     var item = new ToolStripMenuItem($"{n.Title}: {n.Message}") { Tag = n, Font = ThemeConfig.StandardFont, Image = ThemeConfig.GetNuricon(n.Type == "LowStock" ? "warning" : "check") };
-                    item.Click += (s, ev) => { if (n.Target == "btnInventory") ShowForm(partsForm); else ShowForm(dashboardForm); };
+                    item.Click += (s, ev) => { 
+                        if (n.Target == "btnInventory") ShowForm(partsForm); 
+                        else if (n.Target == "btnCustomers") ShowForm(customersForm);
+                        else if (n.Target == "btnSuppliers") ShowForm(suppliersForm);
+                        else ShowForm(dashboardForm); 
+                    };
                     menuNotifications.Items.Add(item);
                 }
             }
@@ -385,7 +451,8 @@ namespace GenericInventorySystem
         }
 
         private void RefreshNotificationBadge() {
-            int oldCount = _lowStockCount; _lowStockCount = _dashboardService.GetLowStockCount();
+            int oldCount = _lowStockCount; 
+            _lowStockCount = _dashboardService.GetLowStockCount() + _dashboardService.GetPaymentRemindersCount();
             if (oldCount != _lowStockCount && pbNotification != null) pbNotification.Invalidate();
         }
 
@@ -419,7 +486,7 @@ namespace GenericInventorySystem
         }
 
         private Button CreateNavigationButton(string text, string iconName, EventHandler clickHandler) {
-            SidebarButton btn = new SidebarButton { Height = 50, Width = 200, Text = "  " + text, FlatStyle = FlatStyle.Flat };
+            SidebarButton btn = new SidebarButton { Height = 50, Dock = DockStyle.Top, Text = "  " + text, FlatStyle = FlatStyle.Flat };
             Image icon = ThemeConfig.GetNuricon(iconName);
             if (icon != null) btn.Image = ResizeImage(icon, 22, 22);
             ThemeConfig.ApplySidebarButtonIcon(btn, btn.Image, false);
@@ -429,9 +496,19 @@ namespace GenericInventorySystem
 
         private Button selectedButton = null;
         private void HighlightSelectedButton(Button btn) {
-            if (selectedButton != null) { ThemeConfig.ApplySidebarButton(selectedButton, false); selectedButton.Tag = false; selectedButton.Paint -= DrawSelectionBorder; }
-            selectedButton = btn; ThemeConfig.ApplySidebarButton(selectedButton, true); selectedButton.Tag = true;
-            selectedButton.Paint += DrawSelectionBorder; selectedButton.Invalidate();
+            if (selectedButton == btn) return;
+            if (selectedButton != null) { 
+                ThemeConfig.ApplySidebarButton(selectedButton, false); 
+                selectedButton.Tag = false; 
+                selectedButton.Paint -= DrawSelectionBorder; 
+                selectedButton.Invalidate(); // Immediately clear old highlight
+            }
+            selectedButton = btn; 
+            ThemeConfig.ApplySidebarButton(selectedButton, true); 
+            selectedButton.Tag = true;
+            selectedButton.Paint += DrawSelectionBorder; 
+            selectedButton.Invalidate(); // Show new highlight
+            selectedButton.Update(); // Force immediate repaint for responsiveness
         }
 
         private void DrawSelectionBorder(object sender, PaintEventArgs e) {

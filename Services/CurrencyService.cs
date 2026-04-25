@@ -32,12 +32,8 @@ namespace GenericInventorySystem.Services
         }
 
         // ─── Supported currencies ─────────────────────────────────────────
-        public static readonly List<CurrencyInfo> SupportedCurrencies = new List<CurrencyInfo>
-        {
-            new CurrencyInfo("USD", "US Dollar",         "$"),
-            new CurrencyInfo("EUR", "Euro",              "€"),
-            new CurrencyInfo("LBP", "Lebanese Lira",    "ل.ل"),
-        };
+        private static List<CurrencyInfo> _supportedCurrencies = new List<CurrencyInfo>();
+        public static List<CurrencyInfo> SupportedCurrencies => _supportedCurrencies;
 
         // ─── Rate dictionary (base = USD) ─────────────────────────────────
         // Default fallback rates (updated at runtime from DB or API)
@@ -83,15 +79,21 @@ namespace GenericInventorySystem.Services
         {
             try
             {
-                var dt = DatabaseHelper.ExecuteDataTable("SELECT code, rate_vs_usd FROM currency_rates");
+                var dt = DatabaseHelper.ExecuteDataTable("SELECT code, name, symbol, rate_vs_usd FROM currency_rates");
+                _rates.Clear();
+                _supportedCurrencies.Clear();
                 foreach (System.Data.DataRow row in dt.Rows)
                 {
                     string code = row["code"].ToString();
+                    string name = row["name"].ToString();
+                    string symbol = row["symbol"].ToString();
                     decimal rate = Convert.ToDecimal(row["rate_vs_usd"]);
+                    
                     _rates[code] = rate;
+                    _supportedCurrencies.Add(new CurrencyInfo(code, name, symbol));
                 }
             }
-            catch { /* silently keep defaults */ }
+            catch { /* silently keep defaults if load fails */ }
         }
 
         public static void SaveRatesToDb(Dictionary<string, decimal> newRates)
@@ -102,6 +104,19 @@ namespace GenericInventorySystem.Services
                     $"UPDATE currency_rates SET rate_vs_usd = {kvp.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}, last_updated = GETDATE() WHERE code = '{kvp.Key}'");
                 _rates[kvp.Key] = kvp.Value;
             }
+        }
+
+        public static void UpdateCurrency(string code, string name, string symbol, decimal rate)
+        {
+            DatabaseHelper.ExecuteNonQuery(
+                $"UPDATE currency_rates SET name = @name, symbol = @symbol, rate_vs_usd = @rate, last_updated = GETDATE() WHERE code = @code",
+                new System.Data.SqlClient.SqlParameter("@name", name),
+                new System.Data.SqlClient.SqlParameter("@symbol", symbol),
+                new System.Data.SqlClient.SqlParameter("@rate", rate),
+                new System.Data.SqlClient.SqlParameter("@code", code)
+            );
+            _rates[code] = rate;
+            LoadRatesFromDb(); // Refresh internal list
         }
 
         // ─── Live API fetch ───────────────────────────────────────────────
@@ -115,11 +130,12 @@ namespace GenericInventorySystem.Services
             {
                 using (var client = new HttpClient())
                 {
-                    client.Timeout = TimeSpan.FromSeconds(8);
-                    // exchangerate.host latest endpoint (base USD)
-                    string url = "https://api.exchangerate.host/live?access_key=FREE&source=USD&currencies=EUR,LBP&format=1";
-                    // Fallback: use Frankfurt API (no key)
-                    string fallbackUrl = "https://api.frankfurter.app/latest?from=USD&to=EUR,LBP";
+                    // Build dynamic URL for all non-USD currencies
+                    List<string> codes = new List<string>();
+                    foreach(var c in _supportedCurrencies) if(c.Code != "USD") codes.Add(c.Code);
+                    string codeList = string.Join(",", codes);
+
+                    string fallbackUrl = $"https://api.frankfurter.app/latest?from=USD&to={codeList}";
 
                     string json;
                     try
@@ -139,14 +155,14 @@ namespace GenericInventorySystem.Services
                     if (ratesIdx < 0) return null;
 
                     string ratesPart = json.Substring(ratesIdx);
-                    foreach (string code in new[] { "EUR", "LBP" })
+                    foreach (string code in codes)
                     {
                         string key = $"\"{code}\":";
                         int idx = ratesPart.IndexOf(key);
                         if (idx < 0) continue;
                         idx += key.Length;
                         int end = ratesPart.IndexOfAny(new[] { ',', '}' }, idx);
-                        string valStr = ratesPart.Substring(idx, end - idx).Trim();
+                        string valStr = ratesPart.Substring(idx, end - idx).Trim().Replace("\"", "");
                         if (decimal.TryParse(valStr, System.Globalization.NumberStyles.Any,
                             System.Globalization.CultureInfo.InvariantCulture, out decimal val))
                         {

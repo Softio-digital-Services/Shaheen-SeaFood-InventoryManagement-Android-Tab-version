@@ -29,6 +29,11 @@ namespace GenericInventorySystem
             ModernMessageBox.Show(message, GenericInventorySystem.Helpers.LocalizationManager.GetString("Msg_Info"), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
+        public static bool ShowConfirmation(string message)
+        {
+            return ConfirmAction(message);
+        }
+
         public static bool ConfirmAction(string message)
         {
             DialogResult result = ModernMessageBox.Show(message, GenericInventorySystem.Helpers.LocalizationManager.GetString("Msg_Confirm"), 

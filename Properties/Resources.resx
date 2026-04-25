@@ -467,5 +467,118 @@ Username: '{0}'</value></data>
   <data name="Main_NoNotifications" xml:space="preserve">
     <value>No new notifications</value>
   </data>
+  <data name="Nav_Users" xml:space="preserve">
+    <value>Users Management</value>
+  </data>
+  <data name="POS_PayLater" xml:space="preserve"><value>Pay Later</value></data>
+  <data name="POS_ConfirmAddBill" xml:space="preserve"><value>Confirm adding ${0} to customer balance?</value></data>
+  <data name="POS_CreditLimitExceeded" xml:space="preserve"><value>Credit Limit Exceeded</value></data>
+  <data name="POS_CreditLimitExceededMsg" xml:space="preserve"><value>Customer has exceeded their credit limit.
+Current Balance: {0:C2}
+New Amount: {1:C2}
+Limit: {2:C2}</value></data>
+  <data name="AddCust_CreditLimit" xml:space="preserve"><value>Credit Limit</value></data>
+  <data name="AddSup_DueDate" xml:space="preserve">
+    <value>Payment Due Date</value>
+  </data>
+  <data name="AddSup_ReminderDays" xml:space="preserve">
+    <value>Reminder (Days Before)</value>
+  </data>
+  <data name="AddSup_EnableReminder" xml:space="preserve">
+    <value>Enable Payment Reminder</value>
+  </data>
+  <data name="colDueDate" xml:space="preserve">
+    <value>Due Date</value>
+  </data>
+  <data name="reminder_days" xml:space="preserve">
+    <value>Rem. Days</value>
+  </data>
+  <data name="AddCust_DueDate" xml:space="preserve">
+    <value>Payment Due Date</value>
+  </data>
+  <data name="AddCust_ReminderDays" xml:space="preserve">
+    <value>Reminder (Days Before)</value>
+  </data>
+  <data name="AddCust_EnableReminder" xml:space="preserve">
+    <value>Enable Payment Reminder</value>
+  </data>
+  <data name="Notif_LowStock" xml:space="preserve">
+    <value>Low Stock Alert</value>
+  </data>
+  <data name="Notif_Payment" xml:space="preserve">
+    <value>Payment Reminder</value>
+  </data>
+  <data name="Label_Customer" xml:space="preserve">
+    <value>Customer</value>
+  </data>
+  <data name="Label_Supplier" xml:space="preserve">
+    <value>Supplier</value>
+  </data>
+  <data name="Notif_Overdue" xml:space="preserve">
+    <value>OVERDUE</value>
+  </data>
+  <data name="Notif_DueIn" xml:space="preserve">
+    <value>due in {0} days</value>
+  </data>
+  <data name="Notif_LowStockMsg" xml:space="preserve">
+    <value>{0} is low ({1} left)</value>
+  </data>
+  <data name="Notif_RecentOrder" xml:space="preserve">
+    <value>Recent Order</value>
+  </data>
+  <data name="Notif_RecentOrderMsg" xml:space="preserve">
+    <value>Order #{0} by {1} - {2}</value>
+  </data>
+  <data name="Notif_WalkIn" xml:space="preserve">
+    <value>Walk-in</value>
+  </data>
+  <data name="Notif_CustomerPaymentDue" xml:space="preserve">
+    <value>Customer Payment Due</value>
+  </data>
+  <data name="Notif_SupplierPaymentDue" xml:space="preserve">
+    <value>Supplier Payment Due</value>
+  </data>
+  <data name="Tran_DueDateLabel" xml:space="preserve">
+    <value>Payment Due Date</value>
+  </data>
+  <data name="User_LoadError" xml:space="preserve"><value>Error loading users</value></data>
+  <data name="User_AdminEditBlock" xml:space="preserve"><value>Cannot edit the main admin user.</value></data>
+  <data name="User_AdminDeleteBlock" xml:space="preserve"><value>Cannot delete the main admin user.</value></data>
+  <data name="User_DeleteConfirm" xml:space="preserve"><value>Are you sure you want to delete user '{0}'?</value></data>
+  <data name="User_DeleteError" xml:space="preserve"><value>Error deleting user</value></data>
+  <data name="AddUser_MsgLoadErr" xml:space="preserve"><value>Error loading user</value></data>
+  <data name="AddUser_MsgSaveErr" xml:space="preserve"><value>Error saving user</value></data>
+  <data name="Hist_LoadError" xml:space="preserve"><value>Error loading history</value></data>
+  <data name="Hist_ReturnCompletedOnly" xml:space="preserve"><value>Only completed orders can be returned.</value></data>
+  <data name="Status_Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Lic_Title" xml:space="preserve"><value>License Activation</value></data>
+  <data name="Lic_Header" xml:space="preserve"><value>Activate Your License</value></data>
+  <data name="Lic_Subtitle" xml:space="preserve"><value>Enter your license key to activate the software</value></data>
+  <data name="Lic_Label" xml:space="preserve"><value>License Key</value></data>
+  <data name="Lic_MachineId" xml:space="preserve"><value>Machine ID (for support):</value></data>
+  <data name="Lic_CopyClipboard" xml:space="preserve"><value>Copy to Clipboard</value></data>
+  <data name="Lic_BtnActivate" xml:space="preserve"><value>Activate</value></data>
+  <data name="Lic_BtnExit" xml:space="preserve"><value>Exit</value></data>
+  <data name="Lic_BtnTrial" xml:space="preserve"><value>Start 30-Day Trial</value></data>
+  <data name="Lic_CopySuccess" xml:space="preserve"><value>Machine ID copied to clipboard!</value></data>
+  <data name="Lic_InvalidKey" xml:space="preserve"><value>Invalid license key. Please check and try again.</value></data>
+  <data name="Lic_ActivateSuccess" xml:space="preserve"><value>License activated successfully!
+
+Expires: {0:MMMM dd, yyyy}</value></data>
+  <data name="Lic_TrialUsed" xml:space="preserve"><value>Trial period has already been used on this machine.</value></data>
+  <data name="Lic_TrialPrompt" xml:space="preserve"><value>Start a 30-day free trial?</value></data>
+  <data name="Lic_TrialSuccess" xml:space="preserve"><value>Trial activated! You have {0} days remaining.</value></data>
+  <data name="Lic_TrialError" xml:space="preserve"><value>Failed to start trial. Please contact support.</value></data>
+  <data name="Exp_Title" xml:space="preserve"><value>Monthly Expenses</value></data>
+  <data name="Exp_Category" xml:space="preserve"><value>Expense Category</value></data>
+  <data name="Exp_Date" xml:space="preserve"><value>Expense Date</value></data>
+  <data name="Exp_Amount" xml:space="preserve"><value>Amount</value></data>
+  <data name="Exp_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Exp_Add" xml:space="preserve"><value>Add Expense</value></data>
+  <data name="Exp_Delete" xml:space="preserve"><value>Delete Expense</value></data>
+  <data name="Exp_ReqCategory" xml:space="preserve"><value>Please select a category.</value></data>
+  <data name="Exp_ReqAmount" xml:space="preserve"><value>Please enter a valid amount.</value></data>
+  <data name="Exp_ConfirmDelete" xml:space="preserve"><value>Are you sure you want to delete this expense?</value></data>
+  <data name="POS_ReqCustomer" xml:space="preserve"><value>Please select a customer for this account sale.</value></data>
 </root>
 

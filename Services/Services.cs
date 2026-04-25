@@ -229,7 +229,7 @@ namespace GenericInventorySystem.Services
     {
         public DataTable GetAllCustomers(string search = "")
         {
-            string sql = "SELECT customer_id as ID, full_name as Name, phone as Phone, email as Email, address as Address, current_balance as 'Balance Due' FROM customers WHERE date_deleted IS NULL";
+            string sql = "SELECT customer_id as ID, full_name as Name, phone as Phone, email as Email, address as Address, current_balance as 'Balance Due', credit_limit, payment_due_date, reminder_days FROM customers WHERE date_deleted IS NULL";
             if (!string.IsNullOrEmpty(search))
             {
                 sql += $" AND (full_name LIKE '%{search}%' OR phone LIKE '%{search}%' OR email LIKE '%{search}%')";
@@ -238,20 +238,23 @@ namespace GenericInventorySystem.Services
             return DatabaseHelper.ExecuteDataTable(sql);
         }
 
-        public int AddCustomer(string name, string phone, string email, string address, string type)
+        public int AddCustomer(string name, string phone, string email, string address, string type, decimal creditLimit = 1000, DateTime? dueDate = null, int reminderDays = 0)
         {
-             string sql = "INSERT INTO customers (full_name, phone, email, address, current_balance, type) " +
-                          "VALUES (@name, @phone, @email, @addr, 0, @type); SELECT SCOPE_IDENTITY();";
+             string sql = "INSERT INTO customers (full_name, phone, email, address, current_balance, type, credit_limit, payment_due_date, reminder_days) " +
+                          "VALUES (@name, @phone, @email, @addr, 0, @type, @credit, @due, @rem); SELECT SCOPE_IDENTITY();";
              
              object result = DatabaseHelper.ExecuteScalar<object>(sql,
                  new SqlParameter("@name", name),
                  new SqlParameter("@phone", phone),
                  new SqlParameter("@email", email),
                  new SqlParameter("@addr", address),
-                 new SqlParameter("@type", type)
+                 new SqlParameter("@type", type),
+                 new SqlParameter("@credit", creditLimit),
+                 new SqlParameter("@due", (object)dueDate ?? DBNull.Value),
+                 new SqlParameter("@rem", reminderDays)
              );
              
-             LogTransaction("CUSTOMER_ADD", $"Added Customer: {name}", name);
+             LogTransaction("CUSTOMER_ADD", $"Added Customer: {name} (Limit: {creditLimit})", name);
              GlobalEvents.RaiseCustomersUpdated();
              
              return result != null ? Convert.ToInt32(result) : -1;
@@ -276,15 +279,18 @@ namespace GenericInventorySystem.Services
              // Note: Payments/Orders are usually logged elsewhere, but we can log balance adjustments here if manual
         }
 
-        public void UpdateCustomer(int id, string name, string phone, string email, string address, string type)
+        public void UpdateCustomer(int id, string name, string phone, string email, string address, string type, decimal creditLimit, DateTime? dueDate, int reminderDays)
         {
-            string sql = "UPDATE customers SET full_name=@name, phone=@phone, email=@email, address=@addr, type=@type WHERE customer_id=@id";
+            string sql = "UPDATE customers SET full_name=@name, phone=@phone, email=@email, address=@addr, type=@type, credit_limit=@credit, payment_due_date=@due, reminder_days=@rem WHERE customer_id=@id";
             DatabaseHelper.ExecuteNonQuery(sql,
                  new SqlParameter("@name", name),
                  new SqlParameter("@phone", phone),
                  new SqlParameter("@email", email),
                  new SqlParameter("@addr", address),
                  new SqlParameter("@type", type),
+                 new SqlParameter("@credit", creditLimit),
+                 new SqlParameter("@due", (object)dueDate ?? DBNull.Value),
+                 new SqlParameter("@rem", reminderDays),
                  new SqlParameter("@id", id));
                  
             LogTransaction("CUSTOMER_UPDATE", $"Updated Customer: {name} (ID: {id})", name);
@@ -355,7 +361,7 @@ namespace GenericInventorySystem.Services
     {
         public DataTable GetAllSuppliers(string search = "")
         {
-            string sql = "SELECT id as ID, supplier_name, phone, email, address FROM suppliers WHERE date_deleted IS NULL";
+            string sql = "SELECT id as ID, supplier_name, phone, email, address, type, balance_due, payment_due_date, reminder_days FROM suppliers WHERE date_deleted IS NULL";
             if (!string.IsNullOrEmpty(search))
             {
                 sql += $" AND (supplier_name LIKE '%{search}%' OR phone LIKE '%{search}%' OR email LIKE '%{search}%')";
@@ -394,9 +400,43 @@ namespace GenericInventorySystem.Services
             }
         }
 
+        public void AddSupplier(string name, string phone, string email, string address, string type, DateTime? dueDate = null, int reminderDays = 0)
+        {
+             string sql = "INSERT INTO suppliers (supplier_name, phone, email, address, type, balance_due, payment_due_date, reminder_days) " +
+                          "VALUES (@name, @phone, @email, @addr, @type, 0, @due, @rem)";
+             
+             DatabaseHelper.ExecuteNonQuery(sql,
+                 new SqlParameter("@name", name),
+                 new SqlParameter("@phone", phone),
+                 new SqlParameter("@email", email),
+                 new SqlParameter("@addr", address),
+                 new SqlParameter("@type", type),
+                 new SqlParameter("@due", (object)dueDate ?? DBNull.Value),
+                 new SqlParameter("@rem", reminderDays)
+             );
+             
+             GlobalEvents.RaiseSuppliersUpdated();
+        }
+
+        public void UpdateSupplier(int id, string name, string phone, string email, string address, string type, DateTime? dueDate, int reminderDays)
+        {
+            string sql = "UPDATE suppliers SET supplier_name=@name, phone=@phone, email=@email, address=@addr, type=@type, payment_due_date=@due, reminder_days=@rem WHERE id=@id";
+            DatabaseHelper.ExecuteNonQuery(sql,
+                 new SqlParameter("@name", name),
+                 new SqlParameter("@phone", phone),
+                 new SqlParameter("@email", email),
+                 new SqlParameter("@addr", address),
+                 new SqlParameter("@type", type),
+                 new SqlParameter("@due", (object)dueDate ?? DBNull.Value),
+                 new SqlParameter("@rem", reminderDays),
+                 new SqlParameter("@id", id));
+                 
+            GlobalEvents.RaiseSuppliersUpdated();
+        }
+
         public void DeleteSupplier(int id)
         {
-            string sql = "UPDATE suppliers SET date_deleted = GETDATE() WHERE id = @id OR supplier_id = @id";
+            string sql = "UPDATE suppliers SET date_deleted = GETDATE() WHERE id = @id";
             DatabaseHelper.ExecuteNonQuery(sql, new SqlParameter("@id", id));
             GlobalEvents.RaiseSuppliersUpdated();
         }

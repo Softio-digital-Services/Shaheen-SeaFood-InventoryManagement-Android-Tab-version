@@ -48,15 +48,34 @@ namespace GenericInventorySystem.Plugins
             this.BackColor = ThemeConfig.BackgroundColor;
             this.Dock      = DockStyle.Fill;
             Build();
+
+            // Enable Keyboard Support
+            this.Load += (s, e) => {
+                var form = this.FindForm();
+                if (form != null) {
+                    form.KeyPreview = true;
+                    form.KeyDown += (sf, ef) => HandleKeyDown(ef);
+                }
+            };
+        }
+
+        private void HandleKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode >= Keys.D0 && e.KeyCode <= Keys.D9) PressButton((e.KeyCode - Keys.D0).ToString());
+            else if (e.KeyCode >= Keys.NumPad0 && e.KeyCode <= Keys.NumPad9) PressButton((e.KeyCode - Keys.NumPad0).ToString());
+            else if (e.KeyCode == Keys.Add || (e.Shift && e.KeyCode == Keys.Oemplus)) PressButton("+");
+            else if (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.OemMinus) PressButton("\u2212");
+            else if (e.KeyCode == Keys.Multiply) PressButton("\u00d7");
+            else if (e.KeyCode == Keys.Divide || e.KeyCode == Keys.OemQuestion) PressButton("\u00f7");
+            else if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Oemplus) PressButton("=");
+            else if (e.KeyCode == Keys.Back) PressButton("\u232b");
+            else if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.Delete) PressButton("C");
+            else if (e.KeyCode == Keys.Decimal || e.KeyCode == Keys.OemPeriod) PressButton(".");
         }
 
         private void Build()
         {
-            // Title
-            Label lbl = ThemeConfig.CreateStandardHeader(
-                LocalizationManager.IsArabic ? "\u062d\u0627\u0633\u0628\u0629" : "Calculator");
-            lbl.Dock = DockStyle.Top;
-            this.Controls.Add(lbl);
+            // Title removed as it's already in the Modal Header
 
             // Centered card
             Panel card = new Panel();
@@ -73,7 +92,7 @@ namespace GenericInventorySystem.Plugins
 
             this.Resize += (s, e) =>
             {
-                card.Location = new Point((this.Width - card.Width) / 2, 80);
+                card.Location = new Point((this.Width - card.Width) / 2, (this.Height - card.Height) / 2);
             };
             this.Controls.Add(card);
 
@@ -165,7 +184,12 @@ namespace GenericInventorySystem.Plugins
                     _current = "0"; _prev = 0; _operator = ""; _newEntry = true;
                     break;
                 case "\u232b": // backspace
-                    _current = _current.Length > 1 ? _current.Substring(0, _current.Length - 1) : "0";
+                    if (_current == "Error" || _current == "NaN") _current = "0";
+                    else if (_current.Length > 1) {
+                        _current = _current.Substring(0, _current.Length - 1);
+                        if (_current == "-") _current = "0";
+                    }
+                    else _current = "0";
                     break;
                 case "\u00b1": // plus-minus
                     if (double.TryParse(_current, out double neg))
@@ -189,7 +213,7 @@ namespace GenericInventorySystem.Plugins
                     {
                         if (double.TryParse(_current, out double val))
                         {
-                            if (!_newEntry) Compute();
+                            if (!_newEntry && !string.IsNullOrEmpty(_operator)) Compute();
                             _prev     = double.Parse(_current);
                             _operator = key;
                             _newEntry = true;
@@ -207,32 +231,28 @@ namespace GenericInventorySystem.Plugins
 
         private void Compute()
         {
+            if (string.IsNullOrEmpty(_operator)) return;
             if (!double.TryParse(_current, out double b)) return;
+            
             double result = _prev;
-            if      (_operator == "\u00f7") result = b != 0 ? _prev / b : 0;
-            else if (_operator == "\u00d7") result = _prev * b;
-            else if (_operator == "\u2212") result = _prev - b;
-            else if (_operator == "+")      result = _prev + b;
-            _current = result % 1 == 0 ? ((long)result).ToString() : result.ToString("G10");
+            try {
+                if      (_operator == "\u00f7") result = b != 0 ? _prev / b : double.NaN;
+                else if (_operator == "\u00d7") result = _prev * b;
+                else if (_operator == "\u2212") result = _prev - b;
+                else if (_operator == "+")      result = _prev + b;
+                
+                if (double.IsNaN(result)) _current = "Error";
+                else _current = result % 1 == 0 ? ((long)result).ToString() : result.ToString("G10");
+            } catch {
+                _current = "Error";
+            }
         }
 
-        private static void DrawRounded(Button btn)
+        private void DrawRounded(Button btn)
         {
             btn.Paint += (s, e) =>
             {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
-                using (var path  = RoundRect(r, 10))
-                using (var brush = new SolidBrush(btn.BackColor))
-                {
-                    e.Graphics.FillPath(brush, path);
-                    if (btn.FlatAppearance.BorderSize > 0)
-                        using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-                            e.Graphics.DrawPath(pen, path);
-                }
-                TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font,
-                    r, btn.ForeColor,
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                ThemeConfig.DrawRoundedButton(btn, e.Graphics);
             };
         }
 

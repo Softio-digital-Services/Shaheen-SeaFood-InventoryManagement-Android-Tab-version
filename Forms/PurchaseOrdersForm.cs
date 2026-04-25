@@ -178,7 +178,7 @@ namespace GenericInventorySystem.Forms
                 cmbSup.SelectedIndexChanged += (s, e) => {
                     dgvItems.Rows.Clear();
                     if (cmbSup.SelectedValue != null) {
-                        int supId = (int)cmbSup.SelectedValue;
+                        int supId = Convert.ToInt32(cmbSup.SelectedValue);
                         foreach (DataRow r in lowStock.Rows) {
                             if (r["supplier_id"] != DBNull.Value && (int)r["supplier_id"] == supId) {
                                 dgvItems.Rows.Add(r["id"], r["part_name"], r["req_qty"], r["purchase_price"]);
@@ -199,7 +199,7 @@ namespace GenericInventorySystem.Forms
                         items.Add(new PurchaseItemInfo { PartId = int.Parse(row.Cells["PartID"].Value.ToString()), Quantity = int.Parse(row.Cells["Qty"].Value.ToString()), CostPrice = decimal.Parse(row.Cells["Cost"].Value?.ToString() ?? "0") });
                 }
                 if (items.Count == 0) return;
-                _purchaseService.CreatePurchaseOrder((int)cmbSup.SelectedValue, items, "");
+                _purchaseService.CreatePurchaseOrder(Convert.ToInt32(cmbSup.SelectedValue), items, "");
                 f.DialogResult = DialogResult.OK; f.Close(); LoadPurchaseOrders();
             };
             p.Controls.Add(btnSave);

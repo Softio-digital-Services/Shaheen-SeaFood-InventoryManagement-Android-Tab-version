@@ -8,7 +8,7 @@ using GenericInventorySystem.Services;
 
 namespace GenericInventorySystem.Forms
 {
-    public class QuotationPreviewForm : Form
+    public class QuotationPreviewForm : BaseModalForm
     {
         private int _orderId;
         private OrderService _orderService;
@@ -19,12 +19,9 @@ namespace GenericInventorySystem.Forms
             _orderId = orderId;
             _orderService = new OrderService();
             
-            this.Text = "Quotation Preview - #" + orderId;
+            this.TitleText = "Quotation Preview - #" + orderId;
             this.Size = new Size(850, 900);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.BackColor = Color.FromArgb(240, 242, 245);
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
+            this.BackColor = ThemeConfig.BackgroundColor;
 
             InitializeUI();
             LoadData();
@@ -32,33 +29,34 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeUI()
         {
-            // Toolbar
-            Panel pnlToolbar = new Panel { Dock = DockStyle.Top, Height = 60, BackColor = Color.White };
-            this.Controls.Add(pnlToolbar);
-
-            ModernButton btnPrint = new ModernButton { Text = "Print / Export", Size = new Size(150, 35), Location = new Point(20, 12) };
-            btnPrint.Click += (s, e) => MessageBox.Show("Print functionality would be integrated with a reporting library (like Crystal Reports or a PDF generator) in a full production environment. For now, this preview represents the final document layout.", "Print Functionality");
-            ThemeConfig.ApplyPrimaryButton(btnPrint);
-            pnlToolbar.Controls.Add(btnPrint);
-
-            ModernButton btnClose = new ModernButton { Text = "Close", Size = new Size(100, 35), Location = new Point(180, 12) };
-            btnClose.Click += (s, e) => this.Close();
-            ThemeConfig.ApplySecondaryButton(btnClose);
-            pnlToolbar.Controls.Add(btnClose);
-
-            // Scrollable area for the Document
-            Panel pnlScroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-            this.Controls.Add(pnlScroll);
+            // Adaptive sizing handled by BaseModalForm.OnLoad
+            
+            SetFooterButtons(
+                "Print / Export",
+                "Close",
+                (s, e) => MessageBox.Show("Print functionality would be integrated with a reporting library (like Crystal Reports or a PDF generator) in a full production environment. For now, this preview represents the final document layout.", "Print Functionality"),
+                (s, e) => this.Close()
+            );
 
             // The actual document (A4-ish proportions)
             pnlContent = new Panel { 
                 Width = 750, 
-                Height = 1000, 
+                Height = 1100, 
                 BackColor = Color.White, 
-                Location = new Point(40, 20),
+                Anchor = AnchorStyles.Top,
                 BorderStyle = BorderStyle.FixedSingle 
             };
-            pnlScroll.Controls.Add(pnlContent);
+            
+            // Container to center the document
+            Panel pnlCenter = new Panel { Dock = DockStyle.Top, Height = 1150, BackColor = Color.Transparent };
+            pnlContent.Left = (this.ContentPanel.Width - pnlContent.Width) / 2;
+            pnlCenter.Controls.Add(pnlContent);
+
+            this.ContentPanel.Controls.Add(pnlCenter);
+            
+            this.ContentPanel.Resize += (s, e) => {
+                pnlContent.Left = Math.Max(20, (this.ContentPanel.Width - pnlContent.Width) / 2);
+            };
         }
 
         private void LoadData()

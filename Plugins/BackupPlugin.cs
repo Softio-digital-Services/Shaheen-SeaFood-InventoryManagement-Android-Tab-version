@@ -52,11 +52,7 @@ namespace GenericInventorySystem.Plugins
         {
             bool ar = LocalizationManager.IsArabic;
 
-            // Title
-            Label title = ThemeConfig.CreateStandardHeader(
-                ar ? "\u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629 \u0648\u0627\u0633\u062a\u0639\u0627\u062f\u0629" : "Backup & Restore");
-            title.Dock = DockStyle.Top;
-            this.Controls.Add(title);
+            // Title removed as it's already in the Modal Header
 
             // Card container
             Panel card = new Panel();
@@ -241,11 +237,15 @@ namespace GenericInventorySystem.Plugins
 
         private static string FindDatabaseFile()
         {
+            string dbPath = DatabaseConfig.DatabasePath;
+            if (File.Exists(dbPath)) return dbPath;
+            
+            // Fallback for older versions or different structures
             string[] candidates =
             {
                 Path.Combine(Application.StartupPath, "Database", "carparts.mdf"),
                 Path.Combine(Application.StartupPath, "carparts.mdf"),
-                Path.Combine(Application.StartupPath, "Database", "carparts.db"),
+                Path.Combine(Application.StartupPath, "Data", "inventory_generic.mdf"),
                 Path.Combine(Application.StartupPath, "carparts.db"),
             };
             foreach (var c in candidates)

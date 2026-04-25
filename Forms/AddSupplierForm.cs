@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using System.Drawing;
 using GenericInventorySystem.Data;
@@ -14,14 +14,17 @@ namespace GenericInventorySystem.Forms
         private ModernTextBox txtPhone;
         private ModernTextBox txtEmail;
         private ModernTextBox txtAddress;
-        private Button btnSave;
-        private Button btnCancel;
+        private FlatDateTimePicker dtDueDate;
+        private NumericUpDown numReminderDays;
+        private CheckBox chkEnableReminder;
         
         public string SupplierName => rdoCompany.Checked ? txtName.Text.Trim() : ContactPerson;
         public string ContactPerson => $"{txtFirstName.Text.Trim()} {txtLastName.Text.Trim()}".Trim();
         public string Phone => txtPhone.Text.Trim();
         public string Email => txtEmail.Text.Trim();
         public string Address => txtAddress.Text.Trim();
+        public DateTime? DueDate => chkEnableReminder.Checked ? dtDueDate.Value : (DateTime?)null;
+        public int ReminderDays => (int)numReminderDays.Value;
         public string SupplierType => rdoCompany.Checked ? "Company" : "Individual";
 
         private RadioButton rdoCompany;
@@ -30,10 +33,40 @@ namespace GenericInventorySystem.Forms
         public AddSupplierForm()
         {
             InitializeComponent();
-            this.TitleText = "Add New Supplier";
+            SetFooterButtons(
+                GenericInventorySystem.Helpers.LocalizationManager.GetString("AddSup_Save"),
+                GenericInventorySystem.Helpers.LocalizationManager.GetString("Popup_Cancel"),
+                btnSave_Click,
+                btnCancel_Click
+            );
+            
             ApplyTheme();
             GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            if (rdoCompany.Checked)
+            {
+                if (!ValidationHelper.ValidateRequiredFields(txtName, txtPhone)) return;
+            }
+            else
+            {
+                if (!ValidationHelper.ValidateRequiredFields(txtFirstName, txtLastName, txtPhone)) return;
+            }
+
+            if (!ValidationHelper.ValidatePhoneNumber(txtPhone.Text)) return;
+            if (!string.IsNullOrWhiteSpace(txtEmail.Text) && !ValidationHelper.ValidateEmail(txtEmail.Text)) return;
+
+            DialogResult = DialogResult.OK; 
+            Close();
         }
 
         private void ApplyLocalization()
@@ -41,7 +74,7 @@ namespace GenericInventorySystem.Forms
             GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
 
-            bool isEdit = this.TitleText != null && (this.TitleText.Contains("Edit") || this.TitleText.Contains("Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã™Å Ã™â€ž") || this.TitleText.Contains("ØªØ¹Ø¯ÙŠÙ„"));
+            bool isEdit = this.TitleText != null && (this.TitleText.Contains("Edit") || this.TitleText.Contains("تعديل"));
             this.TitleText = isEdit ? L("AddSup_TitleEdit") : L("AddSup_TitleNew");
             
             var lblSection = this.Controls.Find("lblSection", true);
@@ -53,6 +86,14 @@ namespace GenericInventorySystem.Forms
             if(txtPhone != null) txtPhone.LabelText = L("Popup_Phone");
             if(txtEmail != null) txtEmail.LabelText = L("AddSup_Email");
             if(txtAddress != null) txtAddress.LabelText = L("Popup_Address");
+            
+            var lblDue = this.Controls.Find("lblDueDate", true);
+            if(lblDue.Length > 0) lblDue[0].Text = L("AddSup_DueDate") ?? "Payment Due Date";
+            
+            var lblRem = this.Controls.Find("lblRemDays", true);
+            if(lblRem.Length > 0) lblRem[0].Text = L("AddSup_ReminderDays") ?? "Reminder (Days Before)";
+            
+            if(chkEnableReminder != null) chkEnableReminder.Text = L("AddSup_EnableReminder") ?? "Enable Reminder";
 
             var lblType = this.Controls.Find("lblType", true);
             if(lblType.Length > 0) lblType[0].Text = L("AddSup_Type");
@@ -62,15 +103,24 @@ namespace GenericInventorySystem.Forms
 
             UpdateValidationUI();
 
-            if(btnCancel != null) btnCancel.Text = L("Popup_Cancel");
-            if(btnSave != null) btnSave.Text = isEdit ? L("AddSup_UpdateBtn") : L("AddSup_Save");
+            SetFooterButtons(
+                isEdit ? L("AddSup_UpdateBtn") : L("AddSup_Save"),
+                L("Popup_Cancel"),
+                btnSave_Click,
+                btnCancel_Click
+            );
         }
 
         // Edit Mode Constructor
-        public AddSupplierForm(int id, string name, string phone, string email, string address, string type, string contactPerson = "") : this()
+        public AddSupplierForm(int id, string name, string phone, string email, string address, string type, DateTime? dueDate = null, int reminderDays = 0, string contactPerson = "") : this()
         {
-            this.TitleText = "Edit Supplier";
-            btnSave.Text = "Update Supplier";
+            this.TitleText = GenericInventorySystem.Helpers.LocalizationManager.GetString("AddSup_TitleEdit");
+            SetFooterButtons(
+                GenericInventorySystem.Helpers.LocalizationManager.GetString("AddSup_UpdateBtn"),
+                GenericInventorySystem.Helpers.LocalizationManager.GetString("Popup_Cancel"),
+                btnSave_Click,
+                btnCancel_Click
+            );
             
             txtName.Text = name;
             
@@ -86,6 +136,13 @@ namespace GenericInventorySystem.Forms
             txtEmail.Text = email;
             txtAddress.Text = address;
 
+            if (dueDate.HasValue)
+            {
+                chkEnableReminder.Checked = true;
+                dtDueDate.Value = dueDate.Value;
+            }
+            numReminderDays.Value = reminderDays;
+
             if (type == "Company") rdoCompany.Checked = true;
             else rdoIndividual.Checked = true;
             UpdateValidationUI();
@@ -93,149 +150,82 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.Size = new System.Drawing.Size(500, 720);
+            this.Size = new System.Drawing.Size(550, 900);
 
-            Label lblSection = new Label();
-            this.SuspendLayout();
+            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 1, RowCount = 10, AutoSize = true, Padding = new Padding(20) };
+            for(int i=0; i<10; i++) tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-            // 
             // Section Title
-            // 
-            lblSection.Name = "lblSection";
-            lblSection.Text = "Supplier Details";
-            lblSection.Font = ThemeConfig.SubHeaderFont;
-            lblSection.Location = new System.Drawing.Point(30, 70);
-            lblSection.AutoSize = true;
-            lblSection.ForeColor = ThemeConfig.SecondaryColor;
-            this.ContentPanel.Controls.Add(lblSection);
+            Label lblSection = new Label { Name = "lblSection", Text = "Supplier Details", Font = ThemeConfig.SubHeaderFont, AutoSize = true, ForeColor = ThemeConfig.SecondaryColor, Margin = new Padding(0, 0, 0, 15) };
+            tlpMain.Controls.Add(lblSection, 0, 0);
 
-            // 
-            // Fields Configuration
-            // 
-            int startY = 110;
-            int gap = 85;
-            int w = 420;
+            // Type Selection
+            TableLayoutPanel pnlType = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Height = 40, Margin = new Padding(0, 0, 0, 15) };
+            pnlType.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            pnlType.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
+            pnlType.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
 
-            txtName = new ModernTextBox();
-            txtName.LabelText = "Company Name";
-            txtName.Location = new Point(30, startY);
-            txtName.Width = w;
-            this.ContentPanel.Controls.Add(txtName);
-
-            // Contact Person Names
-            txtFirstName = new ModernTextBox();
-            txtFirstName.LabelText = "Contact First Name";
-            txtFirstName.Location = new Point(30, startY + gap);
-            txtFirstName.Width = (w / 2) - 5;
-            this.ContentPanel.Controls.Add(txtFirstName);
+            Label lblType = new Label { Name = "lblType", Text = "Supplier Type", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Anchor = AnchorStyles.Left };
+            rdoCompany = new RadioButton { Text = "Company", Font = ThemeConfig.StandardFont, AutoSize = true, Anchor = AnchorStyles.Left, Checked = true };
+            rdoIndividual = new RadioButton { Text = "Individual", Font = ThemeConfig.StandardFont, AutoSize = true, Anchor = AnchorStyles.Left };
             
-            txtLastName = new ModernTextBox();
-            txtLastName.LabelText = "Contact Last Name";
-            txtLastName.Location = new Point(30 + (w / 2) + 5, startY + gap);
-            txtLastName.Width = (w / 2) - 5;
-            this.ContentPanel.Controls.Add(txtLastName);
+            pnlType.Controls.Add(lblType, 0, 0);
+            pnlType.Controls.Add(rdoCompany, 1, 0);
+            pnlType.Controls.Add(rdoIndividual, 2, 0);
+            tlpMain.Controls.Add(pnlType, 0, 1);
 
-            txtPhone = new ModernTextBox();
-            txtPhone.LabelText = "Phone Number";
-            txtPhone.Location = new Point(30, startY + gap * 2);
-            txtPhone.Width = w;
-            this.ContentPanel.Controls.Add(txtPhone);
+            // Company Name
+            txtName = new ModernTextBox { LabelText = "Company Name", Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
+            tlpMain.Controls.Add(txtName, 0, 2);
 
-            txtEmail = new ModernTextBox();
-            txtEmail.LabelText = "Email / Contact Person";
-            txtEmail.Location = new Point(30, startY + gap * 3);
-            txtEmail.Width = w;
-            this.ContentPanel.Controls.Add(txtEmail);
+            // Contact Row
+            TableLayoutPanel pnlNames = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Height = 80, Margin = new Padding(0) };
+            pnlNames.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            pnlNames.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
 
-            txtAddress = new ModernTextBox();
-            txtAddress.LabelText = "Address";
-            txtAddress.Location = new Point(30, startY + gap * 4);
-            txtAddress.Width = w;
-            txtAddress.Multiline = true;
-            txtAddress.Height = 110;
-            this.ContentPanel.Controls.Add(txtAddress);
+            txtFirstName = new ModernTextBox { LabelText = "Contact First Name", Dock = DockStyle.Fill, Margin = new Padding(0, 0, 5, 0) };
+            txtLastName = new ModernTextBox { LabelText = "Contact Last Name", Dock = DockStyle.Fill, Margin = new Padding(5, 0, 0, 0) };
+            pnlNames.Controls.Add(txtFirstName, 0, 0);
+            pnlNames.Controls.Add(txtLastName, 1, 0);
+            tlpMain.Controls.Add(pnlNames, 0, 3);
 
-            // Type Radio Buttons
-            int radioY = startY + gap * 4 + 130;
-            Label lblType = new Label();
-            lblType.Name = "lblType";
-            lblType.Text = "Supplier Type";
-            lblType.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            lblType.ForeColor = ThemeConfig.TextColorDark;
-            lblType.Location = new System.Drawing.Point(35, radioY);
-            lblType.AutoSize = true;
-            this.ContentPanel.Controls.Add(lblType);
+            // Phone & Email
+            txtPhone = new ModernTextBox { LabelText = "Phone Number", Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
+            tlpMain.Controls.Add(txtPhone, 0, 4);
 
-            rdoCompany = new RadioButton();
-            rdoCompany.Text = "Company";
-            rdoCompany.Location = new System.Drawing.Point(40, radioY + 25);
-            rdoCompany.Font = ThemeConfig.StandardFont;
-            rdoCompany.AutoSize = true;
-            rdoCompany.Checked = true;
-            this.ContentPanel.Controls.Add(rdoCompany);
+            txtEmail = new ModernTextBox { LabelText = "Email Address", Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
+            tlpMain.Controls.Add(txtEmail, 0, 5);
 
-            rdoIndividual = new RadioButton();
-            rdoIndividual.Text = "Individual";
-            rdoIndividual.Location = new System.Drawing.Point(150, radioY + 25);
-            rdoIndividual.Font = ThemeConfig.StandardFont;
-            rdoIndividual.AutoSize = true;
-            this.ContentPanel.Controls.Add(rdoIndividual);
+            // Reminder Group
+            TableLayoutPanel pnlReminders = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, AutoSize = true, Margin = new Padding(0, 0, 0, 15) };
+            pnlReminders.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            pnlReminders.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+
+            chkEnableReminder = new CheckBox { Text = "Enable Payment Reminder", AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(5, 0, 0, 10) };
+            tlpMain.Controls.Add(chkEnableReminder, 0, 7);
+
+            Label lblDueDate = new Label { Name = "lblDueDate", Text = "Payment Due Date", Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true };
+            dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Enabled = false, Height = 40 };
+            pnlReminders.Controls.Add(lblDueDate, 0, 0);
+            pnlReminders.Controls.Add(dtDueDate, 0, 1);
+
+            Label lblRemDays = new Label { Name = "lblRemDays", Text = "Reminder (Days Before)", Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true };
+            numReminderDays = new NumericUpDown { Dock = DockStyle.Fill, Minimum = 0, Maximum = 365, Enabled = false, Font = ThemeConfig.StandardFont, Height = 40 };
+            pnlReminders.Controls.Add(lblRemDays, 1, 0);
+            pnlReminders.Controls.Add(numReminderDays, 1, 1);
+            tlpMain.Controls.Add(pnlReminders, 0, 8);
+
+            chkEnableReminder.CheckedChanged += (s, e) => { dtDueDate.Enabled = numReminderDays.Enabled = chkEnableReminder.Checked; };
+
+            // Address
+            txtAddress = new ModernTextBox { LabelText = "Address", Dock = DockStyle.Fill, Multiline = true, Height = 100, Margin = new Padding(0, 0, 0, 20) };
+            tlpMain.Controls.Add(txtAddress, 0, 9);
 
             rdoCompany.CheckedChanged += (s, e) => UpdateValidationUI();
             rdoIndividual.CheckedChanged += (s, e) => UpdateValidationUI();
 
-            // 
-            // Buttons
-            // 
-            btnCancel = new ModernButton();
-            btnCancel.Text = "Cancel";
-            btnCancel.Size = new System.Drawing.Size(120, 40);
-            btnCancel.Location = new System.Drawing.Point(210, 640); 
-            btnCancel.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
+            this.ContentPanel.Controls.Add(tlpMain);
 
-            btnSave = new ModernButton();
-            btnSave.Text = "Save Supplier";
-            btnSave.Size = new System.Drawing.Size(140, 40);
-            btnSave.Location = new System.Drawing.Point(340, 640);
-            btnSave.Click += (s, e) => 
-            { 
-                 Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
-
-                 if (rdoCompany.Checked)
-                 {
-                     if (string.IsNullOrWhiteSpace(txtName.Text))
-                     {
-                         MessageHelper.ShowWarning(L("AddSup_ReqName"));
-                         return;
-                     }
-                 }
-                 else
-                 {
-                     if (string.IsNullOrWhiteSpace(txtFirstName.Text))
-                     {
-                         MessageHelper.ShowWarning(L("Add_ReqFirstName"));
-                         return;
-                     }
-                     if (string.IsNullOrWhiteSpace(txtLastName.Text))
-                     {
-                         MessageHelper.ShowWarning(L("Add_ReqLastName"));
-                         return;
-                     }
-                 }
-
-                 if(string.IsNullOrWhiteSpace(txtPhone.Text) || !ValidationHelper.ValidatePhoneNumber(txtPhone.Text))
-                 {
-                     MessageHelper.ShowWarning(L("Popup_ReqPhone"));
-                     return;
-                 }
-
-                 DialogResult = DialogResult.OK; 
-                 Close(); 
-            };
-
-            this.ContentPanel.Controls.Add(btnSave); 
-            this.ContentPanel.Controls.Add(btnCancel);
-            
             this.ResumeLayout(false);
             this.PerformLayout();
         }
@@ -246,8 +236,6 @@ namespace GenericInventorySystem.Forms
             bool isCompany = rdoCompany.Checked;
 
             txtName.Visible = isCompany;
-            txtName.LabelText = L("AddSup_CompanyName"); // It already has the asterisk effectively, or I should be consistent
-            // Actually I want to be consistent with the asterisk logic
             txtName.LabelText = L("Add_CompanyName") + " *";
             
             txtFirstName.LabelText = isCompany ? L("Add_ContactFirstName") : L("Add_FirstName") + " *";
@@ -258,11 +246,7 @@ namespace GenericInventorySystem.Forms
         private void ApplyTheme()
         {
             // Background is White (BaseModalForm)
-            ThemeConfig.ApplyPrimaryButton(btnSave);
-            ThemeConfig.ApplySecondaryButton(btnCancel);
+            // Footer buttons are styled automatically by SetFooterButtons
         }
     }
 }
-
-
-

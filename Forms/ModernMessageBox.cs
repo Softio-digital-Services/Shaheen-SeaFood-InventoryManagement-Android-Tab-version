@@ -1,47 +1,70 @@
 using System;
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using GenericInventorySystem.Controls;
 using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem.Forms
 {
     public partial class ModernMessageBox : BaseModalForm
     {
-        // Fields
-        private Color primaryColor = Color.CornflowerBlue;
-
-        // Custom properties
-        public Color PrimaryColor
-        {
-            get { return primaryColor; }
-            set
-            {
-                primaryColor = value;
-                // Border/Accent logic if needed, otherwise handled by BaseModalForm styling
-            }
-        }
+        private Label lblMessage;
+        private PictureBox picIcon;
 
         public ModernMessageBox(string text, string caption, MessageBoxButtons buttons, MessageBoxIcon icon)
         {
-            InitializeComponent();
-            InitializeItems();
+            InitializeModernUI();
             
-            this.labelMessage.Text = text;
-            this.TitleText = caption; // Use BaseModalForm property
+            this.TitleText = caption;
+            this.lblMessage.Text = text;
             
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
             SetIcon(icon);
             SetButtons(buttons, isArabic);
+            
+            // Adjust size based on message length
+            AdjustSize(text);
         }
 
-        private void InitializeItems()
+        private void InitializeModernUI()
         {
-            this.labelMessage.MaximumSize = new Size(350, 0); // Word wrap
-            this.Size = new Size(450, 250); // Default Message Box Size
+            this.Size = new Size(500, 280);
+            this.EnforceMinWidth = false;
+
+            // Content Area
+            TableLayoutPanel tlpContent = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                Padding = new Padding(20)
+            };
+            tlpContent.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
+            tlpContent.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+            picIcon = new PictureBox
+            {
+                Size = new Size(48, 48),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Margin = new Padding(0, 5, 10, 0)
+            };
+
+            lblMessage = new Label
+            {
+                Text = "Message Text",
+                Font = ThemeConfig.StandardFont,
+                ForeColor = ThemeConfig.TextColorDark,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoSize = true
+            };
+
+            tlpContent.Controls.Add(picIcon, 0, 0);
+            tlpContent.Controls.Add(lblMessage, 1, 0);
+
+            this.ContentPanel.AddControl(tlpContent);
         }
 
         private void SetIcon(MessageBoxIcon icon)
@@ -49,157 +72,73 @@ namespace GenericInventorySystem.Forms
             switch (icon)
             {
                 case MessageBoxIcon.Error:
-                    this.pictureBoxIcon.Image = SystemIcons.Error.ToBitmap();
-                    PrimaryColor = ThemeConfig.DangerColor; // Red
+                    picIcon.Image = SystemIcons.Error.ToBitmap();
                     break;
                 case MessageBoxIcon.Information:
-                    this.pictureBoxIcon.Image = SystemIcons.Information.ToBitmap();
-                    PrimaryColor = ThemeConfig.PrimaryColor; // Blue
+                    picIcon.Image = SystemIcons.Information.ToBitmap();
                     break;
                 case MessageBoxIcon.Question:
-                    this.pictureBoxIcon.Image = SystemIcons.Question.ToBitmap();
-                    PrimaryColor = ThemeConfig.PrimaryColor; 
+                    picIcon.Image = SystemIcons.Question.ToBitmap();
                     break;
                 case MessageBoxIcon.Exclamation:
-                    this.pictureBoxIcon.Image = SystemIcons.Warning.ToBitmap();
-                    PrimaryColor = ThemeConfig.WarningColor; // Orange
+                    picIcon.Image = SystemIcons.Warning.ToBitmap();
                     break;
-                case MessageBoxIcon.None: 
-                    this.pictureBoxIcon.Image = null;
-                    PrimaryColor = ThemeConfig.PrimaryColor;
+                default:
+                    picIcon.Visible = false;
                     break;
             }
         }
 
         private void SetButtons(MessageBoxButtons buttons, bool isArabic)
         {
+            string ok = isArabic ? "موافق" : "OK";
+            string cancel = isArabic ? "إلغاء" : "Cancel";
+            string yes = isArabic ? "نعم" : "Yes";
+            string no = isArabic ? "لا" : "No";
+
             switch (buttons)
             {
                 case MessageBoxButtons.OK:
-                    button1.Visible = true;
-                    button1.Text = isArabic ? "موافق" : "OK";
-                    button1.Location = new Point(this.panelButtons.Width - button1.Width - 20, 10);
-                    ThemeConfig.ApplyPrimaryButton(button1);
-                    button1.DialogResult = DialogResult.OK; // Set result
-                    
-                    button2.Visible = false;
-                    button3.Visible = false;
-                    this.AcceptButton = button1;
+                    SetFooterButtons(ok, "", (s, e) => { this.DialogResult = DialogResult.OK; this.Close(); }, null);
                     break;
 
                 case MessageBoxButtons.OKCancel:
-                    button1.Visible = true;
-                    button1.Text = isArabic ? "موافق" : "OK";
-                    button1.Location = new Point(this.panelButtons.Width - button1.Width - button2.Width - 30, 10);
-                    ThemeConfig.ApplyPrimaryButton(button1);
-                    button1.DialogResult = DialogResult.OK;
-
-                    button2.Visible = true;
-                    button2.Text = isArabic ? "إلغاء" : "Cancel";
-                    button2.Location = new Point(this.panelButtons.Width - button2.Width - 20, 10);
-                    ThemeConfig.ApplySecondaryButton(button2);
-                    button2.DialogResult = DialogResult.Cancel;
-                    
-                    button3.Visible = false;
-                    this.AcceptButton = button1;
-                    this.CancelButton = button2;
+                    SetFooterButtons(ok, cancel, 
+                        (s, e) => { this.DialogResult = DialogResult.OK; this.Close(); }, 
+                        (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); });
                     break;
 
                 case MessageBoxButtons.YesNo:
-                    button1.Visible = true;
-                    button1.Text = isArabic ? "نعم" : "Yes";
-                    button1.Location = new Point(this.panelButtons.Width - button1.Width - button2.Width - 30, 10);
-                    ThemeConfig.ApplyPrimaryButton(button1);
-                    button1.DialogResult = DialogResult.Yes;
-
-                    button2.Visible = true;
-                    button2.Text = isArabic ? "لا" : "No";
-                    button2.Location = new Point(this.panelButtons.Width - button2.Width - 20, 10);
-                    ThemeConfig.ApplySecondaryButton(button2);
-                    button2.DialogResult = DialogResult.No;
-
-                    button3.Visible = false;
-                    this.AcceptButton = button1;
+                    SetFooterButtons(yes, no, 
+                        (s, e) => { this.DialogResult = DialogResult.Yes; this.Close(); }, 
+                        (s, e) => { this.DialogResult = DialogResult.No; this.Close(); });
                     break;
 
                 case MessageBoxButtons.YesNoCancel:
-                    button1.Visible = true;
-                    button1.Text = isArabic ? "نعم" : "Yes";
-                    button1.Location = new Point(this.panelButtons.Width - button1.Width - button2.Width - button3.Width - 40, 10);
-                    ThemeConfig.ApplyPrimaryButton(button1);
-                    button1.DialogResult = DialogResult.Yes;
-
-                    button2.Visible = true;
-                    button2.Text = isArabic ? "لا" : "No";
-                    button2.Location = new Point(this.panelButtons.Width - button2.Width - button3.Width - 30, 10);
-                    ThemeConfig.ApplySecondaryButton(button2);
-                    button2.DialogResult = DialogResult.No;
-
-                    button3.Visible = true;
-                    button3.Text = isArabic ? "إلغاء" : "Cancel";
-                    button3.Location = new Point(this.panelButtons.Width - button3.Width - 20, 10);
-                    ThemeConfig.ApplySecondaryButton(button3);
-                    button3.DialogResult = DialogResult.Cancel;
-
-                    this.AcceptButton = button1;
-                    this.CancelButton = button3;
-                    break;
-
-                case MessageBoxButtons.RetryCancel:
-                    button1.Visible = true;
-                    button1.Text = isArabic ? "إعادة المحاولة" : "Retry";
-                    button1.Location = new Point(this.panelButtons.Width - button1.Width - button2.Width - 30, 10);
-                    ThemeConfig.ApplyPrimaryButton(button1);
-                    button1.DialogResult = DialogResult.Retry;
-
-                    button2.Visible = true;
-                    button2.Text = isArabic ? "إلغاء" : "Cancel";
-                    button2.Location = new Point(this.panelButtons.Width - button2.Width - 20, 10);
-                    ThemeConfig.ApplySecondaryButton(button2);
-                    button2.DialogResult = DialogResult.Cancel;
-
-                    button3.Visible = false;
-                    this.AcceptButton = button1;
-                    this.CancelButton = button2;
-                    break;
-
-                case MessageBoxButtons.AbortRetryIgnore:
-                    button1.Visible = true;
-                    button1.Text = isArabic ? "إيقاف" : "Abort";
-                    button1.Location = new Point(this.panelButtons.Width - button1.Width - button2.Width - button3.Width - 40, 10);
-                    ThemeConfig.ApplySecondaryButton(button1);
-                    button1.DialogResult = DialogResult.Abort;
-
-                    button2.Visible = true;
-                    button2.Text = isArabic ? "إعادة" : "Retry";
-                    button2.Location = new Point(this.panelButtons.Width - button2.Width - button3.Width - 30, 10);
-                    ThemeConfig.ApplyPrimaryButton(button2);
-                    button2.DialogResult = DialogResult.Retry;
-
-                    button3.Visible = true;
-                    button3.Text = isArabic ? "تجاهل" : "Ignore";
-                    button3.Location = new Point(this.panelButtons.Width - button3.Width - 20, 10);
-                    ThemeConfig.ApplySecondaryButton(button3);
-                    button3.DialogResult = DialogResult.Ignore;
-
-                    this.AcceptButton = button2;
+                    SetFooterButtons(yes, no, 
+                        (s, e) => { this.DialogResult = DialogResult.Yes; this.Close(); }, 
+                        (s, e) => { this.DialogResult = DialogResult.No; this.Close(); },
+                        cancel, (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); });
                     break;
             }
         }
 
-        // Static Show Method (The entry point)
-        public static DialogResult Show(string text, string caption, MessageBoxButtons buttons, MessageBoxIcon icon)
+        private void AdjustSize(string text)
         {
-            try { 
-                System.IO.File.AppendAllText(System.IO.Path.Combine(Application.StartupPath, "crash.txt"), DateTime.Now.ToString() + "\nMBox [" + caption + "]\n" + text + "\n" + new System.Diagnostics.StackTrace(true).ToString() + "\n\n"); 
-            } catch {}
+            // Initial size estimate
+            this.Width = 500;
+            
+            // Allow BaseModalForm.OnLoad to handle the final FitToContent
+            // But we can trigger it early if we want immediate results
+            FitToContent();
+        }
 
-            DialogResult result;
-            using (var msgForm = new ModernMessageBox(text, caption, buttons, icon))
+        public static DialogResult Show(string text, string caption, MessageBoxButtons buttons = MessageBoxButtons.OK, MessageBoxIcon icon = MessageBoxIcon.Information)
+        {
+            using (var msgBox = new ModernMessageBox(text, caption, buttons, icon))
             {
-                result = msgForm.ShowDialog();
+                return msgBox.ShowDialog();
             }
-            return result;
         }
     }
 }

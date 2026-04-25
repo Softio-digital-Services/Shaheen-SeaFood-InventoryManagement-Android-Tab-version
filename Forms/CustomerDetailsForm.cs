@@ -5,10 +5,11 @@ using System.Globalization;
 using System.Windows.Forms;
 using GenericInventorySystem.Data;
 using GenericInventorySystem.Helpers;
+using GenericInventorySystem.Controls;
 
 namespace GenericInventorySystem.Forms
 {
-    public partial class CustomerDetailsForm : Form
+    public partial class CustomerDetailsForm : BaseModalForm
     {
         private int _customerId;
         private string _customerName;
@@ -20,12 +21,13 @@ namespace GenericInventorySystem.Forms
         private DataGridView dgvHistory;
         private Button btnRecordSale;
         private Button btnReceivePayment;
-        private Button btnClose;
+        private Label lblDueDate;
 
         public CustomerDetailsForm(int id, string name)
         {
             _customerId = id;
             _customerName = name;
+            this.Width = 1050; // Increased width to ensure all buttons fit in one row
             InitializeComponent();
             LoadDetails();
             ApplyLocalization();
@@ -34,103 +36,112 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.Size = new Size(950, 700);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.Text = "Customer Details - " + _customerName;
-            this.BackColor = ThemeConfig.BackgroundColor;
+            // Adaptive sizing is now handled by BaseModalForm.OnLoad
+            this.TitleText = (LocalizationManager.IsArabic ? "تفاصيل " : "Details - ") + _customerName;
 
             // Main Layout
             TableLayoutPanel tlpMain = new TableLayoutPanel();
-            tlpMain.Dock = DockStyle.Fill;
+            tlpMain.Dock = DockStyle.Top;
             tlpMain.ColumnCount = 1;
-            tlpMain.RowCount = 3;
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 110F)); // Header Area
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Grid (Fill)
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));  // Footer
+            tlpMain.RowCount = 2;
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // AutoSize header to fit wrapped content
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid Area takes remaining space
+            tlpMain.Height = 650; // Total content height
+            tlpMain.AutoSize = true;
             tlpMain.Padding = new Padding(20);
             
             // --- HEADER ---
-            Panel pnlHeader = new Panel();
-            pnlHeader.Dock = DockStyle.Fill;
-            pnlHeader.BackColor = ThemeConfig.SurfaceColor;
+            TableLayoutPanel pnlHeader = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                BackColor = ThemeConfig.SurfaceColor
+            };
+            pnlHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F)); // Slightly more for buttons
+            pnlHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F));
+            pnlHeader.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Ensure header row can grow if buttons wrap
             
             // Header Left (Title)
-            FlowLayoutPanel flpLeft = new FlowLayoutPanel();
-            flpLeft.FlowDirection = FlowDirection.TopDown;
-            flpLeft.Dock = DockStyle.Left;
-            flpLeft.Width = 350;
-            flpLeft.Padding = new Padding(10);
+            FlowLayoutPanel flpLeft = new FlowLayoutPanel {
+                FlowDirection = FlowDirection.TopDown,
+                Dock = DockStyle.Fill,
+                Padding = new Padding(10)
+            };
             
             lblName = new Label() { Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, AutoSize = true, Margin = new Padding(0,0,0,5) };
             lblType = new Label() { AutoSize = true, ForeColor = ThemeConfig.SecondaryColor, Font = ThemeConfig.StandardFont };
-
             flpLeft.Controls.Add(lblName);
             flpLeft.Controls.Add(lblType);
             
             // Header Right (Balance + Buttons)
-            FlowLayoutPanel flpRight = new FlowLayoutPanel();
-            flpRight.FlowDirection = FlowDirection.RightToLeft;
-            flpRight.Dock = DockStyle.Right;
-            flpRight.Width = 580;
-            flpRight.Padding = new Padding(10);
-            flpRight.AutoSize = false;
+            FlowLayoutPanel flpRight = new FlowLayoutPanel {
+                FlowDirection = FlowDirection.RightToLeft,
+                Dock = DockStyle.Fill,
+                Padding = new Padding(10),
+                WrapContents = false
+            };
             
             // 1. Balance Panel
-            Panel pnlBalance = new Panel();
-            pnlBalance.Size = new Size(180, 70);
-            pnlBalance.BackColor = ThemeConfig.BackgroundColor;
-            pnlBalance.Margin = new Padding(10, 0, 0, 0);
-            
-            lblBalance = new Label() { Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.WarningColor, Location = new Point(10, 10), AutoSize = true };
-            lblBalTitle = new Label() { Text = "Balance Due", Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, Location = new Point(12, 45), AutoSize = true };
+            TableLayoutPanel tlpBalance = new TableLayoutPanel
+            {
+                Size = new Size(220, 100),
+                BackColor = ThemeConfig.BackgroundColor,
+                Margin = new Padding(10, 0, 0, 0),
+                Padding = new Padding(15, 10, 15, 10),
+                ColumnCount = 1,
+                RowCount = 3
+            };
+            tlpBalance.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));
+            tlpBalance.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+            tlpBalance.RowStyles.Add(new RowStyle(SizeType.Percent, 30F));
 
-            pnlBalance.Controls.Add(lblBalance);
-            pnlBalance.Controls.Add(lblBalTitle);
+            lblBalance = new Label() { Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.WarningColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft };
+            lblBalTitle = new Label() { Text = "Balance Due", Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft };
+            lblDueDate = new Label() { Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.DangerColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft };
+
+            tlpBalance.Controls.Add(lblBalance, 0, 0);
+            tlpBalance.Controls.Add(lblBalTitle, 0, 1);
+            tlpBalance.Controls.Add(lblDueDate, 0, 2);
             
-            // 2. Receive Payment Button (Green)
-            btnReceivePayment = new Button() { Size = new Size(160, 45) }; btnReceivePayment.FlatStyle = FlatStyle.Flat; btnReceivePayment.FlatAppearance.BorderSize = 0; btnReceivePayment.Cursor = Cursors.Hand; btnReceivePayment.Paint += (s, e) => ThemeConfig.DrawIconButton(btnReceivePayment, e.Graphics, "currency", "Cust_ReceivePayment", Color.White, ThemeConfig.SuccessColor, false);
+            // 2. Receive Payment Button
+            btnReceivePayment = new ModernButton { Text = "💵 " + (LocalizationManager.IsArabic ? "قبض دفعة" : "Receive Payment"), Size = new Size(165, 45) };
+            ThemeConfig.ApplyEmojiButton(btnReceivePayment, ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, Color.White);
             btnReceivePayment.Click += BtnReceivePayment_Click;
-            
-            // 3. Record Sale Button (Blue)
-            btnRecordSale = new Button() { Size = new Size(150, 45) }; btnRecordSale.FlatStyle = FlatStyle.Flat; btnRecordSale.FlatAppearance.BorderSize = 0; btnRecordSale.Cursor = Cursors.Hand; btnRecordSale.Paint += (s, e) => ThemeConfig.DrawIconButton(btnRecordSale, e.Graphics, "pos", "Cust_RecordSale", Color.White, ThemeConfig.PrimaryColor, false);
+            btnReceivePayment.Margin = new Padding(0, 10, 10, 0);
+
+            // 3. Record Sale button
+            btnRecordSale = new ModernButton { Text = "🛒 " + (LocalizationManager.IsArabic ? "تسجيل بيع" : "Record Sale"), Size = new Size(155, 45) };
+            ThemeConfig.ApplyEmojiButton(btnRecordSale, ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, Color.White);
             btnRecordSale.Click += BtnRecordSale_Click;
-            
-            flpRight.Controls.Add(pnlBalance);
+            btnRecordSale.Margin = new Padding(0, 10, 10, 0);
+
+            flpRight.Controls.Add(tlpBalance);
             flpRight.Controls.Add(btnReceivePayment);
             flpRight.Controls.Add(btnRecordSale);
             
-            pnlHeader.Controls.Add(flpRight);
-            pnlHeader.Controls.Add(flpLeft);
+            pnlHeader.Controls.Add(flpLeft, 0, 0);
+            pnlHeader.Controls.Add(flpRight, 1, 0);
 
             // --- GRID ---
             dgvHistory = new DataGridView();
             dgvHistory.DataError += (s, e) => { e.ThrowException = false; };
             dgvHistory.Dock = DockStyle.Fill;
+            dgvHistory.Height = 450;
             dgvHistory.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvHistory.CellFormatting += DgvHistory_CellFormatting;
             ThemeConfig.ApplyGridTheme(dgvHistory);
 
-            // --- FOOTER ---
-            Panel pnlFooter = new Panel();
-            pnlFooter.Dock = DockStyle.Fill;
-            
-            btnClose = new Button() { Text = "Close", Size = new Size(120, 40) };
-            ThemeConfig.ApplySecondaryButton(btnClose);
-            btnClose.Click += (s,e) => Close();
-            
-            FlowLayoutPanel flpFooter = new FlowLayoutPanel();
-            flpFooter.Dock = DockStyle.Right;
-            flpFooter.FlowDirection = FlowDirection.RightToLeft;
-            flpFooter.Padding = new Padding(0, 10, 0, 0);
-            flpFooter.Controls.Add(btnClose);
-            
-            pnlFooter.Controls.Add(flpFooter);
-
             tlpMain.Controls.Add(pnlHeader, 0, 0);
             tlpMain.Controls.Add(dgvHistory, 0, 1);
-            tlpMain.Controls.Add(pnlFooter, 0, 2);
 
-            this.Controls.Add(tlpMain);
+            this.ContentPanel.Controls.Add(tlpMain);
+
+            SetFooterButtons(
+                LocalizationManager.IsArabic ? "إغلاق" : "Close",
+                "",
+                (s, e) => this.Close(),
+                null
+            );
         }
 
         private void LoadDetails()
@@ -151,16 +162,34 @@ namespace GenericInventorySystem.Forms
                     decimal bal = row.Table.Columns.Contains("current_balance") && row["current_balance"] != DBNull.Value 
                         ? Convert.ToDecimal(row["current_balance"]) : 0m;
                     lblBalance.Text = $"${bal:N2}";
+
+                    // Fetch the earliest upcoming due date from transactions
+                    string sqlUpcoming = $@"SELECT MIN(due_date) FROM payments 
+                                          WHERE entity_type = 'Customer' AND entity_id = {_customerId} 
+                                          AND due_date >= CAST(GETDATE() AS DATE)";
+                    object nextDue = DatabaseHelper.ExecuteScalar<object>(sqlUpcoming);
+
+                    if (nextDue != null && nextDue != DBNull.Value)
+                    {
+                        DateTime due = (DateTime)nextDue;
+                        lblDueDate.Text = (LocalizationManager.IsArabic ? "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0627\u0633\u062A\u062D\u0642\u0627\u0642: " : "Next Due: ") + due.ToString("yyyy-MM-dd");
+                        lblDueDate.Visible = true;
+                    }
+                    else
+                    {
+                        lblDueDate.Visible = false;
+                    }
                 }
 
-                // Load History â€” combines sales (balance additions) and payments received
+                // Load History — combines sales (balance additions) and payments received
                 string sqlHistory = $@"
                     SELECT payment_date as 'Date', 
                            CASE WHEN notes LIKE '[Sale]%' OR notes LIKE '%Sale%' OR notes LIKE '%Order%' THEN 'Payment Due'
-                                ELSE 'Payment Received' END as 'Action',
+                                 ELSE 'Payment Received' END as 'Action',
                            amount as 'Amount',
+                           due_date as 'Due Date',
                            CASE WHEN notes IS NULL OR notes = '' OR notes = 'None' THEN 'None'
-                                ELSE REPLACE(REPLACE(notes, '[Sale] ', ''), '[Payment] ', '') END as 'Details'
+                                 ELSE REPLACE(REPLACE(notes, '[Sale] ', ''), '[Payment] ', '') END as 'Details'
                     FROM payments 
                     WHERE entity_type = 'Customer' AND entity_id = {_customerId}
                     ORDER BY payment_date DESC";
@@ -176,9 +205,8 @@ namespace GenericInventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            this.Text = (isArabic ? "تفاصيل " : "Details - ") + _customerName;
+            this.TitleText = (isArabic ? "تفاصيل " : "Details - ") + _customerName;
             lblBalTitle.Text = isArabic ? "الرصيد المستحق" : "Balance Due";
-            btnClose.Text = LocalizationManager.GetString("Popup_Cancel");
 
             ApplyGridLocalizations();
         }
@@ -190,6 +218,7 @@ namespace GenericInventorySystem.Forms
             if (dgvHistory.Columns["Date"] != null) dgvHistory.Columns["Date"].HeaderText = LocalizationManager.GetString("Hist_ColDate");
             if (dgvHistory.Columns["Action"] != null) dgvHistory.Columns["Action"].HeaderText = LocalizationManager.GetString("Hist_ColAction");
             if (dgvHistory.Columns["Amount"] != null) dgvHistory.Columns["Amount"].HeaderText = LocalizationManager.GetString("Hist_ColAmount");
+            if (dgvHistory.Columns["Due Date"] != null) dgvHistory.Columns["Due Date"].HeaderText = LocalizationManager.GetString("Tran_DueDateLabel") ?? "Due Date";
             if (dgvHistory.Columns["Details"] != null) dgvHistory.Columns["Details"].HeaderText = LocalizationManager.GetString("Hist_ColDetails");
         }
         
@@ -202,7 +231,11 @@ namespace GenericInventorySystem.Forms
             if (colName == "Action")
             {
                 string actionKey = e.Value.ToString();
-                e.Value = LocalizationManager.GetString("Action_" + actionKey);
+                string translated = LocalizationManager.GetString("Action_" + actionKey);
+                if (!string.IsNullOrEmpty(translated) && translated != "Action_" + actionKey)
+                    e.Value = translated;
+                else
+                    e.Value = actionKey.Replace("Action_", ""); // Fallback
             }
             else if (colName == "Details")
             {
@@ -218,7 +251,9 @@ namespace GenericInventorySystem.Forms
             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
             TransactionEntryForm form = new TransactionEntryForm(
                 L("Cust_RecordSale"),
-                string.Format(L("Prompt_RecordSale"), _customerName));
+                string.Format(L("Prompt_RecordSale"), _customerName),
+                "0.00",
+                true);
             
             if(form.ShowDialog() == DialogResult.OK)
             {
@@ -227,13 +262,29 @@ namespace GenericInventorySystem.Forms
                 string dbNotes = "[Sale] " + userNotes;
                 string amountStr = amount.ToString(CultureInfo.InvariantCulture);
 
-                // 1. Update Balance â€” customers table uses current_balance
-                string sql1 = $"UPDATE customers SET current_balance = current_balance + {amountStr} WHERE customer_id = {_customerId}";
-                DatabaseHelper.ExecuteNonQuery(sql1);
+                // 1. Update Balance & Due Date
+                string sql1 = "UPDATE customers SET current_balance = current_balance + @amount";
+                var parameters = new System.Collections.Generic.List<System.Data.SqlClient.SqlParameter> {
+                    new System.Data.SqlClient.SqlParameter("@amount", amount),
+                    new System.Data.SqlClient.SqlParameter("@cid", _customerId)
+                };
+
+                if (form.DueDate.HasValue)
+                {
+                    sql1 += ", payment_due_date = @dueDate";
+                    parameters.Add(new System.Data.SqlClient.SqlParameter("@dueDate", form.DueDate.Value));
+                }
+
+                sql1 += " WHERE customer_id = @cid";
+                DatabaseHelper.ExecuteNonQuery(sql1, parameters.ToArray());
 
                 // 2. Record transaction log
-                string sql2 = $"INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Customer', {_customerId}, {amountStr}, GETDATE(), @notes)";
-                DatabaseHelper.ExecuteNonQuery(sql2, new System.Data.SqlClient.SqlParameter("@notes", dbNotes));
+                string sql2 = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes, due_date) VALUES ('Customer', @cid, @amount, GETDATE(), @notes, @ddate)";
+                DatabaseHelper.ExecuteNonQuery(sql2, 
+                    new System.Data.SqlClient.SqlParameter("@cid", _customerId),
+                    new System.Data.SqlClient.SqlParameter("@amount", amount),
+                    new System.Data.SqlClient.SqlParameter("@notes", dbNotes),
+                    new System.Data.SqlClient.SqlParameter("@ddate", (object)form.DueDate ?? DBNull.Value));
 
                 GlobalEvents.RaiseCustomersUpdated(); // Sync main grid
                 LoadDetails();

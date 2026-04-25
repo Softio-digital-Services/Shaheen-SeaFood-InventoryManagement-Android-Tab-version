@@ -11,9 +11,6 @@ namespace GenericInventorySystem.Forms
         private ModernTextBox txtLicenseKey;
         private Label lblHardwareId;
         private Label lblStatus;
-        private Button btnActivate;
-        private Button btnStartTrial;
-        private Button btnCancel;
         private LinkLabel lnkCopyHardwareId;
 
         private Label lblTitle;
@@ -24,8 +21,7 @@ namespace GenericInventorySystem.Forms
         public LicenseActivationForm()
         {
             InitializeComponent();
-            this.TitleText = "License Activation";
-            this.Size = new Size(700, 480);
+            // Adaptive sizing handled by BaseModalForm.OnLoad
             
             ApplyLocalization();
             LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
@@ -35,94 +31,70 @@ namespace GenericInventorySystem.Forms
         {
             this.SuspendLayout();
 
-            // Header
-            lblTitle = ThemeConfig.CreateStandardHeader("Activate Your License");
-            this.ContentPanel.Controls.Add(lblTitle);
+            TableLayoutPanel tlpMain = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                ColumnCount = 1,
+                RowCount = 5,
+                Padding = new Padding(30),
+                AutoSize = true
+            };
+            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
-            lblSubtitle = new Label();
-            lblSubtitle.Text = "Enter your license key to activate the software";
-            lblSubtitle.Font = ThemeConfig.StandardFont;
-            lblSubtitle.ForeColor = ThemeConfig.SecondaryColor;
-            lblSubtitle.Location = new Point(30, 100);
-            lblSubtitle.AutoSize = true;
+            // Header title removed as it's already in the Modal Header
 
-            this.ContentPanel.Controls.Add(lblSubtitle);
+            lblSubtitle = new Label
+            {
+                Text = "Enter your license key to activate the software",
+                Font = ThemeConfig.StandardFont,
+                ForeColor = ThemeConfig.SecondaryColor,
+                AutoSize = true,
+                Margin = new Padding(0, 10, 0, 20)
+            };
+            tlpMain.Controls.Add(lblSubtitle, 0, 1);
 
             // License Key Input
-            txtLicenseKey = new ModernTextBox();
-            txtLicenseKey.LabelText = "License Key";
-            txtLicenseKey.Location = new Point(30, 160);
-            txtLicenseKey.Width = 620;
-            txtLicenseKey.TextChanged += TxtLicenseKey_TextChanged;
-            this.ContentPanel.Controls.Add(txtLicenseKey);
-
-            // Hardware ID Display
-            lblHwIdTitle = new Label();
-            lblHwIdTitle.Text = "Machine ID (for support):";
-            lblHwIdTitle.Font = ThemeConfig.SmallBoldFont;
-            lblHwIdTitle.ForeColor = ThemeConfig.TextColorDark;
-            lblHwIdTitle.Location = new Point(30, 240);
-            lblHwIdTitle.AutoSize = true;
-            this.ContentPanel.Controls.Add(lblHwIdTitle);
-
-            lblHardwareId = new Label();
-            lblHardwareId.Text = HardwareInfo.GetShortHardwareId();
-            lblHardwareId.Font = ThemeConfig.StandardFont;
-            lblHardwareId.ForeColor = ThemeConfig.SecondaryColor;
-            lblHardwareId.Location = new Point(30, 265);
-            lblHardwareId.AutoSize = true;
-            this.ContentPanel.Controls.Add(lblHardwareId);
-
-            lnkCopyHardwareId = new LinkLabel();
-            lnkCopyHardwareId.Text = "Copy to Clipboard";
-            lnkCopyHardwareId.Font = ThemeConfig.StandardFont;
-            lnkCopyHardwareId.Location = new Point(30, 290);
-            lnkCopyHardwareId.AutoSize = true;
-            lnkCopyHardwareId.LinkClicked += (s, e) =>
+            txtLicenseKey = new ModernTextBox
             {
-                Clipboard.SetText(lblHardwareId.Text);
-                MessageHelper.ShowSuccess("Machine ID copied to clipboard!");
+                LabelText = "License Key",
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 20)
             };
-            this.ContentPanel.Controls.Add(lnkCopyHardwareId);
+            txtLicenseKey.TextChanged += TxtLicenseKey_TextChanged;
+            tlpMain.Controls.Add(txtLicenseKey, 0, 2);
+
+            // Hardware ID Section
+            TableLayoutPanel tlpMachineId = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, AutoSize = true };
+            lblHwIdTitle = new Label { Text = "Machine ID (for support):", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true };
+            lblHardwareId = new Label { Text = HardwareInfo.GetShortHardwareId(), Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true };
+            lnkCopyHardwareId = new LinkLabel { Text = "Copy to Clipboard", Font = ThemeConfig.StandardFont, AutoSize = true, Margin = new Padding(0, 5, 0, 0) };
+            lnkCopyHardwareId.LinkClicked += (s, e) => { 
+                Clipboard.SetText(lblHardwareId.Text); 
+                MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم نسخ معرف الجهاز إلى الحافظة!" : "Machine ID copied to clipboard!"); 
+            };
+            
+            tlpMachineId.Controls.Add(lblHwIdTitle, 0, 0);
+            tlpMachineId.Controls.Add(lblHardwareId, 0, 1);
+            tlpMachineId.Controls.Add(lnkCopyHardwareId, 0, 2);
+            tlpMain.Controls.Add(tlpMachineId, 0, 3);
 
             // Status Label
-            lblStatus = new Label();
-            lblStatus.Text = "";
-            lblStatus.Font = ThemeConfig.StandardFont;
-            lblStatus.ForeColor = ThemeConfig.DangerColor;
-            lblStatus.Location = new Point(30, 325);
-            lblStatus.Size = new Size(620, 30);
-            this.ContentPanel.Controls.Add(lblStatus);
+            lblStatus = new Label
+            {
+                Text = "",
+                Font = ThemeConfig.StandardFont,
+                ForeColor = ThemeConfig.DangerColor,
+                AutoSize = true,
+                Margin = new Padding(0, 20, 0, 0)
+            };
+            tlpMain.Controls.Add(lblStatus, 0, 4);
 
-            // Buttons
-            btnCancel = new ModernButton();
-            btnCancel.Text = "Exit";
-            btnCancel.Size = new Size(120, 40);
-            btnCancel.Location = new Point(230, 370);
-            btnCancel.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
-            ThemeConfig.ApplySecondaryButton(btnCancel);
-            this.ContentPanel.Controls.Add(btnCancel);
+            this.ContentPanel.Controls.Add(tlpMain);
 
-            btnStartTrial = new ModernButton();
-            btnStartTrial.Text = "Start 30-Day Trial";
-            btnStartTrial.Size = new Size(150, 40);
-            btnStartTrial.Location = new Point(360, 370);
-            btnStartTrial.Click += BtnStartTrial_Click;
-            btnStartTrial.Visible = !LocalizationManager.IsArabic; // Hide on AR to avoid layout issues unless space is plenty
-            ThemeConfig.ApplySecondaryButton(btnStartTrial);
-            this.ContentPanel.Controls.Add(btnStartTrial);
-
-            btnActivate = new ModernButton();
-            btnActivate.Text = "Activate";
-            btnActivate.Size = new Size(150, 40);
-            btnActivate.Location = new Point(530, 370);
-            btnActivate.Click += BtnActivate_Click;
-            btnActivate.Enabled = false;
-            ThemeConfig.ApplyPrimaryButton(btnActivate);
-            this.ContentPanel.Controls.Add(btnActivate);
-
+            ApplyLocalization(); // To set initial button text
 
             this.ResumeLayout(false);
+            this.PerformLayout();
         }
 
         private void ApplyLocalization()
@@ -131,23 +103,27 @@ namespace GenericInventorySystem.Forms
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
             this.TitleText = isArabic ? "تفعيل الترخيص" : "License Activation";
-            lblTitle.Text = isArabic ? "تفعيل الترخيص الخاص بك" : "Activate Your License";
-            lblSubtitle.Text = isArabic ? "أدخل مفتاح الترخيص لتفعيل التطبيق" : "Enter your license key to activate the software";
+            lblSubtitle.Text = isArabic ? "أدخل مفتاح الترخيص لتفعيل البرنامج" : "Enter your license key to activate the software";
             
             txtLicenseKey.LabelText = isArabic ? "مفتاح الترخيص" : "License Key";
             lblHwIdTitle.Text = isArabic ? "معرف الجهاز (للدعم الفني):" : "Machine ID (for support):";
             lnkCopyHardwareId.Text = isArabic ? "نسخ إلى الحافظة" : "Copy to Clipboard";
             
-            btnCancel.Text = isArabic ? "خروج" : "Exit";
-            btnStartTrial.Text = isArabic ? "بدء فترة تجريبية مجانية 30 يوماً" : "Start 30-Day Trial";
-            btnActivate.Text = isArabic ? "تفعيل" : "Activate";
+            SetFooterButtons(
+                isArabic ? "تفعيل" : "Activate",
+                isArabic ? "خروج" : "Exit",
+                BtnActivate_Click,
+                (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); },
+                isArabic ? "بدء فترة تجريبية مجانية 30 يوماً" : "Start 30-Day Trial",
+                BtnStartTrial_Click
+            );
         }
 
         private void TxtLicenseKey_TextChanged(object sender, EventArgs e)
         {
             // Enable activate button if key is provided (Format: CPIMS-XXXXX-XXXXX-XXXXX-XXXXX - 25+ chars with dashes)
             string key = txtLicenseKey.Text.Replace("-", "").Replace(" ", "");
-            btnActivate.Enabled = key.Length >= 20;
+            if (PrimaryButton != null) PrimaryButton.Enabled = key.Length >= 20;
             lblStatus.Text = "";
         }
 
@@ -155,10 +131,8 @@ namespace GenericInventorySystem.Forms
         {
             string licenseKey = txtLicenseKey.Text.Trim();
 
-            if (string.IsNullOrWhiteSpace(licenseKey))
+            if (!ValidationHelper.ValidateRequiredFields(this, new Control[] { txtLicenseKey }, new string[] { LocalizationManager.IsArabic ? "مفتاح الترخيص" : "License Key" }))
             {
-                lblStatus.Text = LocalizationManager.IsArabic ? "يرجى إدخال مفتاح الترخيص." : "Please enter a license key.";
-                lblStatus.ForeColor = Color.Red;
                 return;
             }
 
@@ -191,7 +165,7 @@ namespace GenericInventorySystem.Forms
             LicenseKey existingLicense = LicenseManager.GetCurrentLicense();
             if (existingLicense != null && existingLicense.IsTrial())
             {
-                MessageHelper.ShowWarning("Trial period has already been used on this machine.");
+                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لقد تم استخدام الفترة التجريبية بالفعل على هذا الجهاز." : "Trial period has already been used on this machine.");
                 return;
             }
 

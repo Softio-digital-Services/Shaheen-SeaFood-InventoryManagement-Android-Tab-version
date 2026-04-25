@@ -3,15 +3,15 @@ using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Data;
+using GenericInventorySystem.Controls;
+using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem.Forms
 {
-    public class ProductSelectorForm : Form
+    public class ProductSelectorForm : BaseModalForm
     {
         private TextBox txtSearch;
         private DataGridView dgvProducts;
-        private Button btnSelect;
-        private Button btnCancel;
         
         public int SelectedPartId { get; private set; }
         public string SelectedPartName { get; private set; }
@@ -27,52 +27,37 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.Size = new Size(600, 500);
-            this.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? "اختر منتج" : "Select Product";
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
+            // Adaptive sizing handled by BaseModalForm.OnLoad
+            this.TitleText = LocalizationManager.IsArabic ? "اختر منتج" : "Select Product";
 
-            txtSearch = new TextBox();
-            txtSearch.Location = new Point(20, 20);
-            txtSearch.Size = new Size(545, 30);
-            txtSearch.Font = ThemeConfig.SubHeaderFont;
+            TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(15) };
+            tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
+            tlp.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            txtSearch = new TextBox { Dock = DockStyle.Fill, Font = ThemeConfig.SubHeaderFont, Margin = new Padding(0, 0, 0, 10) };
             txtSearch.TextChanged += (s, e) => LoadProducts();
-
-            dgvProducts = new DataGridView();
+            
+            dgvProducts = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, ReadOnly = true, SelectionMode = DataGridViewSelectionMode.FullRowSelect, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, RowHeadersVisible = false };
             dgvProducts.DataError += (s, e) => { e.ThrowException = false; };
-            dgvProducts.Location = new Point(20, 60);
-            dgvProducts.Size = new Size(545, 330);
-            dgvProducts.AllowUserToAddRows = false;
-            dgvProducts.ReadOnly = true;
-            dgvProducts.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvProducts.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvProducts.CellDoubleClick += (s, e) => SelectAndClose();
+            
+            tlp.Controls.Add(txtSearch, 0, 0);
+            tlp.Controls.Add(dgvProducts, 0, 1);
 
-            btnSelect = new Button();
-            btnSelect.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? "إضافة المحدد" : "Add Selected";
-            btnSelect.Location = new Point(360, 410);
-            btnSelect.Size = new Size(120, 35);
-            btnSelect.Click += (s, e) => SelectAndClose();
+            this.ContentPanel.Controls.Add(tlp);
 
-            btnCancel = new Button();
-            btnCancel.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? "إلغاء" : "Cancel";
-            btnCancel.Location = new Point(490, 410); // Right aligned
-            btnCancel.Size = new Size(75, 35);
-            btnCancel.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
-
-            this.Controls.Add(txtSearch);
-            this.Controls.Add(dgvProducts);
-            this.Controls.Add(btnSelect);
-            this.Controls.Add(btnCancel);
+            SetFooterButtons(
+                LocalizationManager.IsArabic ? "إضافة المحدد" : "Add Selected",
+                LocalizationManager.IsArabic ? "إلغاء" : "Cancel",
+                (s, e) => SelectAndClose(),
+                (s, e) => { DialogResult = DialogResult.Cancel; Close(); }
+            );
         }
 
         private void ApplyTheme()
         {
-            this.BackColor = ThemeConfig.BackgroundColor;
             ThemeConfig.ApplyGridTheme(dgvProducts);
-            ThemeConfig.ApplyPrimaryButton(btnSelect);
-            ThemeConfig.ApplySecondaryButton(btnCancel);
+            // Footer buttons are styled automatically by BaseModalForm
         }
 
         private void LoadProducts()
@@ -88,7 +73,7 @@ namespace GenericInventorySystem.Forms
                 dgvProducts.DataSource = DatabaseHelper.ExecuteDataTable(sql);
                 if (dgvProducts.Columns["id"] != null) dgvProducts.Columns["id"].Visible = false;
 
-                if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
+                if (LocalizationManager.IsArabic)
                 {
                     if (dgvProducts.Columns["Name"] != null) dgvProducts.Columns["Name"].HeaderText = "الاسم";
                     if (dgvProducts.Columns["SKU"] != null) dgvProducts.Columns["SKU"].HeaderText = "رقم القطعة";
@@ -118,3 +103,4 @@ namespace GenericInventorySystem.Forms
         }
     }
 }
+

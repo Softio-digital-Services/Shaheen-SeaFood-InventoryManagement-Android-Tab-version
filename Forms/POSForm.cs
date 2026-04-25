@@ -16,12 +16,13 @@ namespace GenericInventorySystem.Forms
         private ComboBox cmbCustomers;
         private FlatDateTimePicker dtOrderDate;
         private FlatDateTimePicker dtDeliveryDate;
+        private FlatDateTimePicker dtDueDate;
         private TextBox txtShippingAddress;
         private Label lblSubtotalVal, lblTaxVal, lblShippingVal, lblTotalVal;
         private ModernTextBox txtBarcodeScan;
         private CheckBox chkApplyVAT, chkApplyShipping;
         private NumericUpDown numShipping;
-        private Button btnCheckout, btnAddItem, btnManageDrafts, btnClearCart, btnQuotation;
+        private Button btnCheckout, btnAddItem, btnManageDrafts, btnClearCart, btnQuotation, btnPayLater, btnReturnItems;
         private StatCard cardTodayOrders, cardTodaySales, cardPending;
         private DataTable cartTable;
         private DashboardService _dashboardService;
@@ -32,10 +33,14 @@ namespace GenericInventorySystem.Forms
             LocalizationManager.ApplyRTL(this); LocalizationManager.TranslateControl(this);
             Func<string, string> L = LocalizationManager.GetString;
             Action<string, string> setText = (name, key) => { var ctrls = this.Controls.Find(name, true); if (ctrls.Length > 0) ctrls[0].Text = L(key); };
-            setText("lblPOSTitle", "POS_Title"); setText("lblCust", "POS_Customer"); setText("lblDateTitle", "POS_OrderDate"); setText("lblDelTitle", "POS_DeliveryDate"); setText("lblAddrTitle", "POS_ShippingTo"); setText("lblLineItems", "POS_LineItems"); setText("lblTotalsTitle", "POS_OrderSummary"); setText("btnDraft", "POS_SaveDraft");
+            setText("lblPOSTitle", "POS_Title"); setText("lblCust", "POS_Customer"); setText("lblDateTitle", "POS_OrderDate"); setText("lblDelTitle", "POS_DeliveryDate");
+            setText("lblDueTitle", "Tran_DueDateLabel");
+            setText("lblAddrTitle", "POS_ShippingTo"); setText("lblLineItems", "POS_LineItems"); setText("lblTotalsTitle", "POS_OrderSummary"); setText("btnDraft", "POS_SaveDraft");
             if(btnQuotation != null) btnQuotation.Text = L("POS_SaveQuotation");
             if(btnAddItem != null) btnAddItem.Text = L("POS_AddItem");
             if(btnCheckout != null) btnCheckout.Text = L("POS_Checkout");
+            if(btnPayLater != null) btnPayLater.Text = L("POS_PayLater");
+            if(btnReturnItems != null) btnReturnItems.Text = L("Return_Action") ?? (LocalizationManager.IsArabic ? "إرجاع أصناف" : "Return Items");
             setText("lblTotal_Subtotal", "POS_Subtotal"); setText("lblTotal_VAT (11%)", "POS_Tax"); setText("lblTotal_Shipping", "POS_Shipping"); setText("lblTotal_Grand Total", "POS_GrandTotal");
             if(btnManageDrafts != null) btnManageDrafts.Text = L("POS_ManageDrafts"); if(btnClearCart != null) btnClearCart.Text = L("POS_ClearCart");
             if(cardTodayOrders != null) cardTodayOrders.Title = L("POS_Orders"); if(cardTodaySales != null) cardTodaySales.Title = L("POS_Sales"); if(cardPending != null) cardPending.Title = L("POS_Pending");
@@ -66,6 +71,10 @@ namespace GenericInventorySystem.Forms
             pnlHeader.Controls.Add(lblPOSTitle);
             tlpRoot.Controls.Add(pnlHeader, 0, 0);
 
+            btnReturnItems = new ModernButton { Text = "Return Items", Size = new Size(130, 34), Anchor = AnchorStyles.Top | AnchorStyles.Right };
+            btnReturnItems.Click += BtnReturnItems_Click; ThemeConfig.ApplyEmojiButton(btnReturnItems, ThemeConfig.ActiveBackColor, ThemeConfig.BorderColor, ThemeConfig.TextColorDark);
+            pnlHeader.Controls.Add(btnReturnItems);
+
             btnManageDrafts = new ModernButton { Text = "Manage Drafts", Size = new Size(140, 34), Anchor = AnchorStyles.Top | AnchorStyles.Right };
             btnManageDrafts.Click += BtnLoadDraft_Click; ThemeConfig.ApplyEmojiButton(btnManageDrafts, ThemeConfig.WarningColor, ThemeConfig.WarningBorder, Color.White);
             pnlHeader.Controls.Add(btnManageDrafts);
@@ -75,7 +84,11 @@ namespace GenericInventorySystem.Forms
             ThemeConfig.ApplyEmojiButton(btnClearCart, ThemeConfig.DangerColor, ThemeConfig.DangerBorder, Color.White);
             pnlHeader.Controls.Add(btnClearCart);
             
-            pnlHeader.Resize += (s, e) => { btnManageDrafts.Left = pnlHeader.Width - 260; btnClearCart.Left = pnlHeader.Width - 110; };
+            pnlHeader.Resize += (s, e) => { 
+                btnClearCart.Left = pnlHeader.Width - 110;
+                btnManageDrafts.Left = btnClearCart.Left - 150;
+                btnReturnItems.Left = btnManageDrafts.Left - 140;
+            };
 
             TableLayoutPanel tlpStats = new TableLayoutPanel { Dock = DockStyle.Top, Height = 110, ColumnCount = 3, Margin = new Padding(0, 5, 0, 10) };
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
@@ -94,9 +107,17 @@ namespace GenericInventorySystem.Forms
             Panel pnlCol1 = new Panel { Dock = DockStyle.Top, AutoSize = true, BackColor = Color.Transparent, Padding = new Padding(0,0,10,0) }; 
             pnlCol1.Controls.Add(new Label { Text = "Customer", Name = "lblCust", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark });
             cmbCustomers = new ComboBox(); ThemeConfig.ApplyComboBoxStyle(cmbCustomers);
+            cmbCustomers.SelectedIndexChanged += (s, e) => {
+                if (btnPayLater != null) {
+                    int custId = -1;
+                    if (cmbCustomers.SelectedValue is int id) custId = id;
+                    else if (cmbCustomers.SelectedValue != null) int.TryParse(cmbCustomers.SelectedValue.ToString(), out custId);
+                    btnPayLater.Enabled = custId != -1;
+                }
+            };
             Panel pnlCustWrapper = ThemeConfig.WrapInStyledInput(cmbCustomers, 40); pnlCustWrapper.Location = new Point(0, 26); pnlCustWrapper.Width = 160; pnlCustWrapper.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             Button btnAddCust = new ModernButton { Name = "btnAddCust", Text = "", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.Overlay, ImageAlign = ContentAlignment.MiddleCenter, Size = new Size(35, 40), Location = new Point(pnlCustWrapper.Right + 5, 26), Anchor = AnchorStyles.Top | AnchorStyles.Right };
-            btnAddCust.Click += (s, e) => { var form = new AddCustomerForm(); if(form.ShowDialog() == DialogResult.OK) { CustomerService svc = new CustomerService(); int newId = svc.AddCustomer(form.CustomerName, form.Phone, form.Email, form.Address, form.CustomerType); LoadCustomers(); if(newId > 0) cmbCustomers.SelectedValue = newId; } };
+            btnAddCust.Click += (s, e) => { var form = new AddCustomerForm(); if(form.ShowDialog() == DialogResult.OK) { CustomerService svc = new CustomerService(); int newId = svc.AddCustomer(form.CustomerName, form.Phone, form.Email, form.Address, form.CustomerType, form.CreditLimit); LoadCustomers(); if(newId > 0) cmbCustomers.SelectedValue = newId; } };
             ThemeConfig.ApplySecondaryButton(btnAddCust);
             pnlCol1.Controls.Add(pnlCustWrapper); pnlCol1.Controls.Add(btnAddCust); pnlCol1.Resize += (s, e) => { btnAddCust.Left = pnlCustWrapper.Right + 5; };
             tblInfo.Controls.Add(pnlCol1, 0, 0);
@@ -113,11 +134,17 @@ namespace GenericInventorySystem.Forms
             Panel pnlDelWrapper = ThemeConfig.WrapInStyledInput(dtDeliveryDate, 40); pnlDelWrapper.Dock = DockStyle.Fill;
             pnlDate2.Controls.Add(pnlDelWrapper); pnlDelWrapper.BringToFront(); tblInfo.Controls.Add(pnlDate2, 0, 2);
 
+            Panel pnlDate3 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0, 0, 10, 0) };
+            pnlDate3.Controls.Add(new Label { Text = "Due Date", Name = "lblDueTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
+            dtDueDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Value = DateTime.Today.AddDays(30) };
+            Panel pnlDueWrapper = ThemeConfig.WrapInStyledInput(dtDueDate, 40); pnlDueWrapper.Dock = DockStyle.Fill;
+            pnlDate3.Controls.Add(pnlDueWrapper); pnlDueWrapper.BringToFront(); tblInfo.Controls.Add(pnlDate3, 1, 2);
+
             Panel pnlCol3 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
             pnlCol3.Controls.Add(new Label { Text = "Shipping To", Name = "lblAddrTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             txtShippingAddress = new TextBox { Multiline = true, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, BorderStyle = BorderStyle.None };
             Panel pnlAddrWrapper = ThemeConfig.WrapInStyledInput(txtShippingAddress, 210, true); pnlAddrWrapper.Dock = DockStyle.Fill;
-            pnlCol3.Controls.Add(pnlAddrWrapper); pnlAddrWrapper.BringToFront(); tblInfo.Controls.Add(pnlCol3, 1, 0); tblInfo.SetRowSpan(pnlCol3, 3);
+            pnlCol3.Controls.Add(pnlAddrWrapper); pnlAddrWrapper.BringToFront(); tblInfo.Controls.Add(pnlCol3, 1, 0); tblInfo.SetRowSpan(pnlCol3, 2);
 
             Panel pnlItems = CreateCardPanel(); pnlItems.Dock = DockStyle.Fill; pnlItems.Margin = new Padding(0, 0, 0, 10);
             TableLayoutPanel tlpGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(20) };
@@ -147,6 +174,8 @@ namespace GenericInventorySystem.Forms
             ThemeConfig.ApplyComboBoxStyle(cboCurrency);
             Panel currPanel = ThemeConfig.WrapInStyledInput(cboCurrency, 36); currPanel.Width = 110; currPanel.Location = new Point(92, 43);
             foreach (var c in CurrencyService.SupportedCurrencies) cboCurrency.Items.Add(c);
+            // Select USD by default
+            for(int i=0; i<cboCurrency.Items.Count; i++) if((cboCurrency.Items[i] as CurrencyInfo)?.Code == "USD") { cboCurrency.SelectedIndex = i; break; }
             cboCurrency.SelectedIndexChanged += (s, e) => { if (cboCurrency.SelectedItem is CurrencyInfo selected) { CurrencyService.ActiveCurrency = selected.Code; UpdateTotal(); } };
             pnlTotals.Controls.Add(currPanel);
 
@@ -158,7 +187,7 @@ namespace GenericInventorySystem.Forms
              addTotalRow("Subtotal", "$0.00", 78, false); 
              
              // Add VAT Checkbox
-             chkApplyVAT = new CheckBox { Text = "", Checked = true, AutoSize = true, Location = new Point(20, 105), Cursor = Cursors.Hand };
+             chkApplyVAT = new CheckBox { Text = "", Checked = false, AutoSize = true, Location = new Point(20, 105), Cursor = Cursors.Hand };
              chkApplyVAT.CheckedChanged += (s, e) => UpdateTotal();
              pnlTotals.Controls.Add(chkApplyVAT);
              
@@ -181,14 +210,22 @@ namespace GenericInventorySystem.Forms
 
              addTotalRow("Grand Total", "$0.00", 168, true);
              
-             Button btnDraft = new ModernButton { Name = "btnDraft", Size = new Size(145, 40), Location = new Point(80, 205), Text = "Save Draft", Cursor = Cursors.Hand };
+             Button btnDraft = new ModernButton { Name = "btnDraft", Size = new Size(115, 40), Location = new Point(25, 205), Text = "Save Draft", Cursor = Cursors.Hand };
              btnDraft.Click += BtnSaveDraft_Click; ThemeConfig.ApplySecondaryButton(btnDraft); pnlTotals.Controls.Add(btnDraft);
-             btnCheckout = new ModernButton { Text = "Checkout", Size = new Size(145, 40), Location = new Point(235, 205) };
+             
+             btnPayLater = new ModernButton { Name = "btnPayLater", Size = new Size(115, 40), Location = new Point(152, 205), Text = "Pay Later", Cursor = Cursors.Hand };
+             btnPayLater.Click += BtnPayLater_Click; ThemeConfig.ApplyEmojiButton(btnPayLater, Color.FromArgb(255, 152, 0), Color.FromArgb(230, 126, 34), Color.White);
+             btnPayLater.Enabled = false; // Initially disabled (Walk-In)
+             pnlTotals.Controls.Add(btnPayLater);
+
+             btnCheckout = new ModernButton { Text = "Checkout", Size = new Size(115, 40), Location = new Point(280, 205) };
              btnCheckout.Click += BtnCheckout_Click; ThemeConfig.ApplyPrimaryButton(btnCheckout); pnlTotals.Controls.Add(btnCheckout);
-             btnQuotation = new ModernButton { Name = "btnQuotation", Size = new Size(145, 40), Location = new Point(80, 252), Text = "Save as Quotation", Cursor = Cursors.Hand };
+             
+             btnQuotation = new ModernButton { Name = "btnQuotation", Size = new Size(170, 40), Location = new Point(25, 252), Text = "Save as Quotation", Cursor = Cursors.Hand };
              btnQuotation.Click += BtnSaveQuotation_Click; ThemeConfig.ApplyEmojiButton(btnQuotation, ThemeConfig.ActiveBackColor, ThemeConfig.PrimaryColor, ThemeConfig.TextColorDark);
              pnlTotals.Controls.Add(btnQuotation);
-             Button btnPrintReceipt = new ModernButton { Name = "btnPrintReceipt", Size = new Size(145, 40), Location = new Point(235, 252), Text = LocalizationManager.GetString("POS_PrintReceipt"), Cursor = Cursors.Hand };
+             
+             Button btnPrintReceipt = new ModernButton { Name = "btnPrintReceipt", Size = new Size(170, 40), Location = new Point(225, 252), Text = LocalizationManager.GetString("POS_PrintReceipt"), Cursor = Cursors.Hand };
              btnPrintReceipt.Click += BtnPrintReceipt_Click; ThemeConfig.ApplyEmojiButton(btnPrintReceipt, ThemeConfig.ActiveBackColor, ThemeConfig.SuccessColor, ThemeConfig.TextColorDark);
              pnlTotals.Controls.Add(btnPrintReceipt);
              tlpBottomArea.Controls.Add(pnlTotals, 1, 0); tlpRoot.Controls.Add(tlpBottomArea, 0, 3);
@@ -239,7 +276,9 @@ namespace GenericInventorySystem.Forms
             try {
                 DataTable dt = DatabaseHelper.ExecuteDataTable("SELECT customer_id, full_name FROM customers ORDER BY full_name");
                 DataRow row = dt.NewRow(); row["customer_id"] = -1; row["full_name"] = LocalizationManager.GetString("POS_WalkIn"); dt.Rows.InsertAt(row, 0);
-                cmbCustomers.DataSource = dt; cmbCustomers.DisplayMember = "full_name"; cmbCustomers.ValueMember = "customer_id";
+                cmbCustomers.ValueMember = "customer_id";
+                cmbCustomers.DisplayMember = "full_name";
+                cmbCustomers.DataSource = dt;
             } catch { }
         }
 
@@ -247,19 +286,78 @@ namespace GenericInventorySystem.Forms
 
         private void BtnCheckout_Click(object sender, EventArgs e)
         {
-            if(cartTable.Rows.Count == 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty")); return; }
+            if (cartTable.Rows.Count == 0)
+            {
+                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "السلة فارغة!" : "Cart is empty!"));
+                return;
+            }
+            
             decimal total = 0; foreach(DataRow row in cartTable.Rows) total += (decimal)row["Total"];
-            int customerId = (int)cmbCustomers.SelectedValue; string paymentStatus = "Paid";
-            if(customerId != -1) {
-                 DialogResult res = ModernMessageBox.Show(string.Format(LocalizationManager.GetString("PaymentPrompt"), $"{total:N2}"), "Payment", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-                 if(res == DialogResult.Cancel) return; if(res == DialogResult.No) paymentStatus = "Unpaid";
-            } else { if(ModernMessageBox.Show(string.Format(LocalizationManager.GetString("ConfirmSale"), $"{total:N2}"), "Confirm", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return; }
+            
+            if(ModernMessageBox.Show(string.Format(LocalizationManager.GetString("ConfirmSale"), $"{total:N2}"), "Confirm", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
+
             try {
                 List<OrderItem> items = new List<OrderItem>();
                 foreach(DataRow row in cartTable.Rows) items.Add(new OrderItem { PartId = (int)row["PartID"], Quantity = (int)row["Quantity"], UnitPrice = (decimal)row["SellingPrice"] });
-                int orderId = new OrderService().PlaceOrder(customerId, items, total, (paymentStatus == "Paid"));
-                DatabaseHelper.LogTransaction("SALE", "Order #" + orderId, "Total: $" + total);
+                int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
+                int orderId = new OrderService().PlaceOrder(customerId, items, total, true); // true = Paid
+                DatabaseHelper.LogTransaction("SALE", "Order #" + orderId, "Paid Total: $" + total);
                 MessageHelper.ShowSuccess("Order Sent! Order #" + orderId); cartTable.Rows.Clear(); UpdateTotal(); RefreshStats(); 
+            } catch(Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
+        }
+
+        private void BtnPayLater_Click(object sender, EventArgs e)
+        {
+            if (cartTable.Rows.Count == 0)
+            {
+                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "السلة فارغة!" : "Cart is empty!"));
+                return;
+            }
+            
+            int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
+            if (customerId == -1)
+            {
+                string msg = LocalizationManager.IsArabic ? "يجب اختيار عميل للبيع بالآجل." : "Must select a customer for Pay Later.";
+                MessageHelper.ShowWarning(msg);
+                return;
+            }
+            
+            decimal total = 0; foreach(DataRow row in cartTable.Rows) total += (decimal)row["Total"];
+            
+            // Credit Limit Validation
+            try {
+                DataTable dt = DatabaseHelper.ExecuteDataTable($"SELECT current_balance, credit_limit FROM customers WHERE customer_id = {customerId}");
+                if (dt.Rows.Count > 0) {
+                    decimal currentBalance = (decimal)dt.Rows[0]["current_balance"];
+                    decimal creditLimit = (decimal)dt.Rows[0]["credit_limit"];
+                    if (currentBalance + total > creditLimit) {
+                        string title = LocalizationManager.GetString("POS_CreditLimitExceeded");
+                        if (string.IsNullOrEmpty(title)) title = "Credit Limit Exceeded";
+                        
+                        string msgFormat = LocalizationManager.GetString("POS_CreditLimitExceededMsg");
+                        string msg;
+                        if (string.IsNullOrEmpty(msgFormat)) {
+                            msg = $"Customer has exceeded their credit limit.\nCurrent Balance: {currentBalance:C2}\nNew Amount: {total:C2}\nLimit: {creditLimit:C2}";
+                        } else {
+                            msg = string.Format(msgFormat, currentBalance, total, creditLimit);
+                        }
+                        
+                        MessageHelper.ShowWarning(msg);
+                        return;
+                    }
+                }
+            } catch { }
+
+            string confirmMsg = LocalizationManager.GetString("POS_ConfirmAddBill");
+            if (string.IsNullOrEmpty(confirmMsg)) confirmMsg = "Confirm adding ${0} to customer balance?";
+            if(ModernMessageBox.Show(string.Format(confirmMsg, $"{total:N2}"), "Confirm", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
+
+            try {
+                List<OrderItem> items = new List<OrderItem>();
+                foreach(DataRow row in cartTable.Rows) items.Add(new OrderItem { PartId = (int)row["PartID"], Quantity = (int)row["Quantity"], UnitPrice = (decimal)row["SellingPrice"] });
+                int orderId = new OrderService().PlaceOrder(customerId, items, total, false, "Completed", dtDueDate.Value); // false = Unpaid
+                DatabaseHelper.LogTransaction("SALE_DEBT", "Order #" + orderId, "Unpaid Total: $" + total);
+                MessageHelper.ShowSuccess("Order Billed! Order #" + orderId); cartTable.Rows.Clear(); UpdateTotal(); RefreshStats(); 
             } catch(Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
         }
 
@@ -362,38 +460,59 @@ namespace GenericInventorySystem.Forms
 
         private void BtnSaveDraft_Click(object sender, EventArgs e)
         {
-             if(cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
+             if (cartTable.Rows.Count == 0)
+             {
+                 MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "السلة فارغة!" : "Cart is empty!"));
+                 return;
+             }
              try {
                  List<OrderItem> items = new List<OrderItem>(); decimal total = 0;
                  foreach(DataRow r in cartTable.Rows) { total += (decimal)r["Total"]; items.Add(new OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] }); }
-                 new OrderService().PlaceOrder((int)cmbCustomers.SelectedValue, items, total, false, "Draft"); 
-                 MessageHelper.ShowSuccess("Draft Saved!"); cartTable.Rows.Clear(); UpdateTotal();
+                 new OrderService().PlaceOrder(Convert.ToInt32(cmbCustomers.SelectedValue), items, total, false, "Draft"); 
+                 MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم حفظ المسودة!" : "Draft Saved!"); cartTable.Rows.Clear(); UpdateTotal();
              } catch(Exception ex) { MessageHelper.ShowError("Failed: " + ex.Message); }
         }
 
         private void BtnSaveQuotation_Click(object sender, EventArgs e)
         {
-             if(cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
-             try {
-                 List<OrderItem> items = new List<OrderItem>(); decimal total = 0;
-                 foreach(DataRow r in cartTable.Rows) { total += (decimal)r["Total"]; items.Add(new OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] }); }
-                 new OrderService().PlaceOrder((int)cmbCustomers.SelectedValue, items, total, false, "Quotation"); 
-                 MessageHelper.ShowSuccess("Saved!"); cartTable.Rows.Clear(); UpdateTotal(); GlobalEvents.RaiseOrdersUpdated();
-             } catch(Exception ex) { MessageHelper.ShowError("Failed: " + ex.Message); }
+            if (cartTable.Rows.Count == 0)
+            {
+                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "السلة فارغة!" : "Cart is empty!"));
+                return;
+            }
+            try {
+                List<OrderItem> items = new List<OrderItem>(); decimal total = 0;
+                foreach(DataRow r in cartTable.Rows) { total += (decimal)r["Total"]; items.Add(new OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] }); }
+                new OrderService().PlaceOrder(Convert.ToInt32(cmbCustomers.SelectedValue), items, total, false, "Quotation"); 
+                MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم الحفظ!" : "Saved!"); cartTable.Rows.Clear(); UpdateTotal(); GlobalEvents.RaiseOrdersUpdated();
+            } catch(Exception ex) { MessageHelper.ShowError("Failed: " + ex.Message); }
         }
 
         private void BtnLoadDraft_Click(object sender, EventArgs e)
         {
              DataTable ds = new OrderService().GetDrafts(); if(ds.Rows.Count == 0) { MessageHelper.ShowInfo("No drafts."); return; }
              BaseModalForm f = new BaseModalForm { TitleText = "Select Draft", Size = new Size(600, 450) };
+             
+             TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(10) };
+             tlp.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+             tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
+
              DataGridView dgv = new DataGridView { Dock = DockStyle.Fill, DataSource = ds, ReadOnly = true, SelectionMode = DataGridViewSelectionMode.FullRowSelect, AllowUserToAddRows = false, RowHeadersVisible = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
              ThemeConfig.ApplyGridTheme(dgv); dgv.ColumnHeadersVisible = true;
-             Button bl = new ModernButton { Text = "Load", Dock = DockStyle.Bottom, Height = 45 }; ThemeConfig.ApplyPrimaryButton(bl);
+             
+             Button bl = new ModernButton { Text = "Load", Size = new Size(120, 45), Anchor = AnchorStyles.Right }; 
+             ThemeConfig.ApplyPrimaryButton(bl);
+             
              bl.Click += (s2, e2) => { if(dgv.SelectedRows.Count > 0) {
                  int oid = (int)dgv.SelectedRows[0].Cells["order_id"].Value;
                  object cid = dgv.SelectedRows[0].Cells["customer_id"].Value; LoadDraftIntoCart(oid, (cid == DBNull.Value) ? -1 : (int)cid); f.DialogResult = DialogResult.OK; f.Close();
              }};
-             f.Controls.Add(dgv); f.Controls.Add(bl); f.ShowDialog();
+             
+             tlp.Controls.Add(dgv, 0, 0);
+             tlp.Controls.Add(bl, 0, 1);
+             
+             f.ContentPanel.Controls.Add(tlp);
+             f.ShowDialog();
         }
 
         private void LoadDraftIntoCart(int draftOrderId, int customerId)
@@ -405,6 +524,34 @@ namespace GenericInventorySystem.Forms
                  foreach(var i in items) { int s = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id={i.PartId}"); cartTable.Rows.Add(i.PartId, i.PartName, Math.Min(i.Quantity, s), 0, i.UnitPrice); }
                  UpdateTotal(); cmbCustomers.SelectedValue = customerId; svc.DeleteOrder(draftOrderId); MessageHelper.ShowSuccess("Loaded!");
              } catch(Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
+        }
+
+        private void BtnReturnItems_Click(object sender, EventArgs e)
+        {
+             bool ar = LocalizationManager.IsArabic;
+             string title = ar ? "إرجاع الأصناف" : "Return Items";
+             string prompt = ar ? "أدخل رقم الطلب للإرجاع:" : "Enter Order ID to Return:";
+             
+             string input = Microsoft.VisualBasic.Interaction.InputBox(prompt, title, "");
+             if (string.IsNullOrEmpty(input)) return;
+
+             if (int.TryParse(input, out int orderId))
+             {
+                 try {
+                     var check = DatabaseHelper.ExecuteScalar<int>($"SELECT COUNT(*) FROM orders WHERE order_id = {orderId}");
+                     if (check > 0)
+                     {
+                         var status = DatabaseHelper.ExecuteScalar<object>($"SELECT status FROM orders WHERE order_id = {orderId}")?.ToString();
+                         if (status == "Quotation" || status == "Draft") {
+                             MessageHelper.ShowWarning(ar ? "لا يمكن إرجاع طلبات الاقتباس أو المسودة." : "Cannot return Quotation or Draft orders.");
+                             return;
+                         }
+                         ReturnEntryForm form = new ReturnEntryForm(orderId);
+                         form.ShowDialog();
+                     }
+                     else MessageHelper.ShowWarning(ar ? "رقم الطلب غير موجود." : "Order ID not found.");
+                 } catch (Exception ex) { MessageHelper.ShowError(ex.Message); }
+             } else MessageHelper.ShowWarning(ar ? "يرجى إدخال رقم صحيح." : "Please enter a valid numeric ID.");
         }
     }
 }

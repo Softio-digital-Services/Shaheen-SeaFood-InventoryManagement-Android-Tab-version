@@ -47,7 +47,7 @@ namespace GenericInventorySystem.Helpers
                         role NVARCHAR(50) DEFAULT 'User',
                         date_created DATETIME DEFAULT GETDATE()
                     );
-                    INSERT INTO users (username, password, full_name, role) VALUES ('admin', 'admin', 'System Administrator', 'Admin');
+                    INSERT INTO users (username, password, full_name, role) VALUES ('Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin');
                 END
 
                 IF OBJECT_ID('dbo.categories', 'U') IS NULL
@@ -69,7 +69,8 @@ namespace GenericInventorySystem.Helpers
                         phone NVARCHAR(20), email NVARCHAR(100), address NVARCHAR(255),
                         type NVARCHAR(50), balance_due DECIMAL(18,2) DEFAULT 0,
                         supplier_code NVARCHAR(50), date_added DATETIME DEFAULT GETDATE(),
-                        date_deleted DATETIME NULL
+                        date_deleted DATETIME NULL,
+                        payment_due_date DATETIME NULL, reminder_days INT DEFAULT 0
                     );
                     INSERT INTO suppliers (supplier_name, phone, email, address, type, supplier_code)
                         VALUES ('Global Auto Parts','555-0101','contact@globalautoparts.com','123 Industrial Way','Wholesaler','SUP-001'),
@@ -83,7 +84,9 @@ namespace GenericInventorySystem.Helpers
                         full_name NVARCHAR(100) NOT NULL,
                         phone NVARCHAR(20), email NVARCHAR(100), address NVARCHAR(255),
                         type NVARCHAR(50), current_balance DECIMAL(18,2) DEFAULT 0,
-                        date_added DATETIME DEFAULT GETDATE(), date_deleted DATETIME NULL
+                        credit_limit DECIMAL(18,2) DEFAULT 1000,
+                        date_added DATETIME DEFAULT GETDATE(), date_deleted DATETIME NULL,
+                        payment_due_date DATETIME NULL, reminder_days INT DEFAULT 0
                     );
                     INSERT INTO customers (full_name, phone, email, address, type, current_balance)
                         VALUES ('John Smith','555-0201','john.smith@email.com','789 Maple Ave','Retail',0),
@@ -183,10 +186,30 @@ namespace GenericInventorySystem.Helpers
                     ALTER TABLE customers ADD date_deleted DATETIME NULL;
                 END
 
+                -- Patch: Add credit_limit to customers
+                IF COL_LENGTH('customers', 'credit_limit') IS NULL
+                BEGIN
+                    ALTER TABLE customers ADD credit_limit DECIMAL(18,2) DEFAULT 1000;
+                END
+
                 -- Patch: Add date_deleted to suppliers
                 IF COL_LENGTH('suppliers', 'date_deleted') IS NULL
                 BEGIN
                      ALTER TABLE suppliers ADD date_deleted DATETIME NULL;
+                END
+
+                -- Patch: Add payment_due_date and reminder_days to suppliers
+                IF COL_LENGTH('suppliers', 'payment_due_date') IS NULL
+                BEGIN
+                    ALTER TABLE suppliers ADD payment_due_date DATETIME NULL;
+                    ALTER TABLE suppliers ADD reminder_days INT DEFAULT 0;
+                END
+
+                -- Patch: Add payment_due_date and reminder_days to customers
+                IF COL_LENGTH('customers', 'payment_due_date') IS NULL
+                BEGIN
+                    ALTER TABLE customers ADD payment_due_date DATETIME NULL;
+                    ALTER TABLE customers ADD reminder_days INT DEFAULT 0;
                 END
 
                 -- Purchase Orders
@@ -255,9 +278,18 @@ namespace GenericInventorySystem.Helpers
                         category NVARCHAR(100),
                         amount DECIMAL(18,2) DEFAULT 0,
                         description NVARCHAR(255),
-                        recorded_by NVARCHAR(100)
                     );
                 END
+
+                -- Super Admin Patch (Ensures Softio.Admin exists in all derived apps)
+                IF NOT EXISTS (SELECT 1 FROM users WHERE username = 'Softio.Admin')
+                BEGIN
+                    INSERT INTO users (username, password, full_name, role) 
+                    VALUES ('Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin');
+                END
+                
+                -- Cleanup legacy admin if it has default credentials
+                DELETE FROM users WHERE username = 'admin' AND password = 'admin';
             ";
             DatabaseHelper.ExecuteNonQuery(sql);
 
@@ -382,7 +414,9 @@ namespace GenericInventorySystem.Helpers
                     balance_due DECIMAL(18,2) DEFAULT 0,
                     supplier_code NVARCHAR(50),
                     date_added DATETIME DEFAULT GETDATE(),
-                    date_deleted DATETIME NULL
+                    date_deleted DATETIME NULL,
+                    payment_due_date DATETIME NULL,
+                    reminder_days INT DEFAULT 0
                 );
 
                 -- Customers
@@ -394,8 +428,11 @@ namespace GenericInventorySystem.Helpers
                     address NVARCHAR(255),
                     type NVARCHAR(50),
                     current_balance DECIMAL(18,2) DEFAULT 0,
+                    credit_limit DECIMAL(18,2) DEFAULT 1000,
                     date_added DATETIME DEFAULT GETDATE(),
-                     date_deleted DATETIME NULL
+                     date_deleted DATETIME NULL,
+                     payment_due_date DATETIME NULL,
+                     reminder_days INT DEFAULT 0
                 );
 
                 -- Parts
@@ -517,8 +554,8 @@ namespace GenericInventorySystem.Helpers
 
         private static void SeedData()
         {
-            // Seed Admin
-            string sql = "INSERT INTO users (username, password, full_name, role) VALUES ('admin', 'admin', 'System Administrator', 'Admin')";
+            // Seed Super Admin
+            string sql = "INSERT INTO users (username, password, full_name, role) VALUES ('Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin')";
             DatabaseHelper.ExecuteNonQuery(sql);
 
             // Seed Categories
@@ -553,8 +590,8 @@ namespace GenericInventorySystem.Helpers
 
             // Seed Transactions
             string sqlSeedTrans = @"INSERT INTO transactions (action_type, part_name, description, username) VALUES 
-                ('STOCK_ADD', 'Synthetic Motor Oil 5W-30', 'Initial stock received', 'admin'),
-                ('STOCK_ADD', 'High Performance Brake Pads', 'Initial stock received', 'admin')";
+                ('STOCK_ADD', 'Synthetic Motor Oil 5W-30', 'Initial stock received', 'Softio.Admin'),
+                ('STOCK_ADD', 'High Performance Brake Pads', 'Initial stock received', 'Softio.Admin')";
             DatabaseHelper.ExecuteNonQuery(sqlSeedTrans);
 
             // Seed Orders

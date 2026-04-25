@@ -26,7 +26,7 @@ namespace GenericInventorySystem.Forms
             _returnService = new ReturnService();
             
             this.TitleText = LocalizationManager.GetString("Return_Title") + " - Order #" + orderId;
-            this.Size = new Size(800, 600);
+            // Adaptive sizing handled by BaseModalForm.OnLoad
 
             InitializeForm();
             LoadOrderItems();
@@ -34,8 +34,17 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeForm()
         {
-            Panel pnlMain = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20) };
-            this.ContentPanel.Controls.Add(pnlMain);
+            this.SuspendLayout();
+
+            TableLayoutPanel tlpMain = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                Padding = new Padding(20)
+            };
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid space
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 220F)); // Bottom area
 
             // Item Grid
             dgvItems = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AutoGenerateColumns = false, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None };
@@ -47,37 +56,49 @@ namespace GenericInventorySystem.Forms
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitPrice", DataPropertyName = "price", HeaderText = LocalizationManager.GetString("POS_GridPrice"), Width = 100, ReadOnly = true });
             
             DataGridViewTextBoxColumn colReturn = new DataGridViewTextBoxColumn { Name = "QtyToReturn", HeaderText = LocalizationManager.GetString("Return_Qty"), Width = 100 };
-            colReturn.DefaultCellStyle.BackColor = Color.FromArgb(240, 248, 255); // Light blue to indicate editable
+            colReturn.DefaultCellStyle.BackColor = Color.FromArgb(240, 248, 255);
             dgvItems.Columns.Add(colReturn);
             
             dgvItems.CellValueChanged += DgvItems_CellValueChanged;
+            tlpMain.Controls.Add(dgvItems, 0, 0);
 
-            Panel pnlGridWrapper = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 0, 0, 10) };
-            pnlGridWrapper.Controls.Add(dgvItems);
-            pnlMain.Controls.Add(pnlGridWrapper);
+            // Bottom Area
+            TableLayoutPanel tlpBottom = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 2,
+                Padding = new Padding(0, 10, 0, 0)
+            };
+            tlpBottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60F));
+            tlpBottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
+            tlpBottom.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            tlpBottom.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
 
-            // Bottom Panel for summary and reason
-            Panel pnlBottom = new Panel { Dock = DockStyle.Bottom, Height = 180 };
-            pnlMain.Controls.Add(pnlBottom);
+            // Reason Section (Left)
+            TableLayoutPanel tlpReason = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
+            Label lblReason = new Label { Text = LocalizationManager.GetString("AdjustStock_Reason") + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Margin = new Padding(0, 0, 0, 5) };
+            txtReason = new TextBox { Multiline = true, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 10, 0) };
+            tlpReason.Controls.Add(lblReason, 0, 0);
+            tlpReason.Controls.Add(txtReason, 0, 1);
+            tlpBottom.Controls.Add(tlpReason, 0, 0);
 
-            Label lblReason = new Label { Text = LocalizationManager.GetString("AdjustStock_Reason") + ":", AutoSize = true, Location = new Point(0, 10), Font = ThemeConfig.SubHeaderFont };
-            pnlBottom.Controls.Add(lblReason);
-            
-            txtReason = new TextBox { Multiline = true, Location = new Point(0, 35), Size = new Size(500, 60), Font = ThemeConfig.StandardFont };
-            pnlBottom.Controls.Add(txtReason);
+            // Summary Section (Right)
+            lblTotalRefund = new Label { Text = "Total Refund: $0.00", Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.TopRight };
+            tlpBottom.Controls.Add(lblTotalRefund, 1, 0);
 
-            lblTotalRefund = new Label { Text = "Total Refund: $0.00", Location = new Point(520, 35), Size = new Size(240, 30), Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.TopRight };
-            pnlBottom.Controls.Add(lblTotalRefund);
+            tlpMain.Controls.Add(tlpBottom, 0, 1);
+            this.ContentPanel.Controls.Add(tlpMain);
 
-            Button btnSubmit = new ModernButton { Text = LocalizationManager.GetString("Return_Action"), Size = new Size(160, 45), Location = new Point(600, 115) };
-            ThemeConfig.ApplyPrimaryButton(btnSubmit);
-            btnSubmit.Click += BtnSubmit_Click;
-            pnlBottom.Controls.Add(btnSubmit);
+            SetFooterButtons(
+                LocalizationManager.GetString("Return_Action"),
+                LocalizationManager.GetString("AddPart_Cancel"),
+                BtnSubmit_Click,
+                (s, e) => this.Close()
+            );
 
-            Button btnCancel = new ModernButton { Text = LocalizationManager.GetString("AddPart_Cancel"), Size = new Size(120, 45), Location = new Point(470, 115) };
-            ThemeConfig.ApplySecondaryButton(btnCancel);
-            btnCancel.Click += (s, e) => this.Close();
-            pnlBottom.Controls.Add(btnCancel);
+            this.ResumeLayout(false);
+            this.PerformLayout();
         }
 
         private void LoadOrderItems()
@@ -140,7 +161,10 @@ namespace GenericInventorySystem.Forms
                     int ordered = (int)row.Cells["QtyOrdered"].Value;
                     if (qty > ordered)
                     {
-                        MessageHelper.ShowWarning("Return quantity cannot exceed ordered quantity for item: " + row.Cells["PartName"].Value);
+                        string msg = LocalizationManager.IsArabic 
+                            ? $"لا يمكن أن تتجاوز كمية الإرجاع الكمية المطلوبة للصنف: {row.Cells["PartName"].Value}"
+                            : $"Return quantity cannot exceed ordered quantity for item: {row.Cells["PartName"].Value}";
+                        MessageHelper.ShowWarning(msg);
                         return;
                     }
 
@@ -155,22 +179,20 @@ namespace GenericInventorySystem.Forms
 
             if (returnItems.Count == 0)
             {
-                MessageHelper.ShowWarning("Please enter at least one item to return.");
+                string msg = LocalizationManager.IsArabic ? "يرجى إدخال صنف واحد على الأقل لإرجاعه." : "Please enter at least one item to return.";
+                MessageHelper.ShowWarning(msg);
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(txtReason.Text))
-            {
-                MessageHelper.ShowWarning("Please provide a reason for the return.");
-                return;
-            }
+            if (!ValidationHelper.ValidateRequiredFields(txtReason)) return;
 
-            if (MessageHelper.ConfirmAction("Are you sure you want to process this return?"))
+            string confirmMsg = LocalizationManager.IsArabic ? "هل أنت متأكد من رغبتك في معالجة هذا المرتجع؟" : "Are you sure you want to process this return?";
+            if (MessageHelper.ConfirmAction(confirmMsg))
             {
                 try
                 {
                     _returnService.ProcessReturn(_orderId, returnItems, txtReason.Text);
-                    MessageHelper.ShowSuccess("Return processed successfully!");
+                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تمت معالجة المرتجع بنجاح!" : "Return processed successfully!");
                     this.DialogResult = DialogResult.OK;
                     this.Close();
                 }

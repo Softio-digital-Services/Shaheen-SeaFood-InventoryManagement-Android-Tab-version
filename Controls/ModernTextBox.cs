@@ -25,6 +25,11 @@ namespace GenericInventorySystem.Controls
             remove => txtInput.KeyDown -= value;
         }
 
+        public void Clear()
+        {
+            this.Text = string.Empty;
+        }
+
         [Category("Appearance")]
         public string LabelText
         {

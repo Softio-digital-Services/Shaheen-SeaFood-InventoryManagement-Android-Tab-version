@@ -16,8 +16,6 @@ namespace GenericInventorySystem.Forms
         private ModernTextBox txtConfirmPassword;
         private ModernTextBox txtFullName;
         private ComboBox cmbRole;
-        private Button btnSave;
-        private Button btnCancel;
         private Label lblSection;
         private Label lblRole;
         
@@ -39,97 +37,75 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.Size = new System.Drawing.Size(450, 650);
+            this.Size = new System.Drawing.Size(500, 700);
             this.TitleText = _userId.HasValue ? "Edit User" : "Add New User";
 
-            this.txtUsername = new ModernTextBox();
-            this.txtPassword = new ModernTextBox();
-            this.txtConfirmPassword = new ModernTextBox();
-            this.txtFullName = new ModernTextBox();
+            this.txtUsername = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
+            this.txtPassword = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), UseSystemPasswordChar = true };
+            this.txtConfirmPassword = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), UseSystemPasswordChar = true };
+            this.txtFullName = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
             this.cmbRole = new ComboBox();
-            this.btnSave = new Button();
-            this.btnCancel = new Button();
-            
-            this.lblSection = new Label();
+            this.lblSection = new Label { Name = "lblSection", AutoSize = true, Margin = new Padding(0, 0, 0, 15) };
+            this.lblRole = new Label { Name = "lblRole", AutoSize = true, Margin = new Padding(0, 5, 0, 5) };
 
             this.SuspendLayout();
 
-            // 
+            TableLayoutPanel tlpMain = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                ColumnCount = 1,
+                RowCount = 8,
+                Padding = new Padding(25),
+                AutoSize = true
+            };
+            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            for (int i = 0; i < 8; i++) tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
             // Section Title
-            // 
             lblSection.Text = "Credentials";
             lblSection.Font = ThemeConfig.SubHeaderFont;
-            lblSection.Location = new System.Drawing.Point(30, 70);
-            lblSection.AutoSize = true;
             lblSection.ForeColor = ThemeConfig.SecondaryColor;
-            this.Controls.Add(lblSection);
-
-            // 
-            // Fields
-            // 
-            int startY = 110;
-            int gap = 85;
+            tlpMain.Controls.Add(lblSection, 0, 0);
 
             // Username
             txtUsername.LabelText = "Username *";
-            txtUsername.Location = new Point(30, startY);
-            txtUsername.Width = 360;
-            this.Controls.Add(txtUsername);
+            tlpMain.Controls.Add(txtUsername, 0, 1);
 
             // Full Name
             txtFullName.LabelText = "Full Name";
-            txtFullName.Location = new Point(30, startY + gap);
-            txtFullName.Width = 360;
-            this.Controls.Add(txtFullName);
+            tlpMain.Controls.Add(txtFullName, 0, 2);
 
             // Password
             txtPassword.LabelText = _userId.HasValue ? "Password (leave blank to keep current)" : "Password *";
-            txtPassword.UseSystemPasswordChar = true;
-            txtPassword.Location = new Point(30, startY + gap * 2);
-            txtPassword.Width = 360;
-            this.Controls.Add(txtPassword);
+            tlpMain.Controls.Add(txtPassword, 0, 3);
 
             // Confirm
             txtConfirmPassword.LabelText = "Confirm Password";
-            txtConfirmPassword.UseSystemPasswordChar = true;
-            txtConfirmPassword.Location = new Point(30, startY + gap * 3);
-            txtConfirmPassword.Width = 360;
-            this.Controls.Add(txtConfirmPassword);
+            tlpMain.Controls.Add(txtConfirmPassword, 0, 4);
 
             // Role
-            this.lblRole = new Label();
             lblRole.Text = "Role";
             lblRole.Font = ThemeConfig.StandardFont;
             lblRole.ForeColor = ThemeConfig.SecondaryColor;
-            lblRole.Location = new Point(30, startY + gap * 4);
-            lblRole.AutoSize = true;
-            this.Controls.Add(lblRole);
+            tlpMain.Controls.Add(lblRole, 0, 5);
 
             ThemeConfig.ApplyComboBoxStyle(cmbRole);
             cmbRole.Items.AddRange(new object[] { "Admin", "Staff", "Accountant" });
-            cmbRole.SelectedIndex = 1; // Default to Staff
+            cmbRole.SelectedIndex = 1;
 
             Panel pnlRole = ThemeConfig.WrapInStyledInput(cmbRole, 40);
-            pnlRole.Location = new Point(30, startY + gap * 4 + 25);
-            pnlRole.Width = 360;
-            this.Controls.Add(pnlRole);
+            pnlRole.Dock = DockStyle.Fill;
+            pnlRole.Margin = new Padding(0, 0, 0, 20);
+            tlpMain.Controls.Add(pnlRole, 0, 6);
 
-            // 
-            // Buttons
-            // 
-            btnCancel.Text = "Cancel";
-            btnCancel.Size = new System.Drawing.Size(110, 40);
-            btnCancel.Location = new System.Drawing.Point(170, 520); 
-            btnCancel.Click += (s, e) => { this.Close(); };
+            SetFooterButtons(
+                _userId.HasValue ? "Update User" : "Save User",
+                "Cancel",
+                btnSave_Click,
+                (s, e) => this.Close()
+            );
 
-            btnSave.Text = _userId.HasValue ? "Update User" : "Save User";
-            btnSave.Size = new System.Drawing.Size(130, 40);
-            btnSave.Location = new System.Drawing.Point(290, 520);
-            btnSave.Click += new EventHandler(btnSave_Click);
-
-            this.Controls.Add(btnSave); 
-            this.Controls.Add(btnCancel);
-            
+            this.ContentPanel.Controls.Add(tlpMain);
             this.ResumeLayout(false);
             this.PerformLayout();
         }
@@ -137,8 +113,7 @@ namespace GenericInventorySystem.Forms
         private void ApplyTheme()
         {
             // Background handled by BaseModalForm (White)
-            ThemeConfig.ApplyPrimaryButton(btnSave);
-            ThemeConfig.ApplySecondaryButton(btnCancel);
+            // Footer buttons are styled automatically by SetFooterButtons
         }
 
         private void ApplyLocalization()
@@ -156,8 +131,12 @@ namespace GenericInventorySystem.Forms
 
             lblRole.Text = LocalizationManager.GetString("AddUser_Role");
 
-            btnCancel.Text = LocalizationManager.GetString("Popup_Cancel");
-            btnSave.Text = _userId.HasValue ? LocalizationManager.GetString("AddUser_Update") : LocalizationManager.GetString("AddUser_Save");
+            SetFooterButtons(
+                _userId.HasValue ? LocalizationManager.GetString("AddUser_Update") : LocalizationManager.GetString("AddUser_Save"),
+                LocalizationManager.GetString("Popup_Cancel"),
+                btnSave_Click,
+                (s, e) => this.Close()
+            );
 
             string currentRole = cmbRole.SelectedItem?.ToString();
             cmbRole.Items.Clear();
@@ -172,7 +151,7 @@ namespace GenericInventorySystem.Forms
             {
                 cmbRole.Items.AddRange(new object[] { "Admin", "Staff", "Accountant" });
                 if (currentRole == LocalizationManager.GetString("Role_Admin") || currentRole == "Admin") cmbRole.SelectedIndex = 0;
-                else if (currentRole == LocalizationManager.GetString("Role_Accountant") || currentRole == "Accountant") cmbRole.SelectedIndex = 2;
+                else if (currentRole == LocalizationManager.GetString("Role_Accountant") || currentRole == "Account accountant") cmbRole.SelectedIndex = 2;
                 else cmbRole.SelectedIndex = 1;
             }
         }
@@ -197,7 +176,7 @@ namespace GenericInventorySystem.Forms
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "Loading User Data");
-                MessageHelper.ShowError("Error loading user: " + ex.Message);
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في تحميل المستخدم: " : "Error loading user: ") + ex.Message);
             }
         }
 
@@ -211,22 +190,20 @@ namespace GenericInventorySystem.Forms
                 string fullName = txtFullName.Text.Trim();
                 string role = cmbRole.SelectedItem?.ToString() ?? "User";
 
-                if (string.IsNullOrEmpty(username))
-                {
-                    MessageHelper.ShowWarning("Username is required.");
-                    return;
-                }
+                if (!ValidationHelper.ValidateRequiredFields(txtUsername)) return;
 
                 // Password validation
                 if (!_userId.HasValue && string.IsNullOrEmpty(password))
                 {
-                    MessageHelper.ShowWarning("Password is required for new users.");
+                    string msg = LocalizationManager.IsArabic ? "كلمة المرور مطلوبة للمستخدمين الجدد" : "Password is required for new users.";
+                    MessageHelper.ShowWarning(msg);
                     return;
                 }
 
                 if (!string.IsNullOrEmpty(password) && password != confirm)
                 {
-                    MessageHelper.ShowWarning("Passwords do not match.");
+                    string msg = LocalizationManager.IsArabic ? "كلمات المرور غير متطابقة" : "Passwords do not match.";
+                    MessageHelper.ShowWarning(msg);
                     return;
                 }
 
@@ -256,14 +233,15 @@ namespace GenericInventorySystem.Forms
                             new SqlParameter("@id", _userId.Value));
                     }
 
-                    MessageHelper.ShowSuccess($"User updated successfully!");
+                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم تحديث المستخدم بنجاح!" : "User updated successfully!");
                 }
                 else
                 {
                     // Add mode - INSERT
                     if (DatabaseHelper.RecordExists("users", "username", username))
                     {
-                        MessageHelper.ShowWarning("Username already exists.");
+                        string msg = LocalizationManager.IsArabic ? "اسم المستخدم موجود بالفعل" : "Username already exists.";
+                        MessageHelper.ShowWarning(msg);
                         return;
                     }
 
@@ -274,7 +252,10 @@ namespace GenericInventorySystem.Forms
                         new SqlParameter("@fullname", string.IsNullOrEmpty(fullName) ? username : fullName),
                         new SqlParameter("@role", role));
 
-                    MessageHelper.ShowSuccess($"User added successfully!\nUsername: '{username}'");
+                    string successMsg = LocalizationManager.IsArabic 
+                        ? $"تم إضافة المستخدم بنجاح!\nاسم المستخدم: '{username}'" 
+                        : $"User added successfully!\nUsername: '{username}'";
+                    MessageHelper.ShowSuccess(successMsg);
                 }
 
                 this.DialogResult = DialogResult.OK;
@@ -283,9 +264,8 @@ namespace GenericInventorySystem.Forms
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, _userId.HasValue ? "Updating User" : "Adding User");
-                MessageHelper.ShowError("Error saving user: " + ex.Message);
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في حفظ المستخدم: " : "Error saving user: ") + ex.Message);
             }
         }
     }
 }
-

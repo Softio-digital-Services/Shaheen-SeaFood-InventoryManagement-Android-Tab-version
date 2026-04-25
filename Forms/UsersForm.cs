@@ -34,39 +34,47 @@ namespace GenericInventorySystem.Forms
             mainLayout.Dock = DockStyle.Fill;
             mainLayout.ColumnCount = 1;
             mainLayout.RowCount = 2; // Header, Content
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 110F)); // Header
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); // Header height
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid
-            mainLayout.Padding = new Padding(20);
+            mainLayout.BackColor = ThemeConfig.BackgroundColor;
             this.Controls.Add(mainLayout);
 
             // 1. Header with Title and Add Button
             Panel pnlHeader = new Panel();
             pnlHeader.Dock = DockStyle.Fill;
-            pnlHeader.Margin = new Padding(0, 0, 0, 10);
+            pnlHeader.BackColor = ThemeConfig.BackgroundColor;
+            pnlHeader.Padding = new Padding(20);
+            pnlHeader.Margin = new Padding(0);
 
             lblUsersTitle = ThemeConfig.CreateStandardHeader("User Management");
             lblUsersTitle.Name = "lblUsersTitle";
-            lblUsersTitle.Location = new Point(0, 0); 
             pnlHeader.Controls.Add(lblUsersTitle);
 
             btnAddUser = new ModernButton();
             btnAddUser.Text = "+ Add User";
             btnAddUser.Size = new Size(150, 40);
             ThemeConfig.ApplyPrimaryButton(btnAddUser);
-            btnAddUser.Location = new Point(pnlHeader.Width - 160, 10);
+            
+            // Positioning button to match standard pattern
             btnAddUser.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnAddUser.Location = new Point(pnlHeader.Width - 170, 70); 
             btnAddUser.Click += btnAddUser_Click;
             pnlHeader.Controls.Add(btnAddUser);
             
-            pnlHeader.Resize += (s, e) => { 
-                btnAddUser.Left = pnlHeader.Width - 160; 
+            // Handle responsive positioning for the button
+            pnlHeader.Resize += (s, e) => {
+                if (LocalizationManager.IsArabic)
+                    btnAddUser.Location = new Point(20, 70);
+                else
+                    btnAddUser.Location = new Point(pnlHeader.Width - btnAddUser.Width - 20, 70);
             };
-
+            
             mainLayout.Controls.Add(pnlHeader, 0, 0);
 
             // 2. Grid Container (Card)
             Panel pnlGridCard = CreateCardPanel();
             pnlGridCard.Dock = DockStyle.Fill;
+            pnlGridCard.Margin = new Padding(20, 10, 20, 20); // Standard margin
             
             dgvUsers = new DataGridView();
             dgvUsers.DataError += (s, e) => { e.ThrowException = false; };
@@ -140,7 +148,7 @@ namespace GenericInventorySystem.Forms
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError("Error loading users: " + ex.Message);
+                MessageHelper.ShowError(LocalizationManager.GetString("User_LoadError") + ": " + ex.Message);
             }
         }
 
@@ -160,7 +168,7 @@ namespace GenericInventorySystem.Forms
 
             if (username.ToLower() == "admin")
             {
-                MessageHelper.ShowWarning("Cannot edit the main admin user.");
+                MessageHelper.ShowWarning(LocalizationManager.GetString("User_AdminEditBlock"));
                 return;
             }
 
@@ -194,11 +202,13 @@ namespace GenericInventorySystem.Forms
                 {
                     if (username.ToLower() == "admin")
                     {
-                        MessageHelper.ShowWarning("Cannot delete the main admin user.");
+                        MessageHelper.ShowWarning(LocalizationManager.GetString("User_AdminDeleteBlock"));
                         return;
                     }
 
-                    if (MessageHelper.ConfirmAction($"Are you sure you want to delete user '{username}'?"))
+                    string confirmMsg = string.Format(LocalizationManager.GetString("User_DeleteConfirm"), username);
+
+                    if (MessageHelper.ConfirmAction(confirmMsg))
                     {
                         try
                         {
@@ -207,7 +217,7 @@ namespace GenericInventorySystem.Forms
                         }
                         catch (Exception ex)
                         {
-                            MessageHelper.ShowError("Error deleting user: " + ex.Message);
+                            MessageHelper.ShowError(LocalizationManager.GetString("User_DeleteError") + ": " + ex.Message);
                         }
                     }
                 }
@@ -279,7 +289,7 @@ namespace GenericInventorySystem.Forms
         {
             Panel p = new Panel();
             p.BackColor = ThemeConfig.SurfaceColor;
-            p.Padding = new Padding(1);
+            p.Padding = new Padding(20);
             p.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -295,7 +305,6 @@ namespace GenericInventorySystem.Forms
                     e.Graphics.DrawPath(pen, path);
                 }
             };
-            p.Padding = new Padding(20);
             return p;
         }
     }

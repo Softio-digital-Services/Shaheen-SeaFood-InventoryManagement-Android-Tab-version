@@ -32,6 +32,21 @@ namespace GenericInventorySystem.Services
             return DatabaseHelper.GetCount("parts", "quantity_in_stock <= minimum_stock_level AND date_deleted IS NULL");
         }
 
+        public int GetPaymentRemindersCount()
+        {
+            int customerReminders = DatabaseHelper.ExecuteScalar<int>(
+                @"SELECT COUNT(*) FROM customers 
+                  WHERE date_deleted IS NULL AND payment_due_date IS NOT NULL AND current_balance > 0 
+                  AND DATEDIFF(day, GETDATE(), payment_due_date) <= reminder_days");
+
+            int supplierReminders = DatabaseHelper.ExecuteScalar<int>(
+                @"SELECT COUNT(*) FROM suppliers 
+                  WHERE date_deleted IS NULL AND payment_due_date IS NOT NULL AND balance_due > 0 
+                  AND DATEDIFF(day, GETDATE(), payment_due_date) <= reminder_days");
+
+            return customerReminders + supplierReminders;
+        }
+
         public int GetOrdersCount(string scope = "Today")
         {
             if(scope == "Today")
@@ -195,8 +210,8 @@ namespace GenericInventorySystem.Services
             {
                 notifications.Add(new Notification {
                     Type = "LowStock",
-                    Title = LocalizationManager.IsArabic ? "\u062A\u0646\u0628\u064A\u0647 \u0646\u0642\u0635 \u0627\u0644\u0645\u062E\u0632\u0648\u0646" : "Low Stock Alert",
-                    Message = LocalizationManager.IsArabic ? $"{row["part_name"]} \u0642\u0627\u0631\u0628 \u0639\u0644\u0649 \u0627\u0644\u0646\u0641\u0627\u062F ({row["quantity_in_stock"]} \u0645\u062A\u0628\u0642\u064A)" : $"{row["part_name"]} is low ({row["quantity_in_stock"]} left)",
+                    Title = LocalizationManager.GetString("Notif_LowStock"),
+                    Message = string.Format(LocalizationManager.GetString("Notif_LowStockMsg"), row["part_name"], row["quantity_in_stock"]),
                     Target = "btnInventory",
                     Timestamp = DateTime.Now
                 });
@@ -209,12 +224,61 @@ namespace GenericInventorySystem.Services
             foreach (DataRow row in recentOrders.Rows)
             {
                 string val = CurrencyService.Format(Convert.ToDecimal(row["total_amount"]));
+                string customerName = row["full_name"]?.ToString() ?? LocalizationManager.GetString("Notif_WalkIn");
                 notifications.Add(new Notification {
                     Type = "Order",
-                    Title = LocalizationManager.IsArabic ? "\u0637\u0644\u0628 \u062D\u062F\u064A\u062B" : "Recent Order",
-                    Message = LocalizationManager.IsArabic ? $"\u0637\u0644\u0628 #{row["order_id"]} \u0628\u0648\u0627\u0633\u0637\u0629 {row["full_name"] ?? "\u0639\u0645\u064A\u0644 \u0645\u0628\u0627\u0634\u0631"} - {val}" : $"Order #{row["order_id"]} by {row["full_name"] ?? "Walk-in"} - {val}",
+                    Title = LocalizationManager.GetString("Notif_RecentOrder"),
+                    Message = string.Format(LocalizationManager.GetString("Notif_RecentOrderMsg"), row["order_id"], customerName, val),
                     Target = "btnHistory",
                     Timestamp = (DateTime)row["order_date"]
+                });
+            }
+
+            // 3. Customer Payment Reminders
+            DataTable customerReminders = DatabaseHelper.ExecuteDataTable(
+                @"SELECT full_name, payment_due_date, current_balance, reminder_days 
+                  FROM customers 
+                  WHERE date_deleted IS NULL 
+                  AND payment_due_date IS NOT NULL 
+                  AND current_balance > 0
+                  AND DATEDIFF(day, GETDATE(), payment_due_date) <= reminder_days");
+
+            foreach (DataRow row in customerReminders.Rows)
+            {
+                DateTime dueDate = (DateTime)row["payment_due_date"];
+                int diff = (dueDate.Date - DateTime.Today).Days;
+                string statusMsg = diff < 0 ? LocalizationManager.GetString("Notif_Overdue") : string.Format(LocalizationManager.GetString("Notif_DueIn"), diff);
+                
+                notifications.Add(new Notification {
+                    Type = diff < 0 ? "Alert" : "Info",
+                    Title = LocalizationManager.GetString("Notif_CustomerPaymentDue"),
+                    Message = $"{row["full_name"]} - {statusMsg} ({CurrencyService.Format(Convert.ToDecimal(row["current_balance"]))})",
+                    Target = "btnCustomers",
+                    Timestamp = dueDate
+                });
+            }
+
+            // 4. Supplier Payment Reminders
+            DataTable supplierReminders = DatabaseHelper.ExecuteDataTable(
+                @"SELECT supplier_name, payment_due_date, balance_due, reminder_days 
+                  FROM suppliers 
+                  WHERE date_deleted IS NULL 
+                  AND payment_due_date IS NOT NULL 
+                  AND balance_due > 0
+                  AND DATEDIFF(day, GETDATE(), payment_due_date) <= reminder_days");
+
+            foreach (DataRow row in supplierReminders.Rows)
+            {
+                DateTime dueDate = (DateTime)row["payment_due_date"];
+                int diff = (dueDate.Date - DateTime.Today).Days;
+                string statusMsg = diff < 0 ? LocalizationManager.GetString("Notif_Overdue") : string.Format(LocalizationManager.GetString("Notif_DueIn"), diff);
+
+                notifications.Add(new Notification {
+                    Type = diff < 0 ? "Alert" : "Info",
+                    Title = LocalizationManager.GetString("Notif_SupplierPaymentDue"),
+                    Message = $"{row["supplier_name"]} - {statusMsg} ({CurrencyService.Format(Convert.ToDecimal(row["balance_due"]))})",
+                    Target = "btnSuppliers",
+                    Timestamp = dueDate
                 });
             }
 

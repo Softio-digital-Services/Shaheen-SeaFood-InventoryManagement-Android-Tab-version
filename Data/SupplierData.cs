@@ -15,6 +15,8 @@ namespace GenericInventorySystem.Data
         public string Address { get; set; }
         public string Status { get; set; }
         public DateTime DateAdded { get; set; }
+        public DateTime? PaymentDueDate { get; set; }
+        public int ReminderDays { get; set; }
 
         /// <summary>
         /// Get all active suppliers
@@ -55,14 +57,16 @@ namespace GenericInventorySystem.Data
                 Phone = reader.IsDBNull(reader.GetOrdinal("phone")) ? "" : reader.GetString(reader.GetOrdinal("phone")),
                 Address = reader.IsDBNull(reader.GetOrdinal("address")) ? "" : reader.GetString(reader.GetOrdinal("address")),
                 Status = reader.GetString(reader.GetOrdinal("status")),
-                DateAdded = reader.GetDateTime(reader.GetOrdinal("date_added"))
+                DateAdded = reader.GetDateTime(reader.GetOrdinal("date_added")),
+                PaymentDueDate = reader.IsDBNull(reader.GetOrdinal("payment_due_date")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("payment_due_date")),
+                ReminderDays = reader.IsDBNull(reader.GetOrdinal("reminder_days")) ? 0 : reader.GetInt32(reader.GetOrdinal("reminder_days"))
             };
         }
-        public static void AddSupplier(string name, string phone, string email, string address, string type, string contactPerson)
+        public static void AddSupplier(string name, string phone, string email, string address, string type, string contactPerson, DateTime? dueDate = null, int reminderDays = 0)
         {
              string code = "SUP-" + DateTime.Now.Ticks.ToString().Substring(10);
-             string sql = "INSERT INTO suppliers (supplier_name, phone, email, address, balance_due, type, supplier_code, contact_person, date_added) " + 
-                          "VALUES (@name, @phone, @email, @addr, 0, @type, @code, @contact, GETDATE())";
+             string sql = "INSERT INTO suppliers (supplier_name, phone, email, address, balance_due, type, supplier_code, contact_person, date_added, payment_due_date, reminder_days) " + 
+                          "VALUES (@name, @phone, @email, @addr, 0, @type, @code, @contact, GETDATE(), @due, @rem)";
              
              DatabaseHelper.ExecuteNonQuery(sql,
                  new SqlParameter("@name", name),
@@ -71,15 +75,17 @@ namespace GenericInventorySystem.Data
                  new SqlParameter("@addr", address),
                  new SqlParameter("@type", type),
                  new SqlParameter("@code", code),
-                 new SqlParameter("@contact", contactPerson ?? "")
+                 new SqlParameter("@contact", contactPerson ?? ""),
+                 new SqlParameter("@due", (object)dueDate ?? DBNull.Value),
+                 new SqlParameter("@rem", reminderDays)
              );
              
              LogTransaction("SUPPLIER_ADD", $"Added Supplier: {name} ({code})");
         }
 
-        public static void UpdateSupplier(int id, string name, string phone, string email, string address, string type, string contactPerson)
+        public static void UpdateSupplier(int id, string name, string phone, string email, string address, string type, string contactPerson, DateTime? dueDate, int reminderDays)
         {
-            string sql = "UPDATE suppliers SET supplier_name=@name, phone=@phone, email=@email, address=@addr, type=@type, contact_person=@contact WHERE id=@id";
+            string sql = "UPDATE suppliers SET supplier_name=@name, phone=@phone, email=@email, address=@addr, type=@type, contact_person=@contact, payment_due_date=@due, reminder_days=@rem WHERE id=@id";
              DatabaseHelper.ExecuteNonQuery(sql,
                  new SqlParameter("@name", name),
                  new SqlParameter("@phone", phone),
@@ -87,6 +93,8 @@ namespace GenericInventorySystem.Data
                  new SqlParameter("@addr", address),
                  new SqlParameter("@type", type),
                  new SqlParameter("@contact", contactPerson ?? ""),
+                 new SqlParameter("@due", (object)dueDate ?? DBNull.Value),
+                 new SqlParameter("@rem", reminderDays),
                  new SqlParameter("@id", id));
 
              LogTransaction("SUPPLIER_UPDATE", $"Updated Supplier: {name} (ID: {id})");

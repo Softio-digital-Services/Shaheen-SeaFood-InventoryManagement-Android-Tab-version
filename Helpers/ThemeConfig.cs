@@ -160,6 +160,14 @@ namespace GenericInventorySystem
             btn.Paint += Btn_PaintRounded;
         }
 
+        public static Color GetParentColor(Control ctrl)
+        {
+            Control p = ctrl.Parent;
+            while (p != null && (p.BackColor == Color.Transparent || p.BackColor.A == 0))
+                p = p.Parent;
+            return p?.BackColor ?? BackgroundColor;
+        }
+
         public static void DrawIconButton(Button btn, Graphics g, string iconName, string localizationKey, Color textColor, Color accentColor, bool isOutline)
         {
             if (btn == null) return;
@@ -170,11 +178,8 @@ namespace GenericInventorySystem
             Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
 
             // Handle background clearing (to prevent artifacts from parent)
-            if (btn.Parent != null)
-            {
-                using (var pb = new SolidBrush(btn.Parent.BackColor))
-                    g.FillRectangle(pb, new Rectangle(0, 0, btn.Width, btn.Height));
-            }
+            using (var pb = new SolidBrush(GetParentColor(btn)))
+                g.FillRectangle(pb, new Rectangle(0, 0, btn.Width, btn.Height));
 
             using (var path = GetRoundedPath(r, 8))
             {
@@ -573,21 +578,12 @@ namespace GenericInventorySystem
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             
             Rectangle r = new Rectangle(0, 0, btn.Width, btn.Height);
-            using (var path = GetRoundedPath(r, 8)) // 8px Radius
+            using (var path = GetRoundedPath(new Rectangle(0, 0, btn.Width - 1, btn.Height - 1), 8)) // 8px Radius
             using (var brush = new SolidBrush(btn.BackColor))
             {
                 // Clear background artifact (Paint parent background)
-                if (btn.Parent != null)
-                {
-                    using(var parentBrush = new SolidBrush(btn.Parent.BackColor))
-                    {
-                        g.FillRectangle(parentBrush, r);
-                    }
-                }
-                else 
-                {
-                    g.Clear(Color.White);
-                }
+                using (var parentBrush = new SolidBrush(GetParentColor(btn)))
+                    g.FillRectangle(parentBrush, r);
                 
                 // Fill Rounded
                 g.FillPath(brush, path);
@@ -666,11 +662,13 @@ namespace GenericInventorySystem
                     }
                 }
 
-                // Draw Text
-                using(Brush textBrush = new SolidBrush(btn.ForeColor))
-                {
-                     g.DrawString(btn.Text, btn.Font, textBrush, contentRect, sf);
-                }
+                // Draw Text using TextRenderer for better compatibility and RTL support
+                TextFormatFlags flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
+                if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
+                    flags |= TextFormatFlags.RightToLeft;
+
+                Rectangle textRect = Rectangle.Round(contentRect);
+                TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor, flags);
             }
         }
 
@@ -704,6 +702,24 @@ namespace GenericInventorySystem
         public static System.Drawing.Drawing2D.GraphicsPath GetRoundedPathPublic(Rectangle rect, int radius)
         {
             return GetRoundedPath(rect, radius);
+        }
+
+        public static void ApplyDangerButton(Button btn)
+        {
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.BackColor = DangerColor;
+            btn.ForeColor = TextColorLight;
+            btn.Font = SmallBoldFont;
+            btn.Cursor = Cursors.Hand;
+            btn.TextAlign = ContentAlignment.MiddleCenter;
+            
+            // Hover Effects
+            btn.MouseEnter += (s, e) => btn.BackColor = DangerColorBright;
+            btn.MouseLeave += (s, e) => btn.BackColor = DangerColor;
+
+            btn.Paint -= Btn_PaintRounded;
+            btn.Paint += Btn_PaintRounded;
         }
 
         public static void ApplySecondaryButton(Button btn)
@@ -868,6 +884,12 @@ namespace GenericInventorySystem
              btn.Font = new Font("Segoe UI", 10F, isActive ? FontStyle.Bold : FontStyle.Regular);
              btn.Cursor = Cursors.Hand;
              btn.TextAlign = ContentAlignment.MiddleLeft;
+             
+             // Hover and Click Effects
+             btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(244, 247, 254); // Match app background
+             btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(230, 235, 245);
+             btn.FlatStyle = FlatStyle.Flat;
+             btn.FlatAppearance.BorderSize = 0;
              
              // Remove gradient usage if previously attached
              // btn.Paint -= Btn_PaintGradient; // Method deleted

@@ -15,10 +15,19 @@ namespace GenericInventorySystem.Forms
         public AddPartForm()
         {
             InitializeComponent();
-            this.TitleText = "Add New Part";
+            // Sizing is handled automatically by BaseModalForm.OnLoad
+            SetFooterButtons(
+                LocalizationManager.GetString("AddPart_Save"), 
+                LocalizationManager.GetString("AddPart_Cancel"), 
+                btnSave_Click, 
+                btnCancel_Click
+            );
+            
+            this.TitleText = LocalizationManager.GetString("AddPart_TitleNew");
             ApplyTheme();
             ApplyLocalization();
             LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            cmbCategory.SelectedIndexChanged += CmbCategory_SelectedIndexChanged;
             
             // Disable MouseWheel on NumericUpDowns to prevent accidental scrolling
             numQuantity.MouseWheel += PreventNumericScroll;
@@ -39,29 +48,11 @@ namespace GenericInventorySystem.Forms
         {
             this.BackColor = ThemeConfig.SurfaceColor;
             
-            btnSave.BackColor = ThemeConfig.PrimaryColor;
-            btnCancel.BackColor = ThemeConfig.SecondaryColor;
-            
             ThemeConfig.ApplyComboBoxStyle(cmbCategory);
             ThemeConfig.ApplyComboBoxStyle(cmbStatus);
 
-            // Wrap for consistent borders
-            WrapControl(cmbCategory);
-            WrapControl(cmbStatus);
-        }
-
-        private void WrapControl(Control c)
-        {
-            if (c == null || c.Parent == null) return;
-            var pos = c.Location;
-            var width = c.Width;
-            var parent = c.Parent;
-            
-            parent.Controls.Remove(c);
-            var wrapper = ThemeConfig.WrapInStyledInput(c, 40);
-            wrapper.Location = pos;
-            wrapper.Width = width;
-            parent.Controls.Add(wrapper);
+            ThemeConfig.ApplyPrimaryButton(btnScan);
+            ThemeConfig.ApplySecondaryButton(btnUpload);
         }
 
 
@@ -70,8 +61,14 @@ namespace GenericInventorySystem.Forms
             EditPartId = int.Parse(id);
             _minStock = minStock;
             
-            this.TitleText = "Edit Part";
-            btnSave.Text = "Update Part";
+            this.TitleText = LocalizationManager.GetString("AddPart_TitleEdit");
+            SetFooterButtons(
+                LocalizationManager.GetString("AddPart_Update"), 
+                LocalizationManager.GetString("AddPart_Cancel"), 
+                btnSave_Click, 
+                btnCancel_Click
+            );
+            
             txtPartName.Text = name;
             txtPartNumber.Text = number;
             numQuantity.Value = qty;
@@ -116,18 +113,61 @@ namespace GenericInventorySystem.Forms
             }
         }
 
+        private bool _isCategoryLoading = false;
+        private void CmbCategory_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_isCategoryLoading || cmbCategory.DataSource == null) return;
+
+            if (cmbCategory.SelectedItem is CategoryData cat && cat.Id == -1)
+            {
+                using (var f = new AddCategoryForm())
+                {
+                    if (f.ShowDialog() == DialogResult.OK)
+                    {
+                        string newCat = f.NewCategoryName;
+                        LoadCategories();
+                        
+                        // Select the new one
+                        int idx = -1;
+                        for(int i=0; i<cmbCategory.Items.Count; i++) {
+                            if ((cmbCategory.Items[i] as CategoryData)?.CategoryName == newCat) { idx = i; break; }
+                        }
+                        if (idx >= 0) cmbCategory.SelectedIndex = idx;
+                    }
+                    else
+                    {
+                        // Reset to first item
+                        if (cmbCategory.Items.Count > 0) cmbCategory.SelectedIndex = 0;
+                    }
+                }
+            }
+        }
         private void LoadCategories()
         {
+            _isCategoryLoading = true;
             try
             {
                 var categories = CategoryData.GetAllCategories();
+                
+                // Add "Add New" item
+                var addNew = new CategoryData { 
+                    Id = -1, 
+                    CategoryName = LocalizationManager.IsArabic ? "+ إضافة فئة جديدة..." : "+ Add New Category..." 
+                };
+                categories.Add(addNew);
+
+                cmbCategory.DataSource = null;
                 cmbCategory.DisplayMember = "CategoryName";
-                cmbCategory.ValueMember = "CategoryName"; // Or Id if FK used, but schema said Name
+                cmbCategory.ValueMember = "CategoryName";
                 cmbCategory.DataSource = categories;
             }
             catch (Exception ex)
             {
                 MessageHelper.ShowError("Error loading categories: " + ex.Message);
+            }
+            finally
+            {
+                _isCategoryLoading = false;
             }
         }
 
@@ -146,11 +186,7 @@ namespace GenericInventorySystem.Forms
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtPartName.Text))
-            {
-                MessageHelper.ShowWarning("Please enter Part Name.");
-                return;
-            }
+            if (!ValidationHelper.ValidateRequiredFields(txtPartName)) return;
 
             // Validation - SKU is a free-text field (e.g. OIL-001), not a number
             string partNum = txtPartNumber.Text.Trim();
@@ -179,14 +215,13 @@ namespace GenericInventorySystem.Forms
                 {
                     // ADD
                    service.AddPart(name, number, category, qty, price, _minStock, image, barcode, location, shelf, status);
-                   MessageHelper.ShowSuccess("Part added successfully!");
+                   MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم إضافة الصنف بنجاح!" : "Part added successfully!");
                 }
                 else
                 {
                     // UPDATE
-                    // service.UpdatePart(id, name, number, category, price, stock, minStock, image, barcode, loc, shelf, status)
                     service.UpdatePart(EditPartId.Value, name, number, category, price, qty, _minStock, image, barcode, location, shelf, status);
-                    MessageHelper.ShowSuccess("Part updated successfully!");
+                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم تحديث الصنف بنجاح!" : "Part updated successfully!");
                 }
                 
                 this.DialogResult = DialogResult.OK;
@@ -271,11 +306,13 @@ namespace GenericInventorySystem.Forms
             lblCategory.Text = LocalizationManager.GetString("AddPart_Category");
             lblStatus.Text = LocalizationManager.GetString("AddPart_Status");
 
-            // Buttons
-            btnScan.Text = LocalizationManager.GetString("AddPart_Scan");
-            btnUpload.Text = LocalizationManager.GetString("AddPart_Upload");
-            btnSave.Text = EditPartId == null ? LocalizationManager.GetString("AddPart_Save") : LocalizationManager.GetString("AddPart_Update");
-            btnCancel.Text = LocalizationManager.GetString("AddPart_Cancel");
+            // Buttons are handled via SetFooterButtons, but we update text here for lang changes
+            SetFooterButtons(
+                EditPartId == null ? LocalizationManager.GetString("AddPart_Save") : LocalizationManager.GetString("AddPart_Update"),
+                LocalizationManager.GetString("AddPart_Cancel"),
+                btnSave_Click,
+                btnCancel_Click
+            );
 
             // Dropdown items translation
             string currentStatus = cmbStatus.SelectedItem?.ToString();

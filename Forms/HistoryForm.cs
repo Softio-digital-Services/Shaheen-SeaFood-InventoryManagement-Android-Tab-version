@@ -166,13 +166,8 @@ namespace GenericInventorySystem.Forms
             Button btnRefresh = new Button();
             btnRefresh.Name = "btnRefresh";
             btnRefresh.Text = "Refresh";
-            btnRefresh.Font = ThemeConfig.SubHeaderFont;
-            btnRefresh.ForeColor = ThemeConfig.SecondaryColor;
-            btnRefresh.BackColor = ThemeConfig.SurfaceColor;
-            btnRefresh.FlatStyle = FlatStyle.Flat;
-            btnRefresh.FlatAppearance.BorderSize = 1;
-            btnRefresh.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
             btnRefresh.Size = new Size(110, 35);
+            ThemeConfig.ApplySecondaryButton(btnRefresh);
 
             pnlHeader.Controls.Add(lblHistoryTitle);
             
@@ -205,7 +200,7 @@ namespace GenericInventorySystem.Forms
 
             txtSearch.Enter += (s, e) => { string ph = LocalizationManager.GetString("Hist_Search"); if (txtSearch.Text == ph) { txtSearch.Text = ""; txtSearch.ForeColor = ThemeConfig.TextColorDark; } };
             txtSearch.Leave += (s, e) => { string ph = LocalizationManager.GetString("Hist_Search"); if (string.IsNullOrWhiteSpace(txtSearch.Text)) { txtSearch.Text = ph; txtSearch.ForeColor = ThemeConfig.SecondaryColor; } };
-            txtSearch.TextChanged += (s, e) => { string ph = LocalizationManager.GetString("Hist_Search"); if (txtSearch.Text != ph && txtSearch.Text != "Search..." && txtSearch.Text != "Ø¨Ø­Ø«...") ApplyFilter(); };
+            txtSearch.TextChanged += (s, e) => { string ph = LocalizationManager.GetString("Hist_Search"); if (txtSearch.Text != ph && txtSearch.Text != "Search...") ApplyFilter(); };
             
             searchPanel.Controls.Add(txtSearch);
             pnlHeader.Controls.Add(searchPanel);
@@ -307,7 +302,7 @@ namespace GenericInventorySystem.Forms
                 
                 if (status == "Quotation" || status == "Draft")
                 {
-                    MessageHelper.ShowWarning("Only completed orders can be returned.");
+                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يمكن إرجاع الطلبات المكتملة فقط." : "Only completed orders can be returned.");
                     return;
                 }
 
@@ -488,7 +483,7 @@ namespace GenericInventorySystem.Forms
              }
              catch (Exception ex)
              {
-                 MessageHelper.ShowError("Error loading history: " + ex.Message);
+                 MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في تحميل السجل: " : "Error loading history: ") + ex.Message);
              }
         }
 

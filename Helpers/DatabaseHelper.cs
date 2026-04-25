@@ -240,6 +240,12 @@ namespace GenericInventorySystem
                 };
 
                 foreach (var q in customerQueries) ExecuteNonQuery(q);
+                
+                // Payments table updates
+                string[] paymentQueries = {
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('payments') AND name = 'due_date') ALTER TABLE payments ADD due_date DATETIME NULL;"
+                };
+                foreach (var q in paymentQueries) ExecuteNonQuery(q);
 
                 // Ensure order_items exists
                 string sqlItems = @"
