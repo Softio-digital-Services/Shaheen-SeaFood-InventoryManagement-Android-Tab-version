@@ -93,7 +93,7 @@ namespace GenericInventorySystem.Forms
             cmbRole.Items.AddRange(new object[] { "Admin", "Staff", "Accountant" });
             cmbRole.SelectedIndex = 1;
 
-            Panel pnlRole = ThemeConfig.WrapInStyledInput(cmbRole, 40);
+            Panel pnlRole = ThemeConfig.WrapInStyledInput(cmbRole, 42);
             pnlRole.Dock = DockStyle.Fill;
             pnlRole.Margin = new Padding(0, 0, 0, 20);
             tlpMain.Controls.Add(pnlRole, 0, 6);

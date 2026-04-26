@@ -17,6 +17,21 @@ namespace GenericInventorySystem.Controls
             this.BackColor = Color.White;
             this.ForeColor = Color.Black;
             this.Size = new Size(350, 200);
+            UpdateRegion();
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            UpdateRegion();
+        }
+
+        private void UpdateRegion()
+        {
+            using (var path = GetRoundedPath(new Rectangle(0, 0, this.Width, this.Height), BorderRadius))
+            {
+                this.Region = new Region(path);
+            }
         }
 
         protected override void OnPaint(PaintEventArgs e)

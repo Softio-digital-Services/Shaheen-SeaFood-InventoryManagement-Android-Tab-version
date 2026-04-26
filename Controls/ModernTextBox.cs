@@ -61,6 +61,20 @@ namespace GenericInventorySystem.Controls
         [Category("Appearance")]
         public bool IsSearch { get; set; } = false;
 
+        private bool _isPassword = false;
+        [Category("Appearance")]
+        public bool IsPassword
+        {
+            get => _isPassword;
+            set
+            {
+                _isPassword = value;
+                txtInput.UseSystemPasswordChar = value;
+                ResizeControls();
+                pnlContainer?.Invalidate();
+            }
+        }
+
         private bool _isFocused = false;
 
         private bool _showLabel = true;
@@ -84,7 +98,7 @@ namespace GenericInventorySystem.Controls
             this.DoubleBuffered = true; 
 
             this.BackColor = Color.Transparent; // Host container
-            this.Size = new Size(350, 70); // Default size (Label + Input)
+            this.Size = new Size(350, 67); // Default size (25px Label + 42px Input)
             this.Padding = new Padding(0);
 
             InitializeControls();
@@ -109,6 +123,7 @@ namespace GenericInventorySystem.Controls
             pnlContainer.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             pnlContainer.Paint += PnlContainer_Paint;
             pnlContainer.Padding = new Padding(10, 5, 10, 5);
+            pnlContainer.Resize += (s, e) => UpdateContainerRegion();
             this.Controls.Add(pnlContainer);
 
             // TextBox
@@ -130,6 +145,19 @@ namespace GenericInventorySystem.Controls
             txtInput.LostFocus += (s, e) => { _isFocused = false; pnlContainer.Invalidate(); UpdatePlaceholder(); };
 
             pnlContainer.Controls.Add(txtInput);
+            
+            pnlContainer.Click += (s, e) => {
+                if (IsPassword)
+                {
+                    Point p = pnlContainer.PointToClient(Cursor.Position);
+                    if (p.X > pnlContainer.Width - 35)
+                    {
+                        txtInput.UseSystemPasswordChar = !txtInput.UseSystemPasswordChar;
+                        pnlContainer.Invalidate();
+                    }
+                }
+            };
+
             UpdateLayout();
         }
 
@@ -138,8 +166,33 @@ namespace GenericInventorySystem.Controls
             if (pnlContainer == null) return;
             int labelHeight = _showLabel ? 25 : 0;
             pnlContainer.Location = new Point(0, labelHeight);
+            
+            // Standardize height for single-line inputs
+            if (!Multiline)
+            {
+                this.Height = labelHeight + 42; // Enforce 42px input height
+            }
+            
             pnlContainer.Size = new Size(this.Width, this.Height - labelHeight);
+            UpdateContainerRegion();
             ResizeControls();
+        }
+
+        private void UpdateContainerRegion()
+        {
+            if (pnlContainer == null) return;
+            using (var path = new GraphicsPath())
+            {
+                int radius = 12;
+                int d = radius * 2;
+                Rectangle r = new Rectangle(0, 0, pnlContainer.Width, pnlContainer.Height);
+                path.AddArc(r.X, r.Y, d, d, 180, 90);
+                path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+                path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+                path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+                path.CloseFigure();
+                pnlContainer.Region = new Region(path);
+            }
         }
 
         private void UpdatePlaceholder()
@@ -165,7 +218,8 @@ namespace GenericInventorySystem.Controls
                      // Center Vertically manually if dock behaves weirdly with single line in large panel
                      txtInput.Dock = DockStyle.None;
                      int leftPadding = IsSearch ? 40 : 10;
-                     txtInput.Width = pnlContainer.Width - leftPadding - 10;
+                     int rightPadding = IsPassword ? 40 : 10;
+                     txtInput.Width = pnlContainer.Width - leftPadding - rightPadding;
                      txtInput.Location = new Point(leftPadding, (pnlContainer.Height - txtInput.Height) / 2);
                      txtInput.Anchor = AnchorStyles.Left | AnchorStyles.Right;
                 }
@@ -198,6 +252,20 @@ namespace GenericInventorySystem.Controls
                 if (searchIcon != null)
                 {
                     e.Graphics.DrawImage(searchIcon, new Rectangle(12, (pnl.Height - 20) / 2, 20, 20));
+                }
+            }
+
+            // Draw Password Eye Icon
+            if (IsPassword)
+            {
+                Image eyeIcon = ThemeConfig.GetNuricon("view");
+                if (eyeIcon != null)
+                {
+                    Color eyeColor = txtInput.UseSystemPasswordChar ? ThemeConfig.SecondaryColor : ThemeConfig.PrimaryColor;
+                    using (Image tintedEye = ThemeConfig.TintImage(eyeIcon, eyeColor))
+                    {
+                        e.Graphics.DrawImage(tintedEye, new Rectangle(pnl.Width - 32, (pnl.Height - 20) / 2, 20, 20));
+                    }
                 }
             }
 

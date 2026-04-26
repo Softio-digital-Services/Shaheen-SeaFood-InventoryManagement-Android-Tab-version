@@ -30,7 +30,7 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeModernUI()
         {
-            this.Size = new Size(500, 280);
+            this.Size = new Size(400, 200);
             this.EnforceMinWidth = false;
 
             // Content Area
@@ -39,7 +39,9 @@ namespace GenericInventorySystem.Forms
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
                 RowCount = 1,
-                Padding = new Padding(20)
+                Padding = new Padding(20),
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink
             };
             tlpContent.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
             tlpContent.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
@@ -56,7 +58,7 @@ namespace GenericInventorySystem.Forms
                 Text = "Message Text",
                 Font = ThemeConfig.StandardFont,
                 ForeColor = ThemeConfig.TextColorDark,
-                Dock = DockStyle.Fill,
+                Dock = DockStyle.Top,
                 TextAlign = ContentAlignment.MiddleLeft,
                 AutoSize = true
             };
@@ -73,18 +75,23 @@ namespace GenericInventorySystem.Forms
             {
                 case MessageBoxIcon.Error:
                     picIcon.Image = SystemIcons.Error.ToBitmap();
+                    this.BorderColor = ThemeConfig.DangerColor;
                     break;
                 case MessageBoxIcon.Information:
                     picIcon.Image = SystemIcons.Information.ToBitmap();
+                    this.BorderColor = ThemeConfig.PrimaryColor;
                     break;
                 case MessageBoxIcon.Question:
                     picIcon.Image = SystemIcons.Question.ToBitmap();
+                    this.BorderColor = ThemeConfig.PrimaryColor;
                     break;
                 case MessageBoxIcon.Exclamation:
                     picIcon.Image = SystemIcons.Warning.ToBitmap();
+                    this.BorderColor = ThemeConfig.WarningColor;
                     break;
                 default:
                     picIcon.Visible = false;
+                    this.BorderColor = ThemeConfig.PrimaryColor;
                     break;
             }
         }
@@ -126,7 +133,7 @@ namespace GenericInventorySystem.Forms
         private void AdjustSize(string text)
         {
             // Initial size estimate
-            this.Width = 500;
+            this.Width = 400;
             
             // Allow BaseModalForm.OnLoad to handle the final FitToContent
             // But we can trigger it early if we want immediate results

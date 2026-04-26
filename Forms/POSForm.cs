@@ -115,8 +115,8 @@ namespace GenericInventorySystem.Forms
                     btnPayLater.Enabled = custId != -1;
                 }
             };
-            Panel pnlCustWrapper = ThemeConfig.WrapInStyledInput(cmbCustomers, 40); pnlCustWrapper.Location = new Point(0, 26); pnlCustWrapper.Width = 160; pnlCustWrapper.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            Button btnAddCust = new ModernButton { Name = "btnAddCust", Text = "", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.Overlay, ImageAlign = ContentAlignment.MiddleCenter, Size = new Size(35, 40), Location = new Point(pnlCustWrapper.Right + 5, 26), Anchor = AnchorStyles.Top | AnchorStyles.Right };
+            Panel pnlCustWrapper = ThemeConfig.WrapInStyledInput(cmbCustomers, 42); pnlCustWrapper.Location = new Point(0, 26); pnlCustWrapper.Width = 160; pnlCustWrapper.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            Button btnAddCust = new ModernButton { Name = "btnAddCust", Text = "", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.Overlay, ImageAlign = ContentAlignment.MiddleCenter, Size = new Size(35, 42), Location = new Point(pnlCustWrapper.Right + 5, 26), Anchor = AnchorStyles.Top | AnchorStyles.Right };
             btnAddCust.Click += (s, e) => { var form = new AddCustomerForm(); if(form.ShowDialog() == DialogResult.OK) { CustomerService svc = new CustomerService(); int newId = svc.AddCustomer(form.CustomerName, form.Phone, form.Email, form.Address, form.CustomerType, form.CreditLimit); LoadCustomers(); if(newId > 0) cmbCustomers.SelectedValue = newId; } };
             ThemeConfig.ApplySecondaryButton(btnAddCust);
             pnlCol1.Controls.Add(pnlCustWrapper); pnlCol1.Controls.Add(btnAddCust); pnlCol1.Resize += (s, e) => { btnAddCust.Left = pnlCustWrapper.Right + 5; };
@@ -125,19 +125,19 @@ namespace GenericInventorySystem.Forms
             Panel pnlDate1 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0,0,10,0) };
             pnlDate1.Controls.Add(new Label { Text = "Order Date", Name = "lblDateTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             dtOrderDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont };
-            Panel pnlDateWrapper = ThemeConfig.WrapInStyledInput(dtOrderDate, 40); pnlDateWrapper.Dock = DockStyle.Fill;
+            Panel pnlDateWrapper = ThemeConfig.WrapInStyledInput(dtOrderDate, 42); pnlDateWrapper.Dock = DockStyle.Fill;
             pnlDate1.Controls.Add(pnlDateWrapper); pnlDateWrapper.BringToFront(); tblInfo.Controls.Add(pnlDate1, 0, 1);
 
             Panel pnlDate2 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0,0,10,0) };
             pnlDate2.Controls.Add(new Label { Text = "Delivery", Name = "lblDelTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             dtDeliveryDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Value = null, MinDate = DateTime.Today };
-            Panel pnlDelWrapper = ThemeConfig.WrapInStyledInput(dtDeliveryDate, 40); pnlDelWrapper.Dock = DockStyle.Fill;
+            Panel pnlDelWrapper = ThemeConfig.WrapInStyledInput(dtDeliveryDate, 42); pnlDelWrapper.Dock = DockStyle.Fill;
             pnlDate2.Controls.Add(pnlDelWrapper); pnlDelWrapper.BringToFront(); tblInfo.Controls.Add(pnlDate2, 0, 2);
 
             Panel pnlDate3 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0, 0, 10, 0) };
             pnlDate3.Controls.Add(new Label { Text = "Due Date", Name = "lblDueTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             dtDueDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Value = DateTime.Today.AddDays(30) };
-            Panel pnlDueWrapper = ThemeConfig.WrapInStyledInput(dtDueDate, 40); pnlDueWrapper.Dock = DockStyle.Fill;
+            Panel pnlDueWrapper = ThemeConfig.WrapInStyledInput(dtDueDate, 42); pnlDueWrapper.Dock = DockStyle.Fill;
             pnlDate3.Controls.Add(pnlDueWrapper); pnlDueWrapper.BringToFront(); tblInfo.Controls.Add(pnlDate3, 1, 2);
 
             Panel pnlCol3 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
@@ -172,7 +172,7 @@ namespace GenericInventorySystem.Forms
             pnlTotals.Controls.Add(new Label { Text = "Order Summary", Name = "lblTotalsTitle", Location = new Point(20, 15), AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark });
             ComboBox cboCurrency = new ComboBox();
             ThemeConfig.ApplyComboBoxStyle(cboCurrency);
-            Panel currPanel = ThemeConfig.WrapInStyledInput(cboCurrency, 36); currPanel.Width = 110; currPanel.Location = new Point(92, 43);
+            Panel currPanel = ThemeConfig.WrapInStyledInput(cboCurrency, 42); currPanel.Width = 110; currPanel.Location = new Point(92, 43);
             foreach (var c in CurrencyService.SupportedCurrencies) cboCurrency.Items.Add(c);
             // Select USD by default
             for(int i=0; i<cboCurrency.Items.Count; i++) if((cboCurrency.Items[i] as CurrencyInfo)?.Code == "USD") { cboCurrency.SelectedIndex = i; break; }

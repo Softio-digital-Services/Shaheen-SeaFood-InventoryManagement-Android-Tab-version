@@ -18,7 +18,7 @@ namespace GenericInventorySystem.Forms
             this.components = new System.ComponentModel.Container();
             
             this.txtBarcode = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
-            this.btnScan = new GenericInventorySystem.Controls.ModernButton { Text = "Scan", Dock = DockStyle.Fill, Margin = new Padding(0) };
+            this.btnScan = new GenericInventorySystem.Controls.ModernButton { Text = "Scan", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
             this.txtPartName = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
             this.txtPartNumber = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
             this.txtLocation = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
@@ -54,7 +54,7 @@ namespace GenericInventorySystem.Forms
             for(int i=0; i<9; i++) tlpFields.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             // Barcode Row
-            TableLayoutPanel pnlBarcode = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Height = 65, Margin = new Padding(0, 0, 0, 10) };
+            TableLayoutPanel pnlBarcode = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Height = 67, Margin = new Padding(0, 0, 0, 10) };
             pnlBarcode.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             pnlBarcode.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100F));
             pnlBarcode.Controls.Add(txtBarcode, 0, 0);
@@ -65,20 +65,23 @@ namespace GenericInventorySystem.Forms
             tlpFields.Controls.Add(txtPartNumber, 0, 2);
 
             // Stock/Price Row
-            TableLayoutPanel pnlStock = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2, Height = 60, Margin = new Padding(0, 0, 0, 10) };
+            TableLayoutPanel pnlStock = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2, Height = 67, Margin = new Padding(0, 0, 0, 10) };
             pnlStock.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             pnlStock.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             pnlStock.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
+            pnlStock.RowStyles.Add(new RowStyle(SizeType.Absolute, 25F)); // Label
+            pnlStock.RowStyles.Add(new RowStyle(SizeType.Absolute, 42F)); // Control
+            
             pnlStock.Controls.Add(lblQuantity, 0, 0);
-            pnlStock.Controls.Add(numQuantity, 0, 1);
+            pnlStock.Controls.Add(ThemeConfig.WrapInStyledInput(numQuantity, 42), 0, 1);
             pnlStock.Controls.Add(lblMinStock, 1, 0);
-            pnlStock.Controls.Add(numMinStock, 1, 1);
+            pnlStock.Controls.Add(ThemeConfig.WrapInStyledInput(numMinStock, 42), 1, 1);
             pnlStock.Controls.Add(lblPrice, 2, 0);
-            pnlStock.Controls.Add(numPrice, 2, 1);
+            pnlStock.Controls.Add(ThemeConfig.WrapInStyledInput(numPrice, 42), 2, 1);
             tlpFields.Controls.Add(pnlStock, 0, 3);
-
+            
             // Location Row
-            TableLayoutPanel pnlLoc = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Height = 65, Margin = new Padding(0, 0, 0, 10) };
+            TableLayoutPanel pnlLoc = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Height = 67, Margin = new Padding(0, 0, 0, 10) };
             pnlLoc.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             pnlLoc.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             pnlLoc.Controls.Add(txtLocation, 0, 0);
@@ -87,14 +90,14 @@ namespace GenericInventorySystem.Forms
 
             // Category
             tlpFields.Controls.Add(lblCategory, 0, 5);
-            Panel pnlCat = ThemeConfig.WrapInStyledInput(cmbCategory, 40);
+            Panel pnlCat = ThemeConfig.WrapInStyledInput(cmbCategory, 42);
             pnlCat.Dock = DockStyle.Fill;
             pnlCat.Margin = new Padding(0, 0, 0, 10);
             tlpFields.Controls.Add(pnlCat, 0, 6);
 
             // Status
             tlpFields.Controls.Add(lblStatus, 0, 7);
-            Panel pnlStatus = ThemeConfig.WrapInStyledInput(cmbStatus, 40);
+            Panel pnlStatus = ThemeConfig.WrapInStyledInput(cmbStatus, 42);
             pnlStatus.Dock = DockStyle.Fill;
             tlpFields.Controls.Add(pnlStatus, 0, 8);
 

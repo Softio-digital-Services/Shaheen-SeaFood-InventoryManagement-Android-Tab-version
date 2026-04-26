@@ -25,14 +25,14 @@ namespace GenericInventorySystem.Forms
             set => lblTitle.Text = value; 
         }
         public bool EnforceMinWidth { get; set; } = true;
+        public Color BorderColor { get; set; } = ThemeConfig.PrimaryColor;
 
         public BaseModalForm()
         {
             this.DoubleBuffered = true;
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.CenterParent;
-            this.BackColor = Color.FromArgb(1, 1, 1); // Almost black
-            this.TransparencyKey = Color.FromArgb(1, 1, 1);
+            this.BackColor = ThemeConfig.SurfaceColor;
             this.Padding = new Padding(0);
 
             this.DoubleBuffered = true;
@@ -41,47 +41,35 @@ namespace GenericInventorySystem.Forms
 
             ThemeConfig.ApplyFormIcon(this);
             InitializeBaseComponents();
-            
-            this.Load += (s, e) => ShowDimmer();
-            this.FormClosing += (s, e) => HideDimmer();
+            UpdateRegion();
         }
 
-        private Form dimmer;
-        private void ShowDimmer()
+        protected override void OnResize(EventArgs e)
         {
-            Form parent = this.Owner;
-            if (parent == null)
+            base.OnResize(e);
+            UpdateRegion();
+            if (btnClose != null && pnlHeader != null)
             {
-                // Try to find the MainForm in open forms
-                foreach (Form f in Application.OpenForms)
-                {
-                    if (f is MainForm) { parent = f; break; }
-                }
+                btnClose.Location = new Point(pnlHeader.Width - 35, 12);
             }
-
-            if (parent == null) return;
-            
-            dimmer = new Form();
-            dimmer.StartPosition = FormStartPosition.Manual;
-            dimmer.FormBorderStyle = FormBorderStyle.None;
-            dimmer.ShowInTaskbar = false;
-            dimmer.BackColor = Color.Black;
-            dimmer.Opacity = 0.45;
-            dimmer.Size = parent.Size;
-            dimmer.Location = parent.Location;
-            dimmer.Enabled = false;
-            
-            dimmer.Show(parent);
-            this.BringToFront();
+            this.Invalidate(); 
         }
 
-        private void HideDimmer()
+        private void UpdateRegion()
         {
-            if (dimmer != null)
+            using (var path = new GraphicsPath())
             {
-                dimmer.Close();
-                dimmer.Dispose();
-                dimmer = null;
+                int radius = 16;
+                int d = radius * 2;
+                Rectangle r = new Rectangle(0, 0, this.Width, this.Height);
+                
+                path.AddArc(r.X, r.Y, d, d, 180, 90);
+                path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+                path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+                path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+                path.CloseFigure();
+                
+                this.Region = new Region(path);
             }
         }
 
@@ -91,7 +79,7 @@ namespace GenericInventorySystem.Forms
             TableLayoutPanel tlpRoot = new TableLayoutPanel {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                Padding = new Padding(15), // Gap for outward neon glow
+                Padding = new Padding(0), // No more gutter
                 BackColor = Color.Transparent 
             };
             tlpRoot.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
@@ -148,14 +136,6 @@ namespace GenericInventorySystem.Forms
                 Padding = new Padding(30, 15, 30, 15), 
                 Margin = new Padding(0)
             };
-            
-            // Add a subtle separator line at the top of the footer
-            FooterPanel.Paint += (s, e) => {
-                using (Pen p = new Pen(ThemeConfig.BorderColor, 1))
-                {
-                    e.Graphics.DrawLine(p, 0, 0, FooterPanel.Width, 0);
-                }
-            };
 
             tlpRoot.Controls.Add(FooterPanel, 0, 2);
         }
@@ -191,7 +171,9 @@ namespace GenericInventorySystem.Forms
             int maxH = (int)(workingArea.Height * 0.85); // Up to 85% height
             
             // 1. Calculate Required Width
-            int requiredWidth = this.Width;
+            // Start with absolute minimum for buttons, then grow
+            int requiredWidth = EnforceMinWidth ? 500 : 350; 
+            
             foreach (Control ctrl in ContentPanel.Controls)
             {
                 if (ctrl.Visible)
@@ -200,7 +182,7 @@ namespace GenericInventorySystem.Forms
                     if (ctrl.AutoSize)
                         w = ctrl.GetPreferredSize(new Size(0, ContentPanel.Height)).Width;
                     
-                    int right = ctrl.Left + w + ctrl.Margin.Right + ContentPanel.Padding.Horizontal + 40;
+                    int right = w + ContentPanel.Padding.Horizontal + 60;
                     if (right > requiredWidth) requiredWidth = right;
                 }
             }
@@ -237,7 +219,6 @@ namespace GenericInventorySystem.Forms
             this.Height = Math.Max(minH, Math.Min(totalRequiredHeight, maxH));
             
             CenterOnScreen();
-            UpdateRegion();
         }
 
         private void CenterOnScreen()
@@ -302,62 +283,44 @@ namespace GenericInventorySystem.Forms
         {
             base.OnPaint(e);
             
-            // 0. Clear background with the dark base color to prevent white "halo" at edges
+            // Region handles the sharp corner clipping, so we just clear and draw
             e.Graphics.Clear(this.BackColor);
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            
             int radius = 16;
-            int padding = 15;
-            Rectangle innerRect = new Rectangle(padding, padding, this.Width - (padding * 2), this.Height - (padding * 2));
+            Rectangle rect = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
             
-            // 1. Draw Multi-Layer Neon Bloom (EDGE-TO-EDGE)
-            for (int i = 7; i > 0; i--)
-            {
-                int offset = (int)(i * 2.2); // Reach the very edge (7 * 2.2 = 15.4)
-                Rectangle glowRect = new Rectangle(innerRect.X - offset, innerRect.Y - offset, innerRect.Width + (offset * 2), innerRect.Height + (offset * 2));
-                
-                using (GraphicsPath glowPath = GetRoundedPath(glowRect, radius + offset))
-                {
-                    int alpha = 25 / i; // Very subtle towards edge
-                    using (SolidBrush brush = new SolidBrush(Color.FromArgb(alpha, ThemeConfig.PrimaryColor)))
-                    {
-                        e.Graphics.FillPath(brush, glowPath);
-                    }
-                }
-            }
-
-            // 2. Draw the Solid Content Background (Rounded White Area)
-            using (GraphicsPath path = GetRoundedPath(innerRect, radius))
+            // 1. Draw the Solid Background (The Form itself)
+            using (GraphicsPath path = GetRoundedPath(rect, radius))
             {
                 using (SolidBrush brush = new SolidBrush(Color.White))
                 {
                     e.Graphics.FillPath(brush, path);
                 }
 
-                // 3. Sharp Core Neon Border (exactly on the edge)
-                using (Pen pen = new Pen(ThemeConfig.PrimaryColor, 1.2f))
+                // 2. Neon Border with Glow (Color depends on BorderColor)
+                Color neonColor = BorderColor;
+                
+                // Outer glow layer (Subtle 4px width)
+                using (Pen glow1 = new Pen(Color.FromArgb(40, neonColor), 4f))
+                    e.Graphics.DrawPath(glow1, path);
+                
+                // Inner glow layer (Subtle 2px width)
+                using (Pen glow2 = new Pen(Color.FromArgb(70, neonColor), 2f))
+                    e.Graphics.DrawPath(glow2, path);
+                    
+                // Main Sharp Neon Border (Refined 1.8px)
+                using (Pen mainPen = new Pen(neonColor, 1.8f))
                 {
-                    e.Graphics.DrawPath(pen, path);
+                    e.Graphics.DrawPath(mainPen, path);
                 }
             }
         }
 
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize(e);
-            if (btnClose != null && pnlHeader != null)
-            {
-                btnClose.Location = new Point(pnlHeader.Width - 35, 12);
-            }
-            UpdateRegion(); 
-            this.Invalidate(); 
-        }
         
         protected override void OnLoad(EventArgs e)
         {
-           base.OnLoad(e);
-           
-           Rectangle workingArea = Screen.PrimaryScreen.WorkingArea;
+            base.OnLoad(e);
+            Rectangle workingArea = Screen.PrimaryScreen.WorkingArea;
            
            // Apply adaptive sizing if width hasn't been explicitly set to something huge
            if (this.Width < 200) this.Width = 600; 
@@ -370,26 +333,21 @@ namespace GenericInventorySystem.Forms
            if (this.Height > workingArea.Height * 0.9)
                this.Height = (int)(workingArea.Height * 0.9);
 
-           // 3. Enforce Minimum Width
-           int minWidth = Math.Min(500, workingArea.Width / 2);
-           if (this.Width < minWidth) this.Width = minWidth;
+            // 3. Enforce Minimum Width
+            if (EnforceMinWidth)
+            {
+                int minWidth = Math.Min(500, workingArea.Width / 2);
+                if (this.Width < minWidth) this.Width = minWidth;
+            }
+            else
+            {
+                if (this.Width < 350) this.Width = 350; // Smaller fallback for message boxes
+            }
 
            // 4. Fit to content to ensure we didn't squash
            FitToContent();
            
            CenterOnScreen();
-           UpdateRegion();
-        }
-
-        private void UpdateRegion()
-        {
-            int radius = 16;
-            Rectangle rect = new Rectangle(0, 0, this.Width, this.Height);
-            using (GraphicsPath path = GetRoundedPath(rect, radius))
-            {
-                this.Region = new Region(path);
-            }
-            this.Invalidate(); 
         }
 
         private GraphicsPath GetRoundedPath(Rectangle rect, int radius)

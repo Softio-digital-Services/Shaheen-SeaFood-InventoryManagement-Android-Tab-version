@@ -120,6 +120,7 @@ namespace GenericInventorySystem.Controls
             pnlContainer.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             pnlContainer.Paint += PnlContainer_Paint;
             pnlContainer.Padding = new Padding(10, 8, 10, 5);
+            pnlContainer.Resize += (s, e) => UpdateContainerRegion();
             this.Controls.Add(pnlContainer);
 
             // ComboBox
@@ -143,6 +144,24 @@ namespace GenericInventorySystem.Controls
             int labelHeight = _showLabel ? 25 : 0;
             pnlContainer.Location = new Point(0, labelHeight);
             pnlContainer.Size = new Size(this.Width, this.Height - labelHeight);
+            UpdateContainerRegion();
+        }
+
+        private void UpdateContainerRegion()
+        {
+            if (pnlContainer == null) return;
+            using (var path = new GraphicsPath())
+            {
+                int radius = 12;
+                int d = radius * 2;
+                Rectangle r = new Rectangle(0, 0, pnlContainer.Width, pnlContainer.Height);
+                path.AddArc(r.X, r.Y, d, d, 180, 90);
+                path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+                path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+                path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+                path.CloseFigure();
+                pnlContainer.Region = new Region(path);
+            }
         }
 
         private void PnlContainer_Paint(object sender, PaintEventArgs e)

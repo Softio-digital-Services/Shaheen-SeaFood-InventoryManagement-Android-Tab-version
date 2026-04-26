@@ -1,61 +1,73 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
+using GenericInventorySystem.Helpers;
 using GenericInventorySystem.Data;
 using GenericInventorySystem.Controls;
-using GenericInventorySystem.Services;
-using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem.Forms
 {
     public partial class CustomersForm : UserControl
     {
         private DataGridView dgvCustomers;
-        private Button btnAdd;
-        private Button btnDetails;
+        private Button btnAddNew;
+        private Button btnCustomerDetails;
         private Button btnImport;
         private Button btnExport;
+        private Button btnDeleteBulk;
         private Label lblCustomersTitle;
         private ModernTextBox txtSearch;
-        private CustomerService _customerService;
+        private DataTable _dtCustomers;
+        private System.Windows.Forms.Timer _searchTimer;
 
         public CustomersForm()
         {
             InitializeComponent();
-            _customerService = new CustomerService();
+            SetupSearchTimer();
             ApplyTheme();
-            
-            GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
-            // Auto-refresh grid when any customer balance changes (e.g. from CustomerDetailsForm popup)
-            GlobalEvents.OnCustomersUpdated += () => { if (this.IsHandleCreated) this.Invoke((Action)(() => LoadData())); };
             ApplyLocalization();
-            ApplyPermissions();
+        }
+
+        private void SetupSearchTimer()
+        {
+            _searchTimer = new System.Windows.Forms.Timer { Interval = 300 };
+            _searchTimer.Tick += (s, e) =>
+            {
+                _searchTimer.Stop();
+                PerformSearch();
+            };
+        }
+
+        private void ApplyTheme()
+        {
+            this.BackColor = ThemeConfig.BackgroundColor;
+            if (lblCustomersTitle != null) { lblCustomersTitle.Font = ThemeConfig.HeaderFont; lblCustomersTitle.ForeColor = ThemeConfig.PrimaryColor; }
+
+            ThemeConfig.ApplyGridTheme(dgvCustomers);
+            
+            // Buttons are styled via Paint event in InitializeComponent
         }
 
         private void ApplyLocalization()
         {
-            GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            GenericInventorySystem.Helpers.LocalizationManager.TranslateControl(this);
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+            LocalizationManager.ApplyRTL(this);
+            var L = LocalizationManager.GetString;
 
-            if (lblCustomersTitle != null) lblCustomersTitle.Text = L("Cust_Title");
-
-            if (txtSearch != null)
-            {
-                txtSearch.PlaceholderText = L("Cust_Search");
-            }
-
-            if (btnAdd != null) btnAdd.Invalidate(); 
-            if (btnDetails != null) btnDetails.Invalidate();
+            if (lblCustomersTitle != null) lblCustomersTitle.Text = L("Cust_Title") ?? "Customers management";
+            if (txtSearch != null) txtSearch.PlaceholderText = L("Cust_Search") ?? "Search customers...";
+            
+            if (btnAddNew != null) btnAddNew.Invalidate();
             if (btnImport != null) btnImport.Invalidate();
             if (btnExport != null) btnExport.Invalidate();
             
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
             if (ctrlDel.Length > 0) ctrlDel[0].Invalidate();
 
+            // Grid Columns
             if (dgvCustomers != null && dgvCustomers.Columns.Count > 0)
             {
                 if (dgvCustomers.Columns.Contains("colName")) dgvCustomers.Columns["colName"].HeaderText = L("Cust_GridName");
@@ -63,9 +75,10 @@ namespace GenericInventorySystem.Forms
                 if (dgvCustomers.Columns.Contains("colEmail")) dgvCustomers.Columns["colEmail"].HeaderText = L("Cust_GridEmail");
                 if (dgvCustomers.Columns.Contains("colAddress")) dgvCustomers.Columns["colAddress"].HeaderText = L("Cust_GridAddress");
                 if (dgvCustomers.Columns.Contains("colBalance")) dgvCustomers.Columns["colBalance"].HeaderText = L("Cust_GridBalance");
-                if (dgvCustomers.Columns.Contains("colCreditLimit")) dgvCustomers.Columns["colCreditLimit"].HeaderText = L("AddCust_CreditLimit") ?? "Credit Limit";
-                if (dgvCustomers.Columns.Contains("colDueDate")) dgvCustomers.Columns["colDueDate"].HeaderText = L("AddCust_DueDate") ?? "Due Date";
                 if (dgvCustomers.Columns.Contains("colActions")) dgvCustomers.Columns["colActions"].HeaderText = L("Cust_GridActions");
+                
+                if (dgvCustomers.Columns.Contains("colCreditLimit")) dgvCustomers.Columns["colCreditLimit"].HeaderText = "Credit Limit";
+                if (dgvCustomers.Columns.Contains("colDueDate")) dgvCustomers.Columns["colDueDate"].HeaderText = "Due Date";
             }
         }
 
@@ -78,14 +91,82 @@ namespace GenericInventorySystem.Forms
             }
         }
 
+        private void LoadData()
+        {
+            try
+            {
+                string sql = "SELECT customer_id as ID, full_name, phone, email, address, current_balance, type, credit_limit, payment_due_date, reminder_days FROM customers WHERE date_deleted IS NULL ORDER BY full_name";
+                _dtCustomers = DatabaseHelper.ExecuteDataTable(sql);
+                DisplayData(_dtCustomers);
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "loading customers");
+            }
+        }
+
+        private void DisplayData(DataTable dt)
+        {
+            dgvCustomers.Rows.Clear();
+            if (dt == null) return;
+
+            foreach (DataRow r in dt.Rows)
+            {
+                int rowIndex = dgvCustomers.Rows.Add();
+                var row = dgvCustomers.Rows[rowIndex];
+
+                row.Cells["colSelect"].Value = false;
+                row.Cells["colId"].Value = r["ID"];
+                row.Cells["colName"].Value = r["full_name"];
+                row.Cells["colPhone"].Value = r["phone"];
+                row.Cells["colEmail"].Value = r["email"];
+                row.Cells["colAddress"].Value = r["address"];
+                
+                decimal bal = r["current_balance"] != DBNull.Value ? Convert.ToDecimal(r["current_balance"]) : 0;
+                row.Cells["colBalance"].Value = bal.ToString("N2");
+
+                decimal limit = r["credit_limit"] != DBNull.Value ? Convert.ToDecimal(r["credit_limit"]) : 0;
+                row.Cells["colCreditLimit"].Value = limit > 0 ? limit.ToString("N2") : "";
+
+                if (r["payment_due_date"] != DBNull.Value)
+                    row.Cells["colDueDate"].Value = Convert.ToDateTime(r["payment_due_date"]).ToString("yyyy-MM-dd");
+                else
+                    row.Cells["colDueDate"].Value = "";
+            }
+        }
+
+        private void PerformSearch()
+        {
+            string term = txtSearch.Text.Trim().ToLower();
+            if (string.IsNullOrEmpty(term))
+            {
+                DisplayData(_dtCustomers);
+                return;
+            }
+
+            if (_dtCustomers == null) return;
+
+            DataTable filtered = _dtCustomers.Clone();
+            var rows = _dtCustomers.AsEnumerable().Where(r => 
+                (r["full_name"]?.ToString().ToLower().Contains(term) ?? false) ||
+                (r["phone"]?.ToString().ToLower().Contains(term) ?? false) ||
+                (r["email"]?.ToString().ToLower().Contains(term) ?? false)
+            );
+
+            foreach (var row in rows) filtered.ImportRow(row);
+            DisplayData(filtered);
+        }
+
         private void InitializeComponent()
         {
             this.dgvCustomers = new System.Windows.Forms.DataGridView();
-            this.btnAdd = new System.Windows.Forms.Button();
-            this.btnDetails = new System.Windows.Forms.Button();
+            this.btnAddNew = new System.Windows.Forms.Button();
+            this.btnCustomerDetails = new System.Windows.Forms.Button();
             this.btnImport = new System.Windows.Forms.Button();
             this.btnExport = new System.Windows.Forms.Button();
+            this.btnDeleteBulk = new System.Windows.Forms.Button();
             this.lblCustomersTitle = new System.Windows.Forms.Label();
+            
             ((System.ComponentModel.ISupportInitialize)(this.dgvCustomers)).BeginInit();
             this.SuspendLayout();
 
@@ -94,7 +175,7 @@ namespace GenericInventorySystem.Forms
             tlpMain.ColumnCount = 1;
             tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tlpMain.RowCount = 2;
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); // Header height
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             tlpMain.Dock = DockStyle.Fill;
             tlpMain.BackColor = ThemeConfig.BackgroundColor;
@@ -105,239 +186,215 @@ namespace GenericInventorySystem.Forms
             panelTop.BackColor = ThemeConfig.BackgroundColor;
             panelTop.Padding = new Padding(20);
 
-            // lblCustomersTitle
-            this.lblCustomersTitle = ThemeConfig.CreateStandardHeader("Customers Directory");
+            // lblTitle
+            this.lblCustomersTitle = ThemeConfig.CreateStandardHeader("Customers management");
             this.lblCustomersTitle.Name = "lblCustomersTitle";
+            panelTop.Controls.Add(lblCustomersTitle);
 
-            // Search Bar (Upgraded to ModernTextBox)
-            txtSearch = new ModernTextBox();
+            // Search Bar
+            this.txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = "Search Customers...";
             txtSearch.Size = new Size(320, 40);
             txtSearch.Location = new Point(20, 75);
-            txtSearch.TextChanged += (s, e) => { 
-                string ph = GenericInventorySystem.Helpers.LocalizationManager.GetString("Cust_Search");
-                if (txtSearch.Text != ph && txtSearch.Text != "Search...") 
-                    LoadData(txtSearch.Text); 
-            };
+            txtSearch.TextChanged += txtSearch_TextChanged;
             panelTop.Controls.Add(txtSearch);
 
             // Actions Panel (FlowLayout for Buttons)
-            FlowLayoutPanel panelActions = new FlowLayoutPanel();
-            panelActions.FlowDirection = FlowDirection.LeftToRight;
-            panelActions.AutoSize = true;
-            panelActions.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            panelActions.Location = new Point(360, 70);
-            panelActions.Height = 40;
-            panelActions.WrapContents = false;
-            panelActions.Padding = new Padding(0);
-            panelActions.Margin = new Padding(0);
-            
+            FlowLayoutPanel panelButtons = new FlowLayoutPanel();
+            panelButtons.FlowDirection = FlowDirection.LeftToRight;
+            panelButtons.AutoSize = true;
+            panelButtons.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            panelButtons.Location = new Point(360, 70); 
+            panelButtons.Height = 40;
+            panelButtons.WrapContents = false;
+            panelButtons.Padding = new Padding(0);
+            panelButtons.Margin = new Padding(0);
+
             // Import Button (Green Outline)
             this.btnImport.Size = new System.Drawing.Size(100, 40);
             this.btnImport.Text = "";
             this.btnImport.Name = "btnImportCust";
             this.btnImport.FlatStyle = FlatStyle.Flat;
-            this.btnImport.FlatAppearance.BorderSize = 0;
-            this.btnImport.BackColor = ThemeConfig.SurfaceColor;
-            this.btnImport.Cursor = Cursors.Hand;
+            btnImport.FlatAppearance.BorderSize = 0;
+            btnImport.BackColor = ThemeConfig.SurfaceColor;
+            btnImport.Cursor = Cursors.Hand;
             this.btnImport.Margin = new Padding(0, 0, 10, 0);
-            this.btnImport.Click += BtnImport_Click;
             this.btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Cust_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
+            panelButtons.Controls.Add(btnImport);
 
             // Export Button (Blue Outline)
             this.btnExport.Size = new System.Drawing.Size(100, 40);
             this.btnExport.Text = "";
             this.btnExport.Name = "btnExportCust";
             this.btnExport.FlatStyle = FlatStyle.Flat;
-            this.btnExport.FlatAppearance.BorderSize = 0;
-            this.btnExport.BackColor = ThemeConfig.SurfaceColor;
-            this.btnExport.Cursor = Cursors.Hand;
+            btnExport.FlatAppearance.BorderSize = 0;
+            btnExport.BackColor = ThemeConfig.SurfaceColor;
+            btnExport.Cursor = Cursors.Hand;
             this.btnExport.Margin = new Padding(0, 0, 10, 0);
-            this.btnExport.Click += BtnExport_Click;
+            this.btnExport.Click += btnExport_Click;
             this.btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Cust_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
-
-            // Customer Details Button (Blue)
-            this.btnDetails = new Button();
-            this.btnDetails.Size = new System.Drawing.Size(160, 40);
-            this.btnDetails.Text = "";
-            this.btnDetails.Name = "btnDetailsCust";
-            this.btnDetails.FlatStyle = FlatStyle.Flat;
-            this.btnDetails.FlatAppearance.BorderSize = 0;
-            this.btnDetails.BackColor = Color.Transparent;
-            this.btnDetails.Cursor = Cursors.Hand;
-            this.btnDetails.Margin = new Padding(0, 0, 10, 0);
-            this.btnDetails.Click += BtnDetails_Click;
-            this.btnDetails.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDetails, e.Graphics, "view", "Cust_Details", ThemeConfig.TextColorLight, ThemeConfig.SuccessColor, false);
-
-            // Add Customer (Blue)
-            this.btnAdd.Size = new System.Drawing.Size(160, 40);
-            this.btnAdd.Text = "";
-            this.btnAdd.Name = "btnAddCustomer"; 
-            this.btnAdd.FlatStyle = FlatStyle.Flat;
-            this.btnAdd.FlatAppearance.BorderSize = 0;
-            this.btnAdd.BackColor = ThemeConfig.SurfaceColor; 
-            this.btnAdd.Cursor = Cursors.Hand;
-            this.btnAdd.Margin = new Padding(0);
-            this.btnAdd.Click += BtnAdd_Click;
-            this.btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Cust_AddCustomer", ThemeConfig.TextColorLight, ThemeConfig.PrimaryColor, false);
+            panelButtons.Controls.Add(btnExport);
 
             // Delete Selected Button (Red Outline)
-            Button btnDeleteSelected = new Button();
-            btnDeleteSelected.Size = new Size(130, 40);
-            btnDeleteSelected.Text = ""; 
-            btnDeleteSelected.Name = "btnDeleteSelected";
-            btnDeleteSelected.FlatStyle = FlatStyle.Flat;
-            btnDeleteSelected.FlatAppearance.BorderSize = 0;
-            btnDeleteSelected.BackColor = ThemeConfig.SurfaceColor;
-            btnDeleteSelected.Cursor = Cursors.Hand;
-            btnDeleteSelected.Margin = new Padding(0, 0, 10, 0);
-            btnDeleteSelected.Click += (s, e) =>
-            {
-                var checkedIds = new System.Collections.Generic.List<int>();
-                foreach (DataGridViewRow row in dgvCustomers.Rows)
-                {
-                    var chkCell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
-                    if (chkCell != null && Convert.ToBoolean(chkCell.Value ?? false))
-                    {
-                        if (int.TryParse(row.Cells["customer_id"].Value?.ToString(), out int cId))
-                            checkedIds.Add(cId);
-                    }
-                }
-                if (checkedIds.Count == 0)
-                {
-                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يرجى تحديد عميل واحد على الأقل لحذفه." : "Please select at least one customer to delete.");
-                    return;
-                }
-                string confirmMsg = LocalizationManager.IsArabic 
-                    ? $"هل أنت متأكد من رغبتك في حذف {checkedIds.Count} من العملاء المحددين؟" 
-                    : $"Are you sure you want to delete {checkedIds.Count} selected customers?";
-                if (MessageHelper.ConfirmAction(confirmMsg))
-                {
-                    foreach(int i in checkedIds) _customerService.DeleteCustomer(i);
-                    string successMsg = LocalizationManager.IsArabic 
-                        ? $"تم حذف {checkedIds.Count} من العملاء بنجاح." 
-                        : $"{checkedIds.Count} customers deleted successfully.";
-                    MessageHelper.ShowSuccess(successMsg);
-                    LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
-                }
-            };
-            btnDeleteSelected.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDeleteSelected, e.Graphics, "delete", "Cust_Delete", ThemeConfig.DangerColor, ThemeConfig.DangerColor, true);
+            this.btnDeleteBulk.Size = new System.Drawing.Size(130, 40);
+            this.btnDeleteBulk.Text = "";
+            this.btnDeleteBulk.Name = "btnDeleteSelected";
+            this.btnDeleteBulk.FlatStyle = FlatStyle.Flat;
+            btnDeleteBulk.FlatAppearance.BorderSize = 0;
+            btnDeleteBulk.BackColor = ThemeConfig.SurfaceColor;
+            btnDeleteBulk.Cursor = Cursors.Hand;
+            this.btnDeleteBulk.Margin = new Padding(0, 0, 10, 0);
+            this.btnDeleteBulk.Click += btnDeleteBulk_Click;
+            this.btnDeleteBulk.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDeleteBulk, e.Graphics, "delete", "Cust_Delete", ThemeConfig.DangerBorder, ThemeConfig.DangerBorder, true);
+            panelButtons.Controls.Add(btnDeleteBulk);
 
-            panelActions.Controls.Add(this.btnImport);
-            panelActions.Controls.Add(this.btnExport);
-            panelActions.Controls.Add(btnDeleteSelected);
-            panelActions.Controls.Add(this.btnDetails);
-            panelActions.Controls.Add(this.btnAdd);
+            // Details Button
+            this.btnCustomerDetails.Size = new System.Drawing.Size(160, 40);
+            this.btnCustomerDetails.Text = "";
+            this.btnCustomerDetails.Name = "btnDetailsCust";
+            this.btnCustomerDetails.FlatStyle = FlatStyle.Flat;
+            btnCustomerDetails.FlatAppearance.BorderSize = 0;
+            btnCustomerDetails.BackColor = ThemeConfig.SurfaceColor;
+            btnCustomerDetails.Cursor = Cursors.Hand;
+            this.btnCustomerDetails.Margin = new Padding(0, 0, 10, 0);
+            this.btnCustomerDetails.Click += btnCustomerDetails_Click;
+            this.btnCustomerDetails.Paint += (s, e) => ThemeConfig.DrawIconButton(btnCustomerDetails, e.Graphics, "view", "Cust_Details", ThemeConfig.TextColorLight, ThemeConfig.WarningColor, false);
+            panelButtons.Controls.Add(btnCustomerDetails);
 
-            panelTop.Controls.Add(this.lblCustomersTitle);
-            panelTop.Controls.Add(txtSearch); 
-            panelTop.Controls.Add(panelActions);
+            // Add Customer Button (Primary Solid)
+            this.btnAddNew.Size = new System.Drawing.Size(160, 40);
+            this.btnAddNew.Text = "";
+            this.btnAddNew.Name = "btnAddCust";
+            this.btnAddNew.FlatStyle = FlatStyle.Flat;
+            btnAddNew.FlatAppearance.BorderSize = 0;
+            btnAddNew.BackColor = ThemeConfig.SurfaceColor;
+            btnAddNew.Cursor = Cursors.Hand;
+            this.btnAddNew.Margin = new Padding(0);
+            this.btnAddNew.Click += btnAddNew_Click;
+            this.btnAddNew.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddNew, e.Graphics, "add", "Cust_AddCustomer", Color.White, ThemeConfig.PrimaryColor, false);
+            panelButtons.Controls.Add(btnAddNew);
+
+            panelTop.Controls.Add(panelButtons);
             
-            panelTop.Resize += (s, e) =>
-            {
-                if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
-                {
+            // Align buttons panel to right (RTL Aware)
+            panelTop.Resize += (s, e) => {
+                if (LocalizationManager.IsArabic) {
                     txtSearch.Location = new Point(panelTop.Width - txtSearch.Width - 20, 75);
-                    panelActions.Location = new Point(20, 70);
-                }
-                else
-                {
+                    panelButtons.Location = new Point(20, 70);
+                } else {
                     txtSearch.Location = new Point(20, 75);
-                    panelActions.Location = new Point(panelTop.Width - panelActions.Width - 20, 70);
+                    panelButtons.Location = new Point(panelTop.Width - panelButtons.Width - 20, 70);
                 }
             };
-
-            // Grid Panel
-            Panel panelGrid = new Panel();
-            panelGrid.Dock = DockStyle.Fill;
-            panelGrid.Padding = new Padding(20, 10, 20, 20);
-            panelGrid.BackColor = ThemeConfig.BackgroundColor;
-
-            // Grid Config
-            this.dgvCustomers.Dock = DockStyle.Fill;
-            this.dgvCustomers.AllowUserToAddRows = false;
-            this.dgvCustomers.ReadOnly = false; 
-            this.dgvCustomers.RowHeadersVisible = false;
-            this.dgvCustomers.BackgroundColor = ThemeConfig.SurfaceColor;
-            this.dgvCustomers.BorderStyle = BorderStyle.None;
-            this.dgvCustomers.AutoGenerateColumns = false; 
-            this.dgvCustomers.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            this.dgvCustomers.MultiSelect = false; 
-            
-            dgvCustomers.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark;
-            dgvCustomers.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
-            dgvCustomers.GridColor = ThemeConfig.BorderColor;
-
-            // Events
-            dgvCustomers.CellPainting += DgvCustomers_CellPainting;
-            dgvCustomers.CellContentClick += DgvCustomers_CellContentClick;
-            dgvCustomers.CellMouseMove += DgvCustomers_CellMouseMove;
-            dgvCustomers.CellMouseLeave += DgvCustomers_CellMouseLeave;
-            dgvCustomers.DataError += (s, e) => {
-                Console.WriteLine("DataError: " + (e.Exception != null ? e.Exception.Message : "Unknown"));
-                e.ThrowException = false;
-            };
-
-            // Columns
-            dgvCustomers.Columns.Clear();
-            dgvCustomers.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colCheck", HeaderText = "", Width = 30, ReadOnly = false });
-            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", HeaderText = "Customer Name", DataPropertyName = "Name", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
-            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPhone", HeaderText = "Phone", DataPropertyName = "Phone", Width = 120, ReadOnly = true });
-            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmail", HeaderText = "Email", DataPropertyName = "Email", Width = 200, ReadOnly = true });
-            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colAddress", HeaderText = "Address", DataPropertyName = "Address", Width = 200, ReadOnly = true });
-            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBalance", HeaderText = "Balance Due", DataPropertyName = "Balance Due", Width = 120, ReadOnly = true });
-            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCreditLimit", HeaderText = "Credit Limit", DataPropertyName = "credit_limit", Width = 100, ReadOnly = true });
-            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colDueDate", HeaderText = "Due Date", DataPropertyName = "payment_due_date", Width = 100, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "yyyy-MM-dd" } });
-            dgvCustomers.Columns.Add(new DataGridViewButtonColumn { Name = "colActions", HeaderText = "Actions", Width = 100, ReadOnly = true });
-
-            // Hidden Fields
-            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "ID", DataPropertyName = "ID", Visible = false });
-            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "reminder_days", DataPropertyName = "reminder_days", Visible = false });
-
-            panelGrid.Controls.Add(this.dgvCustomers);
 
             tlpMain.Controls.Add(panelTop, 0, 0);
-            tlpMain.Controls.Add(panelGrid, 0, 1);
+
+            // DataGridView
+            dgvCustomers = new DataGridView { 
+                Dock = DockStyle.Fill, 
+                AllowUserToAddRows = false, 
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect, 
+                MultiSelect = false,
+                BackgroundColor = ThemeConfig.BackgroundColor,
+                BorderStyle = BorderStyle.None,
+                Margin = new Padding(0)
+            };
+            
+            dgvCustomers.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colSelect", Width = 50, HeaderText = "" });
+            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colId", Visible = false });
+            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", Width = 200, MinimumWidth = 150 });
+            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPhone", Width = 130 });
+            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmail", Width = 180 });
+            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colAddress", Width = 220 });
+            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBalance", Width = 120 });
+            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCreditLimit", Width = 120 });
+            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colDueDate", Width = 120 });
+            dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", Width = 100 });
+            
+            dgvCustomers.CellPainting += DgvCustomers_CellPainting;
+            dgvCustomers.CellContentClick += DgvCustomers_CellContentClick;
+            
+            tlpMain.Controls.Add(dgvCustomers, 0, 1);
 
             this.Controls.Add(tlpMain);
-            this.Size = new System.Drawing.Size(950, 600); 
-
             ((System.ComponentModel.ISupportInitialize)(this.dgvCustomers)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
+        }
+
+        private void btnAddNew_Click(object sender, EventArgs e)
+        {
+            using (var form = new AddCustomerForm())
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    SaveCustomer(form);
+                    LoadData();
+                }
+            }
+        }
+
+        private void SaveCustomer(AddCustomerForm form)
+        {
+            try
+            {
+                string sql = "INSERT INTO customers (full_name, phone, email, address, type, current_balance, credit_limit, payment_due_date, reminder_days, date_added) " +
+                             "VALUES (@name, @phone, @email, @addr, @type, 0, @limit, @due, @rem, GETDATE())";
+                
+                DatabaseHelper.ExecuteNonQuery(sql,
+                    new System.Data.SqlClient.SqlParameter("@name", form.CustomerName),
+                    new System.Data.SqlClient.SqlParameter("@phone", form.Phone),
+                    new System.Data.SqlClient.SqlParameter("@email", form.Email),
+                    new System.Data.SqlClient.SqlParameter("@addr", form.Address),
+                    new System.Data.SqlClient.SqlParameter("@type", form.CustomerType),
+                    new System.Data.SqlClient.SqlParameter("@limit", form.CreditLimit),
+                    new System.Data.SqlClient.SqlParameter("@due", (object)form.DueDate ?? DBNull.Value),
+                    new System.Data.SqlClient.SqlParameter("@rem", form.ReminderDays));
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "adding customer");
+            }
+        }
+
+        private void btnCustomerDetails_Click(object sender, EventArgs e)
+        {
+            if (dgvCustomers.SelectedRows.Count == 0) return;
+            int id = Convert.ToInt32(dgvCustomers.SelectedRows[0].Cells["colId"].Value);
+            string name = dgvCustomers.SelectedRows[0].Cells["colName"].Value.ToString();
+            ShowDetails(id, name);
+        }
+
+        private void ShowDetails(int id, string name)
+        {
+            using (var form = new CustomerDetailsForm(id, name))
+            {
+                form.ShowDialog();
+            }
         }
 
         private void DgvCustomers_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
-             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-
-             if (dgvCustomers.Columns[e.ColumnIndex].Name == "colActions")
-             {
-                 e.Handled = true;
-                 e.PaintBackground(e.CellBounds, true);
-                 
-                 // Edit Icon 
-                 Rectangle editRect = new Rectangle(e.CellBounds.X + 5, e.CellBounds.Y + 14, 32, 32);
-                 DrawNuriconButton(e.Graphics, editRect, ThemeConfig.GetNuricon("edit"));
- 
-                 // Delete Icon
-                 Rectangle delRect = new Rectangle(e.CellBounds.X + 45, e.CellBounds.Y + 14, 32, 32);
-                 DrawNuriconButton(e.Graphics, delRect, ThemeConfig.GetNuricon("delete"));
-             }
-        }
-
-        private void DrawNuriconButton(Graphics g, Rectangle rect, Image icon)
-        {
-            using (var path = GetRoundedRect(rect, 8))
-            using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-            using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
+            
+            if (dgvCustomers.Columns[e.ColumnIndex].Name == "colActions")
             {
-                g.FillPath(brush, path);
-                g.DrawPath(pen, path);
+                e.Handled = true;
+                e.PaintBackground(e.CellBounds, true);
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+                // Edit Icon 
+                Rectangle editRect = new Rectangle(e.CellBounds.X + 12, e.CellBounds.Y + (e.CellBounds.Height - 24)/2, 24, 24);
+                Image imgEdit = ThemeConfig.GetNuricon("edit");
+                if (imgEdit != null) e.Graphics.DrawImage(imgEdit, editRect);
+
+                // Delete Icon
+                Rectangle delRect = new Rectangle(e.CellBounds.X + 48, e.CellBounds.Y + (e.CellBounds.Height - 24)/2, 24, 24);
+                Image imgDelete = ThemeConfig.GetNuricon("delete");
+                if (imgDelete != null) e.Graphics.DrawImage(imgDelete, delRect);
             }
-            if (icon != null) g.DrawImage(icon, new Rectangle(rect.X + 6, rect.Y + 6, 20, 20));
         }
 
         private void DgvCustomers_CellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -347,448 +404,127 @@ namespace GenericInventorySystem.Forms
             string colName = dgvCustomers.Columns[e.ColumnIndex].Name;
             if (colName != "colActions") return;
 
-            int id = Convert.ToInt32(dgvCustomers.Rows[e.RowIndex].Cells["ID"].Value);
+            int id = Convert.ToInt32(dgvCustomers.Rows[e.RowIndex].Cells["colId"].Value);
             
-            Point cur = dgvCustomers.PointToClient(Cursor.Position);
-            Rectangle cellBounds = dgvCustomers.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
-            int relX = cur.X - cellBounds.X;
+            Point clientPoint = dgvCustomers.PointToClient(Control.MousePosition);
+            Rectangle cellRect = dgvCustomers.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, false);
+            int relativeX = clientPoint.X - cellRect.X;
 
-            if (relX >= 5 && relX <= 37) // Edit Rect (5, 14, 32, 32)
+            if (relativeX >= 10 && relativeX <= 40)
             {
-                // Edit
-                if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
-                {
-                    MessageHelper.ShowWarning(GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? "\u0644\u064a\u0633 \u0644\u062f\u064a\u0643 \u0635\u0644\u0627\u062d\u064a\u0629 \u0644\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0639\u0645\u0644\u0627\u0621." : "You do not have permission to edit customers.");
-                    return;
-                }
-
-                string name = dgvCustomers.Rows[e.RowIndex].Cells["colName"].Value?.ToString() ?? "";
-                string phone = dgvCustomers.Rows[e.RowIndex].Cells["colPhone"].Value?.ToString() ?? "";
-                string email = dgvCustomers.Rows[e.RowIndex].Cells["colEmail"].Value?.ToString() ?? "";
-                string addr = dgvCustomers.Rows[e.RowIndex].Cells["colAddress"].Value?.ToString() ?? "";
-                
-                object creditVal = dgvCustomers.Rows[e.RowIndex].Cells["colCreditLimit"].Value;
-                decimal credit = (creditVal == null || creditVal == DBNull.Value) ? 1000 : Convert.ToDecimal(creditVal);
-                
-                DateTime? dueDate = dgvCustomers.Rows[e.RowIndex].Cells["colDueDate"].Value as DateTime?;
-                
-                object remVal = dgvCustomers.Rows[e.RowIndex].Cells["reminder_days"].Value;
-                int reminderDays = (remVal == null || remVal == DBNull.Value) ? 0 : Convert.ToInt32(remVal);
-                string type = "Individual";
-
-                AddCustomerForm form = new AddCustomerForm(id, name, phone, email, addr, type, credit, dueDate, reminderDays);
-                if (form.ShowDialog() == DialogResult.OK)
-                {
-                    _customerService.UpdateCustomer(id, form.CustomerName, form.Phone, form.Email, form.Address, form.CustomerType, form.CreditLimit, form.DueDate, form.ReminderDays);
-                    LoadData();
-                }
+                EditCustomer(id);
             }
-            else if (relX >= 45 && relX <= 77) // Delete Rect (45, 14, 32, 32)
+            else if (relativeX >= 45 && relativeX <= 75)
             {
-                // Delete
-                if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
-                {
-                    MessageHelper.ShowWarning(GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? "\u0644\u064a\u0633 \u0644\u062f\u064a\u0643 \u0635\u0644\u0627\u062d\u064a\u0629 \u0644\u062d\u0630\u0641 \u0627\u0644\u0639\u0645\u0644\u0627\u0621." : "You do not have permission to delete customers.");
-                    return;
-                }
-
-                 if (MessageHelper.ShowConfirm(LocalizationManager.IsArabic ? "هل أنت متأكد من رغبتك في حذف هذا العميل؟" : "Are you sure you want to delete this customer?"))
-                {
-                    _customerService.DeleteCustomer(id);
-                    LoadData();
-                }
+                DeleteCustomer(id);
             }
         }
 
-        private void DgvCustomers_CellMouseMove(object sender, DataGridViewCellMouseEventArgs e)
-        {
-             if (e.RowIndex >= 0 && dgvCustomers.Columns[e.ColumnIndex].Name == "colActions")
-             {
-                 dgvCustomers.Cursor = Cursors.Hand;
-             }
-             else
-             {
-                 dgvCustomers.Cursor = Cursors.Default;
-             }
-        }
-
-        private void DgvCustomers_CellMouseLeave(object sender, DataGridViewCellEventArgs e)
-        {
-             dgvCustomers.Cursor = Cursors.Default;
-        }
-
-        private void UpdateStats()
-        {
-            // Stats removed from UI as per new design
-        }
-
-        private void ApplyTheme()
-        {
-            this.BackColor = ThemeConfig.BackgroundColor;
-            lblCustomersTitle.ForeColor = ThemeConfig.PrimaryColor;
-            ThemeConfig.ApplyGridTheme(dgvCustomers);
-        }
-
-        private void LoadData(string search = "")
+        private void EditCustomer(int id)
         {
             try
             {
-                DataTable dt = _customerService.GetAllCustomers(search);
-                dgvCustomers.DataSource = dt;
+                DataRow r = _dtCustomers.AsEnumerable().FirstOrDefault(row => Convert.ToInt32(row["ID"]) == id);
+                if (r == null) return;
+
+                string name = r["full_name"].ToString();
+                string phone = r["phone"].ToString();
+                string email = r["email"].ToString();
+                string address = r["address"].ToString();
+                string type = r["type"].ToString();
+                decimal limit = r["credit_limit"] != DBNull.Value ? Convert.ToDecimal(r["credit_limit"]) : 0;
+                DateTime? due = r["payment_due_date"] != DBNull.Value ? (DateTime?)Convert.ToDateTime(r["payment_due_date"]) : null;
+                int rem = r["reminder_days"] != DBNull.Value ? Convert.ToInt32(r["reminder_days"]) : 0;
+
+                using (var form = new AddCustomerForm(id, name, phone, email, address, type, limit, due, rem))
+                {
+                    if (form.ShowDialog() == DialogResult.OK)
+                    {
+                        UpdateCustomer(id, form);
+                        LoadData();
+                    }
+                }
             }
-            catch(Exception ex) { MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في تحميل البيانات: " : "Error loading data: ") + ex.Message); }
+            catch (Exception ex) { ErrorLogger.LogError(ex, "EditCustomer"); }
         }
 
-        private void BtnAdd_Click(object sender, EventArgs e)
-        {
-            AddCustomerForm form = new AddCustomerForm();
-            if(form.ShowDialog() == DialogResult.OK)
-            {
-                _customerService.AddCustomer(form.CustomerName, form.Phone, form.Email, form.Address, form.CustomerType, form.CreditLimit, form.DueDate, form.ReminderDays);
-                LoadData();
-            }
-        }
-
-        private void BtnDetails_Click(object sender, EventArgs e)
-        {
-            if(dgvCustomers.SelectedRows.Count == 0) { MessageHelper.ShowInfo(LocalizationManager.IsArabic ? "يرجى تحديد عميل." : "Please select a customer."); return; }
-            int id = Convert.ToInt32(dgvCustomers.SelectedRows[0].Cells["ID"].Value);
-            string name = dgvCustomers.SelectedRows[0].Cells["colName"].Value.ToString();
-            var form = new CustomerDetailsForm(id, name);
-            form.ShowDialog();
-            LoadData();
-        }
-
-        private void DrawRoundedButton(Graphics g, Rectangle rect, string text, Color bgColor, Color textColor)
-        {
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            Rectangle r = new Rectangle(0, 0, rect.Width - 1, rect.Height - 1);
-            
-            using (var path = GetRoundedRect(r, 8))
-            using (var brush = new SolidBrush(bgColor))
-            {
-                g.FillPath(brush, path);
-            }
-            TextRenderer.DrawText(g, text, ThemeConfig.ButtonFont, r, textColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-        }
-
-        private void DrawOutlinedButton(Graphics g, Rectangle rect, string icon, Color color)
-        {
-            using (var path = GetRoundedRect(rect, 8))
-            using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-            using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-            {
-                g.FillPath(brush, path);
-                g.DrawPath(pen, path);
-            }
-
-            TextRenderer.DrawText(g, icon, ThemeConfig.EmojiFont, rect, color, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-        }
-
-        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRect(Rectangle rect, int radius)
-        {
-            var path = new System.Drawing.Drawing2D.GraphicsPath();
-            path.AddArc(rect.X, rect.Y, radius, radius, 180, 90);
-            path.AddArc(rect.Right - radius, rect.Y, radius, radius, 270, 90);
-            path.AddArc(rect.Right - radius, rect.Bottom - radius, radius, radius, 0, 90);
-            path.AddArc(rect.X, rect.Bottom - radius, radius, radius, 90, 90);
-            path.CloseFigure();
-            return path;
-        }
-
-        private void BtnExport_Click(object sender, EventArgs e)
-        {
-            ExportToCsv();
-        }
-
-        private void BtnImport_Click(object sender, EventArgs e)
-        {
-            ImportFromCsv();
-        }
-
-        private void ExportToCsv()
+        private void UpdateCustomer(int id, AddCustomerForm form)
         {
             try
             {
-                SaveFileDialog saveDialog = new SaveFileDialog();
-                saveDialog.Filter = "CSV Files (*.csv)|*.csv";
-                saveDialog.FileName = $"Customers_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                saveDialog.Title = "Export Customers to CSV";
-
-                if (saveDialog.ShowDialog() == DialogResult.OK)
-                {
-                    DataTable dt = (DataTable)dgvCustomers.DataSource;
-                    if (dt == null || dt.Rows.Count == 0)
-                    {
-                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات للتصدير." : "No data to export.");
-                        return;
-                    }
-
-                    DataTable exportDt = new DataTable();
-                    exportDt.Columns.Add("CustomerName");
-                    exportDt.Columns.Add("Email");
-                    exportDt.Columns.Add("Phone");
-                    exportDt.Columns.Add("Address");
-                    exportDt.Columns.Add("City");
-                    exportDt.Columns.Add("PostalCode");
-                    exportDt.Columns.Add("Notes");
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        exportDt.Rows.Add(
-                            row["Name"],
-                            row["Email"],
-                            row["Phone"],
-                            row["Address"],
-                            "",
-                            "",
-                            ""
-                        );
-                    }
-
-                    if (Helpers.ImportExportHelper.ExportToCsv(exportDt, saveDialog.FileName))
-                    {
-                        string successMsg = LocalizationManager.IsArabic 
-                            ? $"تم تصدير {exportDt.Rows.Count} من العملاء إلى ملف CSV بنجاح!" 
-                            : $"Exported {exportDt.Rows.Count} customers to CSV successfully!";
-                        MessageHelper.ShowSuccess(successMsg);
-                    }
-                    else
-                    {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "فشل تصدير البيانات." : "Failed to export data.");
-                    }
-                }
+                string sql = "UPDATE customers SET full_name=@name, phone=@phone, email=@email, address=@addr, type=@type, credit_limit=@limit, payment_due_date=@due, reminder_days=@rem WHERE customer_id=@id";
+                DatabaseHelper.ExecuteNonQuery(sql,
+                    new System.Data.SqlClient.SqlParameter("@name", form.CustomerName),
+                    new System.Data.SqlClient.SqlParameter("@phone", form.Phone),
+                    new System.Data.SqlClient.SqlParameter("@email", form.Email),
+                    new System.Data.SqlClient.SqlParameter("@addr", form.Address),
+                    new System.Data.SqlClient.SqlParameter("@type", form.CustomerType),
+                    new System.Data.SqlClient.SqlParameter("@limit", form.CreditLimit),
+                    new System.Data.SqlClient.SqlParameter("@due", (object)form.DueDate ?? DBNull.Value),
+                    new System.Data.SqlClient.SqlParameter("@rem", form.ReminderDays),
+                    new System.Data.SqlClient.SqlParameter("@id", id));
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في التصدير: " : "Export error: ") + ex.Message);
+                ErrorLogger.LogError(ex, "updating customer");
             }
         }
 
-        private void ExportToExcel()
+        private void DeleteCustomer(int id)
         {
-            try
+            if (MessageHelper.ConfirmAction(LocalizationManager.GetString("Customers_DeleteConfirm") ?? "Are you sure you want to delete this customer?"))
             {
-                SaveFileDialog saveDialog = new SaveFileDialog();
-                saveDialog.Filter = "Excel Files (*.xlsx)|*.xlsx";
-                saveDialog.FileName = $"Customers_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-                saveDialog.Title = "Export Customers to Excel";
-
-                if (saveDialog.ShowDialog() == DialogResult.OK)
+                try
                 {
-                    DataTable dt = (DataTable)dgvCustomers.DataSource;
-                    if (dt == null || dt.Rows.Count == 0)
-                    {
-                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات للتصدير." : "No data to export.");
-                        return;
-                    }
-
-                    DataTable exportDt = new DataTable();
-                    exportDt.Columns.Add("CustomerName");
-                    exportDt.Columns.Add("Email");
-                    exportDt.Columns.Add("Phone");
-                    exportDt.Columns.Add("Address");
-                    exportDt.Columns.Add("City");
-                    exportDt.Columns.Add("PostalCode");
-                    exportDt.Columns.Add("Notes");
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        exportDt.Rows.Add(
-                            row["Name"],
-                            row["Email"],
-                            row["Phone"],
-                            row["Address"],
-                            "",
-                            "",
-                            ""
-                        );
-                    }
-
-                    if (Helpers.ImportExportHelper.ExportToExcel(exportDt, saveDialog.FileName, "Customers"))
-                    {
-                        string successMsg = LocalizationManager.IsArabic 
-                            ? $"تم تصدير {exportDt.Rows.Count} من العملاء إلى ملف Excel بنجاح!" 
-                            : $"Exported {exportDt.Rows.Count} customers to Excel successfully!";
-                        MessageHelper.ShowSuccess(successMsg);
-                    }
-                    else
-                    {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "فشل تصدير البيانات." : "Failed to export data.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في التصدير: " : "Export error: ") + ex.Message);
-            }
-        }
-
-        private void ImportFromCsv()
-        {
-            try
-            {
-                OpenFileDialog openDialog = new OpenFileDialog();
-                openDialog.Filter = "CSV Files (*.csv)|*.csv";
-                openDialog.Title = "Import Customers from CSV";
-
-                if (openDialog.ShowDialog() == DialogResult.OK)
-                {
-                    DataTable dt = Helpers.ImportExportHelper.ImportFromCsv(openDialog.FileName);
-                    
-                    if (dt == null || dt.Rows.Count == 0)
-                    {
-                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لم يتم العثور على بيانات في الملف." : "No data found in the file.");
-                        return;
-                    }
-
-                    if (!dt.Columns.Contains("CustomerName") || !dt.Columns.Contains("Email"))
-                    {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic 
-                            ? "تنسيق ملف غير صالح. الأعمدة المطلوبة: CustomerName, Email, Phone, Address, City, PostalCode, Notes" 
-                            : "Invalid file format. Required columns: CustomerName, Email, Phone, Address, City, PostalCode, Notes");
-                        return;
-                    }
-
-                    int imported = 0;
-                    int skipped = 0;
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        try
-                        {
-                            string customerName = row["CustomerName"].ToString();
-                            string email = row["Email"].ToString();
-                            
-                            if (string.IsNullOrWhiteSpace(customerName))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            if (_customerService.CustomerExists(email))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            _customerService.ImportCustomer(
-                                customerName,
-                                email,
-                                row["Phone"].ToString(),
-                                row["Address"].ToString(),
-                                row["City"].ToString(),
-                                row["PostalCode"].ToString(),
-                                row["Notes"].ToString()
-                            );
-                            imported++;
-                        }
-                        catch
-                        {
-                            skipped++;
-                        }
-                    }
-
+                    DatabaseHelper.ExecuteNonQuery("UPDATE customers SET date_deleted = GETDATE() WHERE customer_id = @id", new System.Data.SqlClient.SqlParameter("@id", id));
                     LoadData();
-                    string completeMsg = LocalizationManager.IsArabic 
-                        ? $"اكتمل الاستيراد!\nتم استيراد: {imported}\nتم تخطي: {skipped}" 
-                        : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
-                    MessageHelper.ShowSuccess(completeMsg);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في الاستيراد: " : "Import error: ") + ex.Message);
-            }
-        }
-
-        private void ImportFromExcel()
-        {
-            try
-            {
-                OpenFileDialog openDialog = new OpenFileDialog();
-                openDialog.Filter = "Excel Files (*.xlsx;*.xls)|*.xlsx;*.xls|All Files (*.*)|*.*";
-                openDialog.Title = "Import Customers from Excel";
-
-                if (openDialog.ShowDialog() == DialogResult.OK)
+                catch (Exception ex)
                 {
-                    DataTable dt = Helpers.ImportExportHelper.ImportFromExcel(openDialog.FileName);
-                    
-                    if (dt == null || dt.Rows.Count == 0)
-                    {
-                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لم يتم العثور على بيانات في الملف." : "No data found in the file.");
-                        return;
-                    }
-
-                    if (!dt.Columns.Contains("CustomerName") || !dt.Columns.Contains("Email"))
-                    {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic 
-                            ? "تنسيق ملف غير صالح. الأعمدة المطلوبة: CustomerName, Email, Phone, Address, City, PostalCode, Notes" 
-                            : "Invalid file format. Required columns: CustomerName, Email, Phone, Address, City, PostalCode, Notes");
-                        return;
-                    }
-
-                    int imported = 0;
-                    int skipped = 0;
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        try
-                        {
-                            string customerName = row["CustomerName"].ToString();
-                            string email = row["Email"].ToString();
-                            
-                            if (string.IsNullOrWhiteSpace(customerName))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            if (_customerService.CustomerExists(email))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            _customerService.ImportCustomer(
-                                customerName,
-                                email,
-                                row["Phone"].ToString(),
-                                row["Address"].ToString(),
-                                row["City"].ToString(),
-                                row["PostalCode"].ToString(),
-                                row["Notes"].ToString()
-                            );
-                            imported++;
-                        }
-                        catch
-                        {
-                            skipped++;
-                        }
-                    }
-
-                    LoadData();
-                    string completeMsg = LocalizationManager.IsArabic 
-                        ? $"اكتمل الاستيراد!\nتم استيراد: {imported}\nتم تخطي: {skipped}" 
-                        : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
-                    MessageHelper.ShowSuccess(completeMsg);
+                    ErrorLogger.LogError(ex, "deleting customer");
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في الاستيراد: " : "Import error: ") + ex.Message);
             }
         }
 
-        private void ApplyPermissions()
+        private void btnDeleteBulk_Click(object sender, EventArgs e)
         {
-            if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
+            var ids = new List<int>();
+            foreach (DataGridViewRow row in dgvCustomers.Rows)
             {
-                var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
-                if (ctrlDel.Length > 0) ctrlDel[0].Visible = false;
-                
-                if (btnImport != null) btnImport.Visible = false;
+                if (Convert.ToBoolean(row.Cells["colSelect"].Value))
+                {
+                    ids.Add(Convert.ToInt32(row.Cells["colId"].Value));
+                }
             }
+
+            if (ids.Count == 0) return;
+
+            if (MessageHelper.ConfirmAction("Are you sure you want to delete the selected customers?"))
+            {
+                try
+                {
+                    foreach (int id in ids)
+                    {
+                        DatabaseHelper.ExecuteNonQuery("UPDATE customers SET date_deleted = GETDATE() WHERE customer_id = @id", new System.Data.SqlClient.SqlParameter("@id", id));
+                    }
+                    LoadData();
+                }
+                catch (Exception ex)
+                {
+                    ErrorLogger.LogError(ex, "bulk deleting customers");
+                }
+            }
+        }
+
+        private void btnExport_Click(object sender, EventArgs e)
+        {
+            MessageHelper.ShowInfo("Export feature coming soon!");
+        }
+
+        private void txtSearch_TextChanged(object sender, EventArgs e)
+        {
+            _searchTimer.Stop();
+            _searchTimer.Start();
         }
     }
 }

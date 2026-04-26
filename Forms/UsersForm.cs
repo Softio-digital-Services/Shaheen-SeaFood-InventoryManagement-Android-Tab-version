@@ -186,7 +186,7 @@ namespace GenericInventorySystem.Forms
             int userId = Convert.ToInt32(dgvUsers.Rows[rowIndex].Cells["id"].Value);
             string username = dgvUsers.Rows[rowIndex].Cells["username"].Value.ToString();
 
-            if (username.ToLower() == "admin")
+            if (username.ToLower() == "softio.admin")
             {
                 MessageHelper.ShowWarning(LocalizationManager.GetString("User_AdminEditBlock"));
                 return;
@@ -211,16 +211,19 @@ namespace GenericInventorySystem.Forms
                 var mousePos = dgvUsers.PointToClient(Cursor.Position);
                 var cellRect = dgvUsers.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
                 int relativeX = mousePos.X - cellRect.X;
+                int iconSize = 24;
+                int gap = 12;
+                int startX = (cellRect.Width - (iconSize * 2 + gap)) / 2;
 
-                // Edit Click (match fixed offsets: 5 to 37)
-                if (relativeX >= 5 && relativeX <= 37)
+                // Edit Click (centered range)
+                if (relativeX >= startX && relativeX <= startX + iconSize)
                 {
                     PerformEdit(e.RowIndex);
                 }
-                // Delete Click (match fixed offsets: 45 to 77)
-                else if (relativeX >= 45 && relativeX <= 77)
+                // Delete Click (centered range)
+                else if (relativeX >= startX + iconSize + gap && relativeX <= startX + iconSize * 2 + gap)
                 {
-                    if (username.ToLower() == "admin")
+                    if (username.ToLower() == "softio.admin")
                     {
                         MessageHelper.ShowWarning(LocalizationManager.GetString("User_AdminDeleteBlock"));
                         return;
@@ -271,28 +274,23 @@ namespace GenericInventorySystem.Forms
                 e.Handled = true;
                 e.PaintBackground(e.CellBounds, true);
 
+                int iconSize = 24;
+                int gap = 12;
+                int startX = e.CellBounds.X + (e.CellBounds.Width - (iconSize * 2 + gap)) / 2;
+                int centerY = e.CellBounds.Y + (e.CellBounds.Height - iconSize) / 2;
+
                 // Edit Icon
-                Rectangle editRect = new Rectangle(e.CellBounds.X + 5, e.CellBounds.Y + 14, 32, 32);
-                DrawNuriconButton(e.Graphics, editRect, ThemeConfig.GetNuricon("edit"));
+                Rectangle editRect = new Rectangle(startX, centerY, iconSize, iconSize);
+                Image imgEdit = ThemeConfig.GetNuricon("edit");
+                if (imgEdit != null) e.Graphics.DrawImage(imgEdit, editRect);
 
                 // Delete Icon
-                Rectangle delRect = new Rectangle(e.CellBounds.X + 45, e.CellBounds.Y + 14, 32, 32);
-                DrawNuriconButton(e.Graphics, delRect, ThemeConfig.GetNuricon("delete"));
+                Rectangle delRect = new Rectangle(startX + iconSize + gap, centerY, iconSize, iconSize);
+                Image imgDelete = ThemeConfig.GetNuricon("delete");
+                if (imgDelete != null) e.Graphics.DrawImage(imgDelete, delRect);
             }
         }
-
-        private void DrawNuriconButton(Graphics g, Rectangle rect, Image icon)
-        {
-            using (var path = GetRoundedRect(rect, 8))
-            using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-            using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-            {
-                g.FillPath(brush, path);
-                g.DrawPath(pen, path);
-            }
-            if (icon != null) g.DrawImage(icon, new Rectangle(rect.X + 6, rect.Y + 6, 20, 20));
-        }
-
+        
         private System.Drawing.Drawing2D.GraphicsPath GetRoundedRect(Rectangle rect, int radius)
         {
             var path = new System.Drawing.Drawing2D.GraphicsPath();
@@ -308,7 +306,7 @@ namespace GenericInventorySystem.Forms
         private Panel CreateCardPanel()
         {
             Panel p = new Panel();
-            p.BackColor = ThemeConfig.SurfaceColor;
+            p.BackColor = ThemeConfig.BackgroundColor; // Matches parent to hide corners
             p.Padding = new Padding(20);
             p.Paint += (s, e) =>
             {

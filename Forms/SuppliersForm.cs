@@ -320,27 +320,17 @@ namespace GenericInventorySystem.Forms
             {
                 e.Handled = true;
                 e.PaintBackground(e.CellBounds, true);
-                
+
                 // Edit Icon
-                Rectangle editRect = new Rectangle(e.CellBounds.X + 5, e.CellBounds.Y + 14, 32, 32);
-                DrawNuriconButton(e.Graphics, editRect, ThemeConfig.GetNuricon("edit"));
+                Rectangle editRect = new Rectangle(e.CellBounds.X + 8, e.CellBounds.Y + 14, 32, 32);
+                Image imgEdit = ThemeConfig.GetNuricon("edit");
+                if (imgEdit != null) e.Graphics.DrawImage(imgEdit, editRect);
 
                 // Delete Icon
-                Rectangle delRect = new Rectangle(e.CellBounds.X + 45, e.CellBounds.Y + 14, 32, 32);
-                DrawNuriconButton(e.Graphics, delRect, ThemeConfig.GetNuricon("delete"));
+                Rectangle delRect = new Rectangle(e.CellBounds.X + 48, e.CellBounds.Y + 14, 32, 32);
+                Image imgDelete = ThemeConfig.GetNuricon("delete");
+                if (imgDelete != null) e.Graphics.DrawImage(imgDelete, delRect);
             }
-        }
-
-        private void DrawNuriconButton(Graphics g, Rectangle rect, Image icon)
-        {
-            using (var path = GetRoundedRect(rect, 8))
-            using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-            using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-            {
-                g.FillPath(brush, path);
-                g.DrawPath(pen, path);
-            }
-            if (icon != null) g.DrawImage(icon, new Rectangle(rect.X + 6, rect.Y + 6, 20, 20));
         }
 
         private void DgvSuppliers_CellContentClick(object sender, DataGridViewCellEventArgs e)

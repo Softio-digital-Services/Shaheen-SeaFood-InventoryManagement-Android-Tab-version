@@ -2,6 +2,7 @@ using System;
 using System.Data.SqlClient;
 using System.Windows.Forms;
 using System.Drawing;
+using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem
 {
@@ -17,14 +18,14 @@ namespace GenericInventorySystem
 
         private void ApplyLocalization()
         {
-            GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
-            bool isAr = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
+            LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = LocalizationManager.GetString;
+            bool isAr = LocalizationManager.IsArabic;
 
             labelTitle.Text    = L("Login_Title");
             labelSubtitle.Text = L("Login_Subtitle");
-            lblUsername.Text   = L("Login_Username");
-            lblPassword.Text   = L("Login_Password");
+            txtUsername.LabelText = L("Login_Username");
+            txtPassword.LabelText = L("Login_Password");
             chkShowPass.Text   = L("Login_ShowPassword");
             btnLogin.Text      = L("Login_Button");
 
@@ -35,7 +36,6 @@ namespace GenericInventorySystem
             labelSubtitle.TextAlign = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
         }
 
-
         private void ApplyTheme()
         {
             // Background
@@ -43,108 +43,43 @@ namespace GenericInventorySystem
             
             // Add Logo
             PictureBox pbLogo = new PictureBox();
-             pbLogo.Size = new Size(120, 120);
-             pbLogo.SizeMode = PictureBoxSizeMode.Zoom;
-             pbLogo.Anchor = AnchorStyles.Top; 
-             try 
-             { 
-                  string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png");
-                  if(System.IO.File.Exists(logoPath))
-                      pbLogo.Image = Image.FromFile(logoPath);
-             } catch { }
-             panelLoginCard.Controls.Add(pbLogo);
+            pbLogo.Size = new Size(120, 120);
+            pbLogo.SizeMode = PictureBoxSizeMode.Zoom;
+            pbLogo.Anchor = AnchorStyles.Top; 
+            try 
+            { 
+                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png");
+                if(System.IO.File.Exists(logoPath))
+                    pbLogo.Image = Image.FromFile(logoPath);
+            } catch { }
+            panelLoginCard.Controls.Add(pbLogo);
 
-             // Center Logo on Resize
-             panelLoginCard.Resize += (s, e) => {
-                 pbLogo.Location = new Point((panelLoginCard.Width - 120) / 2, 15);
-             };
-             pbLogo.Location = new Point((panelLoginCard.Width - 120) / 2, 15);
+            // Center Logo on Resize
+            panelLoginCard.Resize += (s, e) => {
+                pbLogo.Location = new Point((panelLoginCard.Width - 120) / 2, 15);
+            };
+            pbLogo.Location = new Point((panelLoginCard.Width - 120) / 2, 15);
 
-            // Shift All Elements Down to accommodate Logo (80px + 10px padding = 90px shift)
+            labelTitle.Top = 145;
+            labelSubtitle.Top = 195;
             
-            // We need to move Title, Subtitle, Inputs.
-            // Absolute positioning requires manual adjustment.
-            
-            labelTitle.Top = 135;
-            labelSubtitle.Top = 180;
-            
-            lblUsername.Top = 220;
-            txtUsername.Top = 245;
-            
-            lblPassword.Top = 295;
-            txtPassword.Top = 320;
+            txtUsername.Top = 235;
+            txtPassword.Top = 315;
+            btnLogin.Top = 410;
             
             chkShowPass.Visible = false; // Hide old checkbox
-            btnLogin.Top = 370; // Shifted up to fill the gap
-            
-            // Resize Panel if needed?
-            // Designer set Absolute 450 Height. Content ends at 350+45+padding ~400. Safe.
-             
-            // Rounded corners for the panel could be done here with a region if desired, keeping it clean for now
             
             // Labels
-            labelTitle.Font = ThemeConfig.HeaderFont; // Or keep larger if it's special, but try HeaderFont. Actually, login title might be specifically huge. I will change it to a generic large font later if needed, but for now HeaderFont. Wait, 24F vs 14F is a big difference. Let's use ThemeConfig.HeaderFont but maybe scale it if needed. Actually, let's keep large title. Let's add HugeFont to ThemeConfig.
-            labelTitle.Font = new Font("Segoe UI", 24F, FontStyle.Bold); // Reverting intention, I will keep this since it's a specialized splash text.
-            labelTitle.ForeColor = ThemeConfig.PrimaryColor; // Brand Color
+            labelTitle.Font = new Font("Segoe UI", 24F, FontStyle.Bold);
+            labelTitle.ForeColor = ThemeConfig.PrimaryColor; 
             
             labelSubtitle.Font = ThemeConfig.StandardFont;
             labelSubtitle.ForeColor = ThemeConfig.SecondaryColor;
-
-            lblUsername.Font = ThemeConfig.SubHeaderFont;
-            lblUsername.ForeColor = ThemeConfig.TextColorDark;
-
-            lblPassword.Font = ThemeConfig.SubHeaderFont;
-            lblPassword.ForeColor = ThemeConfig.TextColorDark;
-
-            // Inputs
-            txtUsername.BackColor = ThemeConfig.SurfaceColor; // Keeping light scheme for inputs
-            txtUsername.ForeColor = ThemeConfig.TextColorDark;
-            txtUsername.Font = new Font("Segoe UI", 12F);
-
-            txtPassword.BackColor = ThemeConfig.SurfaceColor;
-            txtPassword.ForeColor = ThemeConfig.TextColorDark;
-            txtPassword.Font = new Font("Segoe UI", 12F);
 
             // Keyboard Navigation
             txtUsername.KeyDown += txtUsername_KeyDown;
             txtPassword.KeyDown += txtPassword_KeyDown;
 
-
-            // Buttons
-            ThemeConfig.ApplyPrimaryButton(btnLogin);
-            
-            // Checkbox (Hidden, but keeping code for compatibility if needed elsewhere)
-            chkShowPass.Visible = false;
-            
-            // Password Toggle Eye Icon
-            PictureBox pbTogglePass = new PictureBox {
-                Name = "pbTogglePass",
-                Size = new Size(24, 24),
-                SizeMode = PictureBoxSizeMode.Zoom,
-                Cursor = Cursors.Hand,
-                BackColor = txtPassword.BackColor,
-                Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("view"), ThemeConfig.SecondaryColor)
-            };
-            panelLoginCard.Controls.Add(pbTogglePass);
-            pbTogglePass.BringToFront();
-            
-            // Initial positioning
-            void AlignEye() {
-                pbTogglePass.Location = new Point(txtPassword.Right - 30, txtPassword.Top + (txtPassword.Height - 24) / 2 + 1);
-            }
-            AlignEye();
-            txtPassword.SizeChanged += (s, e) => AlignEye();
-            panelLoginCard.Resize += (s, e) => AlignEye();
-
-            bool passVisible = false;
-            pbTogglePass.Click += (s, e) => {
-                passVisible = !passVisible;
-                txtPassword.PasswordChar = passVisible ? '\0' : '\u2022';
-                pbTogglePass.Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("view"), passVisible ? ThemeConfig.PrimaryColor : ThemeConfig.SecondaryColor);
-            };
-            pbTogglePass.MouseEnter += (s, e) => pbTogglePass.Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("view"), ThemeConfig.PrimaryColor);
-            pbTogglePass.MouseLeave += (s, e) => pbTogglePass.Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("view"), passVisible ? ThemeConfig.PrimaryColor : ThemeConfig.SecondaryColor);
-            
             // Close and Minimize Buttons
             btnClose.ForeColor = ThemeConfig.SecondaryColor;
             btnClose.MouseEnter += (s, e) => btnClose.ForeColor = ThemeConfig.DangerColor;
@@ -153,7 +88,6 @@ namespace GenericInventorySystem
             btnMinimize.ForeColor = ThemeConfig.SecondaryColor;
             btnMinimize.MouseEnter += (s, e) => btnMinimize.ForeColor = ThemeConfig.PrimaryColor;
             btnMinimize.MouseLeave += (s, e) => btnMinimize.ForeColor = ThemeConfig.SecondaryColor;
-
 
             // Rounded Corners for Card
             panelLoginCard.Resize += (s, e) => 
@@ -164,33 +98,25 @@ namespace GenericInventorySystem
                     panelLoginCard.Region = new Region(path);
                 }
             };
-            // Trigger once
-            int r = 20; 
-            // Update panel height logic if it was set in designer.
-            // But tableLayoutPanel1 has RowStyles.
-            // Designer: RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 450F));
-            
-            // We can update the TableLayoutPanel RowStyle at runtime
+
+            // Adjust card height
             if(tableLayoutPanel1.RowStyles.Count >= 2)
             {
-                tableLayoutPanel1.RowStyles[1].Height = 520F; // Increase height to fit logo + shift
+                tableLayoutPanel1.RowStyles[1].Height = 550F;
             }
 
-            // Apply initial region using actual panel size (not hardcoded 350x520)
             panelLoginCard.BackColor = ThemeConfig.SurfaceColor;
             panelLoginCard.PerformLayout();
-            using (System.Drawing.Drawing2D.GraphicsPath path = GetRoundedPath(panelLoginCard.ClientRectangle, r))
+            using (System.Drawing.Drawing2D.GraphicsPath path = GetRoundedPath(panelLoginCard.ClientRectangle, 20))
             {
                 panelLoginCard.Region = new Region(path);
             }
-
         }
 
         private System.Drawing.Drawing2D.GraphicsPath GetRoundedPath(Rectangle rect, int radius)
         {
             var path = new System.Drawing.Drawing2D.GraphicsPath();
             float r = radius;
-            
             path.AddArc(rect.X, rect.Y, r, r, 180, 90);
             path.AddArc(rect.Right - r, rect.Y, r, r, 270, 90);
             path.AddArc(rect.Right - r, rect.Bottom - r, r, r, 0, 90);
@@ -206,7 +132,6 @@ namespace GenericInventorySystem
 
         private void loginBtn_Click(object sender, EventArgs e)
         {
-            // Validate required fields using ValidationHelper
             if (!ValidationHelper.ValidateRequiredFields(txtUsername, txtPassword))
             {
                 return;
@@ -214,29 +139,19 @@ namespace GenericInventorySystem
 
             try
             {
-                // SUPER ADMIN BYPASS: Permanent login for Softio Support/Admin
                 if (txtUsername.Text.Trim() == "Softio.Admin" && txtPassword.Text.Trim() == "Softio@2026!")
                 {
-                      try 
-                      {
-                          GenericInventorySystem.Helpers.UserSession.Username = "Softio.Admin";
-                          GenericInventorySystem.Helpers.UserSession.FullName = "Softio Super Admin";
-                          GenericInventorySystem.Helpers.UserSession.Role = "Admin";
+                    UserSession.Username = "Softio.Admin";
+                    UserSession.FullName = "Softio Super Admin";
+                    UserSession.Role = "Admin";
 
-                          MainForm mForm = new MainForm();
-                          mForm.Show();
-                          this.Hide();
-                      }
-                     catch (Exception ex)
-                     {
-                         MessageHelper.ShowError($"MainForm Load Error: {ex.Message}\nStack: {ex.StackTrace}");
-                     }
-                     return;
+                    MainForm mForm = new MainForm();
+                    mForm.Show();
+                    this.Hide();
+                    return;
                 }
 
-                // Check credentials and fetch details using DatabaseHelper
                 string sql = "SELECT username, full_name, role FROM users WHERE username = @username AND password = @password";
-                
                 var parameters = new SqlParameter[]
                 {
                     new SqlParameter("@username", txtUsername.Text.Trim()),
@@ -248,9 +163,9 @@ namespace GenericInventorySystem
                     if (dt.Rows.Count > 0)
                     {
                         var row = dt.Rows[0];
-                        GenericInventorySystem.Helpers.UserSession.Username = row["username"].ToString();
-                        GenericInventorySystem.Helpers.UserSession.FullName = row["full_name"].ToString();
-                        GenericInventorySystem.Helpers.UserSession.Role = row["role"].ToString();
+                        UserSession.Username = row["username"].ToString();
+                        UserSession.FullName = row["full_name"].ToString();
+                        UserSession.Role = row["role"].ToString();
 
                         MainForm mForm = new MainForm();
                         mForm.Show();
@@ -258,7 +173,7 @@ namespace GenericInventorySystem
                     }
                     else
                     {
-                        MessageHelper.ShowError(GenericInventorySystem.Helpers.LocalizationManager.GetString("Login_Error"));
+                        MessageHelper.ShowError(LocalizationManager.GetString("Login_Error"));
                     }
                 }
             }
@@ -271,7 +186,7 @@ namespace GenericInventorySystem
 
         private void showPass_CheckedChanged(object sender, EventArgs e)
         {
-            txtPassword.PasswordChar = chkShowPass.Checked ? '\0' : '\u2022';
+            // chkShowPass is hidden, ModernTextBox handles it via eye icon now
         }
 
         private void txtUsername_KeyDown(object sender, KeyEventArgs e)
@@ -301,4 +216,3 @@ namespace GenericInventorySystem
         }
     }
 }
-

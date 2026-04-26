@@ -241,38 +241,52 @@ namespace GenericInventorySystem
         /// </summary>
         public static Panel WrapInStyledInput(Control innerControl, int height, bool isMultiline = false)
         {
-            Panel p = new Panel();
-            p.Size = new Size(200, height);
-            p.BackColor = Color.White;
+            Panel p = new Panel
+            {
+                Size      = new Size(200, height),
+                BackColor = Color.White
+            };
 
-            innerControl.Dock = DockStyle.None; // Prevent inner controls from overriding the explicit padding below
-            int inputY = isMultiline ? 10 : Math.Max(3, (height - innerControl.Height) / 2);
-            innerControl.Location = new Point(10, inputY);
-            innerControl.Width = p.Width - 20;
-            if (isMultiline) innerControl.Height = p.Height - 20;
+            innerControl.Dock = DockStyle.None;
+            void positionControl() {
+                if (innerControl == null) return;
+                innerControl.Width = p.Width - 20;
+                if (!isMultiline)
+                    innerControl.Location = new Point(10, (p.Height - innerControl.Height) / 2);
+                else {
+                    innerControl.Location = new Point(10, 10);
+                    innerControl.Height = p.Height - 20;
+                }
+            }
 
-            p.Controls.Add(innerControl);
+            p.Resize += (s, e) => {
+                positionControl();
+                using (var path = GetRoundedPath(new Rectangle(0, 0, p.Width, p.Height), 12))
+                {
+                    p.Region = new Region(path);
+                }
+                p.Invalidate();
+            };
+
+            // Initial setup
+            positionControl();
+            using (var path = GetRoundedPath(new Rectangle(0, 0, p.Width, p.Height), 12))
+            {
+                p.Region = new Region(path);
+            }
 
             p.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                // Inset by 1 px for drawing inside
-                Rectangle r = new Rectangle(1, 1, p.Width - 3, p.Height - 3);
-                using (var path = GetRoundedPath(r, 6)) // Standard radius
+                // Draw border inset by 1px
+                using (var path = GetRoundedPath(new Rectangle(0, 0, p.Width - 1, p.Height - 1), 12))
                 using (var pen = new Pen(BorderColor, 1.5f))
                 {
                     e.Graphics.DrawPath(pen, path);
                 }
             };
 
-            p.Resize += (s, e) => {
-                if (innerControl != null) {
-                    innerControl.Width = p.Width - 20;
-                    if (isMultiline) innerControl.Height = p.Height - 20;
-                }
-                p.Invalidate();
-            };
-
+            p.Controls.Add(innerControl);
             return p;
         }
 
@@ -403,17 +417,21 @@ namespace GenericInventorySystem
             btn.Paint -= WinCtrl_PaintMaximize;
             btn.Paint -= WinCtrl_PaintClose;
 
+            bool isDarkHeader = (btn.FindForm() is MainForm);
+            Color defaultHover = isDarkHeader ? Color.FromArgb(40, 255, 255, 255) : Color.FromArgb(30, PrimaryColor);
+            Color closeHover = DangerColor; // Consistent red hover for close
+
             if (type == "Close")
             {
                 btn.Paint += WinCtrl_PaintClose;
-                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(30, PrimaryColor); btn.Invalidate(); };
+                btn.MouseEnter += (s, e) => { btn.BackColor = closeHover; btn.Invalidate(); };
                 btn.MouseLeave += (s, e) => { btn.BackColor = Color.Transparent; btn.Invalidate(); };
             }
             else if (type == "Maximize" || type == "Restore" || type == "Minimize")
             {
                 if (type == "Minimize") btn.Paint += WinCtrl_PaintMinimize;
                 else btn.Paint += WinCtrl_PaintMaximize;
-                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(30, PrimaryColor); btn.Invalidate(); };
+                btn.MouseEnter += (s, e) => { btn.BackColor = defaultHover; btn.Invalidate(); };
                 btn.MouseLeave += (s, e) => { btn.BackColor = Color.Transparent; btn.Invalidate(); };
             }
         }
@@ -431,7 +449,8 @@ namespace GenericInventorySystem
             }
             int cx = btn.Width / 2, cy = btn.Height / 2;
             int lineW = 6;
-            Color iconColor = ThemeConfig.TextColorDark;
+            bool isDarkHeader = (btn.FindForm() is MainForm);
+            Color iconColor = isDarkHeader ? Color.White : ThemeConfig.TextColorDark;
             using (var p = new Pen(iconColor, 1.5f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
                 g.DrawLine(p, cx - lineW, cy + 2, cx + lineW, cy + 2);
         }
@@ -450,7 +469,8 @@ namespace GenericInventorySystem
             }
             int cx = btn.Width / 2, cy = btn.Height / 2;
             bool isRestore = (btn.Tag as string) == "Restore";
-            Color iconColor = ThemeConfig.TextColorDark;
+            bool isDarkHeader = (btn.FindForm() is MainForm);
+            Color iconColor = isDarkHeader ? Color.White : ThemeConfig.TextColorDark;
             using (var p = new Pen(iconColor, 1.5f))
             {
                 if (isRestore)
@@ -481,7 +501,11 @@ namespace GenericInventorySystem
 
             int cx = btn.Width / 2, cy = btn.Height / 2;
             int s = 4; 
-            Color iconColor = ThemeConfig.TextColorDark;
+            bool isDarkHeader = (btn.FindForm() is MainForm);
+            Color iconColor = isDarkHeader ? Color.White : ThemeConfig.TextColorDark;
+            
+            // If hovered (DangerColor background), force white icon for visibility
+            if (btn.BackColor == DangerColor) iconColor = Color.White;
             
             using (var p = new Pen(iconColor, 1.5f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
             {
@@ -551,8 +575,9 @@ namespace GenericInventorySystem
                 // Fill Rounded
                 g.FillPath(brush, path);
                 
-                // Draw Selection/Focus Border (Optional: Draw distinct clean border if focused?)
-                // For now, clean style = no border.
+                // Subtle Glowing Edge / Highlight
+                using (var glowPen = new Pen(Color.FromArgb(80, Color.White), 1.2f))
+                    g.DrawPath(glowPen, path);
                 
                 // Text Alignment & Format
                 StringFormat sf = new StringFormat();

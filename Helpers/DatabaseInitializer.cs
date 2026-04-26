@@ -281,15 +281,23 @@ namespace GenericInventorySystem.Helpers
                     );
                 END
 
-                -- Super Admin Patch (Ensures Softio.Admin exists in all derived apps)
-                IF NOT EXISTS (SELECT 1 FROM users WHERE username = 'Softio.Admin')
+                -- Ensure Softio.Admin is the primary account with ID 1
+                IF NOT EXISTS (SELECT 1 FROM users WHERE id = 1 AND username = 'Softio.Admin')
                 BEGIN
-                    INSERT INTO users (username, password, full_name, role) 
-                    VALUES ('Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin');
+                    -- Delete any existing Softio.Admin to avoid unique constraint violations during swap
+                    DELETE FROM users WHERE username = 'Softio.Admin';
+                    
+                    -- If ID 1 is occupied by something else, delete it (it will be recreated if it was 'admin' by the next block)
+                    IF EXISTS (SELECT 1 FROM users WHERE id = 1)
+                        DELETE FROM users WHERE id = 1;
+                        
+                    SET IDENTITY_INSERT users ON;
+                    INSERT INTO users (id, username, password, full_name, role) VALUES (1, 'Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin');
+                    SET IDENTITY_INSERT users OFF;
                 END
                 
-                -- Cleanup legacy admin if it has default credentials
-                DELETE FROM users WHERE username = 'admin' AND password = 'admin';
+                -- Cleanup legacy admin completely
+                DELETE FROM users WHERE username = 'admin';
             ";
             DatabaseHelper.ExecuteNonQuery(sql);
 

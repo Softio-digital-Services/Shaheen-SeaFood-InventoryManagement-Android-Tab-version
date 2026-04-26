@@ -35,11 +35,9 @@ namespace GenericInventorySystem
             this.panelLoginCard = new System.Windows.Forms.Panel();
             this.labelTitle = new System.Windows.Forms.Label();
             this.labelSubtitle = new System.Windows.Forms.Label();
-            this.txtUsername = new System.Windows.Forms.TextBox();
-            this.txtPassword = new System.Windows.Forms.TextBox();
-            this.lblUsername = new System.Windows.Forms.Label();
-            this.lblPassword = new System.Windows.Forms.Label();
-            this.btnLogin = new System.Windows.Forms.Button();
+            this.txtUsername = new GenericInventorySystem.Controls.ModernTextBox();
+            this.txtPassword = new GenericInventorySystem.Controls.ModernTextBox();
+            this.btnLogin = new GenericInventorySystem.Controls.ModernButton();
             this.chkShowPass = new System.Windows.Forms.CheckBox();
             this.btnClose = new System.Windows.Forms.Label();
             this.btnMinimize = new System.Windows.Forms.Label();
@@ -74,9 +72,7 @@ namespace GenericInventorySystem
 
             this.panelLoginCard.Controls.Add(this.labelTitle);
             this.panelLoginCard.Controls.Add(this.labelSubtitle);
-            this.panelLoginCard.Controls.Add(this.lblUsername);
             this.panelLoginCard.Controls.Add(this.txtUsername);
-            this.panelLoginCard.Controls.Add(this.lblPassword);
             this.panelLoginCard.Controls.Add(this.txtPassword);
             this.panelLoginCard.Controls.Add(this.chkShowPass);
             this.panelLoginCard.Controls.Add(this.btnLogin);
@@ -128,37 +124,22 @@ namespace GenericInventorySystem
             this.labelSubtitle.Text = "Enter your credentials to access the system.";
 
             // 
-            // lblUsername
-            // 
-            this.lblUsername.AutoSize = true;
-            this.lblUsername.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
-            this.lblUsername.Location = new System.Drawing.Point(35, 130);
-            this.lblUsername.Text = "Username";
-            
-            // 
             // txtUsername
             // 
-            this.txtUsername.Font = new System.Drawing.Font("Segoe UI", 11F);
-            this.txtUsername.Location = new System.Drawing.Point(35, 155);
-            this.txtUsername.Size = new System.Drawing.Size(280, 30);
-            this.txtUsername.Name = "username";
+            this.txtUsername.Location = new System.Drawing.Point(35, 140);
+            this.txtUsername.Name = "txtUsername";
+            this.txtUsername.Size = new System.Drawing.Size(280, 67);
+            this.txtUsername.LabelText = "Username";
 
-            // 
-            // lblPassword
-            // 
-            this.lblPassword.AutoSize = true;
-            this.lblPassword.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
-            this.lblPassword.Location = new System.Drawing.Point(35, 200);
-            this.lblPassword.Text = "Password";
 
             // 
             // txtPassword
             // 
-            this.txtPassword.Font = new System.Drawing.Font("Segoe UI", 11F);
-            this.txtPassword.Location = new System.Drawing.Point(35, 225);
-            this.txtPassword.Size = new System.Drawing.Size(280, 30);
-            this.txtPassword.Name = "password";
-            this.txtPassword.PasswordChar = '•';
+            this.txtPassword.Location = new System.Drawing.Point(35, 220);
+            this.txtPassword.Name = "txtPassword";
+            this.txtPassword.Size = new System.Drawing.Size(280, 67);
+            this.txtPassword.LabelText = "Password";
+            this.txtPassword.IsPassword = true;
 
             // 
             // chkShowPass
@@ -177,8 +158,8 @@ namespace GenericInventorySystem
             this.btnLogin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnLogin.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             this.btnLogin.ForeColor = System.Drawing.Color.White;
-            this.btnLogin.Location = new System.Drawing.Point(35, 310);
-            this.btnLogin.Name = "loginBtn";
+            this.btnLogin.Location = new System.Drawing.Point(35, 320);
+            this.btnLogin.Name = "btnLogin";
             this.btnLogin.Size = new System.Drawing.Size(280, 45);
             this.btnLogin.Text = "LOGIN";
             this.btnLogin.Click += new System.EventHandler(this.loginBtn_Click);
@@ -208,11 +189,9 @@ namespace GenericInventorySystem
         private System.Windows.Forms.Label btnClose;
         private System.Windows.Forms.Label labelTitle;
         private System.Windows.Forms.Label labelSubtitle;
-        private System.Windows.Forms.TextBox txtUsername;
-        private System.Windows.Forms.TextBox txtPassword;
-        private System.Windows.Forms.Label lblUsername;
-        private System.Windows.Forms.Label lblPassword;
-        private System.Windows.Forms.Button btnLogin;
+        private GenericInventorySystem.Controls.ModernTextBox txtUsername;
+        private GenericInventorySystem.Controls.ModernTextBox txtPassword;
+        private GenericInventorySystem.Controls.ModernButton btnLogin;
         private System.Windows.Forms.CheckBox chkShowPass;
         private System.Windows.Forms.Label btnMinimize;
 

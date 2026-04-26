@@ -130,6 +130,31 @@ namespace GenericInventorySystem.Controls
             
             // Add Rounded styling/shadow via Paint (Simple border for now)
             this.Paint += StatCard_Paint;
+            UpdateRegion();
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            UpdateRegion();
+        }
+
+        private void UpdateRegion()
+        {
+            using (var path = new GraphicsPath())
+            {
+                int radius = 12;
+                int d = radius * 2;
+                Rectangle r = new Rectangle(0, 0, this.Width, this.Height);
+                
+                path.AddArc(r.X, r.Y, d, d, 180, 90);
+                path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+                path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+                path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+                path.CloseFigure();
+                
+                this.Region = new Region(path);
+            }
         }
 
         private void RepositionForRTL()
