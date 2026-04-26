@@ -142,6 +142,32 @@ namespace GenericInventorySystem.Services
             return count > 0;
         }
 
+        public bool BarcodeExists(string barcode, int? excludePartId = null)
+        {
+            if (string.IsNullOrWhiteSpace(barcode)) return false;
+            string sql = "SELECT COUNT(*) FROM parts WHERE barcode = @barcode AND date_deleted IS NULL";
+            var parameters = new System.Collections.Generic.List<SqlParameter> { new SqlParameter("@barcode", barcode) };
+            
+            if (excludePartId.HasValue)
+            {
+                sql += " AND id != @id";
+                parameters.Add(new SqlParameter("@id", excludePartId.Value));
+            }
+            
+            int count = DatabaseHelper.ExecuteScalar<int>(sql, parameters.ToArray());
+            return count > 0;
+        }
+
+        public DataRow GetPartByBarcodeOrNumber(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query)) return null;
+            
+            string sql = "SELECT id, part_name, part_number, barcode, selling_price FROM parts WHERE (barcode = @query OR part_number = @query OR part_name = @query) AND date_deleted IS NULL";
+            DataTable dt = DatabaseHelper.ExecuteDataTable(sql, new SqlParameter("@query", query));
+            if (dt.Rows.Count > 0) return dt.Rows[0];
+            return null;
+        }
+
         public void ImportPart(string partNumber, string partName, string categoryName, int quantity, int minStock, decimal unitPrice, string location, string status)
         {
             try

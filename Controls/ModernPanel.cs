@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using GenericInventorySystem; // Correct namespace for ThemeConfig
 
 namespace GenericInventorySystem.Controls
 {
@@ -14,42 +15,35 @@ namespace GenericInventorySystem.Controls
 
         public ModernPanel()
         {
-            this.BackColor = Color.White;
+            this.SetStyle(ControlStyles.UserPaint | ControlStyles.ResizeRedraw | ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.SupportsTransparentBackColor, true);
+            this.BackColor = Color.Transparent;
             this.ForeColor = Color.Black;
             this.Size = new Size(350, 200);
-            UpdateRegion();
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize(e);
-            UpdateRegion();
-        }
-
-        private void UpdateRegion()
-        {
-            using (var path = GetRoundedPath(new Rectangle(0, 0, this.Width, this.Height), BorderRadius))
-            {
-                this.Region = new Region(path);
-            }
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            base.OnPaint(e);
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
             
-            // Gradient
-            Rectangle rect = new Rectangle(0, 0, this.Width, this.Height);
+            // 1. Clear background with PARENT color to solve white corners
+            Color parentColor = ThemeConfig.GetParentColor(this);
+            using (var brush = new SolidBrush(parentColor))
+            {
+                e.Graphics.FillRectangle(brush, -1, -1, this.Width + 2, this.Height + 2);
+            }
+
+            // 2. Draw Rounded Surface (Gradient)
+            Rectangle rect = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
             using (LinearGradientBrush brush = new LinearGradientBrush(rect, this.GradientTopColor, this.GradientBottomColor, this.GradientAngle))
-            using (GraphicsPath graphicsPath = GetRoundedPath(new Rectangle(0, 0, this.Width - 1, this.Height - 1), BorderRadius))
+            using (GraphicsPath graphicsPath = GetRoundedPath(rect, BorderRadius))
             {
                 e.Graphics.FillPath(brush, graphicsPath);
                 
-                // Draw Rounded Border
+                // 3. Draw Rounded Border
                 using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f))
                 {
-                    e.Graphics.DrawPath(pen, path: graphicsPath);
+                    e.Graphics.DrawPath(pen, graphicsPath);
                 }
             }
         }

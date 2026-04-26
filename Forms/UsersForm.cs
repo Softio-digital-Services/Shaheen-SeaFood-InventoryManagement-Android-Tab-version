@@ -31,102 +31,49 @@ namespace GenericInventorySystem.Forms
             this.BackColor = ThemeConfig.BackgroundColor;
 
             // Main Layout
-            TableLayoutPanel mainLayout = new TableLayoutPanel();
-            mainLayout.Dock = DockStyle.Fill;
-            mainLayout.ColumnCount = 1;
-            mainLayout.RowCount = 2; // Header, Content
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); // Header height
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid
-            mainLayout.BackColor = ThemeConfig.BackgroundColor;
+            TableLayoutPanel mainLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = ThemeConfig.BackgroundColor, Padding = new Padding(20) };
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             this.Controls.Add(mainLayout);
 
-            // 1. Header with Title and Add Button
-            Panel pnlHeader = new Panel();
-            pnlHeader.Dock = DockStyle.Fill;
-            pnlHeader.BackColor = ThemeConfig.BackgroundColor;
-            pnlHeader.Padding = new Padding(20);
-            pnlHeader.Margin = new Padding(0);
-
+            // 1. Header
+            Panel pnlHeader = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.BackgroundColor, Margin = new Padding(0) };
             lblUsersTitle = ThemeConfig.CreateStandardHeader("User Management");
-            lblUsersTitle.Name = "lblUsersTitle";
             pnlHeader.Controls.Add(lblUsersTitle);
 
-            txtSearch = new ModernTextBox();
-            txtSearch.IsSearch = true;
-            txtSearch.ShowLabel = false;
-            txtSearch.PlaceholderText = "Search users...";
-            txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(20, 70);
+            txtSearch = new ModernTextBox { IsSearch = true, ShowLabel = false, PlaceholderText = "Search users...", Size = new Size(320, 40), Location = new Point(0, 55) };
             txtSearch.TextChanged += (s, e) => LoadData(txtSearch.Text);
             pnlHeader.Controls.Add(txtSearch);
 
-            btnAddUser = new ModernButton();
-            btnAddUser.Text = "+ Add User";
-            btnAddUser.Size = new Size(150, 40);
+            btnAddUser = new ModernButton { Text = "+ Add User", Size = new Size(150, 40) };
             ThemeConfig.ApplyPrimaryButton(btnAddUser);
-            
-            // Positioning button to match standard pattern
-            btnAddUser.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnAddUser.Location = new Point(pnlHeader.Width - 170, 70); 
             btnAddUser.Click += btnAddUser_Click;
             pnlHeader.Controls.Add(btnAddUser);
             
-            // Handle responsive positioning for the button
             pnlHeader.Resize += (s, e) => {
-                if (LocalizationManager.IsArabic)
-                {
-                    txtSearch.Location = new Point(pnlHeader.Width - txtSearch.Width - 20, 70);
-                    btnAddUser.Location = new Point(20, 70);
-                }
-                else
-                {
-                    txtSearch.Location = new Point(20, 70);
-                    btnAddUser.Location = new Point(pnlHeader.Width - btnAddUser.Width - 20, 70);
+                if (LocalizationManager.IsArabic) {
+                    txtSearch.Location = new Point(pnlHeader.Width - txtSearch.Width, 55);
+                    btnAddUser.Location = new Point(0, 50);
+                } else {
+                    txtSearch.Location = new Point(0, 55);
+                    btnAddUser.Location = new Point(pnlHeader.Width - btnAddUser.Width, 50);
                 }
             };
-            
             mainLayout.Controls.Add(pnlHeader, 0, 0);
 
-            // 2. Grid Container (Card)
-            Panel pnlGridCard = CreateCardPanel();
-            pnlGridCard.Dock = DockStyle.Fill;
-            pnlGridCard.Margin = new Padding(20, 10, 20, 20); // Standard margin
-            
-            dgvUsers = new DataGridView();
-            dgvUsers.DataError += (s, e) => { e.ThrowException = false; };
-            dgvUsers.Dock = DockStyle.Fill;
-            dgvUsers.BackgroundColor = ThemeConfig.SurfaceColor;
-            dgvUsers.BorderStyle = BorderStyle.None;
-            dgvUsers.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
-
-            dgvUsers.EnableHeadersVisualStyles = false;
-            dgvUsers.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
-            dgvUsers.RowHeadersVisible = false;
-            dgvUsers.AutoGenerateColumns = false;
-            dgvUsers.AllowUserToAddRows = false;
-            dgvUsers.ReadOnly = true;
+            // 2. Grid
+            dgvUsers = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal, RowHeadersVisible = false, AutoGenerateColumns = false, AllowUserToAddRows = false, ReadOnly = true };
+            dgvUsers.DataError += (s, e) => e.ThrowException = false;
             dgvUsers.CellClick += DgvUsers_CellClick;
             dgvUsers.CellMouseMove += DgvUsers_CellMouseMove;
             dgvUsers.CellMouseLeave += DgvUsers_CellMouseLeave;
             dgvUsers.CellPainting += DgvUsers_CellPainting;
 
-            // Columns
             dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "id", HeaderText = "ID", DataPropertyName = "id", Width = 80 });
             dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "username", HeaderText = "Username", DataPropertyName = "username", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-            
-            // Actions Column (Edit + Delete)
-            var btnCol = new DataGridViewButtonColumn 
-            { 
-                Name = "actions", 
-                HeaderText = "Actions", 
-                Text = "", 
-                UseColumnTextForButtonValue = true, 
-                Width = 140,
-                FlatStyle = FlatStyle.Flat 
-            };
-            dgvUsers.Columns.Add(btnCol);
+            dgvUsers.Columns.Add(new DataGridViewButtonColumn { Name = "actions", HeaderText = "Actions", Text = "", UseColumnTextForButtonValue = true, Width = 140, FlatStyle = FlatStyle.Flat });
 
-            pnlGridCard.Controls.Add(dgvUsers);
+            Panel pnlGridCard = ThemeConfig.CreateCardPanel(dgvUsers);
             mainLayout.Controls.Add(pnlGridCard, 0, 1);
 
             this.ResumeLayout(false);
@@ -142,16 +89,11 @@ namespace GenericInventorySystem.Forms
         {
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
-
             lblUsersTitle.Text = isArabic ? "إدارة المستخدمين" : "User Management";
             btnAddUser.Text = isArabic ? "+ إضافة مستخدم" : "+ Add User";
-
-            if (dgvUsers.Columns["id"] != null)
-                dgvUsers.Columns["id"].HeaderText = isArabic ? "المعرف" : "ID";
-            if (dgvUsers.Columns["username"] != null)
-                dgvUsers.Columns["username"].HeaderText = isArabic ? "اسم المستخدم" : "Username";
-            if (dgvUsers.Columns["actions"] != null)
-                dgvUsers.Columns["actions"].HeaderText = isArabic ? "الإجراءات" : "Actions";
+            if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = isArabic ? "المعرف" : "ID";
+            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = isArabic ? "اسم المستخدم" : "Username";
+            if (dgvUsers.Columns["actions"] != null) dgvUsers.Columns["actions"].HeaderText = isArabic ? "الإجراءات" : "Actions";
         }
 
         public void LoadData(string search = "")
@@ -289,41 +231,6 @@ namespace GenericInventorySystem.Forms
                 Image imgDelete = ThemeConfig.GetNuricon("delete");
                 if (imgDelete != null) e.Graphics.DrawImage(imgDelete, delRect);
             }
-        }
-        
-        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRect(Rectangle rect, int radius)
-        {
-            var path = new System.Drawing.Drawing2D.GraphicsPath();
-            int d = radius * 2;
-            path.AddArc(rect.X, rect.Y, d, d, 180, 90);
-            path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
-            path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
-            path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
-            path.CloseFigure();
-            return path;
-        }
-
-        private Panel CreateCardPanel()
-        {
-            Panel p = new Panel();
-            p.BackColor = ThemeConfig.BackgroundColor; // Matches parent to hide corners
-            p.Padding = new Padding(20);
-            p.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                Rectangle r = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
-                
-                using (var path = GetRoundedRect(r, 12))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-                {
-                    using(var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                    {
-                        e.Graphics.FillPath(brush, path);
-                    }
-                    e.Graphics.DrawPath(pen, path);
-                }
-            };
-            return p;
         }
     }
 }

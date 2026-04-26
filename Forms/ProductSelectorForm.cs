@@ -65,10 +65,10 @@ namespace GenericInventorySystem.Forms
             try
             {
                 string search = txtSearch.Text.Trim();
-                string sql = "SELECT id, part_name as Name, part_number as SKU, selling_price as Price, quantity_in_stock as Stock FROM parts WHERE date_deleted IS NULL AND status = 'Active'";
+                string sql = "SELECT id, part_name as Name, part_number as SKU, barcode as Barcode, selling_price as Price, quantity_in_stock as Stock FROM parts WHERE date_deleted IS NULL";
                 if (!string.IsNullOrEmpty(search))
                 {
-                    sql += $" AND (part_name LIKE '%{search}%' OR part_number LIKE '%{search}%')";
+                    sql += $" AND (part_name LIKE '%{search}%' OR part_number LIKE '%{search}%' OR barcode LIKE '%{search}%')";
                 }
                 dgvProducts.DataSource = DatabaseHelper.ExecuteDataTable(sql);
                 if (dgvProducts.Columns["id"] != null) dgvProducts.Columns["id"].Visible = false;
@@ -77,6 +77,7 @@ namespace GenericInventorySystem.Forms
                 {
                     if (dgvProducts.Columns["Name"] != null) dgvProducts.Columns["Name"].HeaderText = "الاسم";
                     if (dgvProducts.Columns["SKU"] != null) dgvProducts.Columns["SKU"].HeaderText = "رقم القطعة";
+                    if (dgvProducts.Columns["Barcode"] != null) dgvProducts.Columns["Barcode"].HeaderText = "الباركود";
                     if (dgvProducts.Columns["Price"] != null) dgvProducts.Columns["Price"].HeaderText = "السعر";
                     if (dgvProducts.Columns["Stock"] != null) dgvProducts.Columns["Stock"].HeaderText = "المخزون";
                 }

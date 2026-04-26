@@ -47,12 +47,10 @@ namespace GenericInventorySystem.Controls
         {
             pnlContainer = new Panel();
             pnlContainer.Dock = DockStyle.Fill;
-            pnlContainer.BackColor = Color.White;
+            pnlContainer.Paint += PnlContainer_Paint;
             pnlContainer.Padding = new Padding(10, 0, 5, 0);
             pnlContainer.Cursor = Cursors.Hand;
             pnlContainer.Click += OpenCalendar;
-            // Paint border handled by Parent wrapper in POSForm? 
-            // POSForm POSForm uses CreateStyledInput which wraps THIS control in ANOTHER panel with border.
             // So this control should just be transparent or white background.
             // CreateStyledInput sets innerControl.Width etc.
             
@@ -105,6 +103,47 @@ namespace GenericInventorySystem.Controls
                 this.Value = calendar.SelectedDate;
             };
             calendar.Show();
+        }
+
+        private void PnlContainer_Paint(object sender, PaintEventArgs e)
+        {
+            var pnl = sender as Panel;
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            // 1. Clear corners with PARENT color to solve "white corners bug"
+            Color parentColor = this.Parent?.BackColor ?? ThemeConfig.BackgroundColor;
+            using (var brush = new SolidBrush(parentColor))
+            {
+                e.Graphics.FillRectangle(brush, pnl.ClientRectangle);
+            }
+
+            // 2. Draw Rounded Surface (White)
+            Rectangle rect = new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1);
+            using (var path = GetRoundedPath(rect, 12))
+            {
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    e.Graphics.FillPath(brush, path);
+                }
+
+                // 3. Draw Border
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f))
+                {
+                    e.Graphics.DrawPath(pen, path);
+                }
+            }
+        }
+
+        private GraphicsPath GetRoundedPath(Rectangle rect, int radius)
+        {
+            GraphicsPath path = new GraphicsPath();
+            int d = radius * 2;
+            path.AddArc(rect.X, rect.Y, d, d, 180, 90);
+            path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
+            path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
+            path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
+            path.CloseFigure();
+            return path;
         }
 
         private void UpdateLabel()

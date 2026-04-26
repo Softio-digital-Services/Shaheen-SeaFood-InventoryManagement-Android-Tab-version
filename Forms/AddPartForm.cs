@@ -190,6 +190,21 @@ namespace GenericInventorySystem.Forms
 
             // Validation - SKU is a free-text field (e.g. OIL-001), not a number
             string partNum = txtPartNumber.Text.Trim();
+            string barcode = txtBarcode.Text.Trim();
+
+            // Instantiate service locally or via property if available
+            InventoryService service = new InventoryService();
+
+            if (!string.IsNullOrWhiteSpace(barcode))
+            {
+                if (service.BarcodeExists(barcode, EditPartId))
+                {
+                    MessageHelper.ShowWarning(LocalizationManager.IsArabic 
+                        ? "هذا الباركود موجود بالفعل في النظام." 
+                        : "This barcode already exists in the system.");
+                    return;
+                }
+            }
 
             try
             {
@@ -198,7 +213,6 @@ namespace GenericInventorySystem.Forms
                 int qty = (int)numQuantity.Value;
                 decimal price = numPrice.Value;
                 string status = cmbStatus.SelectedItem?.ToString() ?? "Active";
-                string barcode = txtBarcode.Text.Trim();
                 string location = txtLocation.Text.Trim();
                 string shelf = txtShelf.Text.Trim();
                 string category = cmbCategory.Text; // Use Text to allow new categories or typed ones
@@ -206,8 +220,6 @@ namespace GenericInventorySystem.Forms
                 string image = _currentImagePath; 
                 if(string.IsNullOrEmpty(image)) image = null;
 
-                // Instantiate service locally or via property if available (PartsForm has it, but this is a different form)
-                InventoryService service = new InventoryService();
 
                 _minStock = (int)numMinStock.Value;
                 

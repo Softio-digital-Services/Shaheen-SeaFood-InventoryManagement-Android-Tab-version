@@ -30,11 +30,37 @@ namespace GenericInventorySystem.Controls
             this.Text = string.Empty;
         }
 
+        private bool _isRequired = false;
+        [Category("Behavior")]
+        public bool IsRequired
+        {
+            get => _isRequired;
+            set { _isRequired = value; UpdateLabel(); }
+        }
+
+        private bool _isError = false;
+        [Category("Appearance")]
+        public bool IsError
+        {
+            get => _isError;
+            set { _isError = value; pnlContainer?.Invalidate(); }
+        }
+
+        private string _baseLabelText = "";
         [Category("Appearance")]
         public string LabelText
         {
-            get => lblTitle.Text;
-            set => lblTitle.Text = value;
+            get => _baseLabelText;
+            set { _baseLabelText = value; UpdateLabel(); }
+        }
+
+        private void UpdateLabel()
+        {
+            if (lblTitle == null) return;
+            string text = _baseLabelText;
+            if (_isRequired && !string.IsNullOrEmpty(text) && !text.EndsWith("*") && !text.EndsWith("* "))
+                text += " *";
+            lblTitle.Text = text;
         }
 
         [Category("Behavior")]
@@ -117,13 +143,12 @@ namespace GenericInventorySystem.Controls
 
             // Container Panel (Rounded White Box)
             pnlContainer = new Panel();
-            pnlContainer.BackColor = Color.White;
+            pnlContainer.BackColor = Color.Transparent;
             pnlContainer.Location = new Point(0, 25);
             pnlContainer.Size = new Size(this.Width, this.Height - 25);
             pnlContainer.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             pnlContainer.Paint += PnlContainer_Paint;
-            pnlContainer.Padding = new Padding(10, 5, 10, 5);
-            pnlContainer.Resize += (s, e) => UpdateContainerRegion();
+            pnlContainer.Padding = new Padding(10, 8, 10, 5);
             this.Controls.Add(pnlContainer);
 
             // TextBox
@@ -137,6 +162,7 @@ namespace GenericInventorySystem.Controls
             // Center vertically
             txtInput.Location = new Point(10, (pnlContainer.Height - txtInput.Height)/2);
             txtInput.TextChanged += (s, e) => {
+                if (_isError) IsError = false; // Reset error on type
                 this.OnTextChanged(EventArgs.Empty);
                 UpdatePlaceholder();
             };
@@ -174,26 +200,9 @@ namespace GenericInventorySystem.Controls
             }
             
             pnlContainer.Size = new Size(this.Width, this.Height - labelHeight);
-            UpdateContainerRegion();
             ResizeControls();
         }
 
-        private void UpdateContainerRegion()
-        {
-            if (pnlContainer == null) return;
-            using (var path = new GraphicsPath())
-            {
-                int radius = 12;
-                int d = radius * 2;
-                Rectangle r = new Rectangle(0, 0, pnlContainer.Width, pnlContainer.Height);
-                path.AddArc(r.X, r.Y, d, d, 180, 90);
-                path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
-                path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
-                path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
-                path.CloseFigure();
-                pnlContainer.Region = new Region(path);
-            }
-        }
 
         private void UpdatePlaceholder()
         {
@@ -237,12 +246,31 @@ namespace GenericInventorySystem.Controls
         {
             var pnl = sender as Panel;
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            
-            // Draw Rounded Border
-            using (var path = GetRoundedPath(new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1), 12))
-            using (var pen = new Pen(_isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor, _isFocused ? 2f : 1.5f))
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+            // 1. Clear corners with PARENT color to solve "white corners bug"
+            Color parentColor = ThemeConfig.GetParentColor(this);
+            using (var brush = new SolidBrush(parentColor))
             {
-                e.Graphics.DrawPath(pen, path);
+                e.Graphics.FillRectangle(brush, -1, -1, pnl.Width + 2, pnl.Height + 2);
+            }
+
+            // 2. Draw Rounded Surface (White)
+            Rectangle rect = new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1);
+            using (var path = GetRoundedPath(rect, 12))
+            {
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    e.Graphics.FillPath(brush, path);
+                }
+
+                // 3. Draw Border (Primary if focused, else BorderColor)
+                Color borderColor = _isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor;
+                float borderSize = _isFocused ? 2f : 1.5f;
+                using (var pen = new Pen(borderColor, borderSize))
+                {
+                    e.Graphics.DrawPath(pen, path);
+                }
             }
 
             // Draw Search Icon

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using GenericInventorySystem.Helpers;
+using GenericInventorySystem;
 
 namespace GenericInventorySystem.Controls
 {
@@ -114,13 +115,12 @@ namespace GenericInventorySystem.Controls
 
             // Container Panel
             pnlContainer = new Panel();
-            pnlContainer.BackColor = Color.White;
+            pnlContainer.BackColor = Color.Transparent;
             pnlContainer.Location = new Point(0, 25);
             pnlContainer.Size = new Size(this.Width, this.Height - 25);
             pnlContainer.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             pnlContainer.Paint += PnlContainer_Paint;
             pnlContainer.Padding = new Padding(10, 8, 10, 5);
-            pnlContainer.Resize += (s, e) => UpdateContainerRegion();
             this.Controls.Add(pnlContainer);
 
             // ComboBox
@@ -144,34 +144,38 @@ namespace GenericInventorySystem.Controls
             int labelHeight = _showLabel ? 25 : 0;
             pnlContainer.Location = new Point(0, labelHeight);
             pnlContainer.Size = new Size(this.Width, this.Height - labelHeight);
-            UpdateContainerRegion();
         }
 
-        private void UpdateContainerRegion()
-        {
-            if (pnlContainer == null) return;
-            using (var path = new GraphicsPath())
-            {
-                int radius = 12;
-                int d = radius * 2;
-                Rectangle r = new Rectangle(0, 0, pnlContainer.Width, pnlContainer.Height);
-                path.AddArc(r.X, r.Y, d, d, 180, 90);
-                path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
-                path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
-                path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
-                path.CloseFigure();
-                pnlContainer.Region = new Region(path);
-            }
-        }
 
         private void PnlContainer_Paint(object sender, PaintEventArgs e)
         {
             var pnl = sender as Panel;
-            // Draw Rounded Border
-            using (var path = GetRoundedPath(new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1), 12))
-            using (var pen = new Pen(_isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor, _isFocused ? 2f : 1.5f))
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+            // 1. Clear corners with PARENT color to solve "white corners bug"
+            Color parentColor = ThemeConfig.GetParentColor(this);
+            using (var brush = new SolidBrush(parentColor))
             {
-                e.Graphics.DrawPath(pen, path);
+                e.Graphics.FillRectangle(brush, -1, -1, pnl.Width + 2, pnl.Height + 2);
+            }
+
+            // 2. Draw Rounded Surface (White)
+            Rectangle rect = new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1);
+            using (var path = GetRoundedPath(rect, 12))
+            {
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    e.Graphics.FillPath(brush, path);
+                }
+
+                // 3. Draw Border (Primary if focused, else BorderColor)
+                Color borderColor = _isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor;
+                float borderSize = _isFocused ? 2f : 1.5f;
+                using (var pen = new Pen(borderColor, borderSize))
+                {
+                    e.Graphics.DrawPath(pen, path);
+                }
             }
         }
 

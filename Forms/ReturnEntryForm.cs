@@ -55,11 +55,16 @@ namespace GenericInventorySystem.Forms
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "QtyOrdered", DataPropertyName = "quantity", HeaderText = "Ordered", Width = 80, ReadOnly = true });
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitPrice", DataPropertyName = "price", HeaderText = LocalizationManager.GetString("POS_GridPrice"), Width = 100, ReadOnly = true });
             
-            DataGridViewTextBoxColumn colReturn = new DataGridViewTextBoxColumn { Name = "QtyToReturn", HeaderText = LocalizationManager.GetString("Return_Qty"), Width = 100 };
+            DataGridViewTextBoxColumn colReturn = new DataGridViewTextBoxColumn { Name = "QtyToReturn", DataPropertyName = "QtyToReturn", HeaderText = LocalizationManager.GetString("Return_Qty"), Width = 100 };
             colReturn.DefaultCellStyle.BackColor = Color.FromArgb(240, 248, 255);
             dgvItems.Columns.Add(colReturn);
             
             dgvItems.CellValueChanged += DgvItems_CellValueChanged;
+            
+            // Allow easy editing of the return quantity
+            dgvItems.SelectionMode = DataGridViewSelectionMode.CellSelect;
+            dgvItems.EditMode = DataGridViewEditMode.EditOnEnter;
+
             tlpMain.Controls.Add(dgvItems, 0, 0);
 
             // Bottom Area
@@ -184,7 +189,8 @@ namespace GenericInventorySystem.Forms
                 return;
             }
 
-            if (!ValidationHelper.ValidateRequiredFields(txtReason)) return;
+            // Reason is now optional
+
 
             string confirmMsg = LocalizationManager.IsArabic ? "هل أنت متأكد من رغبتك في معالجة هذا المرتجع؟" : "Are you sure you want to process this return?";
             if (MessageHelper.ConfirmAction(confirmMsg))

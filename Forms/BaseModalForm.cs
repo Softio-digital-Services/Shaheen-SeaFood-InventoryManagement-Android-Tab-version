@@ -374,5 +374,41 @@ namespace GenericInventorySystem.Forms
             ReleaseCapture();
             SendMessage(this.Handle, 0x112, 0xf012, 0);
         }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // Navigation via Enter or Arrows
+            if (keyData == Keys.Enter || keyData == Keys.Down || keyData == Keys.Up)
+            {
+                Control active = this.ActiveControl;
+                
+                // Determine if the current control is a text input
+                bool isTextBox = active is TextBox || (active != null && active.Parent is Controls.ModernTextBox);
+
+                // For Arrows: ONLY handle if it's a regular text input
+                if (keyData == Keys.Down || keyData == Keys.Up)
+                {
+                    if (!isTextBox) return base.ProcessCmdKey(ref msg, keyData);
+                }
+
+                // Special handling for multiline textboxes (Enter adds new line)
+                if (active is TextBox tb && tb.Multiline && keyData == Keys.Enter)
+                    return base.ProcessCmdKey(ref msg, keyData);
+                
+                // Execute navigation
+                if (keyData == Keys.Enter || keyData == Keys.Down)
+                {
+                    this.SelectNextControl(active, true, true, true, true);
+                    return true;
+                }
+                else if (keyData == Keys.Up)
+                {
+                    this.SelectNextControl(active, false, true, true, true);
+                    return true;
+                }
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
     }
 }

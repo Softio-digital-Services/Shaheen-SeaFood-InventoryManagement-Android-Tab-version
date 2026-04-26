@@ -49,41 +49,41 @@ namespace GenericInventorySystem.Forms
         {
             this.SuspendLayout();
             this.Dock     = DockStyle.Fill;
-            this.BackColor = ThemeConfig.BackgroundColor;
-
             TableLayoutPanel tlp = new TableLayoutPanel();
             tlp.Dock       = DockStyle.Fill;
             tlp.Padding    = new Padding(20);
             tlp.ColumnCount = 1;
-            tlp.RowCount   = 2;
-            tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 100F));
-            tlp.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            tlp.RowCount   = 3;
+            tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // 0. Title
+            tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));  // 1. Actions (Search/Currency)
+            tlp.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // 2. Content
             tlp.BackColor  = ThemeConfig.BackgroundColor;
             this.Controls.Add(tlp);
 
-            // ─── Header ───────────────────────────────────────────────────
-            Panel pnlHeader = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.BackgroundColor };
+            // 0. Title
             lblQuotationsTitle = ThemeConfig.CreateStandardHeader(
                 LocalizationManager.IsArabic ? "عروض الأسعار للعملاء" : "Customer Quotations");
             lblQuotationsTitle.Name = "lblQuotationsTitle";
-            pnlHeader.Controls.Add(lblQuotationsTitle);
+            lblQuotationsTitle.Margin = new Padding(0);
+            tlp.Controls.Add(lblQuotationsTitle, 0, 0);
 
-            // Search Bar (Harmonized)
+            // 1. Actions Row
+            Panel pnlActions = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
+            
             txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = "Search quotations...";
             txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(0, 45);
+            txtSearch.Location = new Point(0, 5);
             txtSearch.TextChanged += (s, e) => LoadQuotations(txtSearch.Text);
-            pnlHeader.Controls.Add(txtSearch);
+            pnlActions.Controls.Add(txtSearch);
 
-            // ─── Currency selector (aligned right) ────────────────────────
+            // Currency selector (aligned right)
             ComboBox cboCurrency = new ComboBox();
             ThemeConfig.ApplyComboBoxStyle(cboCurrency);
             Panel currPanel = ThemeConfig.WrapInStyledInput(cboCurrency, 36); currPanel.Width = 110;
-            currPanel.Location = new Point(pnlHeader.Width - 130, 45);
-            currPanel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            currPanel.Dock = DockStyle.Right;
             
             foreach (var c in CurrencyService.SupportedCurrencies)
                 cboCurrency.Items.Add(c);
@@ -98,38 +98,11 @@ namespace GenericInventorySystem.Forms
                 if (cboCurrency.SelectedItem is CurrencyInfo sel)
                     CurrencyService.ActiveCurrency = sel.Code;
             };
+            pnlActions.Controls.Add(currPanel);
+            tlp.Controls.Add(pnlActions, 0, 1);
 
-            // Keep panels aligned on Resize
-            pnlHeader.Resize += (s, e) =>
-            {
-                if (LocalizationManager.IsArabic)
-                {
-                    txtSearch.Location = new Point(pnlHeader.Width - txtSearch.Width, 45);
-                    currPanel.Location = new Point(0, 45);
-                }
-                else
-                {
-                    txtSearch.Location = new Point(0, 45);
-                    currPanel.Location = new Point(pnlHeader.Width - currPanel.Width, 45);
-                }
-            };
-            
-            pnlHeader.Controls.Add(currPanel);
-            tlp.Controls.Add(pnlHeader, 0, 0);
 
             // ─── Grid ─────────────────────────────────────────────────────
-            // Wrap in a card-like Panel
-            Panel pnlCard = new Panel();
-            pnlCard.Dock        = DockStyle.Fill;
-            pnlCard.BackColor   = Color.White;
-            pnlCard.Padding     = new Padding(0);
-            pnlCard.Paint      += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (Pen pen = new Pen(ThemeConfig.BorderColor, 1))
-                    e.Graphics.DrawRectangle(pen, 0, 0, pnlCard.Width - 1, pnlCard.Height - 1);
-            };
-
             dgvQuotes = new DataGridView();
             dgvQuotes.Dock              = DockStyle.Fill;
             dgvQuotes.AllowUserToAddRows = false;
@@ -210,8 +183,9 @@ namespace GenericInventorySystem.Forms
                 dgvQuotes.Cursor = Cursors.Default;
             };
 
-            pnlCard.Controls.Add(dgvQuotes);
-            tlp.Controls.Add(pnlCard, 0, 1);
+            // Card Wrapper
+            Panel pnlCard = ThemeConfig.CreateCardPanel(dgvQuotes);
+            tlp.Controls.Add(pnlCard, 0, 2);
 
             this.ResumeLayout(false);
         }
@@ -254,30 +228,6 @@ namespace GenericInventorySystem.Forms
             }
         }
 
-        private void DrawActionButton(Graphics g, Rectangle rect, string text, Color color)
-        {
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            using (GraphicsPath path = GetRoundedRect(rect, 6))
-            using (SolidBrush bg = new SolidBrush(Color.FromArgb(20, color)))
-            using (Pen border = new Pen(color, 1.2f))
-            {
-                g.FillPath(bg, path);
-                g.DrawPath(border, path);
-            }
-            TextRenderer.DrawText(g, text, ThemeConfig.SmallBoldFont, rect, color,
-                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-        }
-
-        private GraphicsPath GetRoundedRect(Rectangle rect, int radius)
-        {
-            var path = new GraphicsPath();
-            path.AddArc(rect.X, rect.Y, radius, radius, 180, 90);
-            path.AddArc(rect.Right - radius, rect.Y, radius, radius, 270, 90);
-            path.AddArc(rect.Right - radius, rect.Bottom - radius, radius, radius, 0, 90);
-            path.AddArc(rect.X, rect.Bottom - radius, radius, radius, 90, 90);
-            path.CloseFigure();
-            return path;
-        }
 
         // ─── Click handling for the three painted buttons ─────────────────
         private void DgvQuotes_CellClick(object sender, DataGridViewCellEventArgs e)

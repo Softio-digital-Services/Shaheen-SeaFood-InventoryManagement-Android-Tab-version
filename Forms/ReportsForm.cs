@@ -91,34 +91,29 @@ namespace GenericInventorySystem.Forms
             tlpRoot.Controls.Add(tlpTop, 0, 1);
 
             // Valuation Chart Card
-            Panel pnlValuation = CreateCardPanel();
+            chartValuation = new Chart { Dock = DockStyle.Fill };
+            Panel pnlValuation = ThemeConfig.CreateCardPanel(chartValuation);
             pnlValuation.Dock = DockStyle.Fill;
             pnlValuation.Margin = new Padding(0, 0, 10, 0);
-            pnlValuation.Padding = new Padding(20);
             
             Label lblValTitle = GetTitleLabel("Inventory Valuation Over Time");
             lblValTitle.Name = "lblValTitle";
             pnlValuation.Controls.Add(lblValTitle);
+            lblValTitle.BringToFront(); // Ensure title is visible above chart in card
 
-            chartValuation = new Chart();
-            chartValuation.Dock = DockStyle.Fill;
-            pnlValuation.Controls.Add(chartValuation);
-            lblValTitle.SendToBack(); // Maintain docking order hack or just add chart second (done)
             tlpTop.Controls.Add(pnlValuation, 0, 0);
 
             // Pie Chart Card
-            Panel pnlPie = CreateCardPanel();
+            chartPie = new Chart { Dock = DockStyle.Fill };
+            Panel pnlPie = ThemeConfig.CreateCardPanel(chartPie);
             pnlPie.Dock = DockStyle.Fill;
             pnlPie.Margin = new Padding(10, 0, 0, 0);
-            pnlPie.Padding = new Padding(20);
             
             Label lblPieTitle = GetTitleLabel("Sales by Category");
             lblPieTitle.Name = "lblPieTitle";
             pnlPie.Controls.Add(lblPieTitle);
+            lblPieTitle.BringToFront();
 
-            chartPie = new Chart();
-            chartPie.Dock = DockStyle.Fill;
-            pnlPie.Controls.Add(chartPie);
             tlpTop.Controls.Add(pnlPie, 1, 0);
 
 
@@ -145,42 +140,42 @@ namespace GenericInventorySystem.Forms
             pnlKPIContainer.Controls.Add(tlpKPIs);
 
             // KPI 1
-            Panel kpi1 = CreateCardPanel();
+            Panel pnlKPI1Content = new Panel { Dock = DockStyle.Fill };
+            Label kpi1Title = new Label { Name = "kpi1Title", Text = "Total Sales (YTD):", Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, Location = new Point(0, 5), AutoSize = true };
+            lblKPI1Value = new Label { Text = "$0", Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 35), AutoSize = true };
+            pnlKPI1Content.Controls.Add(kpi1Title);
+            pnlKPI1Content.Controls.Add(lblKPI1Value);
+
+            Panel kpi1 = ThemeConfig.CreateCardPanel(pnlKPI1Content);
             kpi1.Dock = DockStyle.Fill;
             kpi1.Margin = new Padding(0, 0, 0, 10);
-            Label kpi1Title = new Label { Name = "kpi1Title", Text = "Total Sales (YTD):", Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, Location = new Point(15, 15), AutoSize = true };
-            lblKPI1Value = new Label { Text = "$0", Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.TextColorDark, Location = new Point(15, 45), AutoSize = true };
-
-            kpi1.Controls.Add(kpi1Title);
-            kpi1.Controls.Add(lblKPI1Value);
             tlpKPIs.Controls.Add(kpi1, 0, 0);
             
             // KPI 2
-            Panel kpi2 = CreateCardPanel();
+            Panel pnlKPI2Content = new Panel { Dock = DockStyle.Fill };
+            Label kpi2Title = new Label { Name = "kpi2Title", Text = "Average Order Value:", Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, Location = new Point(0, 5), AutoSize = true };
+            lblKPI2Value = new Label { Text = "$0", Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 35), AutoSize = true };
+            pnlKPI2Content.Controls.Add(kpi2Title);
+            pnlKPI2Content.Controls.Add(lblKPI2Value);
+
+            Panel kpi2 = ThemeConfig.CreateCardPanel(pnlKPI2Content);
             kpi2.Dock = DockStyle.Fill;
             kpi2.Margin = new Padding(0, 10, 0, 0);
-            Label kpi2Title = new Label { Name = "kpi2Title", Text = "Average Order Value:", Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, Location = new Point(15, 15), AutoSize = true };
-            lblKPI2Value = new Label { Text = "$0", Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.TextColorDark, Location = new Point(15, 45), AutoSize = true };
-
-            kpi2.Controls.Add(kpi2Title);
-            kpi2.Controls.Add(lblKPI2Value);
             tlpKPIs.Controls.Add(kpi2, 0, 1);
 
             tlpBottom.Controls.Add(pnlKPIContainer, 0, 0);
 
             // Bar Chart Card
-            Panel pnlBar = CreateCardPanel();
+            chartBar = new Chart { Dock = DockStyle.Fill };
+            Panel pnlBar = ThemeConfig.CreateCardPanel(chartBar);
             pnlBar.Dock = DockStyle.Fill;
             pnlBar.Margin = new Padding(10, 0, 0, 0);
-            pnlBar.Padding = new Padding(20);
             
             Label lblBarTitle = GetTitleLabel("Top Selling Products (This Month)");
             lblBarTitle.Name = "lblBarTitle";
             pnlBar.Controls.Add(lblBarTitle);
+            lblBarTitle.BringToFront();
 
-            chartBar = new Chart();
-            chartBar.Dock = DockStyle.Fill;
-            pnlBar.Controls.Add(chartBar);
             tlpBottom.Controls.Add(pnlBar, 1, 0);
         }
 
@@ -306,52 +301,6 @@ namespace GenericInventorySystem.Forms
             }
         }
 
-        private Panel CreateCardPanel()
-        {
-            Panel p = new Panel();
-            p.BackColor = Color.White;
-            p.Padding = new Padding(1); // Border width equivalent
-            p.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                Rectangle r = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
-                using (var path = GetRoundedRect(r, 12))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-                {
-                    using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                    {
-                        e.Graphics.FillPath(brush, path);
-                    }
-                    e.Graphics.DrawPath(pen, path);
-                }
-            };
-
-            return p;
-        }
-
-        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRect(Rectangle bounds, int radius)
-        {
-            int diameter = radius * 2;
-            Size size = new Size(diameter, diameter);
-            Rectangle arc = new Rectangle(bounds.Location, size);
-            System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
-
-            if (radius == 0)
-            {
-                path.AddRectangle(bounds);
-                return path;
-            }
-
-            path.AddArc(arc, 180, 90);
-            arc.X = bounds.Right - diameter;
-            path.AddArc(arc, 270, 90);
-            arc.Y = bounds.Bottom - diameter;
-            path.AddArc(arc, 0, 90);
-            arc.X = bounds.Left;
-            path.AddArc(arc, 90, 90);
-            path.CloseFigure();
-            return path;
-        }
     }
 }
 

@@ -109,198 +109,151 @@ namespace GenericInventorySystem.Forms
             ((System.ComponentModel.ISupportInitialize)(this.dgvParts)).BeginInit();
             this.SuspendLayout();
 
-            // SIMPLE LAYOUT
-            Panel mainContainer = new Panel();
-            mainContainer.Dock = DockStyle.Fill;
-            mainContainer.BackColor = ThemeConfig.BackgroundColor;
-            mainContainer.Padding = new Padding(20);
+            // STANDARD LAYOUT
+            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = ThemeConfig.BackgroundColor, Padding = new Padding(20) };
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
+            // Header (panelTop)
+            Panel panelTop = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.BackgroundColor, Margin = new Padding(0) };
+            
             // Title
             Label lblInventoryTitle = ThemeConfig.CreateStandardHeader("Inventory Management");
             lblInventoryTitle.Name = "lblInventoryTitle";
-            mainContainer.Controls.Add(lblInventoryTitle); // Note: mainContainer has Padding(20), so Location(0,0) works perfectly.
+            panelTop.Controls.Add(lblInventoryTitle);
 
-            // Search Bar (Upgraded to ModernTextBox)
+            // Search Bar
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = "Search Inventory...";
             txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(20, 58);
+            txtSearch.Location = new Point(0, 55);
             txtSearch.TextChanged += (s, e) => { 
                 string ph = GenericInventorySystem.Helpers.LocalizationManager.GetString("Parts_Search");
                 if (txtSearch.Text != ph && txtSearch.Text != "Search...") 
                     LoadData(txtSearch.Text); 
             };
-            mainContainer.Controls.Add(txtSearch);
+            panelTop.Controls.Add(txtSearch);
 
+
+            // Action Buttons Panel
+            FlowLayoutPanel panelButtons = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                AutoSize = true,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Location = new Point(400, 70),
+                Height = 40,
+                WrapContents = false
+            };
 
             // Filter Button (Rounded Outline)
             btnFilter.Size = new Size(100, 40);
-            btnFilter.Text = "";
-            btnFilter.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnFilter.FlatStyle = FlatStyle.Flat;
             btnFilter.FlatAppearance.BorderSize = 0;
             btnFilter.BackColor = ThemeConfig.SurfaceColor;
             btnFilter.Cursor = Cursors.Hand;
             btnFilter.Click += BtnFilter_Click;
-            
             btnFilter.Paint += (s, e) => ThemeConfig.DrawIconButton(btnFilter, e.Graphics, "filter", "Parts_Filter", ThemeConfig.TextColorDark, ThemeConfig.BorderColor, true);
-
-
-            // Add Category Button (Rounded Light Blue/Gray)
-            btnAddCategory = new Button();
-            btnAddCategory.Size = new Size(160, 40); // Same size
-            btnAddCategory.Text = ""; 
-            btnAddCategory.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnAddCategory.FlatStyle = FlatStyle.Flat;
-            btnAddCategory.FlatAppearance.BorderSize = 0;
-            btnAddCategory.BackColor = ThemeConfig.SurfaceColor;
-            btnAddCategory.Cursor = Cursors.Hand;
-            btnAddCategory.Click += BtnAddCategory_Click;
-            
-            btnAddCategory.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddCategory, e.Graphics, "add", "Parts_AddCategory", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
-
-            // Add Button (Rounded Blue)
-            btnAdd.Size = new Size(160, 40);
-            btnAdd.Text = ""; 
-            btnAdd.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnAdd.FlatStyle = FlatStyle.Flat;
-            btnAdd.FlatAppearance.BorderSize = 0;
-            btnAdd.BackColor = Color.Transparent; 
-            btnAdd.Cursor = Cursors.Hand;
-            btnAdd.Click += BtnAdd_Click;
-            
-            btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Parts_AddProduct", ThemeConfig.TextColorLight, ThemeConfig.PrimaryColor, false);
-            
-            // Import Button (Rounded Outline)
-            btnImport.Size = new Size(100, 40);
-            btnImport.Text = ""; 
-            btnImport.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnImport.FlatStyle = FlatStyle.Flat;
-            btnImport.FlatAppearance.BorderSize = 0;
-            btnImport.BackColor = ThemeConfig.SurfaceColor;
-            btnImport.Cursor = Cursors.Hand;
-            btnImport.Click += BtnImport_Click;
-            
-            btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Parts_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
-
+            panelButtons.Controls.Add(btnFilter);
 
             // Export Button (Rounded Outline)
             btnExport.Size = new Size(100, 40);
-            btnExport.Text = ""; 
-            btnExport.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnExport.FlatStyle = FlatStyle.Flat;
             btnExport.FlatAppearance.BorderSize = 0;
             btnExport.BackColor = ThemeConfig.SurfaceColor;
             btnExport.Cursor = Cursors.Hand;
             btnExport.Click += BtnExport_Click;
-            
             btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Parts_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
+            panelButtons.Controls.Add(btnExport);
 
+            // Import Button (Rounded Outline)
+            btnImport.Size = new Size(100, 40);
+            btnImport.FlatStyle = FlatStyle.Flat;
+            btnImport.FlatAppearance.BorderSize = 0;
+            btnImport.BackColor = ThemeConfig.SurfaceColor;
+            btnImport.Cursor = Cursors.Hand;
+            btnImport.Click += BtnImport_Click;
+            btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Parts_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
+            panelButtons.Controls.Add(btnImport);
 
-            // Delete Selected Button (Red Outline)
-            Button btnDeleteSelected = new Button();
-            btnDeleteSelected.Size = new Size(130, 40);
-            btnDeleteSelected.Text = ""; 
-            btnDeleteSelected.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnDeleteSelected.FlatStyle = FlatStyle.Flat;
+            // Add Category Button
+            btnAddCategory = new Button();
+            btnAddCategory.Size = new Size(130, 40);
+            btnAddCategory.FlatStyle = FlatStyle.Flat;
+            btnAddCategory.FlatAppearance.BorderSize = 0;
+            btnAddCategory.BackColor = ThemeConfig.SurfaceColor;
+            btnAddCategory.Cursor = Cursors.Hand;
+            btnAddCategory.Click += BtnAddCategory_Click;
+            btnAddCategory.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddCategory, e.Graphics, "pos", "Parts_AddCategory", ThemeConfig.TextColorDark, ThemeConfig.BorderColor, true);
+            panelButtons.Controls.Add(btnAddCategory);
+
+            // Delete Selected Button
+            Button btnDeleteSelected = new Button { Size = new Size(130, 40), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand, Name = "btnDeleteSelected" };
             btnDeleteSelected.FlatAppearance.BorderSize = 0;
             btnDeleteSelected.BackColor = ThemeConfig.SurfaceColor;
-            btnDeleteSelected.Cursor = Cursors.Hand;
-            btnDeleteSelected.Click += (s, e) =>
-            {
-                var checkedIds = new System.Collections.Generic.List<int>();
-                foreach (DataGridViewRow row in dgvParts.Rows)
-                {
-                    var chkCell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
-                    if (chkCell != null && Convert.ToBoolean(chkCell.Value ?? false))
-                    {
-                        if (int.TryParse(row.Cells["part_id"].Value?.ToString(), out int pId))
-                            checkedIds.Add(pId);
-                    }
-                }
-                if (checkedIds.Count == 0)
-                {
-                    MessageHelper.ShowWarning("Please select at least one item to delete.");
-                    return;
-                }
-                if (MessageHelper.ConfirmAction($"Are you sure you want to delete {checkedIds.Count} selected items?"))
-                {
-                    foreach(int i in checkedIds) _inventoryService.DeletePart(i);
-                    MessageHelper.ShowSuccess($"{checkedIds.Count} items deleted successfully.");
-                    LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
-                }
+            btnDeleteSelected.Click += (s, e) => {
+                 var checkedIds = new System.Collections.Generic.List<int>();
+                 foreach (DataGridViewRow row in dgvParts.Rows) {
+                     var chkCell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
+                     if (chkCell != null && Convert.ToBoolean(chkCell.Value ?? false)) {
+                         if (int.TryParse(row.Cells["part_id"].Value?.ToString(), out int pId)) checkedIds.Add(pId);
+                     }
+                 }
+                 if (checkedIds.Count == 0) { MessageHelper.ShowWarning("Please select at least one item to delete."); return; }
+                 if (MessageHelper.ConfirmAction($"Are you sure you want to delete {checkedIds.Count} selected items?")) {
+                     foreach(int i in checkedIds) _inventoryService.DeletePart(i);
+                     MessageHelper.ShowSuccess($"{checkedIds.Count} items deleted successfully.");
+                     LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
+                 }
             };
-            btnDeleteSelected.Name = "btnDeleteSelected";
             btnDeleteSelected.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDeleteSelected, e.Graphics, "delete", "Parts_Delete", ThemeConfig.DangerColor, ThemeConfig.DangerColor, true);
+            panelButtons.Controls.Add(btnDeleteSelected);
 
-            mainContainer.Controls.Add(btnDeleteSelected);
-            btnDeleteSelected.BringToFront();
+            // Add Product Button
+            btnAdd.Size = new Size(160, 40);
+            btnAdd.FlatStyle = FlatStyle.Flat;
+            btnAdd.FlatAppearance.BorderSize = 0;
+            btnAdd.BackColor = ThemeConfig.SurfaceColor;
+            btnAdd.Cursor = Cursors.Hand;
+            btnAdd.Click += BtnAdd_Click;
+            btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Parts_AddProduct", Color.White, ThemeConfig.PrimaryColor, false);
+            panelButtons.Controls.Add(btnAdd);
 
-            // â”€â”€â”€ Currency selector (styled, next to search bar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            ComboBox cboCurrencyParts = new ComboBox();
-            ThemeConfig.ApplyComboBoxStyle(cboCurrencyParts);
-            Panel currPanelParts = ThemeConfig.WrapInStyledInput(cboCurrencyParts, 36); currPanelParts.Width = 110;
-            cboCurrencyParts.Name = "cboCurrencyParts";
-            foreach (var c in GenericInventorySystem.Services.CurrencyService.SupportedCurrencies)
-                cboCurrencyParts.Items.Add(c);
-            // Pre-select active currency
-            foreach (var item in cboCurrencyParts.Items)
-                if (item is GenericInventorySystem.Services.CurrencyInfo ci && ci.Code == GenericInventorySystem.Services.CurrencyService.ActiveCurrency)
-                { cboCurrencyParts.SelectedItem = item; break; }
-            if (cboCurrencyParts.SelectedIndex < 0 && cboCurrencyParts.Items.Count > 0) cboCurrencyParts.SelectedIndex = 0;
-
-            cboCurrencyParts.SelectedIndexChanged += (s, e) =>
-            {
-                if (cboCurrencyParts.SelectedItem is GenericInventorySystem.Services.CurrencyInfo sel)
-                {
-                    // This will trigger the global CurrencyChanged event, 
-                    // which we (and others) are already listening to above.
-                    GenericInventorySystem.Services.CurrencyService.ActiveCurrency = sel.Code;
+            panelTop.Controls.Add(panelButtons);
+            
+            // RTL Awareness for positioning
+            panelTop.Resize += (s, e) => {
+                if (LocalizationManager.IsArabic) {
+                    txtSearch.Location = new Point(panelTop.Width - txtSearch.Width, 55);
+                    panelButtons.Location = new Point(0, 50);
+                } else {
+                    txtSearch.Location = new Point(0, 55);
+                    panelButtons.Location = new Point(panelTop.Width - panelButtons.Width, 50);
                 }
             };
 
-            mainContainer.Controls.Add(currPanelParts); // Actually add the combo box to the form
-            ToolTip ttCurr = new ToolTip();
-            ttCurr.SetToolTip(currPanelParts, "Change display currency â€” prices are stored in USD");
-
-            // Position buttons on resize (Right Margin 20)
-            mainContainer.Resize += (s, e) =>
-            {
-                btnAdd.Location          = new Point(mainContainer.Width - btnAdd.Width - 20, 58);
-                btnAddCategory.Location  = new Point(btnAdd.Left - btnAddCategory.Width - 10, 58);
-                btnImport.Location       = new Point(btnAddCategory.Left - btnImport.Width - 10, 58);
-                btnExport.Location       = new Point(btnImport.Left - btnExport.Width - 10, 58);
-                btnFilter.Location       = new Point(btnExport.Left - btnFilter.Width - 10, 58);
-                btnDeleteSelected.Location = new Point(btnFilter.Left - btnDeleteSelected.Width - 10, 58);
-
-                // Currency selector: aligned with buttons on the right
-                currPanelParts.Location  = new Point(btnDeleteSelected.Left - currPanelParts.Width - 15, 56);
-
-                dgvParts.Width = mainContainer.Width - 40;
-            };
-
-
-            // DataGridView - SIMPLE CONFIGURATION
-            dgvParts.Location = new Point(20, 110);
-            dgvParts.Size = new Size(mainContainer.Width - 40, mainContainer.Height - 120);
-            dgvParts.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            
-            // Explicit overrides
-
+            tlpMain.Controls.Add(panelTop, 0, 0);
+            // DataGridView Configuration
             dgvParts.AllowUserToAddRows = false;
-            dgvParts.ReadOnly = false; // Allow editing (for checkboxes)
+            dgvParts.ReadOnly = false;
             dgvParts.AutoGenerateColumns = false;
+            dgvParts.BorderStyle = BorderStyle.None;
+            dgvParts.BackgroundColor = ThemeConfig.SurfaceColor;
             
             dgvParts.CellPainting += DgvParts_CellPainting;
             dgvParts.CellFormatting += DgvParts_CellFormatting;
             dgvParts.CellMouseClick += DgvParts_CellMouseClick;
             dgvParts.CellMouseMove += DgvParts_CellMouseMove;
             dgvParts.CellMouseLeave += DgvParts_CellMouseLeave;
-            dgvParts.DataError += (s, e) => {
-                Console.WriteLine("DataError: " + (e.Exception != null ? e.Exception.Message : "Unknown"));
-                e.ThrowException = false;
-            };
+            dgvParts.DataError += (s, e) => e.ThrowException = false;
+
+            // Card Panel (Rounded body)
+            Panel pnlCard = ThemeConfig.CreateCardPanel(dgvParts);
+            tlpMain.Controls.Add(pnlCard, 0, 1);
+
+            this.Controls.Add(tlpMain);
+            this.Dock = DockStyle.Fill;
 
             // Define Columns
             dgvParts.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colCheck", HeaderText = "", Width = 30, FillWeight = 1, ReadOnly = false }); // Active Checkbox
@@ -330,21 +283,6 @@ namespace GenericInventorySystem.Forms
             
             // Apply Theme LAST to ensure header styles override defaults
             ThemeConfig.ApplyGridTheme(dgvParts);
-
-            mainContainer.Controls.Add(txtSearch);
-            mainContainer.Controls.Add(btnFilter);
-            mainContainer.Controls.Add(btnExport);
-            mainContainer.Controls.Add(btnImport);
-            mainContainer.Controls.Add(btnAddCategory);
-            mainContainer.Controls.Add(btnAdd);
-            mainContainer.Controls.Add(dgvParts);
-            
-            // Trigger initial positioning
-            mainContainer.Resize += (s, e) => { }; // This will trigger the resize event once
-            mainContainer.PerformLayout();
-
-            this.Controls.Add(mainContainer);
-            this.Dock = DockStyle.Fill;
 
             ((System.ComponentModel.ISupportInitialize)(this.dgvParts)).EndInit();
             this.ResumeLayout(false);

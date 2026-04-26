@@ -48,6 +48,7 @@ namespace GenericInventorySystem
             {
                 text = modernTxt.Text;
                 isEmpty = string.IsNullOrWhiteSpace(text);
+                modernTxt.IsError = isEmpty; // Visual feedback
             }
             else if (control is TextBox textBox)
             {

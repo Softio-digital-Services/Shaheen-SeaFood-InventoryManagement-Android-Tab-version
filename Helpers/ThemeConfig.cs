@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Text.Json;
 using System.IO;
+using System.Drawing.Drawing2D;
 
 namespace GenericInventorySystem
 {
@@ -687,7 +688,7 @@ namespace GenericInventorySystem
             return path;
         }
 
-        public static System.Drawing.Drawing2D.GraphicsPath GetRoundedPathPublic(Rectangle rect, int radius)
+        public static GraphicsPath GetRoundedPathPublic(Rectangle rect, int radius)
         {
             return GetRoundedPath(rect, radius);
         }
@@ -1271,6 +1272,48 @@ namespace GenericInventorySystem
             wrapper.Controls.Add(cbo);
             return (wrapper, cbo);
         }
+
+        public static Panel CreateCardPanel(Control inner)
+        {
+            // The outer panel acts as the background container to avoid "white corners"
+            Panel p = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0) };
+            
+            // The actual card panel that draws the rounded background
+            Panel card = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(5) };
+            
+            card.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                
+                // 1. Fill the entire area with PARENT background first to solve white corners
+                Color parentColor = GetParentColor(card);
+                using (var bgBrush = new SolidBrush(parentColor))
+                    e.Graphics.FillRectangle(bgBrush, -1, -1, card.Width + 2, card.Height + 2);
+
+                // 2. Draw Rounded Card with SurfaceColor
+                Rectangle rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
+                using (var cardBrush = new SolidBrush(SurfaceColor))
+                using (var path = GetRoundedPath(rect, 15))
+                {
+                    e.Graphics.FillPath(cardBrush, path);
+                    
+                    // Subtle border to define the card
+                    using (var pen = new Pen(BorderColor, 1f))
+                        e.Graphics.DrawPath(pen, path);
+                }
+            };
+
+            // To ensure the inner content doesn't cover the rounded corners, 
+            // we use a nested container or specific margins.
+            // But usually, the Grid inside looks fine if the card panel has some padding.
+            card.Controls.Add(inner);
+            inner.Dock = DockStyle.Fill;
+
+            p.Controls.Add(card);
+            return p;
+        }
+
 
         public static void ApplyModernMenuTheme(ContextMenuStrip menu)
         {

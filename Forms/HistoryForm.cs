@@ -137,76 +137,49 @@ namespace GenericInventorySystem.Forms
             this.BackColor = ThemeConfig.BackgroundColor;
 
             // Main Layout
-            TableLayoutPanel mainLayout = new TableLayoutPanel();
-            mainLayout.Dock = DockStyle.Fill;
-            mainLayout.ColumnCount = 1;
-            mainLayout.RowCount = 4;
-            // Header, Stats, Tabs, Content
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 110F)); // Standard Header Height
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 110F)); // Stats
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); // Tab Buttons
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid Content
-            mainLayout.Padding = new Padding(20);
+            // Container
+            TableLayoutPanel mainLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // 0. Title
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));  // 1. Actions (Search/Refresh)
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); // 2. Stats
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));  // 3. Tabs
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // 4. Content
             this.Controls.Add(mainLayout);
 
-            // 1. Header
-            // 1. Header Wrapper
-            Panel pnlHeader = new Panel();
-            pnlHeader.Dock = DockStyle.Fill;
-            pnlHeader.Margin = new Padding(0);
-            pnlHeader.Padding = new Padding(0, 20, 0, 0); // Add top padding for title alignment
-            
+            // 0. Title
             lblHistoryTitle = ThemeConfig.CreateStandardHeader("System History Logs");
             lblHistoryTitle.Name = "lblHistoryTitle";
-            lblHistoryTitle.Location = new Point(0, 0); // Override default
+            lblHistoryTitle.Margin = new Padding(0);
+            mainLayout.Controls.Add(lblHistoryTitle, 0, 0);
 
+            // 1. Actions Row (Search + Refresh)
+            Panel pnlActions = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
             
-            Button btnRefresh = new Button();
-            btnRefresh.Name = "btnRefresh";
-            btnRefresh.Text = "Refresh";
-            btnRefresh.Size = new Size(110, 35);
-            ThemeConfig.ApplySecondaryButton(btnRefresh);
-
-            pnlHeader.Controls.Add(lblHistoryTitle);
-            
-            // Search Bar (Upgraded to ModernTextBox)
             txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = "Search history...";
             txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(20, 60);
-            txtSearch.TextChanged += (s, e) => {
-                string ph = LocalizationManager.GetString("Hist_Search");
-                if (txtSearch.Text != ph && txtSearch.Text != "Search...") ApplyFilter();
-            };
-            pnlHeader.Controls.Add(txtSearch);
+            txtSearch.Location = new Point(0, 5); 
+            txtSearch.TextChanged += (s, e) => ApplyFilter();
+            pnlActions.Controls.Add(txtSearch);
 
-            // Refresh Button Placement
-            btnRefresh.Location = new Point(pnlHeader.Width - 130, 60);
-            btnRefresh.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            Button btnRefresh = new Button();
+            btnRefresh.Name = "btnRefresh";
+            btnRefresh.Text = "Refresh";
+            btnRefresh.Size = new Size(120, 40);
+            btnRefresh.Dock = DockStyle.Right;
+            ThemeConfig.ApplySecondaryButton(btnRefresh);
             btnRefresh.Click += (s, e) => LoadHistory();
-            pnlHeader.Controls.Add(btnRefresh);
+            pnlActions.Controls.Add(btnRefresh);
 
-            pnlHeader.Resize += (s, e) => {
-                if (LocalizationManager.IsArabic)
-                {
-                    txtSearch.Location = new Point(pnlHeader.Width - txtSearch.Width - 20, 60);
-                    btnRefresh.Location = new Point(20, 60);
-                }
-                else
-                {
-                    txtSearch.Location = new Point(20, 60);
-                    btnRefresh.Location = new Point(pnlHeader.Width - btnRefresh.Width - 20, 60);
-                }
-            };
-            
-            mainLayout.Controls.Add(pnlHeader, 0, 0);
+            mainLayout.Controls.Add(pnlActions, 0, 1);
 
             // 2. Stats Panel
             TableLayoutPanel tlpStats = new TableLayoutPanel();
             tlpStats.Dock = DockStyle.Fill;
             tlpStats.ColumnCount = 3;
+            tlpStats.RowCount = 1;
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
@@ -220,13 +193,13 @@ namespace GenericInventorySystem.Forms
             tlpStats.Controls.Add(cardOrders, 1, 0);
             tlpStats.Controls.Add(cardPayments, 2, 0);
             
-            mainLayout.Controls.Add(tlpStats, 0, 1);
+            mainLayout.Controls.Add(tlpStats, 0, 2);
 
             // 3. Custom Tabs
             pnlTabs = new Panel();
             pnlTabs.Dock = DockStyle.Fill;
             pnlTabs.Height = 50;
-            pnlTabs.Margin = new Padding(0, 10, 0, 0);
+            pnlTabs.Margin = new Padding(0);
             
             pnlIndicator = new Panel { Height = 3, BackColor = ThemeConfig.PrimaryColor, Top = 40, Visible = false };
             pnlTabs.Controls.Add(pnlIndicator);
@@ -243,12 +216,13 @@ namespace GenericInventorySystem.Forms
             pnlTabs.Controls.Add(btnTabOrders);
             pnlTabs.Controls.Add(btnTabQuotations);
             
-            mainLayout.Controls.Add(pnlTabs, 0, 2);
+            mainLayout.Controls.Add(pnlTabs, 0, 3);
 
             // 4. Content Area
             pnlContent = new Panel();
             pnlContent.Dock = DockStyle.Fill;
-            pnlContent.Padding = new Padding(0, 10, 0, 0);
+            pnlContent.Margin = new Padding(0, 5, 0, 0);
+            mainLayout.Controls.Add(pnlContent, 0, 4);
             
             // Grids
             dgvInventory = CreateGrid();
@@ -262,11 +236,17 @@ namespace GenericInventorySystem.Forms
             dgvQuotations = CreateGrid(); // NEW
             
             // Card Wrappers
-            pnlInventoryCard = CreateCardPanel(dgvInventory);
-            pnlCustomersCard = CreateCardPanel(dgvCustomers);
-            pnlSuppliersCard = CreateCardPanel(dgvSuppliers);
-            pnlOrdersCard = CreateCardPanel(dgvOrders); 
-            pnlQuotationsCard = CreateCardPanel(dgvQuotations); // NEW
+            pnlInventoryCard = ThemeConfig.CreateCardPanel(dgvInventory);
+            pnlCustomersCard = ThemeConfig.CreateCardPanel(dgvCustomers);
+            pnlSuppliersCard = ThemeConfig.CreateCardPanel(dgvSuppliers);
+            pnlOrdersCard = ThemeConfig.CreateCardPanel(dgvOrders); 
+            pnlQuotationsCard = ThemeConfig.CreateCardPanel(dgvQuotations); // NEW
+            
+            pnlInventoryCard.Visible = false;
+            pnlCustomersCard.Visible = false;
+            pnlSuppliersCard.Visible = false;
+            pnlOrdersCard.Visible = false;
+            pnlQuotationsCard.Visible = false;
             
             pnlContent.Controls.Add(pnlInventoryCard);
             pnlContent.Controls.Add(pnlCustomersCard);
@@ -274,7 +254,7 @@ namespace GenericInventorySystem.Forms
             pnlContent.Controls.Add(pnlOrdersCard);
             pnlContent.Controls.Add(pnlQuotationsCard);
             
-            mainLayout.Controls.Add(pnlContent, 0, 3);
+            mainLayout.Controls.Add(pnlContent, 0, 4);
 
             this.ResumeLayout(false);
         }
@@ -367,31 +347,6 @@ namespace GenericInventorySystem.Forms
             return dgv;
         }
 
-        private Panel CreateCardPanel(Control innerControl)
-        {
-            Panel p = new Panel();
-            p.Dock = DockStyle.Fill;
-            p.BackColor = Color.White;
-            p.Padding = new Padding(20); 
-            p.Controls.Add(innerControl);
-            p.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                Rectangle r = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
-                using (var path = GetRoundedRect(r, 12))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-                {
-                    using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                    {
-                        e.Graphics.FillPath(brush, path);
-                    }
-                    e.Graphics.DrawPath(pen, path);
-                }
-            };
-
-            p.Visible = false; // Hidden by default
-            return p;
-        }
 
         private void SwitchTab(Button clickedBtn)
         {
@@ -529,29 +484,6 @@ namespace GenericInventorySystem.Forms
              catch { /* Ignore invalid filter strings */ }
         }
         
-        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRect(Rectangle bounds, int radius)
-        {
-            int diameter = radius * 2;
-            Size size = new Size(diameter, diameter);
-            Rectangle arc = new Rectangle(bounds.Location, size);
-            System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
-
-            if (radius == 0)
-            {
-                path.AddRectangle(bounds);
-                return path;
-            }
-
-            path.AddArc(arc, 180, 90);
-            arc.X = bounds.Right - diameter;
-            path.AddArc(arc, 270, 90);
-            arc.Y = bounds.Bottom - diameter;
-            path.AddArc(arc, 0, 90);
-            arc.X = bounds.Left;
-            path.AddArc(arc, 90, 90);
-            path.CloseFigure();
-            return path;
-        }
     }
 }
 

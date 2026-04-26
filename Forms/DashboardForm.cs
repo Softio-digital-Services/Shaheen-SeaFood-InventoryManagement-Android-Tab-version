@@ -103,7 +103,8 @@ namespace GenericInventorySystem.Forms
 
             
             // Row Styles
-            _mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));  // Title
+            // Row Styles
+            _mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // Title (Standardized)
             _mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); // Cards
             _mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 55F));   // Middle (Bar Chart + List)
             _mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));   // Bottom (Line Chart)
@@ -113,7 +114,7 @@ namespace GenericInventorySystem.Forms
             // 0. Title
             lblDashboardTitle = ThemeConfig.CreateStandardHeader("Performance Dashboard");
             lblDashboardTitle.Name = "lblDashboardTitle";
-            lblDashboardTitle.Location = new Point(0, 0); // Reset to 0,0 because parent _mainLayout has Padding(20)
+            lblDashboardTitle.Margin = new Padding(0); 
             _mainLayout.Controls.Add(lblDashboardTitle, 0, 0);
 
             // 1. Cards Layout (Top)
@@ -122,15 +123,16 @@ namespace GenericInventorySystem.Forms
                 Dock = DockStyle.Fill,
                 ColumnCount = 4,
                 RowCount = 1,
-                Margin = new Padding(0, 0, 0, 20) // Spacing below cards
+                Margin = new Padding(0, 0, 0, 15), // Spacing below cards
+                BackColor = Color.Transparent
             };
             for (int i = 0; i < 4; i++) _cardsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
             
             // Create Cards
-            _cardInventory = CreateStatCard("Total Inventory", "inventory", ThemeConfig.PrimaryColor); // Blue
-            _cardRevenue = CreateStatCard("Total Revenue", "revenue", ThemeConfig.SuccessColor); // Green
-            _cardOrders = CreateStatCard("Total Orders", "orders", ThemeConfig.WarningColor); // Orange
-            _cardLowStock = CreateStatCard("Low Stock", "bell", ThemeConfig.DangerColor); // Red (Bell for alert)
+            _cardInventory = CreateStatCard("Total Inventory", "inventory", ThemeConfig.PrimaryColor); 
+            _cardRevenue = CreateStatCard("Total Revenue", "revenue", ThemeConfig.SuccessColor); 
+            _cardOrders = CreateStatCard("Total Orders", "orders", ThemeConfig.WarningColor); 
+            _cardLowStock = CreateStatCard("Low Stock", "bell", ThemeConfig.DangerColor); 
 
 
             _cardsLayout.Controls.Add(_cardInventory, 0, 0);
@@ -146,56 +148,59 @@ namespace GenericInventorySystem.Forms
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
                 RowCount = 1,
-                Margin = new Padding(0, 0, 0, 20)
+                Margin = new Padding(0, 0, 0, 15),
+                BackColor = Color.Transparent
             };
-            _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F)); // Chart gets more space
-            _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F)); // Feed gets less
+            _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F)); 
+            _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F)); 
             
-            // Bar Chart (Weekly Revenue)
+            // Bar Chart Card
             _chartWeeklyRevenue = CreateModernChart("Weekly Revenue");
-            _middleLayout.Controls.Add(_chartWeeklyRevenue, 0, 0);
+            Panel pnlWeeklyCard = ThemeConfig.CreateCardPanel(_chartWeeklyRevenue);
+            pnlWeeklyCard.Margin = new Padding(0, 0, 10, 0);
+            _middleLayout.Controls.Add(pnlWeeklyCard, 0, 0);
             
-            // Top Items Grid (Right Panel)
-            Panel rightPanel = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor, Padding = new Padding(10) };
-
-            // Rounded corners could be done with a control wrapper, sticking to Panel for now
+            // Top Items Grid Card
+            Panel rightContent = new Panel { Dock = DockStyle.Fill };
             _lblTop = new Label 
             { 
                 Name = "lblTop",
                 Text = "Top Selling Items", 
                 Font = ThemeConfig.SubHeaderFont, 
                 Dock = DockStyle.Top, 
-                Height = 60, // Increased from 30 to 60 for breathing room
-                TextAlign = ContentAlignment.BottomLeft, // Align bottom so it sits above grid nicely
-                Padding = new Padding(0, 0, 0, 10), // Padding below text
+                Height = 30,
                 ForeColor = ThemeConfig.TextColorDark 
             };
-            rightPanel.Controls.Add(_lblTop);
+            rightContent.Controls.Add(_lblTop);
             
             _gridTopItems = new DataGridView();
             _gridTopItems.DataError += (s, e) => { e.ThrowException = false; };
             ThemeConfig.ApplyGridTheme(_gridTopItems);
             _gridTopItems.Dock = DockStyle.Fill;
             _gridTopItems.ColumnHeadersVisible = true; 
-            _gridTopItems.ScrollBars = ScrollBars.Vertical; // Default vertical scrolling
-            rightPanel.Controls.Add(_gridTopItems);
-            
-            _middleLayout.Controls.Add(rightPanel, 1, 0);
+            _gridTopItems.ScrollBars = ScrollBars.Vertical; 
+            rightContent.Controls.Add(_gridTopItems);
+            _lblTop.BringToFront();
+
+            Panel pnlTopItemsCard = ThemeConfig.CreateCardPanel(rightContent);
+            pnlTopItemsCard.Margin = new Padding(10, 0, 0, 0);
+            _middleLayout.Controls.Add(pnlTopItemsCard, 1, 0);
             
             _mainLayout.Controls.Add(_middleLayout, 0, 2);
 
             // 3. Bottom Section (Line Chart)
-            Panel bottomPanel = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor, Padding = new Padding(10) };
+            Panel bottomContent = new Panel { Dock = DockStyle.Fill };
             _lblTrend = new Label { Name = "lblTrend", Text = "Sales Trends", Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Height = 30, ForeColor = ThemeConfig.TextColorDark };
-
-            bottomPanel.Controls.Add(_lblTrend);
+            bottomContent.Controls.Add(_lblTrend);
 
             _chartTrends = CreateModernChart("Monthly Trends");
-            _chartTrends.Series.Clear(); // Will add Spline series later
+            _chartTrends.Series.Clear(); 
             _chartTrends.Dock = DockStyle.Fill;
-            bottomPanel.Controls.Add(_chartTrends);
-            
-            _mainLayout.Controls.Add(bottomPanel, 0, 3);
+            bottomContent.Controls.Add(_chartTrends);
+            _lblTrend.BringToFront();
+
+            Panel pnlTrendsCard = ThemeConfig.CreateCardPanel(bottomContent);
+            _mainLayout.Controls.Add(pnlTrendsCard, 0, 3);
         }
 
         private StatCard CreateStatCard(string title, string iconName, Color color)

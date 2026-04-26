@@ -179,12 +179,13 @@ namespace GenericInventorySystem.Forms
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             tlpMain.Dock = DockStyle.Fill;
             tlpMain.BackColor = ThemeConfig.BackgroundColor;
+            tlpMain.Padding = new Padding(20);
 
             // Header Panel
             Panel panelTop = new Panel();
             panelTop.Dock = DockStyle.Fill;
             panelTop.BackColor = ThemeConfig.BackgroundColor;
-            panelTop.Padding = new Padding(20);
+            panelTop.Margin = new Padding(0);
 
             // lblTitle
             this.lblCustomersTitle = ThemeConfig.CreateStandardHeader("Customers management");
@@ -197,7 +198,7 @@ namespace GenericInventorySystem.Forms
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = "Search Customers...";
             txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(20, 75);
+            txtSearch.Location = new Point(0, 55);
             txtSearch.TextChanged += txtSearch_TextChanged;
             panelTop.Controls.Add(txtSearch);
 
@@ -281,11 +282,11 @@ namespace GenericInventorySystem.Forms
             // Align buttons panel to right (RTL Aware)
             panelTop.Resize += (s, e) => {
                 if (LocalizationManager.IsArabic) {
-                    txtSearch.Location = new Point(panelTop.Width - txtSearch.Width - 20, 75);
-                    panelButtons.Location = new Point(20, 70);
+                    txtSearch.Location = new Point(panelTop.Width - txtSearch.Width, 55);
+                    panelButtons.Location = new Point(0, 50);
                 } else {
-                    txtSearch.Location = new Point(20, 75);
-                    panelButtons.Location = new Point(panelTop.Width - panelButtons.Width - 20, 70);
+                    txtSearch.Location = new Point(0, 55);
+                    panelButtons.Location = new Point(panelTop.Width - panelButtons.Width, 50);
                 }
             };
 
@@ -297,7 +298,7 @@ namespace GenericInventorySystem.Forms
                 AllowUserToAddRows = false, 
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect, 
                 MultiSelect = false,
-                BackgroundColor = ThemeConfig.BackgroundColor,
+                BackgroundColor = ThemeConfig.SurfaceColor,
                 BorderStyle = BorderStyle.None,
                 Margin = new Padding(0)
             };
@@ -316,7 +317,8 @@ namespace GenericInventorySystem.Forms
             dgvCustomers.CellPainting += DgvCustomers_CellPainting;
             dgvCustomers.CellContentClick += DgvCustomers_CellContentClick;
             
-            tlpMain.Controls.Add(dgvCustomers, 0, 1);
+            Panel pnlCard = ThemeConfig.CreateCardPanel(dgvCustomers);
+            tlpMain.Controls.Add(pnlCard, 0, 1);
 
             this.Controls.Add(tlpMain);
             ((System.ComponentModel.ISupportInitialize)(this.dgvCustomers)).EndInit();

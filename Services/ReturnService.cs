@@ -96,6 +96,86 @@ namespace GenericInventorySystem.Services
                 throw;
             }
         }
+        public void ProcessBlindReturn(List<ReturnItemInfo> itemsToReturn, string reason, int customerId = -1)
+        {
+            try
+            {
+                // 1. Calculate total refund
+                decimal totalRefund = 0;
+                foreach (var item in itemsToReturn)
+                {
+                    totalRefund += item.RefundAmount;
+                }
+
+                // 2. Insert Return Record (order_id is NULL)
+                string sqlReturn = "INSERT INTO returns (return_date, total_refund, reason, performed_by) " +
+                                  "VALUES (GETDATE(), @refund, @reason, @user); SELECT SCOPE_IDENTITY();";
+                
+                object returnIdObj = DatabaseHelper.ExecuteScalar<object>(sqlReturn,
+                    new SqlParameter("@refund", totalRefund),
+                    new SqlParameter("@reason", reason ?? (object)DBNull.Value),
+                    new SqlParameter("@user", UserSession.Username));
+                
+                int returnId = Convert.ToInt32(returnIdObj);
+
+                // 3. Process each item
+                foreach (var item in itemsToReturn)
+                {
+                    // Insert return item record
+                    string sqlItem = "INSERT INTO return_items (return_id, part_id, quantity, refund_amount) " +
+                                     "VALUES (@rid, @pid, @qty, @refund)";
+                    DatabaseHelper.ExecuteNonQuery(sqlItem,
+                        new SqlParameter("@rid", returnId),
+                        new SqlParameter("@pid", item.PartId),
+                        new SqlParameter("@qty", item.Quantity),
+                        new SqlParameter("@refund", item.RefundAmount));
+
+                    // Update stock
+                    string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock + @qty WHERE id = @pid";
+                    DatabaseHelper.ExecuteNonQuery(sqlStock,
+                        new SqlParameter("@qty", item.Quantity),
+                        new SqlParameter("@pid", item.PartId));
+
+                    // Log stock movement
+                    string sqlLog = "INSERT INTO stock_movements (part_id, movement_type, quantity, performed_by, notes, movement_date) " +
+                                    "VALUES (@pid, 'RETURN', @qty, @user, @notes, GETDATE())";
+                    DatabaseHelper.ExecuteNonQuery(sqlLog,
+                        new SqlParameter("@pid", item.PartId),
+                        new SqlParameter("@qty", item.Quantity),
+                        new SqlParameter("@user", UserSession.Username),
+                        new SqlParameter("@notes", "Unlinked Return (Blind Return)"));
+                }
+
+                // 4. Update Customer Balance if applicable
+                if (customerId > 0)
+                {
+                    string sqlUpdateBalance = "UPDATE customers SET current_balance = current_balance - @refund WHERE id = @cid";
+                    DatabaseHelper.ExecuteNonQuery(sqlUpdateBalance,
+                        new SqlParameter("@refund", totalRefund),
+                        new SqlParameter("@cid", customerId)
+                    );
+
+                    string sqlTrans = "INSERT INTO customer_transactions (customer_id, transaction_date, amount, transaction_type, reference, notes) " +
+                                      "VALUES (@cid, GETDATE(), @amt, 'PAYMENT', @ref, @notes)";
+                    DatabaseHelper.ExecuteNonQuery(sqlTrans,
+                        new SqlParameter("@cid", customerId),
+                        new SqlParameter("@amt", totalRefund),
+                        new SqlParameter("@ref", "Return #" + returnId),
+                        new SqlParameter("@notes", "[Return] Refund for Blind Return")
+                    );
+                }
+
+                DatabaseHelper.LogTransaction("BLIND_RETURN", "Unlinked Items", "Refund Total: " + totalRefund);
+                
+                GlobalEvents.RaiseInventoryUpdated();
+                if (customerId > 0) GlobalEvents.RaiseCustomersUpdated();
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "ReturnService.ProcessBlindReturn");
+                throw;
+            }
+        }
     }
 
     public class ReturnItemInfo

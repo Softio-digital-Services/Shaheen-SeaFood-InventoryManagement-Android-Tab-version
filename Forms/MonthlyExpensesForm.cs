@@ -106,8 +106,10 @@ namespace GenericInventorySystem.Forms
             grid.Controls.Add(buttonGroup, 0, 2);
             grid.SetColumnSpan(buttonGroup, 4);
 
-            pnlEntry.Controls.Add(grid);
-            mainLayout.Controls.Add(pnlEntry, 0, 1);
+            // Card for Entry Panel
+            Panel pnlEntryCard = ThemeConfig.CreateCardPanel(grid);
+            pnlEntryCard.Margin = new Padding(0, 0, 0, 15);
+            mainLayout.Controls.Add(pnlEntryCard, 0, 1);
 
             // Grid
             dgvExpenses = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, AllowUserToAddRows = false, ReadOnly = true, AutoGenerateColumns = false };
@@ -134,7 +136,9 @@ namespace GenericInventorySystem.Forms
             dgvExpenses.Columns.Add(btnPaid);
             dgvExpenses.CellContentClick += DgvExpenses_CellContentClick;
 
-            mainLayout.Controls.Add(dgvExpenses, 0, 2);
+            // Card for Grid
+            Panel pnlGridCard = ThemeConfig.CreateCardPanel(dgvExpenses);
+            mainLayout.Controls.Add(pnlGridCard, 0, 2);
         }
 
         private void ApplyLocalization()

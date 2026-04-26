@@ -38,58 +38,78 @@ namespace GenericInventorySystem.Forms
             this.Size = new Size(1100, 750);
             this.BackColor = ThemeConfig.BackgroundColor;
 
-            TableLayoutPanel mainLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(20) };
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            this.Controls.Add(mainLayout);
-
-            Panel pnlHeader = new Panel { Dock = DockStyle.Fill };
+            // Main Layout
+            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
+            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // Title
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));  // Search/Actions
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Content
+            this.Controls.Add(tlpMain);
+ 
+            // 0. Title
             lblPOTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("PO_Title"));
             lblPOTitle.Name = "lblPOTitle";
-            pnlHeader.Controls.Add(lblPOTitle);
+            lblPOTitle.Margin = new Padding(0);
+            tlpMain.Controls.Add(lblPOTitle, 0, 0);
 
+            // 1. Actions Row (Search + Buttons)
+            Panel pnlActions = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
+            
+            // Search Bar
             txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
-            txtSearch.PlaceholderText = "Search purchase orders...";
+            txtSearch.PlaceholderText = LocalizationManager.IsArabic ? "البحث في طلبات الشراء..." : "Search purchase orders...";
             txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(0, 45);
+            txtSearch.Location = new Point(0, 5); // Align with buttons vertically
             txtSearch.TextChanged += (s, e) => LoadPurchaseOrders(txtSearch.Text);
-            pnlHeader.Controls.Add(txtSearch);
+            pnlActions.Controls.Add(txtSearch);
 
-            FlowLayoutPanel pnlButtons = new FlowLayoutPanel { Dock = DockStyle.Right, AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 10, 10, 0) };
-            Button btnNewPO = new ModernButton { Text = "+ " + LocalizationManager.GetString("PO_New"), Size = new Size(180, 40) };
-            ThemeConfig.ApplyPrimaryButton(btnNewPO);
-            btnNewPO.Click += BtnNewPO_Click;
-            pnlButtons.Controls.Add(btnNewPO);
-
-            if (UserSession.IsAdmin || UserSession.IsAccountant)
+            // Buttons Panel
+            FlowLayoutPanel panelButtons = new FlowLayoutPanel
             {
-                Button btnAutoPO = new ModernButton { Text = "Predictive Buy-List", Size = new Size(200, 40) };
-                ThemeConfig.ApplySecondaryButton(btnAutoPO);
-                btnAutoPO.Click += BtnAutoPO_Click;
-            pnlButtons.Controls.Add(btnAutoPO);
-            }
-            pnlHeader.Controls.Add(pnlButtons);
-
-            pnlHeader.Resize += (s, e) =>
-            {
-                if (LocalizationManager.IsArabic)
-                {
-                    txtSearch.Location = new Point(pnlHeader.Width - txtSearch.Width, 45);
-                    pnlButtons.Location = new Point(0, 10);
-                }
-                else
-                {
-                    txtSearch.Location = new Point(0, 45);
-                    pnlButtons.Location = new Point(pnlHeader.Width - pnlButtons.Width, 10);
-                }
+                FlowDirection = FlowDirection.RightToLeft,
+                AutoSize = true,
+                Dock = DockStyle.Right,
+                WrapContents = false
             };
 
+            // New PO Button
+            Button btnNewPO = new Button
+            {
+                Size = new Size(180, 40),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = ThemeConfig.SurfaceColor,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(10, 0, 0, 0)
+            };
+            btnNewPO.FlatAppearance.BorderSize = 0;
+            btnNewPO.Click += BtnNewPO_Click;
+            btnNewPO.Paint += (s, e) => ThemeConfig.DrawIconButton(btnNewPO, e.Graphics, "add", "PO_New", Color.White, ThemeConfig.PrimaryColor, false);
+            panelButtons.Controls.Add(btnNewPO);
 
-            mainLayout.Controls.Add(pnlHeader, 0, 0);
+            // Predictive Buy-List
+            if (UserSession.IsAdmin || UserSession.IsAccountant)
+            {
+                Button btnAutoPO = new Button
+                {
+                    Size = new Size(200, 40),
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = ThemeConfig.SurfaceColor,
+                    Cursor = Cursors.Hand,
+                    Margin = new Padding(10, 0, 0, 0)
+                };
+                btnAutoPO.FlatAppearance.BorderSize = 0;
+                btnAutoPO.Click += BtnAutoPO_Click;
+                btnAutoPO.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAutoPO, e.Graphics, "orders", "PO_Predictive", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
+                panelButtons.Controls.Add(btnAutoPO);
+            }
 
-            pnlContent = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 10, 0, 0) };
+            pnlActions.Controls.Add(panelButtons);
+            tlpMain.Controls.Add(pnlActions, 0, 1);
+
+            // Content
+            pnlContent = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0, 10, 0, 0) };
             dgvPO = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, ReadOnly = true, AutoGenerateColumns = false, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None };
             ThemeConfig.ApplyGridTheme(dgvPO);
 
@@ -97,33 +117,75 @@ namespace GenericInventorySystem.Forms
             dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", DataPropertyName = "order_date", HeaderText = LocalizationManager.GetString("PO_Date"), Width = 150 });
             dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Supplier", DataPropertyName = "supplier_name", HeaderText = LocalizationManager.GetString("PO_Supplier"), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
             dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", DataPropertyName = "total_amount", HeaderText = LocalizationManager.GetString("PO_Amount"), Width = 120 });
-            dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", DataPropertyName = "status", HeaderText = LocalizationManager.GetString("PO_Status"), Width = 100 });
+            dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", DataPropertyName = "status", HeaderText = LocalizationManager.GetString("PO_Status"), Width = 120 });
             
-            DataGridViewButtonColumn btnAction = new DataGridViewButtonColumn { Name = "colAction", HeaderText = LocalizationManager.GetString("Parts_GridActions"), Text = LocalizationManager.GetString("Return_Action"), UseColumnTextForButtonValue = true, Width = 100, FlatStyle = FlatStyle.Flat };
-            dgvPO.Columns.Add(btnAction);
+            DataGridViewImageColumn colAction = new DataGridViewImageColumn
+            {
+                Name = "colAction",
+                HeaderText = LocalizationManager.GetString("Parts_GridActions"),
+                ImageLayout = DataGridViewImageCellLayout.Zoom,
+                Width = 140
+            };
+            dgvPO.Columns.Add(colAction);
 
             dgvPO.CellContentClick += DgvPO_CellContentClick;
             dgvPO.CellFormatting += DgvPO_CellFormatting;
+            dgvPO.CellPainting += DgvPO_CellPainting;
 
-            pnlCard = CreateCardPanel(dgvPO);
+            pnlCard = ThemeConfig.CreateCardPanel(dgvPO);
             pnlContent.Controls.Add(pnlCard);
-            mainLayout.Controls.Add(pnlContent, 0, 1);
+            tlpMain.Controls.Add(pnlContent, 0, 2);
 
             this.ResumeLayout(false);
         }
 
-        private Panel CreateCardPanel(Control inner)
+        private void DgvPO_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
         {
-            Panel p = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor, Padding = new Padding(20) };
-            p.Controls.Add(inner);
-            p.Paint += (s, e) => {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                Rectangle r = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
-                using (var path = ThemeConfig.GetRoundedPathPublic(r, 12))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1)) e.Graphics.DrawPath(pen, path);
-            };
-            return p;
+            if (e.RowIndex < 0) return;
+
+            if (dgvPO.Columns[e.ColumnIndex].Name == "colAction")
+            {
+                e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
+
+                string status = dgvPO.Rows[e.RowIndex].Cells["Status"].Value?.ToString();
+                bool isReceived = status == "Received";
+
+                // We only show the "Receive" icon if it's NOT received
+                if (!isReceived)
+                {
+                    Image receiveIcon = ThemeConfig.GetNuricon("delivery");
+                    if (receiveIcon != null)
+                    {
+                        int iconSize = 24;
+                        int x = e.CellBounds.X + (e.CellBounds.Width - iconSize) / 2;
+                        int y = e.CellBounds.Y + (e.CellBounds.Height - iconSize) / 2;
+
+                        using (Image tinted = ThemeConfig.TintImage(receiveIcon, ThemeConfig.PrimaryColor))
+                        {
+                            e.Graphics.DrawImage(tinted, new Rectangle(x, y, iconSize, iconSize));
+                        }
+                    }
+                }
+                else
+                {
+                    // Draw a checkmark or nothing
+                    Image checkIcon = ThemeConfig.GetNuricon("check");
+                    if (checkIcon != null)
+                    {
+                        int iconSize = 24;
+                        int x = e.CellBounds.X + (e.CellBounds.Width - iconSize) / 2;
+                        int y = e.CellBounds.Y + (e.CellBounds.Height - iconSize) / 2;
+                        using (Image tinted = ThemeConfig.TintImage(checkIcon, ThemeConfig.SuccessColor))
+                        {
+                            e.Graphics.DrawImage(tinted, new Rectangle(x, y, iconSize, iconSize));
+                        }
+                    }
+                }
+
+                e.Handled = true;
+            }
         }
+
 
         private void LoadPurchaseOrders(string search = "")
         {
@@ -182,66 +244,136 @@ namespace GenericInventorySystem.Forms
 
         private void ShowNewPODialog(bool autoPopulateLowStock = false)
         {
-            BaseModalForm f = new BaseModalForm { TitleText = LocalizationManager.GetString("PO_New"), Size = new Size(950, 700) };
-            Panel p = new Panel { Dock = DockStyle.Fill, Padding = new Padding(25) };
-            f.ContentPanel.Controls.Add(p);
+            BaseModalForm f = new BaseModalForm { TitleText = LocalizationManager.GetString("PO_New"), Size = new Size(1050, 750) };
+            
+            // Root Container
+            TableLayoutPanel tlpRoot = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 3,
+                Padding = new Padding(20)
+            };
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 90F));  // Header
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 100F)); // Footer
+            f.ContentPanel.Controls.Add(tlpRoot);
 
-            // 1. Supplier Selection
-            Label lblSup = new Label { Text = LocalizationManager.GetString("PO_Supplier") + ":", Location = new Point(0, 0), AutoSize = true, Font = ThemeConfig.SmallBoldFont };
-            ComboBox cmbSup = new ComboBox { Location = new Point(0, 25), Width = 300, DropDownStyle = ComboBoxStyle.DropDownList };
-            ThemeConfig.ApplyComboBoxStyle(cmbSup);
+            // --- HEADER SECTION ---
+            TableLayoutPanel tlpHeader = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                ColumnCount = 3,
+                RowCount = 1,
+                Margin = new Padding(0)
+            };
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
+
+            // 1. Supplier
+            ModernComboBox cmbSup = new ModernComboBox { 
+                Dock = DockStyle.Fill, 
+                LabelText = LocalizationManager.GetString("PO_Supplier") + ":",
+                Margin = new Padding(0, 0, 10, 0)
+            };
             DataTable dtSup = DatabaseHelper.ExecuteDataTable("SELECT id, supplier_name FROM suppliers WHERE date_deleted IS NULL");
             cmbSup.DataSource = dtSup; cmbSup.DisplayMember = "supplier_name"; cmbSup.ValueMember = "id";
-            p.Controls.Add(lblSup); p.Controls.Add(cmbSup);
+            tlpHeader.Controls.Add(cmbSup, 0, 0);
 
-            // 2. Part Search Section
-            Label lblPart = new Label { Text = "Quick Add Part (Search):", Location = new Point(330, 0), AutoSize = true, Font = ThemeConfig.SmallBoldFont };
-            ModernComboBox cmbParts = new ModernComboBox { Location = new Point(330, 25), Width = 400 };
+            // 2. Part Search
+            ModernComboBox cmbParts = new ModernComboBox { 
+                Dock = DockStyle.Fill, 
+                LabelText = (LocalizationManager.IsArabic ? "إضافة سريعة (بحث):" : "Quick Add Part (Search):"),
+                Margin = new Padding(0, 0, 10, 0)
+            };
             DataTable dtParts = DatabaseHelper.ExecuteDataTable("SELECT id, part_name, purchase_price FROM parts WHERE date_deleted IS NULL");
             cmbParts.DataSource = dtParts; cmbParts.DisplayMember = "part_name"; cmbParts.ValueMember = "id";
-            p.Controls.Add(lblPart); p.Controls.Add(cmbParts);
+            tlpHeader.Controls.Add(cmbParts, 1, 0);
 
-            Button btnAddRow = new Button { Text = "+ Add to Order", Location = new Point(740, 25), Size = new Size(130, 32) };
+            // 3. Add Button
+            Button btnAddRow = new Button { 
+                Text = "+ " + (LocalizationManager.IsArabic ? "أضف للطلب" : "Add to Order"), 
+                Height = 42,
+                Dock = DockStyle.Bottom,
+                Margin = new Padding(0, 0, 0, 3) // Align with input bottoms
+            };
             ThemeConfig.ApplyPrimaryButton(btnAddRow);
-            p.Controls.Add(btnAddRow);
+            tlpHeader.Controls.Add(btnAddRow, 2, 0);
 
-            // 3. Items Grid
-            DataGridView dgvItems = new DataGridView { Location = new Point(0, 80), Size = new Size(900, 420), AllowUserToAddRows = false, BackgroundColor = Color.White };
+            tlpRoot.Controls.Add(tlpHeader, 0, 0);
+
+            // --- GRID SECTION ---
+            DataGridView dgvItems = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, BackgroundColor = Color.White };
             ThemeConfig.ApplyGridTheme(dgvItems);
             dgvItems.Columns.Add("PartID", "ID"); dgvItems.Columns["PartID"].ReadOnly = true; dgvItems.Columns["PartID"].Width = 60;
             dgvItems.Columns.Add("PartName", LocalizationManager.GetString("AddPart_Product")); dgvItems.Columns["PartName"].ReadOnly = true; dgvItems.Columns["PartName"].Width = 350;
             dgvItems.Columns.Add("Qty", LocalizationManager.GetString("POS_GridQty")); dgvItems.Columns["Qty"].Width = 100;
             dgvItems.Columns.Add("Cost", LocalizationManager.GetString("POS_GridUnitCost")); dgvItems.Columns["Cost"].Width = 150;
             dgvItems.Columns.Add("Subtotal", "Subtotal"); dgvItems.Columns["Subtotal"].ReadOnly = true; dgvItems.Columns["Subtotal"].Width = 150;
-            p.Controls.Add(dgvItems);
+            tlpRoot.Controls.Add(dgvItems, 0, 1);
 
-            Label lblGrandTotal = new Label { Text = "Grand Total: 0.00", Location = new Point(0, 510), Size = new Size(900, 30), Font = ThemeConfig.HeaderFont, TextAlign = ContentAlignment.TopRight };
-            p.Controls.Add(lblGrandTotal);
+            // --- FOOTER SECTION ---
+            TableLayoutPanel tlpFooter = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                Margin = new Padding(0, 10, 0, 0)
+            };
+            tlpFooter.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60F));
+            tlpFooter.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
 
-            // Event: Add Item from search
+            FlowLayoutPanel flpTotals = new FlowLayoutPanel {
+                FlowDirection = FlowDirection.TopDown,
+                Dock = DockStyle.Fill,
+                WrapContents = false
+            };
+
+            Label lblGrandTotal = new Label { 
+                Text = "Grand Total: 0.00", 
+                AutoSize = true, 
+                Font = ThemeConfig.HeaderFont, 
+                ForeColor = ThemeConfig.TextColorDark,
+                Margin = new Padding(0, 0, 0, 10),
+                Anchor = AnchorStyles.Right
+            };
+
+            Button btnSave = new ModernButton { Text = (LocalizationManager.IsArabic ? "إتمام طلب الشراء" : "Finalize Purchase Order"), Size = new Size(250, 45), Anchor = AnchorStyles.Right };
+            ThemeConfig.ApplyPrimaryButton(btnSave);
+            
+            flpTotals.Controls.Add(lblGrandTotal);
+            flpTotals.Controls.Add(btnSave);
+            tlpFooter.Controls.Add(flpTotals, 1, 0);
+            tlpRoot.Controls.Add(tlpFooter, 0, 2);
+
+            // --- EVENTS ---
             btnAddRow.Click += (s, e) => {
                 if (cmbParts.SelectedValue == null) return;
                 DataRowView drv = cmbParts.SelectedItem as DataRowView;
                 decimal cost = drv["purchase_price"] != DBNull.Value ? Convert.ToDecimal(drv["purchase_price"]) : 0;
-                dgvItems.Rows.Add(drv["id"], drv["part_name"], 1, cost, cost);
+                
+                bool found = false;
+                foreach(DataGridViewRow row in dgvItems.Rows) {
+                    if (row.Cells["PartID"].Value?.ToString() == drv["id"].ToString()) {
+                        row.Cells["Qty"].Value = Convert.ToInt32(row.Cells["Qty"].Value ?? 1) + 1;
+                        found = true; break;
+                    }
+                }
+                if (!found) dgvItems.Rows.Add(drv["id"], drv["part_name"], 1, cost, cost);
                 UpdatePOTotal(dgvItems, lblGrandTotal);
             };
 
-            // Event: Auto-calculate subtotals
             dgvItems.CellValueChanged += (s, e) => {
                 if (e.RowIndex < 0) return;
                 if (dgvItems.Columns[e.ColumnIndex].Name == "Qty" || dgvItems.Columns[e.ColumnIndex].Name == "Cost") {
-                    decimal qty = Convert.ToDecimal(dgvItems.Rows[e.RowIndex].Cells["Qty"].Value ?? 0);
-                    decimal cost = Convert.ToDecimal(dgvItems.Rows[e.RowIndex].Cells["Cost"].Value ?? 0);
+                    decimal qty = 0; decimal.TryParse(dgvItems.Rows[e.RowIndex].Cells["Qty"].Value?.ToString(), out qty);
+                    decimal cost = 0; decimal.TryParse(dgvItems.Rows[e.RowIndex].Cells["Cost"].Value?.ToString(), out cost);
                     dgvItems.Rows[e.RowIndex].Cells["Subtotal"].Value = qty * cost;
                     UpdatePOTotal(dgvItems, lblGrandTotal);
                 }
             };
 
-            // Event: Predictive Link
             if (autoPopulateLowStock) {
                 DataTable lowStock = DatabaseHelper.ExecuteDataTable("SELECT id, part_name, (minimum_stock_level - quantity_in_stock + reorder_quantity) as req_qty, purchase_price, supplier_id FROM parts WHERE quantity_in_stock <= minimum_stock_level AND status = 'Active'");
-                cmbSup.SelectedIndexChanged += (s, e) => {
+                cmbSup.InnerComboBox.SelectedIndexChanged += (s, e) => {
                     dgvItems.Rows.Clear();
                     if (cmbSup.SelectedValue != null && int.TryParse(cmbSup.SelectedValue.ToString(), out int supId)) {
                         foreach (DataRow r in lowStock.Rows) {
@@ -254,20 +386,28 @@ namespace GenericInventorySystem.Forms
                 };
             }
 
-            Button btnSave = new ModernButton { Text = "Finalize Purchase Order", Location = new Point(650, 560), Size = new Size(250, 45) };
-            ThemeConfig.ApplyPrimaryButton(btnSave);
             btnSave.Click += (s, e) => {
-                if (cmbSup.SelectedValue == null) return;
+                if (cmbSup.SelectedValue == null) {
+                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يرجى اختيار مورد." : "Please select a supplier.");
+                    return;
+                }
                 List<PurchaseItemInfo> items = new List<PurchaseItemInfo>();
                 foreach (DataGridViewRow row in dgvItems.Rows) {
                     if (row.Cells["PartID"].Value != null)
-                        items.Add(new PurchaseItemInfo { PartId = int.Parse(row.Cells["PartID"].Value.ToString()), Quantity = int.Parse(row.Cells["Qty"].Value.ToString()), CostPrice = decimal.Parse(row.Cells["Cost"].Value?.ToString() ?? "0") });
+                        items.Add(new PurchaseItemInfo { 
+                            PartId = int.Parse(row.Cells["PartID"].Value.ToString()), 
+                            Quantity = int.Parse(row.Cells["Qty"].Value.ToString()), 
+                            CostPrice = decimal.Parse(row.Cells["Cost"].Value?.ToString() ?? "0") 
+                        });
                 }
-                if (items.Count == 0) return;
-                _purchaseService.CreatePurchaseOrder(Convert.ToInt32(cmbSup.SelectedValue), items, "Generated via softio order manager");
+                if (items.Count == 0) {
+                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يرجى إضافة أصناف للطلب." : "Please add items to the order.");
+                    return;
+                }
+                _purchaseService.CreatePurchaseOrder(Convert.ToInt32(cmbSup.SelectedValue), items, "Manual PO Creation");
                 f.DialogResult = DialogResult.OK; f.Close(); LoadPurchaseOrders();
             };
-            p.Controls.Add(btnSave);
+
             f.ShowDialog();
         }
 

@@ -71,9 +71,10 @@ namespace GenericInventorySystem.Controls
 
         private void InitializeControls()
         {
+            this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
             this.Size = new Size(240, 110);
             this.Padding = new Padding(20);
-            this.BackColor = Color.White;
+            this.BackColor = Color.Transparent;
             
             // Container for Icon
             _iconPanel = new Panel();
@@ -81,6 +82,7 @@ namespace GenericInventorySystem.Controls
             _iconPanel.Location = new Point(this.Width - 65, 20); // Top Right
             _iconPanel.Paint += IconPanel_Paint;
             
+
 
 
             // Labels
@@ -125,36 +127,14 @@ namespace GenericInventorySystem.Controls
                 _iconPanel.Location = isRtl ? new Point(15, 25) : new Point(this.Width - 70, 25);
             };
             
+            
             // RightToLeft changed: reposition everything
             this.RightToLeftChanged += (s, e) => RepositionForRTL();
-            
-            // Add Rounded styling/shadow via Paint (Simple border for now)
-            this.Paint += StatCard_Paint;
-            UpdateRegion();
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            UpdateRegion();
-        }
-
-        private void UpdateRegion()
-        {
-            using (var path = new GraphicsPath())
-            {
-                int radius = 12;
-                int d = radius * 2;
-                Rectangle r = new Rectangle(0, 0, this.Width, this.Height);
-                
-                path.AddArc(r.X, r.Y, d, d, 180, 90);
-                path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
-                path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
-                path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
-                path.CloseFigure();
-                
-                this.Region = new Region(path);
-            }
         }
 
         private void RepositionForRTL()
@@ -261,15 +241,33 @@ namespace GenericInventorySystem.Controls
             }
         }
 
-        private void StatCard_Paint(object sender, PaintEventArgs e)
+        protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            Rectangle r = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
             
-            using (var path = GetRoundedRect(r, 12))
-            using (var pen = new Pen(ThemeConfig.BorderColor, 1))
+            // 1. Clear background with parent color to solve "white corners bug"
+            Color parentColor = ThemeConfig.GetParentColor(this);
+            using (var brush = new SolidBrush(parentColor))
             {
-                e.Graphics.DrawPath(pen, path);
+                // Slightly larger rectangle to ensure no artifacts at edges/corners
+                e.Graphics.FillRectangle(brush, -1, -1, this.Width + 2, this.Height + 2);
+            }
+
+            Rectangle r = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
+            using (var path = GetRoundedRect(r, 12))
+            {
+                // 2. Fill rounded card with surface color (White)
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    e.Graphics.FillPath(brush, path);
+                }
+
+                // 3. Draw border
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1))
+                {
+                    e.Graphics.DrawPath(pen, path);
+                }
             }
         }
 

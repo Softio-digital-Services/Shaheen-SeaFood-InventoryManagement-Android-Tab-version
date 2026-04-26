@@ -580,5 +580,6 @@ Expires: {0:MMMM dd, yyyy}</value></data>
   <data name="Exp_ReqAmount" xml:space="preserve"><value>Please enter a valid amount.</value></data>
   <data name="Exp_ConfirmDelete" xml:space="preserve"><value>Are you sure you want to delete this expense?</value></data>
   <data name="POS_ReqCustomer" xml:space="preserve"><value>Please select a customer for this account sale.</value></data>
+  <data name="PO_Predictive" xml:space="preserve"><value>Predictive Buy-List</value></data>
 </root>
 

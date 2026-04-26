@@ -123,23 +123,19 @@ namespace GenericInventorySystem
             this.labelSubtitle.Name = "labelSubtitle";
             this.labelSubtitle.Text = "Enter your credentials to access the system.";
 
-            // 
-            // txtUsername
-            // 
             this.txtUsername.Location = new System.Drawing.Point(35, 140);
             this.txtUsername.Name = "txtUsername";
             this.txtUsername.Size = new System.Drawing.Size(280, 67);
             this.txtUsername.LabelText = "Username";
+            this.txtUsername.IsRequired = true;
 
 
-            // 
-            // txtPassword
-            // 
             this.txtPassword.Location = new System.Drawing.Point(35, 220);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.Size = new System.Drawing.Size(280, 67);
             this.txtPassword.LabelText = "Password";
             this.txtPassword.IsPassword = true;
+            this.txtPassword.IsRequired = true;
 
             // 
             // chkShowPass

@@ -19,13 +19,16 @@ namespace GenericInventorySystem.Forms
         private FlatDateTimePicker dtDueDate;
         private TextBox txtShippingAddress;
         private Label lblSubtotalVal, lblTaxVal, lblShippingVal, lblTotalVal;
-        private ModernTextBox txtBarcodeScan;
         private CheckBox chkApplyVAT, chkApplyShipping;
         private NumericUpDown numShipping;
         private Button btnCheckout, btnAddItem, btnManageDrafts, btnClearCart, btnQuotation, btnPayLater, btnReturnItems;
         private StatCard cardTodayOrders, cardTodaySales, cardPending;
         private DataTable cartTable;
         private DashboardService _dashboardService;
+        
+        // Barcode Scanner Buffer
+        private DateTime _lastScanTime = DateTime.Now;
+        private string _scanBuffer = "";
         
         public POSForm() { InitializeComponent(); _dashboardService = new DashboardService(); LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization(); ApplyLocalization(); ApplyPermissions(); }
 
@@ -52,7 +55,6 @@ namespace GenericInventorySystem.Forms
                 if(dgvCart.Columns.Contains("SellingPrice")) dgvCart.Columns["SellingPrice"].HeaderText = L("POS_GridPrice");
                 if(dgvCart.Columns.Contains("Total")) dgvCart.Columns["Total"].HeaderText = L("POS_GridTotal");
             }
-            if (txtBarcodeScan != null) txtBarcodeScan.LabelText = L("POS_ScanBarcode");
         }
 
         protected override void OnVisibleChanged(EventArgs e) { base.OnVisibleChanged(e); if (this.Visible && !this.DesignMode) { if (cartTable == null) InitializeCart(); RefreshStats(); LoadCustomers(); } }
@@ -61,7 +63,7 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent() {
             this.SuspendLayout(); this.Size = new Size(1100, 750); this.BackColor = ThemeConfig.BackgroundColor; 
-            TableLayoutPanel tlpRoot = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(20) };
+            TableLayoutPanel tlpRoot = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             this.Controls.Add(tlpRoot);
 
@@ -71,24 +73,7 @@ namespace GenericInventorySystem.Forms
             pnlHeader.Controls.Add(lblPOSTitle);
             tlpRoot.Controls.Add(pnlHeader, 0, 0);
 
-            btnReturnItems = new ModernButton { Text = "Return Items", Size = new Size(130, 34), Anchor = AnchorStyles.Top | AnchorStyles.Right };
-            btnReturnItems.Click += BtnReturnItems_Click; ThemeConfig.ApplyEmojiButton(btnReturnItems, ThemeConfig.ActiveBackColor, ThemeConfig.BorderColor, ThemeConfig.TextColorDark);
-            pnlHeader.Controls.Add(btnReturnItems);
-
-            btnManageDrafts = new ModernButton { Text = "Manage Drafts", Size = new Size(140, 34), Anchor = AnchorStyles.Top | AnchorStyles.Right };
-            btnManageDrafts.Click += BtnLoadDraft_Click; ThemeConfig.ApplyEmojiButton(btnManageDrafts, ThemeConfig.WarningColor, ThemeConfig.WarningBorder, Color.White);
-            pnlHeader.Controls.Add(btnManageDrafts);
-
-            btnClearCart = new ModernButton { Text = "Clear Cart", Size = new Size(110, 34), Anchor = AnchorStyles.Top | AnchorStyles.Right };
-            btnClearCart.Click += (s, e) => { if(cartTable.Rows.Count > 0 && MessageHelper.ConfirmAction(LocalizationManager.GetString("POS_ClearCartConfirm"))) { cartTable.Rows.Clear(); UpdateTotal(); MessageHelper.ShowSuccess(LocalizationManager.GetString("POS_ClearCartSuccess")); } };
-            ThemeConfig.ApplyEmojiButton(btnClearCart, ThemeConfig.DangerColor, ThemeConfig.DangerBorder, Color.White);
-            pnlHeader.Controls.Add(btnClearCart);
-            
-            pnlHeader.Resize += (s, e) => { 
-                btnClearCart.Left = pnlHeader.Width - 110;
-                btnManageDrafts.Left = btnClearCart.Left - 150;
-                btnReturnItems.Left = btnManageDrafts.Left - 140;
-            };
+            // The header panel now only contains the title. Buttons moved to Line Items panel.
 
             TableLayoutPanel tlpStats = new TableLayoutPanel { Dock = DockStyle.Top, Height = 110, ColumnCount = 3, Margin = new Padding(0, 5, 0, 10) };
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
@@ -153,18 +138,48 @@ namespace GenericInventorySystem.Forms
 
             Panel pnlGridHeader = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
             pnlGridHeader.Controls.Add(new Label { Text = "Line Items", Name = "lblLineItems", Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Location = new Point(0, 15) });
-            txtBarcodeScan = new ModernTextBox { LabelText = "Scan Barcode", Size = new Size(250, 45), Anchor = AnchorStyles.Top | AnchorStyles.Right };
-            txtBarcodeScan.KeyDown += TxtBarcodeScan_KeyDown; pnlGridHeader.Controls.Add(txtBarcodeScan);
-            btnAddItem = new ModernButton { Size = new Size(140, 36), Text = "Add Item", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0), Anchor = AnchorStyles.Top | AnchorStyles.Right };
-            btnAddItem.Click += BtnAddItem_Click; ThemeConfig.ApplyPrimaryButton(btnAddItem); pnlGridHeader.Controls.Add(btnAddItem);
-            pnlGridHeader.Resize += (s, e) => { btnAddItem.Location = new Point(pnlGridHeader.Width - 140, 8); txtBarcodeScan.Left = pnlGridHeader.Width - 400; };
+            
+            FlowLayoutPanel gridButtonsPanel = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.RightToLeft,
+                AutoSize = true,
+                WrapContents = false,
+                Height = 50,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
+            };
+
+            btnAddItem = new ModernButton { Size = new Size(110, 36), Text = "Add Item", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0), Margin = new Padding(5, 7, 0, 0) };
+            btnAddItem.Click += BtnAddItem_Click; ThemeConfig.ApplyPrimaryButton(btnAddItem); 
+
+            ModernButton btnBlindReturn = new ModernButton { Text = "Item Return", Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
+            btnBlindReturn.Click += (s, e) => { var form = new BlindReturnForm(); form.ShowDialog(); };
+            ThemeConfig.ApplyEmojiButton(btnBlindReturn, ThemeConfig.WarningColor, ThemeConfig.WarningBorder, Color.White);
+
+            btnReturnItems = new ModernButton { Text = "Return Items", Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
+            btnReturnItems.Click += BtnReturnItems_Click; ThemeConfig.ApplyEmojiButton(btnReturnItems, ThemeConfig.ActiveBackColor, ThemeConfig.BorderColor, ThemeConfig.TextColorDark);
+
+            btnManageDrafts = new ModernButton { Text = "Manage Drafts", Size = new Size(130, 36), Margin = new Padding(5, 7, 0, 0) };
+            btnManageDrafts.Click += BtnLoadDraft_Click; ThemeConfig.ApplyEmojiButton(btnManageDrafts, ThemeConfig.WarningColor, ThemeConfig.WarningBorder, Color.White);
+
+            btnClearCart = new ModernButton { Text = "Clear Cart", Size = new Size(110, 36), Margin = new Padding(0, 7, 0, 0) };
+            btnClearCart.Click += (s, e) => { if(cartTable.Rows.Count > 0 && MessageHelper.ConfirmAction(LocalizationManager.GetString("POS_ClearCartConfirm"))) { cartTable.Rows.Clear(); UpdateTotal(); MessageHelper.ShowSuccess(LocalizationManager.GetString("POS_ClearCartSuccess")); } };
+            ThemeConfig.ApplyEmojiButton(btnClearCart, ThemeConfig.DangerColor, ThemeConfig.DangerBorder, Color.White);
+
+            gridButtonsPanel.Controls.Add(btnAddItem);
+            gridButtonsPanel.Controls.Add(btnBlindReturn);
+            gridButtonsPanel.Controls.Add(btnReturnItems);
+            gridButtonsPanel.Controls.Add(btnManageDrafts);
+            gridButtonsPanel.Controls.Add(btnClearCart);
+
+            pnlGridHeader.Controls.Add(gridButtonsPanel);
+            pnlGridHeader.Resize += (s, e) => { gridButtonsPanel.Location = new Point(pnlGridHeader.Width - gridButtonsPanel.Width, 0); };
             tlpGrid.Controls.Add(pnlGridHeader, 0, 0);
 
             dgvCart = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AutoGenerateColumns = false, BorderStyle = BorderStyle.None, BackgroundColor = ThemeConfig.SurfaceColor };
             dgvCart.CellContentClick += DgvCart_CellContentClick; dgvCart.CellValueChanged += DgvCart_CellValueChanged; dgvCart.CellPainting += DgvCart_CellPainting; 
             ThemeConfig.ApplyGridTheme(dgvCart); tlpGrid.Controls.Add(dgvCart, 0, 1); tlpRoot.Controls.Add(pnlItems, 0, 2);
 
-            TableLayoutPanel tlpBottomArea = new TableLayoutPanel { Dock = DockStyle.Top, Height = 310, ColumnCount = 2, Margin = new Padding(0, 10, 0, 0) };
+            TableLayoutPanel tlpBottomArea = new TableLayoutPanel { Dock = DockStyle.Top, Height = 310, ColumnCount = 2, Margin = new Padding(0, 10, 0, 0), BackColor = Color.Transparent };
             tlpBottomArea.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F)); tlpBottomArea.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 420F));
             tlpBottomArea.Controls.Add(pnlInfo, 0, 0);
             
@@ -234,12 +249,35 @@ namespace GenericInventorySystem.Forms
 
         private Panel CreateCardPanel()
         {
-            Panel p = new Panel(); p.BackColor = ThemeConfig.SurfaceColor; p.BorderStyle = BorderStyle.None;
+            Panel p = new Panel(); 
+            p.BackColor = Color.Transparent; 
+            p.BorderStyle = BorderStyle.None;
             p.Paint += (s, e) => {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                
+                // 1. Clear corners with PARENT background color
+                Color parentColor = ThemeConfig.GetParentColor(p);
+                using (var brush = new SolidBrush(parentColor))
+                {
+                    e.Graphics.FillRectangle(brush, -1, -1, p.Width + 2, p.Height + 2);
+                }
+
+                // 2. Draw Rounded Surface (White)
                 Rectangle r = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
                 using (var path = GetRoundedRect(r, 12))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1)) { e.Graphics.DrawPath(pen, path); }
+                {
+                    using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
+                    {
+                        e.Graphics.FillPath(brush, path);
+                    }
+
+                    // 3. Draw Border
+                    using (var pen = new Pen(ThemeConfig.BorderColor, 1)) 
+                    { 
+                        e.Graphics.DrawPath(pen, path); 
+                    }
+                }
             };
             return p;
         }
@@ -257,6 +295,7 @@ namespace GenericInventorySystem.Forms
             {
                 cartTable = new DataTable();
                 cartTable.Columns.Add("PartID", typeof(int)); cartTable.Columns.Add("PartName", typeof(string)); cartTable.Columns.Add("Quantity", typeof(int)); cartTable.Columns.Add("PrivatePrice", typeof(decimal)); cartTable.Columns.Add("SellingPrice", typeof(decimal)); cartTable.Columns.Add("Total", typeof(decimal), "Quantity * SellingPrice");
+                
                 dgvCart.Columns.Clear();
                 dgvCart.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartID", DataPropertyName = "PartID", Visible = false });
                 dgvCart.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", DataPropertyName = "PartName", HeaderText = LocalizationManager.GetString("POS_GridProduct"), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
@@ -266,7 +305,7 @@ namespace GenericInventorySystem.Forms
                 DataGridViewTextBoxColumn colTotal = new DataGridViewTextBoxColumn { Name = "Total", DataPropertyName = "Total", HeaderText = LocalizationManager.GetString("POS_GridTotal"), Width = 100, ReadOnly = true };
                 colTotal.DefaultCellStyle.Format = "c2"; colTotal.DefaultCellStyle.FormatProvider = System.Globalization.CultureInfo.GetCultureInfo("en-US"); dgvCart.Columns.Add(colTotal);
                 DataGridViewButtonColumn btnDelete = new DataGridViewButtonColumn { Name = "colDelete", HeaderText = "", Text = "", UseColumnTextForButtonValue = true, FlatStyle = FlatStyle.Flat, Width = 60 }; dgvCart.Columns.Add(btnDelete);
-                dgvCart.DataSource = cartTable; LoadCustomers(); ThemeConfig.ApplyGridTheme(dgvCart); this.ActiveControl = txtBarcodeScan;
+                dgvCart.DataSource = cartTable; LoadCustomers(); ThemeConfig.ApplyGridTheme(dgvCart);
             }
             catch (Exception ex) { MessageHelper.ShowError("Error initializing POS: " + ex.Message); }
         }
@@ -392,17 +431,58 @@ namespace GenericInventorySystem.Forms
         }
         private void BtnAddItem_Click(object sender, EventArgs e) { ProductSelectorForm s = new ProductSelectorForm(); if (s.ShowDialog() == DialogResult.OK) AddToCart(s.SelectedPartId, s.SelectedPartName, s.SelectedPrice, s.SelectedStock); }
 
-        private void TxtBarcodeScan_KeyDown(object sender, KeyEventArgs e)
+        protected override void OnLoad(EventArgs e)
         {
-             if (e.KeyCode == Keys.Enter) {
-                 string t = txtBarcodeScan.Text.Trim();
-                 if(!string.IsNullOrEmpty(t)) {
-                      DataTable dt = DatabaseHelper.ExecuteDataTable($"SELECT id,part_name,selling_price,quantity_in_stock FROM parts WHERE (barcode='{t}' OR part_number='{t}') AND date_deleted IS NULL");
-                      if(dt.Rows.Count > 0) { DataRow r = dt.Rows[0]; AddToCart((int)r["id"], r["part_name"].ToString(), (decimal)r["selling_price"], (int)r["quantity_in_stock"]); txtBarcodeScan.Text = ""; }
-                      else { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_ProductNotFound")); txtBarcodeScan.Text = ""; }
-                 }
-                 e.Handled = true; e.SuppressKeyPress = true; txtBarcodeScan.Focus();
-             }
+            base.OnLoad(e);
+            if (this.ParentForm != null)
+            {
+                this.ParentForm.KeyPreview = true;
+                this.ParentForm.KeyPress += POSForm_KeyPress;
+            }
+        }
+
+        private void POSForm_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!this.Visible) return;
+
+            TimeSpan elapsed = DateTime.Now - _lastScanTime;
+            if (elapsed.TotalMilliseconds > 100) 
+            {
+                _scanBuffer = "";
+            }
+            _lastScanTime = DateTime.Now;
+
+            if (e.KeyChar != (char)Keys.Enter)
+            {
+                _scanBuffer += e.KeyChar;
+            }
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.Enter && this.Visible)
+            {
+                TimeSpan elapsed = DateTime.Now - _lastScanTime;
+                if (elapsed.TotalMilliseconds <= 100 && !string.IsNullOrEmpty(_scanBuffer))
+                {
+                    string barcode = _scanBuffer.Trim();
+                    _scanBuffer = "";
+
+                    DataTable dt = DatabaseHelper.ExecuteDataTable($"SELECT id,part_name,selling_price,quantity_in_stock FROM parts WHERE (barcode='{barcode}' OR part_number='{barcode}') AND date_deleted IS NULL");
+                    if(dt.Rows.Count > 0) 
+                    { 
+                        DataRow r = dt.Rows[0]; 
+                        AddToCart((int)r["id"], r["part_name"].ToString(), (decimal)r["selling_price"], (int)r["quantity_in_stock"]); 
+                    }
+                    else 
+                    { 
+                        MessageHelper.ShowWarning(LocalizationManager.GetString("POS_ProductNotFound") ?? $"Item not found for barcode: {barcode}"); 
+                    }
+
+                    return true; // Suppress Enter key so it doesn't click focused buttons
+                }
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         private void AddToCart(int id, string name, decimal price, int stock)
@@ -529,29 +609,26 @@ namespace GenericInventorySystem.Forms
         private void BtnReturnItems_Click(object sender, EventArgs e)
         {
              bool ar = LocalizationManager.IsArabic;
-             string title = ar ? "إرجاع الأصناف" : "Return Items";
-             string prompt = ar ? "أدخل رقم الطلب للإرجاع:" : "Enter Order ID to Return:";
              
-             string input = Microsoft.VisualBasic.Interaction.InputBox(prompt, title, "");
-             if (string.IsNullOrEmpty(input)) return;
+             OrderIdPromptForm promptForm = new OrderIdPromptForm();
+             if (promptForm.ShowDialog() != DialogResult.OK) return;
 
-             if (int.TryParse(input, out int orderId))
-             {
-                 try {
-                     var check = DatabaseHelper.ExecuteScalar<int>($"SELECT COUNT(*) FROM orders WHERE order_id = {orderId}");
-                     if (check > 0)
-                     {
-                         var status = DatabaseHelper.ExecuteScalar<object>($"SELECT status FROM orders WHERE order_id = {orderId}")?.ToString();
-                         if (status == "Quotation" || status == "Draft") {
-                             MessageHelper.ShowWarning(ar ? "لا يمكن إرجاع طلبات الاقتباس أو المسودة." : "Cannot return Quotation or Draft orders.");
-                             return;
-                         }
-                         ReturnEntryForm form = new ReturnEntryForm(orderId);
-                         form.ShowDialog();
+             int orderId = promptForm.OrderId;
+             
+             try {
+                 var check = DatabaseHelper.ExecuteScalar<int>($"SELECT COUNT(*) FROM orders WHERE order_id = {orderId}");
+                 if (check > 0)
+                 {
+                     var status = DatabaseHelper.ExecuteScalar<object>($"SELECT status FROM orders WHERE order_id = {orderId}")?.ToString();
+                     if (status == "Quotation" || status == "Draft") {
+                         MessageHelper.ShowWarning(ar ? "لا يمكن إرجاع طلبات الاقتباس أو المسودة." : "Cannot return Quotation or Draft orders.");
+                         return;
                      }
-                     else MessageHelper.ShowWarning(ar ? "رقم الطلب غير موجود." : "Order ID not found.");
-                 } catch (Exception ex) { MessageHelper.ShowError(ex.Message); }
-             } else MessageHelper.ShowWarning(ar ? "يرجى إدخال رقم صحيح." : "Please enter a valid numeric ID.");
+                     ReturnEntryForm form = new ReturnEntryForm(orderId);
+                     form.ShowDialog();
+                 }
+                 else MessageHelper.ShowWarning(ar ? "رقم الطلب غير موجود." : "Order ID not found.");
+             } catch (Exception ex) { MessageHelper.ShowError(ex.Message); }
         }
     }
 }

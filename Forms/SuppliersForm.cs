@@ -93,12 +93,13 @@ namespace GenericInventorySystem.Forms
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             tlpMain.Dock = DockStyle.Fill;
             tlpMain.BackColor = ThemeConfig.BackgroundColor;
+            tlpMain.Padding = new Padding(20);
 
             // Header Panel
             Panel panelTop = new Panel();
             panelTop.Dock = DockStyle.Fill;
             panelTop.BackColor = ThemeConfig.BackgroundColor;
-            panelTop.Padding = new Padding(20);
+            panelTop.Margin = new Padding(0);
 
             // lblSuppliersTitle
             this.lblSuppliersTitle = ThemeConfig.CreateStandardHeader("Supplier Management");
@@ -110,7 +111,7 @@ namespace GenericInventorySystem.Forms
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = "Search Suppliers...";
             txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(20, 75);
+            txtSearch.Location = new Point(0, 55);
             txtSearch.TextChanged += (s, e) => { 
                 string ph = GenericInventorySystem.Helpers.LocalizationManager.GetString("Sup_Search");
                 if (txtSearch.Text != ph && txtSearch.Text != "Search...") 
@@ -235,21 +236,15 @@ namespace GenericInventorySystem.Forms
             {
                 if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
                 {
-                    txtSearch.Location = new Point(panelTop.Width - txtSearch.Width - 20, 75);
-                    panelButtons.Location = new Point(20, 70);
+                    txtSearch.Location = new Point(panelTop.Width - txtSearch.Width, 55);
+                    panelButtons.Location = new Point(0, 50);
                 }
                 else
                 {
-                    txtSearch.Location = new Point(20, 75);
-                    panelButtons.Location = new Point(panelTop.Width - panelButtons.Width - 20, 70);
+                    txtSearch.Location = new Point(0, 55);
+                    panelButtons.Location = new Point(panelTop.Width - panelButtons.Width, 50);
                 }
             };
-
-            // Grid Panel
-            Panel panelGrid = new Panel();
-            panelGrid.Dock = DockStyle.Fill;
-            panelGrid.Padding = new Padding(20, 10, 20, 20);
-            panelGrid.BackColor = ThemeConfig.BackgroundColor;
 
             // Grid Config
             this.dgvSuppliers.Dock = DockStyle.Fill;
@@ -299,10 +294,10 @@ namespace GenericInventorySystem.Forms
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "address", DataPropertyName = "address", Visible = false });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "type", DataPropertyName = "type", Visible = false });
 
-            panelGrid.Controls.Add(this.dgvSuppliers);
-
+            // Card Panel (Rounded body)
+            Panel pnlCard = ThemeConfig.CreateCardPanel(dgvSuppliers);
             tlpMain.Controls.Add(panelTop, 0, 0);
-            tlpMain.Controls.Add(panelGrid, 0, 1);
+            tlpMain.Controls.Add(pnlCard, 0, 1);
 
             this.Controls.Add(tlpMain);
             this.Size = new System.Drawing.Size(950, 600); 

@@ -36,35 +36,36 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent()
         {
-            // Adaptive sizing is now handled by BaseModalForm.OnLoad
             this.TitleText = (LocalizationManager.IsArabic ? "تفاصيل " : "Details - ") + _customerName;
 
-            // Main Layout
-            TableLayoutPanel tlpMain = new TableLayoutPanel();
-            tlpMain.Dock = DockStyle.Top;
-            tlpMain.ColumnCount = 1;
-            tlpMain.RowCount = 2;
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // AutoSize header to fit wrapped content
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid Area takes remaining space
-            tlpMain.Height = 650; // Total content height
-            tlpMain.AutoSize = true;
-            tlpMain.Padding = new Padding(20);
+            // Main Layout container
+            TableLayoutPanel tlpMain = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                Padding = new Padding(10)
+            };
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); // Fixed height for header section
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid takes the rest
             
             // --- HEADER ---
             TableLayoutPanel pnlHeader = new TableLayoutPanel {
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
                 RowCount = 1,
-                BackColor = ThemeConfig.SurfaceColor
+                BackColor = ThemeConfig.SurfaceColor,
+                Padding = new Padding(5)
             };
-            pnlHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F)); // Slightly more for buttons
-            pnlHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F));
-            pnlHeader.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Ensure header row can grow if buttons wrap
+            // Left column for Name (AutoSize), Right for Balance/Buttons (Percent)
+            pnlHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); 
+            pnlHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             
-            // Header Left (Title)
+            // Header Left: Name & Type
             FlowLayoutPanel flpLeft = new FlowLayoutPanel {
                 FlowDirection = FlowDirection.TopDown,
                 Dock = DockStyle.Fill,
+                AutoSize = true,
+                WrapContents = false,
                 Padding = new Padding(10)
             };
             
@@ -73,12 +74,12 @@ namespace GenericInventorySystem.Forms
             flpLeft.Controls.Add(lblName);
             flpLeft.Controls.Add(lblType);
             
-            // Header Right (Balance + Buttons)
+            // Header Right: Balance + Buttons
             FlowLayoutPanel flpRight = new FlowLayoutPanel {
-                FlowDirection = FlowDirection.RightToLeft,
+                FlowDirection = LocalizationManager.IsArabic ? FlowDirection.LeftToRight : FlowDirection.RightToLeft,
                 Dock = DockStyle.Fill,
-                Padding = new Padding(10),
-                WrapContents = false
+                Padding = new Padding(0, 10, 0, 0),
+                WrapContents = true // Allow wrapping if space is tight
             };
             
             // 1. Balance Panel
@@ -86,7 +87,7 @@ namespace GenericInventorySystem.Forms
             {
                 Size = new Size(220, 100),
                 BackColor = ThemeConfig.BackgroundColor,
-                Margin = new Padding(10, 0, 0, 0),
+                Margin = new Padding(10, 0, 10, 0),
                 Padding = new Padding(15, 10, 15, 10),
                 ColumnCount = 1,
                 RowCount = 3
@@ -97,7 +98,7 @@ namespace GenericInventorySystem.Forms
 
             lblBalance = new Label() { Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.WarningColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft };
             lblBalTitle = new Label() { Text = "Balance Due", Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft };
-            lblDueDate = new Label() { Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.DangerColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft };
+            lblDueDate = new Label() { Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.DangerColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft, Visible = false };
 
             tlpBalance.Controls.Add(lblBalance, 0, 0);
             tlpBalance.Controls.Add(lblBalTitle, 0, 1);
@@ -107,13 +108,13 @@ namespace GenericInventorySystem.Forms
             btnReceivePayment = new ModernButton { Text = "💵 " + (LocalizationManager.IsArabic ? "قبض دفعة" : "Receive Payment"), Size = new Size(165, 45) };
             ThemeConfig.ApplyEmojiButton(btnReceivePayment, ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, Color.White);
             btnReceivePayment.Click += BtnReceivePayment_Click;
-            btnReceivePayment.Margin = new Padding(0, 10, 10, 0);
+            btnReceivePayment.Margin = new Padding(5, 5, 5, 5);
 
             // 3. Record Sale button
             btnRecordSale = new ModernButton { Text = "🛒 " + (LocalizationManager.IsArabic ? "تسجيل بيع" : "Record Sale"), Size = new Size(155, 45) };
             ThemeConfig.ApplyEmojiButton(btnRecordSale, ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, Color.White);
             btnRecordSale.Click += BtnRecordSale_Click;
-            btnRecordSale.Margin = new Padding(0, 10, 10, 0);
+            btnRecordSale.Margin = new Padding(5, 5, 5, 5);
 
             flpRight.Controls.Add(tlpBalance);
             flpRight.Controls.Add(btnReceivePayment);
@@ -126,7 +127,6 @@ namespace GenericInventorySystem.Forms
             dgvHistory = new DataGridView();
             dgvHistory.DataError += (s, e) => { e.ThrowException = false; };
             dgvHistory.Dock = DockStyle.Fill;
-            dgvHistory.Height = 450;
             dgvHistory.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvHistory.CellFormatting += DgvHistory_CellFormatting;
             ThemeConfig.ApplyGridTheme(dgvHistory);

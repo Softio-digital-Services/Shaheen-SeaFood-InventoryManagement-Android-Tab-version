@@ -236,11 +236,17 @@ namespace GenericInventorySystem.Forms
             bool isCompany = rdoCompany.Checked;
 
             txtName.Visible = isCompany;
-            txtName.LabelText = L("Add_CompanyName") + " *";
+            txtName.IsRequired = isCompany;
+            txtName.LabelText = L("Add_CompanyName");
             
-            txtFirstName.LabelText = isCompany ? L("Add_ContactFirstName") : L("Add_FirstName") + " *";
-            txtLastName.LabelText = isCompany ? L("Add_ContactLastName") : L("Add_LastName") + " *";
-            txtPhone.LabelText = L("Popup_Phone") + " *";
+            txtFirstName.IsRequired = !isCompany;
+            txtFirstName.LabelText = isCompany ? L("Add_ContactFirstName") : L("Add_FirstName");
+
+            txtLastName.IsRequired = !isCompany;
+            txtLastName.LabelText = isCompany ? L("Add_ContactLastName") : L("Add_LastName");
+
+            txtPhone.IsRequired = true;
+            txtPhone.LabelText = L("Popup_Phone");
         }
 
         private void ApplyTheme()

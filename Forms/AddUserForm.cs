@@ -68,7 +68,8 @@ namespace GenericInventorySystem.Forms
             tlpMain.Controls.Add(lblSection, 0, 0);
 
             // Username
-            txtUsername.LabelText = "Username *";
+            txtUsername.LabelText = "Username";
+            txtUsername.IsRequired = true;
             tlpMain.Controls.Add(txtUsername, 0, 1);
 
             // Full Name
@@ -76,7 +77,8 @@ namespace GenericInventorySystem.Forms
             tlpMain.Controls.Add(txtFullName, 0, 2);
 
             // Password
-            txtPassword.LabelText = _userId.HasValue ? "Password (leave blank to keep current)" : "Password *";
+            txtPassword.LabelText = _userId.HasValue ? "Password (leave blank to keep current)" : "Password";
+            txtPassword.IsRequired = !_userId.HasValue;
             tlpMain.Controls.Add(txtPassword, 0, 3);
 
             // Confirm
@@ -127,6 +129,8 @@ namespace GenericInventorySystem.Forms
             txtUsername.LabelText = LocalizationManager.GetString("AddUser_Username");
             txtFullName.LabelText = LocalizationManager.GetString("AddUser_FullName");
             txtPassword.LabelText = _userId.HasValue ? LocalizationManager.GetString("AddUser_PassEdit") : LocalizationManager.GetString("AddUser_PassNew");
+            txtUsername.IsRequired = true;
+            txtPassword.IsRequired = !_userId.HasValue;
             txtConfirmPassword.LabelText = LocalizationManager.GetString("AddUser_ConfirmPass");
 
             lblRole.Text = LocalizationManager.GetString("AddUser_Role");
@@ -191,6 +195,7 @@ namespace GenericInventorySystem.Forms
                 string role = cmbRole.SelectedItem?.ToString() ?? "User";
 
                 if (!ValidationHelper.ValidateRequiredFields(txtUsername)) return;
+                if (!_userId.HasValue && !ValidationHelper.ValidateRequiredFields(txtPassword)) return;
 
                 // Password validation
                 if (!_userId.HasValue && string.IsNullOrEmpty(password))
