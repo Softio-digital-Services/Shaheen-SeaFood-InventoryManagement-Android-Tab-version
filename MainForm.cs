@@ -21,6 +21,7 @@ namespace GenericInventorySystem
         private Forms.POSForm posForm;
         private Forms.PurchaseOrdersForm purchaseOrdersForm;
         private Forms.MonthlyExpensesForm monthlyExpensesForm;
+        private Forms.BarcodeLabelsForm barcodeLabelsForm;
 
         // Header Controls
         private PictureBox pbNotification;
@@ -162,9 +163,13 @@ namespace GenericInventorySystem
             var pbLogo = panel1.Controls.Find("pbLogo", true).FirstOrDefault() as PictureBox;
             if (pbLogo != null)
             {
-                pbLogo.Location = isAr ? new Point(panel1.Width - pbLogo.Width - 20, (panel1.Height - pbLogo.Height) / 2) : new Point(20, (panel1.Height - pbLogo.Height) / 2);
+                pbLogo.Dock = DockStyle.None;
+                pbLogo.Padding = Padding.Empty;
+                pbLogo.Location = isAr ? new Point(panel1.Width - pbLogo.Width + 35, (panel1.Height - pbLogo.Height) / 2) : new Point(-35, (panel1.Height - pbLogo.Height) / 2);
+                pbLogo.BringToFront();
             }
-            label2.Location = isAr ? new Point(panel1.Width - label2.Width - 20, (panel1.Height - label2.Height) / 2) : new Point(20, (panel1.Height - label2.Height) / 2);
+            label2.Visible = false; // Forced hide to prevent clipping
+            label2.Location = isAr ? new Point(panel1.Width - label2.Width - 10, (panel1.Height - label2.Height) / 2) : new Point(10, (panel1.Height - label2.Height) / 2);
         }
 
         private void UpdateNavText(string name, string key) {
@@ -179,7 +184,7 @@ namespace GenericInventorySystem
             panel2.Controls.Add(pnlNav);
             pnlNav.BringToFront();
 
-            PictureBox pbSidebarLogo = new PictureBox { Name = "pbSidebarLogo", Size = new Size(140, 160), SizeMode = PictureBoxSizeMode.Zoom, Dock = DockStyle.Top, Padding = new Padding(0, 20, 0, 20) };
+            PictureBox pbSidebarLogo = new PictureBox { Name = "pbSidebarLogo", Size = new Size(100, 100), SizeMode = PictureBoxSizeMode.Zoom, Dock = DockStyle.Top, Padding = new Padding(30, 30, 30, 30) };
             try { string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png"); if(System.IO.File.Exists(logoPath)) pbSidebarLogo.Image = Image.FromFile(logoPath); } catch { }
             pnlNav.Controls.Add(pbSidebarLogo);
             pbSidebarLogo.BringToFront(); // Highest index in Dock=Top is top, index 0 is bottom. No, wait. 
@@ -229,6 +234,7 @@ namespace GenericInventorySystem
             quotationsForm = InitializeForm<Forms.QuotationsForm>();
             purchaseOrdersForm = InitializeForm<Forms.PurchaseOrdersForm>();
             monthlyExpensesForm = InitializeForm<Forms.MonthlyExpensesForm>();
+            barcodeLabelsForm = InitializeForm<Forms.BarcodeLabelsForm>();
 
             // Navigation Buttons
             Dashboard_btn.Height = 50;
@@ -250,6 +256,7 @@ namespace GenericInventorySystem
             if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "Inventory", "inventory", "btnInventory", () => ShowForm(partsForm));
             if (isAdmin || isWorker) AddNavButton(pnlNav, "POS / Checkout", "pos", "btnPOS", () => ShowForm(posForm));
             if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "Customers", "customers", "btnCustomers", () => ShowForm(customersForm));
+            if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "Barcode Labels", "barcode", "btnLabels", () => ShowForm(barcodeLabelsForm));
             
             // Accountants & Admins
             if (isAdmin || isAccountant)
@@ -514,10 +521,11 @@ namespace GenericInventorySystem
             label2.Text = ThemeConfig.AppTitle; 
             label2.Font = ThemeConfig.HeaderFont;
             label2.ForeColor = Color.White; // New: White on Blue
-            label2.Padding = new Padding(15, 0, 0, 0);
-            label2.Visible = false; // Hide text title, use logo instead
-
-            panel1.Height = 70; // Increased height for larger logo
+            label2.Visible = false; // Explicitly hide the title
+            panel1.Height = 60; // Decreased height
+            panel1.Padding = Padding.Empty;
+            panel1.Margin = Padding.Empty;
+            panel1.BorderStyle = BorderStyle.None; // Remove border that adds padding
             // Header Logo
             if (panel1.Controls.Find("pbLogo", true).Length == 0)
             {
@@ -531,15 +539,18 @@ namespace GenericInventorySystem
                     string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png");
                     if(System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath); 
                 } catch { }
-                panel1.Controls.Add(pbLogo);
+                panel1.Controls.Add(pbLogo); // Added back!
                 pbLogo.BringToFront();
-                pbLogo.Location = new Point(0, (panel1.Height - pbLogo.Height) / 2); // Far left
+                pbLogo.Location = new Point(-35, 0); // Start at the absolute edge, Y=0 to center in 60px height
                 pbLogo.MouseDown += Header_MouseDown;
             }
 
             var existingLogo = panel1.Controls.Find("pbLogo", true).FirstOrDefault() as PictureBox;
             if (existingLogo != null) {
-                existingLogo.Location = new Point(0, (panel1.Height - existingLogo.Height) / 2); // Far left
+                existingLogo.Dock = DockStyle.None;
+                existingLogo.Padding = Padding.Empty;
+                existingLogo.Location = new Point(-35, 0); // Y=0 to center in 60px height
+                existingLogo.BringToFront();
             }
 
             label1.Text = "Welcome, " + UserSession.FullName;

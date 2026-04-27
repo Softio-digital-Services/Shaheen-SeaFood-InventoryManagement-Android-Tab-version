@@ -268,6 +268,7 @@ namespace GenericInventorySystem.Forms
             dgvSuppliers.GridColor = ThemeConfig.BorderColor;
 
             ThemeConfig.ApplyGridTheme(dgvSuppliers);
+            ThemeConfig.ApplyHeaderCheckBox(dgvSuppliers, "colCheck");
 
             // Events
             dgvSuppliers.CellPainting += DgvSuppliers_CellPainting;

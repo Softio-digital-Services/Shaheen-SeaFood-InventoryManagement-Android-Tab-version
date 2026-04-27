@@ -33,6 +33,20 @@ namespace GenericInventorySystem.Forms
             numQuantity.MouseWheel += PreventNumericScroll;
             numPrice.MouseWheel += PreventNumericScroll;
             numMinStock.MouseWheel += PreventNumericScroll;
+            btnAutoSKU.Click += BtnAutoSKU_Click;
+        }
+
+        private void BtnAutoSKU_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtPartName.Text))
+            {
+                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يرجى إدخال اسم المنتج أولاً." : "Please enter product name first.");
+                return;
+            }
+
+            BarcodeService barcodeService = new BarcodeService();
+            string suggestedSku = barcodeService.GenerateSKU(cmbCategory.Text, txtPartName.Text);
+            txtPartNumber.Text = suggestedSku;
         }
 
         private void PreventNumericScroll(object sender, MouseEventArgs e)
@@ -53,6 +67,7 @@ namespace GenericInventorySystem.Forms
 
             ThemeConfig.ApplyPrimaryButton(btnScan);
             ThemeConfig.ApplySecondaryButton(btnUpload);
+            ThemeConfig.ApplySecondaryButton(btnAutoSKU);
         }
 
 
@@ -192,6 +207,14 @@ namespace GenericInventorySystem.Forms
             string partNum = txtPartNumber.Text.Trim();
             string barcode = txtBarcode.Text.Trim();
 
+            // Auto-generate SKU if empty
+            if (string.IsNullOrWhiteSpace(partNum))
+            {
+                BarcodeService barcodeService = new BarcodeService();
+                partNum = barcodeService.GenerateSKU(cmbCategory.Text, txtPartName.Text);
+                txtPartNumber.Text = partNum;
+            }
+
             // Instantiate service locally or via property if available
             InventoryService service = new InventoryService();
 
@@ -309,6 +332,7 @@ namespace GenericInventorySystem.Forms
             txtPartNumber.LabelText = LocalizationManager.GetString("AddPart_SKU");
             txtLocation.LabelText = LocalizationManager.GetString("AddPart_Location");
             txtShelf.LabelText = LocalizationManager.GetString("AddPart_Shelf");
+            btnAutoSKU.Text = isArabic ? "✨ تلقائي" : "✨ Auto";
 
             // Labels
             string currSymbol = GenericInventorySystem.Services.CurrencyService.GetSymbol("USD");

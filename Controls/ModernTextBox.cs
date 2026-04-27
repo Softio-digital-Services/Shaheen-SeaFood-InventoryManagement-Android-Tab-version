@@ -172,7 +172,7 @@ namespace GenericInventorySystem.Controls
                 pnlContainer.Invalidate(); 
                 UpdatePlaceholder();
                 // Prevent auto-selection of text
-                this.BeginInvoke(new Action(() => { txtInput.SelectionLength = 0; }));
+                if (this.IsHandleCreated) this.BeginInvoke(new Action(() => { txtInput.SelectionLength = 0; }));
             };
             txtInput.LostFocus += (s, e) => { _isFocused = false; pnlContainer.Invalidate(); UpdatePlaceholder(); };
 

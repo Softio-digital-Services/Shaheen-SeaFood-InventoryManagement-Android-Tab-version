@@ -73,11 +73,11 @@ namespace GenericInventorySystem.Forms
                 BackColor = ThemeConfig.SurfaceColor 
             };
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F)); // Category
-            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F)); // Date
-            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F)); // Amount
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200F)); // Date (Increased from 180)
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F)); // Amount (Increased from 120)
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F)); // Description
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));  // Spacer
-            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 320F)); // Actions (Right) - Increased to 320 to prevent clipping
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 320F)); // Actions
             
             grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 85F)); // Increased to 85 to prevent clipping
             grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 35F)); // Sub Row (Recurring)
@@ -112,8 +112,10 @@ namespace GenericInventorySystem.Forms
             
             Panel pnlDate = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
             Label lblDateRef = new Label { Text = LocalizationManager.IsArabic ? "التاريخ" : "Expense Date", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };
-            dtpDate = new FlatDateTimePicker { Location = new Point(0, 25), Width = 170, Height = 42 };
-            pnlDate.Controls.Add(dtpDate); pnlDate.Controls.Add(lblDateRef);
+            dtpDate = new FlatDateTimePicker { Width = 170, Height = 42 };
+            Panel pnlDateWrapper = ThemeConfig.WrapInStyledInput(dtpDate, 42);
+            pnlDateWrapper.Location = new Point(0, 25);
+            pnlDate.Controls.Add(pnlDateWrapper); pnlDate.Controls.Add(lblDateRef);
             
             Panel pnlAmount = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
             Label lblAmountRef = new Label { Text = LocalizationManager.IsArabic ? "المبلغ" : "Amount", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };

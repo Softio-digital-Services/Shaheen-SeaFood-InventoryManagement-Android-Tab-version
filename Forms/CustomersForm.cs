@@ -314,8 +314,8 @@ namespace GenericInventorySystem.Forms
             dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colDueDate", Width = 120 });
             dgvCustomers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", Width = 100 });
             
-            dgvCustomers.CellPainting += DgvCustomers_CellPainting;
-            dgvCustomers.CellContentClick += DgvCustomers_CellContentClick;
+            ThemeConfig.ApplyGridTheme(dgvCustomers);
+            ThemeConfig.ApplyHeaderCheckBox(dgvCustomers, "colSelect");
             
             Panel pnlCard = ThemeConfig.CreateCardPanel(dgvCustomers);
             tlpMain.Controls.Add(pnlCard, 0, 1);

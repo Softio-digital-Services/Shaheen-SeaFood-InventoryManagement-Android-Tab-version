@@ -62,7 +62,15 @@ namespace GenericInventorySystem.Forms
             tlpFields.Controls.Add(pnlBarcode, 0, 0);
 
             tlpFields.Controls.Add(txtPartName, 0, 1);
-            tlpFields.Controls.Add(txtPartNumber, 0, 2);
+            
+            // SKU Row with Auto-Generate
+            TableLayoutPanel pnlSKU = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Height = 67, Margin = new Padding(0, 0, 0, 10) };
+            pnlSKU.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            pnlSKU.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
+            pnlSKU.Controls.Add(txtPartNumber, 0, 0);
+            this.btnAutoSKU = new GenericInventorySystem.Controls.ModernButton { Text = "✨ Auto", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
+            pnlSKU.Controls.Add(btnAutoSKU, 1, 0);
+            tlpFields.Controls.Add(pnlSKU, 0, 2);
 
             // Stock/Price Row
             TableLayoutPanel pnlStock = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2, Height = 67, Margin = new Padding(0, 0, 0, 10) };
@@ -128,6 +136,7 @@ namespace GenericInventorySystem.Forms
         private GenericInventorySystem.Controls.ModernButton btnScan;
         private GenericInventorySystem.Controls.ModernTextBox txtPartName;
         private GenericInventorySystem.Controls.ModernTextBox txtPartNumber;
+        private GenericInventorySystem.Controls.ModernButton btnAutoSKU;
         private GenericInventorySystem.Controls.ModernTextBox txtLocation;
         private GenericInventorySystem.Controls.ModernTextBox txtShelf;
         

@@ -49,7 +49,6 @@ namespace GenericInventorySystem
         // ==========================================
         
         // Primary Brand Color (Royal Blue)
-        // Primary Brand Color (Royal Blue - Horizon Standard)
         public static Color PrimaryColor { get; } = Color.FromArgb(25, 118, 210); // Deep Blue
         public static Color PrimaryHoverColor { get; } = Color.FromArgb(13, 71, 161);
 
@@ -130,9 +129,6 @@ namespace GenericInventorySystem
         // HELPER METHODS
         // ==========================================
 
-        /// <summary>
-        /// Creates a standardized screen title label with consistent font, color, and margin.
-        /// </summary>
         public static Label CreateStandardHeader(string text)
         {
             return new Label
@@ -158,11 +154,9 @@ namespace GenericInventorySystem
             btn.Cursor = Cursors.Hand;
             btn.TextAlign = ContentAlignment.MiddleCenter;
             
-            // Hover Effects
             btn.MouseEnter += (s, e) => btn.BackColor = PrimaryHoverColor;
             btn.MouseLeave += (s, e) => btn.BackColor = PrimaryColor;
 
-            // Attach Rounded Painter
             btn.Paint -= Btn_PaintRounded; 
             btn.Paint += Btn_PaintRounded;
         }
@@ -184,12 +178,10 @@ namespace GenericInventorySystem
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
 
-            // Handle background clearing (to prevent artifacts from parent)
-            // Use 1px inflation to ensure anti-aliased corners are fully covered
             using (var pb = new SolidBrush(GetParentColor(btn)))
                 g.FillRectangle(pb, -1, -1, btn.Width + 2, btn.Height + 2);
 
-            using (var path = GetRoundedPath(r, 12)) // Increased to 12 to match ModernTextBox
+            using (var path = GetRoundedPath(r, 12)) 
             {
                 if (isOutline)
                 {
@@ -207,7 +199,6 @@ namespace GenericInventorySystem
             int iconSize = 24;
             int margin = 8;
             
-            // Icon Position
             int iconX = isArabic ? (btn.Width - iconSize - margin) : margin;
             int iconY = (btn.Height - iconSize) / 2;
             
@@ -219,7 +210,6 @@ namespace GenericInventorySystem
                 }
             }
 
-            // Text Position (Centered in the remaining area)
             int textX = isArabic ? margin : (iconX + iconSize + 4);
             int textW = btn.Width - iconSize - (margin * 2) - 4;
             Rectangle textRect = new Rectangle(textX, 0, textW, btn.Height);
@@ -237,17 +227,8 @@ namespace GenericInventorySystem
             cbo.BackColor = SurfaceColor;
             cbo.ForeColor = TextColorDark;
             cbo.Cursor = Cursors.Hand;
-            
-            // Standardizing DropDownStyle removed to preserve typability and UI.
-            // if (cbo.DropDownStyle == ComboBoxStyle.DropDown)
-            //    cbo.DropDownStyle = ComboBoxStyle.DropDownList;
-            // but we can ensure the colors and fonts are perfect.
         }
 
-        /// <summary>
-        /// Wraps any control in a Panel that draws a consistent rounded border.
-        /// Useful for ComboBox and DateTimePicker which don't support borders in Flat mode easily.
-        /// </summary>
         public static Panel WrapInStyledInput(Control innerControl, int height, bool isMultiline = false)
         {
             Panel p = new Panel
@@ -277,7 +258,6 @@ namespace GenericInventorySystem
                 p.Invalidate();
             };
 
-            // Initial setup
             positionControl();
             using (var path = GetRoundedPath(new Rectangle(0, 0, p.Width, p.Height), 12))
             {
@@ -287,7 +267,6 @@ namespace GenericInventorySystem
             p.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                // Draw border inset by 1px
                 using (var path = GetRoundedPath(new Rectangle(0, 0, p.Width - 1, p.Height - 1), 12))
                 using (var pen = new Pen(BorderColor, 1.5f))
                 {
@@ -299,19 +278,10 @@ namespace GenericInventorySystem
             return p;
         }
 
-        // ==========================================
-        // CHARTING / ANALYTICS
-        // ==========================================
         public static readonly Color[] ChartPalette = new Color[]
         {
-            PrimaryColor,
-            SuccessColor,
-            WarningColor,
-            DangerColor,
-            SecondaryColor,
-            Color.FromArgb(99, 102, 241), // Indigo
-            Color.FromArgb(168, 85, 247), // Purple
-            Color.FromArgb(236, 72, 153)  // Pink
+            PrimaryColor, SuccessColor, WarningColor, DangerColor, SecondaryColor,
+            Color.FromArgb(99, 102, 241), Color.FromArgb(168, 85, 247), Color.FromArgb(236, 72, 153)
         };
 
         public static void ApplyChartTheme(Chart chart)
@@ -323,9 +293,7 @@ namespace GenericInventorySystem
             chart.ChartAreas.Clear();
             var area = chart.ChartAreas.Add("MainArea");
             area.BackColor = Color.Transparent;
-            area.BorderWidth = 0;
 
-            // Axis Styling
             area.AxisX.LabelStyle.Font = StandardFont;
             area.AxisY.LabelStyle.Font = StandardFont;
             area.AxisX.LabelStyle.ForeColor = SecondaryColor;
@@ -336,9 +304,8 @@ namespace GenericInventorySystem
 
             area.AxisX.MajorGrid.LineColor = Color.FromArgb(245, 245, 245);
             area.AxisY.MajorGrid.LineColor = Color.FromArgb(245, 245, 245);
-            area.AxisX.MajorGrid.Enabled = false; // Usually cleaner without vertical lines
+            area.AxisX.MajorGrid.Enabled = false;
 
-            // Title Styling
             foreach (var title in chart.Titles)
             {
                 title.Font = SubHeaderFont;
@@ -347,7 +314,6 @@ namespace GenericInventorySystem
                 title.Docking = Docking.Top;
             }
 
-            // Legend Styling
             chart.Legends.Clear();
             var legend = chart.Legends.Add("Default");
             legend.BackColor = Color.Transparent;
@@ -357,11 +323,6 @@ namespace GenericInventorySystem
             legend.Alignment = StringAlignment.Center;
         }
 
-        /// <summary>
-        /// Like ApplyPrimaryButton, but correctly renders emoji + text by using split-draw:
-        /// the first space-delimited token is drawn with EmojiFont,
-        /// the rest is drawn with SmallBoldFont. Call after setting BackColor.
-        /// </summary>
         public static void ApplyEmojiButton(Button btn, Color backColor, Color hoverColor, Color textColor)
         {
             btn.FlatStyle = FlatStyle.Flat;
@@ -389,7 +350,7 @@ namespace GenericInventorySystem
             if (c is PictureBox pb)
             {
                 Image icon = pb.Image;
-                pb.Image = null; // Prevent double-drawing (ghosting)
+                pb.Image = null; 
 
                 pb.Paint += (s, e) => {
                     e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -417,18 +378,17 @@ namespace GenericInventorySystem
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = Color.Transparent;
-            btn.Text = string.Empty; // We draw everything via Paint
+            btn.Text = string.Empty; 
             btn.Cursor = Cursors.Default;
             btn.TabStop = false;
 
-            // Remove existing paint handlers to prevent duplication
             btn.Paint -= WinCtrl_PaintMinimize;
             btn.Paint -= WinCtrl_PaintMaximize;
             btn.Paint -= WinCtrl_PaintClose;
 
             bool isDarkHeader = (btn.FindForm() is MainForm);
             Color defaultHover = isDarkHeader ? Color.FromArgb(40, 255, 255, 255) : Color.FromArgb(30, PrimaryColor);
-            Color closeHover = DangerColor; // Consistent red hover for close
+            Color closeHover = DangerColor; 
 
             if (type == "Close")
             {
@@ -463,7 +423,6 @@ namespace GenericInventorySystem
             using (var p = new Pen(iconColor, 1.5f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
                 g.DrawLine(p, cx - lineW, cy + 2, cx + lineW, cy + 2);
         }
-
 
         private static void WinCtrl_PaintMaximize(object sender, PaintEventArgs e)
         {
@@ -513,7 +472,6 @@ namespace GenericInventorySystem
             bool isDarkHeader = (btn.FindForm() is MainForm);
             Color iconColor = isDarkHeader ? Color.White : ThemeConfig.TextColorDark;
             
-            // If hovered (DangerColor background), force white icon for visibility
             if (btn.BackColor == DangerColor) iconColor = Color.White;
             
             using (var p = new Pen(iconColor, 1.5f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
@@ -525,42 +483,33 @@ namespace GenericInventorySystem
 
         private static void Btn_PaintEmojiButton(object sender, PaintEventArgs e)
         {
-            var btn = sender as Button;
-            if (btn == null) return;
-
+            var btn = sender as Button; if (btn == null) return;
             var g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-            // 1. Clear background with parent color
             Rectangle r = new Rectangle(0, 0, btn.Width, btn.Height);
             if (btn.Parent != null)
                 using (var pb = new SolidBrush(btn.Parent.BackColor))
                     g.FillRectangle(pb, r);
 
-            // 2. Draw rounded background
             using (var path = GetRoundedPath(r, 8))
             using (var brush = new SolidBrush(btn.BackColor))
                 g.FillPath(brush, path);
 
-            // 3. Split text: first word = emoji, rest = label
             string full = btn.Text ?? string.Empty;
             int spaceIdx = full.IndexOf(' ');
             string emojiPart = spaceIdx > 0 ? full.Substring(0, spaceIdx) : full;
             string labelPart = spaceIdx > 0 ? full.Substring(spaceIdx + 1) : string.Empty;
 
-            // 4. Measure to center
             Size emojiSize = TextRenderer.MeasureText(emojiPart, EmojiFont);
             Size labelSize = TextRenderer.MeasureText(labelPart, SmallBoldFont);
-            int totalWidth = emojiSize.Width + labelSize.Width - 8; // -8 for GDI spacing overshoot
+            int totalWidth = emojiSize.Width + labelSize.Width - 8; 
             int startX = (btn.Width - totalWidth) / 2;
-            int centerY = (btn.Height - emojiSize.Height) / 2;
 
-            // 5. Draw emoji
             TextRenderer.DrawText(g, emojiPart, EmojiFont,
                 new Rectangle(startX, 0, emojiSize.Width, btn.Height),
                 btn.ForeColor, TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.NoPadding);
 
-            // 6. Draw label text
             if (!string.IsNullOrEmpty(labelPart))
                 TextRenderer.DrawText(g, labelPart, SmallBoldFont,
                     new Rectangle(startX + emojiSize.Width - 6, 0, labelSize.Width + 8, btn.Height),
@@ -570,12 +519,9 @@ namespace GenericInventorySystem
         public static void DrawRoundedButton(Button btn, Graphics g)
         {
             if (btn == null) return;
-            
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            
             Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
             
-            // 1. Clear background with PARENT color to solve "white corners bug"
             using (var parentBrush = new SolidBrush(GetParentColor(btn)))
                 g.FillRectangle(parentBrush, -1, -1, btn.Width + 2, btn.Height + 2);
                 
@@ -587,78 +533,11 @@ namespace GenericInventorySystem
                     g.DrawPath(glowPen, path);
             }    
 
-            // Text Alignment & Format
-            StringFormat sf = new StringFormat();
-            sf.HotkeyPrefix = System.Drawing.Text.HotkeyPrefix.None;
-            
-            switch (btn.TextAlign)
-            {
-                case ContentAlignment.TopLeft:
-                case ContentAlignment.MiddleLeft:
-                case ContentAlignment.BottomLeft:
-                    sf.Alignment = StringAlignment.Near;
-                    break;
-                case ContentAlignment.TopCenter:
-                case ContentAlignment.MiddleCenter:
-                case ContentAlignment.BottomCenter:
-                    sf.Alignment = StringAlignment.Center;
-                    break;
-                case ContentAlignment.TopRight:
-                case ContentAlignment.MiddleRight:
-                case ContentAlignment.BottomRight:
-                    sf.Alignment = StringAlignment.Far;
-                    break;
-            }
-            
-            switch (btn.TextAlign)
-            {
-                case ContentAlignment.TopLeft:
-                case ContentAlignment.TopCenter:
-                case ContentAlignment.TopRight:
-                    sf.LineAlignment = StringAlignment.Near;
-                    break;
-                case ContentAlignment.MiddleLeft:
-                case ContentAlignment.MiddleCenter:
-                case ContentAlignment.MiddleRight:
-                    sf.LineAlignment = StringAlignment.Center;
-                    break;
-                case ContentAlignment.BottomLeft:
-                case ContentAlignment.BottomCenter:
-                case ContentAlignment.BottomRight:
-                    sf.LineAlignment = StringAlignment.Far;
-                    break;
-            }
-
-            RectangleF contentRect = new RectangleF(
-                r.X + btn.Padding.Left,
-                r.Y + btn.Padding.Top,
-                r.Width - (btn.Padding.Right + btn.Padding.Left),
-                r.Height - (btn.Padding.Bottom + btn.Padding.Top));
-
-            if (btn.Image != null)
-            {
-                int iconSize = (int)(btn.Height * 0.6f);
-                int iconX = (int)contentRect.X;
-                int iconY = (int)(contentRect.Y + (contentRect.Height - iconSize) / 2);
-
-                if (btn.TextImageRelation == TextImageRelation.ImageBeforeText)
-                {
-                    g.DrawImage(btn.Image, new Rectangle(iconX, iconY, iconSize, iconSize));
-                    contentRect.X += iconSize + 4;
-                    contentRect.Width -= iconSize + 4;
-                }
-                else if (btn.TextImageRelation == TextImageRelation.Overlay || btn.TextAlign == ContentAlignment.MiddleCenter)
-                {
-                    g.DrawImage(btn.Image, new Rectangle((int)(r.X + (r.Width - iconSize)/2), iconY, iconSize, iconSize));
-                }
-            }
-
             TextFormatFlags flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
             if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
                 flags |= TextFormatFlags.RightToLeft;
 
-            Rectangle textRect = Rectangle.Round(contentRect);
-            TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor, flags);
+            TextRenderer.DrawText(g, btn.Text, btn.Font, Rectangle.Round(r), btn.ForeColor, flags);
         }
 
         private static void Btn_PaintRounded(object sender, PaintEventArgs e)
@@ -666,20 +545,15 @@ namespace GenericInventorySystem
              DrawRoundedButton(sender as Button, e.Graphics);
         }
 
-        private static System.Drawing.Drawing2D.GraphicsPath GetRoundedPath(Rectangle rect, int radius)
+        private static GraphicsPath GetRoundedPath(Rectangle rect, int radius)
         {
-            var path = new System.Drawing.Drawing2D.GraphicsPath();
-            // Offset for border drawing if needed suitable for filling
-            // For buttons, we want exact fill.
-            
+            var path = new GraphicsPath();
             int d = radius * 2;
-            Rectangle r = new Rectangle(rect.X, rect.Y, rect.Width, rect.Height); // Full Size
+            Rectangle r = new Rectangle(rect.X, rect.Y, rect.Width, rect.Height); 
+            if (d > r.Width) d = r.Width;
+            if (d > r.Height) d = r.Height;
+            if (d <= 0) d = 1;
 
-            // To prevent cut-off at edges, we might start a bit inside, 
-            // but for a button, we typically want full paint.
-            // However, GraphicsPath adding arcs needs care with right/bottom edges.
-            // Correct logic for exact sizing:
-            
             path.AddArc(r.X, r.Y, d, d, 180, 90);
             path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
             path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
@@ -703,7 +577,6 @@ namespace GenericInventorySystem
             btn.Cursor = Cursors.Hand;
             btn.TextAlign = ContentAlignment.MiddleCenter;
             
-            // Hover Effects
             btn.MouseEnter += (s, e) => btn.BackColor = DangerColorBright;
             btn.MouseLeave += (s, e) => btn.BackColor = DangerColor;
 
@@ -715,13 +588,12 @@ namespace GenericInventorySystem
         {
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
-            btn.BackColor = Color.FromArgb(230, 230, 240); // Light Gray
+            btn.BackColor = Color.FromArgb(230, 230, 240); 
             btn.ForeColor = TextColorDark;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
             btn.TextAlign = ContentAlignment.MiddleCenter;
             
-            // Hover Effects
             btn.MouseEnter += (s, e) => btn.BackColor = SecondaryHoverColor;
             btn.MouseLeave += (s, e) => btn.BackColor = Color.FromArgb(230, 230, 240);
 
@@ -737,32 +609,25 @@ namespace GenericInventorySystem
             grid.EnableHeadersVisualStyles = false;
             grid.GridColor = Color.FromArgb(230, 230, 230);
             
-            // Header
-            // Header
-            grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252); // Light Gray #F8FAFC
-            grid.ColumnHeadersDefaultCellStyle.ForeColor = TextColorDark; // Navy Dark to match project
-            grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = SelectionBackColor; // Light Gray-Blue to match app selections
+            grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
+            grid.ColumnHeadersDefaultCellStyle.ForeColor = TextColorDark; 
+            grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = SelectionBackColor;
             grid.ColumnHeadersDefaultCellStyle.SelectionForeColor = TextColorDark; 
-            grid.ColumnHeadersDefaultCellStyle.Font = SmallBoldFont; // Reduced size
-            grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None; // Cleaner
-            grid.ColumnHeadersHeight = 45; // Slightly reduced height
+            grid.ColumnHeadersDefaultCellStyle.Font = SmallBoldFont; 
+            grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None; 
+            grid.ColumnHeadersHeight = 45; 
             grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
-            // Rows
             grid.DefaultCellStyle.BackColor = SurfaceColor;
             grid.DefaultCellStyle.ForeColor = TextColorDark;
             grid.DefaultCellStyle.Font = StandardFont; 
             grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             
-            // Modern Selection: Light Blue background with Dark Text (Like Horizon/Tailwind tables)
-            grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(237, 242, 247); // Light Gray-Blue
+            grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(237, 242, 247);
             grid.DefaultCellStyle.SelectionForeColor = TextColorDark;
+            grid.Padding = new Padding(12, 5, 5, 5); 
             
-            grid.Padding = new Padding(12, 5, 5, 5); // More breathing room
-            
-            // Prevent Checkbox Columns from sorting (which wipes unbound states)
-            // And ensure they are perfectly centered
             foreach (DataGridViewColumn col in grid.Columns)
             {
                 if (col is DataGridViewCheckBoxColumn)
@@ -783,16 +648,15 @@ namespace GenericInventorySystem
             };
 
             grid.RowHeadersVisible = false;
-            grid.RowTemplate.Height = 60; // Standardized taller rows
-            grid.AlternatingRowsDefaultCellStyle.BackColor = Color.White; // Clean look
+            grid.RowTemplate.Height = 60; 
+            grid.AlternatingRowsDefaultCellStyle.BackColor = Color.White; 
             
             grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             grid.AllowUserToResizeRows = false;
             grid.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
-            grid.GridColor = Color.FromArgb(240, 240, 240); // Very subtle lines
+            grid.GridColor = Color.FromArgb(240, 240, 240);
 
-            // Universal Checkbox "Select Row" Functionality
             grid.CurrentCellDirtyStateChanged += (s, e) =>
             {
                 if (grid.IsCurrentCellDirty && grid.CurrentCell is DataGridViewCheckBoxCell)
@@ -800,104 +664,44 @@ namespace GenericInventorySystem
                     grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
                 }
             };
+        }
 
-            grid.CellClick += (s, e) =>
+        public static CheckBox ApplyHeaderCheckBox(DataGridView grid, string checkBoxColumnName = "colSelect")
+        {
+            if (grid == null) return null;
+
+            CheckBox headerCheckBox = new CheckBox 
+            { 
+                Size = new Size(15, 15), 
+                BackColor = Color.Transparent, 
+                Cursor = Cursors.Hand 
+            };
+
+            headerCheckBox.CheckedChanged += (s, e) =>
             {
-                if (e.RowIndex >= 0 && e.ColumnIndex >= 0 && grid.Columns.Contains("colCheck"))
+                grid.EndEdit();
+                foreach (DataGridViewRow row in grid.Rows)
                 {
-                    // Ignore clicks on action columns
-                    if (grid.Columns[e.ColumnIndex].Name == "colActions") return;
-                    
-                    // If they clicked directly on the checkbox column, let native behavior handle it but commit immediately
-                    if (grid.Columns[e.ColumnIndex].Name == "colCheck")
-                    {
-                         grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
-                    }
-                    else
-                    {
-                        // Clicked somewhere else on the row, manually toggle the checkbox
-                        var cell = grid.Rows[e.RowIndex].Cells["colCheck"] as DataGridViewCheckBoxCell;
-                        if (cell != null && !cell.ReadOnly)
-                        {
-                            bool currentVal = Convert.ToBoolean(cell.Value ?? false);
-                            cell.Value = !currentVal;
-                            grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
-                            grid.InvalidateCell(cell);
-                        }
-                    }
+                    if (grid.Columns.Contains(checkBoxColumnName))
+                        row.Cells[checkBoxColumnName].Value = headerCheckBox.Checked;
                 }
             };
 
-            grid.ColumnHeaderMouseClick += (s, e) =>
-            {
-                if (e.ColumnIndex >= 0 && grid.Columns[e.ColumnIndex].Name == "colCheck")
-                {
-                    grid.EndEdit();
-                    if (grid.Rows.Count > 0)
-                    {
-                        bool allChecked = true;
-                        foreach (DataGridViewRow row in grid.Rows)
-                        {
-                            var cell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
-                            if (cell == null || !Convert.ToBoolean(cell.Value ?? false))
-                            {
-                                allChecked = false;
-                                break;
-                            }
-                        }
-                        
-                        bool newState = !allChecked;
-                        foreach (DataGridViewRow row in grid.Rows)
-                        {
-                            var cell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
-                            if (cell != null && !cell.ReadOnly)
-                            {
-                                cell.Value = newState;
-                            }
-                        }
-                        grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
-                        grid.Refresh();
-                    }
-                }
-            };
-            
-            grid.Visible = true;
-
-            // Custom Button Painting for any Button columns to ensure modern look
             grid.CellPainting += (s, e) =>
             {
-                if (e.RowIndex < 0 || e.ColumnIndex < 0 || e.Handled) return;
-                
-                if (grid.Columns[e.ColumnIndex] is DataGridViewButtonColumn)
+                if (e.RowIndex == -1 && grid.Columns.Contains(checkBoxColumnName) && e.ColumnIndex == grid.Columns[checkBoxColumnName].Index)
                 {
-                    string text = e.FormattedValue?.ToString();
-                    if (string.IsNullOrEmpty(text)) return; // Don't draw giant blue blocks for empty buttons
-
-                    // Paint background correctly based on selection state
-                    bool isSelected = (e.State & DataGridViewElementStates.Selected) != 0;
-                    Color bgColor = isSelected ? grid.DefaultCellStyle.SelectionBackColor : e.CellStyle.BackColor;
-                    
-                    using (var bgBrush = new SolidBrush(bgColor))
-                        e.Graphics.FillRectangle(bgBrush, e.CellBounds);
-
-                    // Paint borders
-                    e.Paint(e.CellBounds, DataGridViewPaintParts.Border);
-
-                    var rect = e.CellBounds;
-                    rect.Inflate(-6, -6);
-                    
-                    using (var path = GetRoundedPath(rect, 8))
-                    using (var brush = new SolidBrush(PrimaryColor))
-                    {
-                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                        e.Graphics.FillPath(brush, path);
-                        
-                        TextRenderer.DrawText(e.Graphics, text, SmallBoldFont, rect, Color.White, 
-                            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
-                    }
+                    e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
+                    headerCheckBox.Location = new Point(
+                        e.CellBounds.X + (e.CellBounds.Width - headerCheckBox.Width) / 2, 
+                        e.CellBounds.Y + (e.CellBounds.Height - headerCheckBox.Height) / 2
+                    );
                     e.Handled = true;
                 }
             };
+
+            grid.Controls.Add(headerCheckBox);
+            return headerCheckBox;
         }
 
         public static Image TintImage(Image source, Color tintColor)
@@ -926,28 +730,22 @@ namespace GenericInventorySystem
              btn.FlatStyle = FlatStyle.Flat;
              btn.FlatAppearance.BorderSize = 0;
              btn.BackColor = isActive ? ActiveBackColor : Color.Transparent; 
-             btn.ForeColor = isActive ? PrimaryColor : Color.FromArgb(31, 41, 55); // Darker gray for inactive
+             btn.ForeColor = isActive ? PrimaryColor : Color.FromArgb(31, 41, 55); 
              btn.Font = new Font("Segoe UI", 10F, isActive ? FontStyle.Bold : FontStyle.Regular);
              btn.Cursor = Cursors.Hand;
              btn.TextAlign = ContentAlignment.MiddleLeft;
              
-             // Hover and Click Effects
-             btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(244, 247, 254); // Match app background
+             btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(244, 247, 254);
              btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(230, 235, 245);
-             btn.FlatStyle = FlatStyle.Flat;
-             btn.FlatAppearance.BorderSize = 0;
-             
-             // Remove gradient usage if previously attached
-             // btn.Paint -= Btn_PaintGradient; // Method deleted
         }
 
         public static void ApplySidebarButtonIcon(Button btn, Image icon, bool isActive)
         {
             ApplySidebarButton(btn, isActive);
             btn.Image = icon;
-            btn.ImageAlign = ContentAlignment.MiddleLeft; // Default for LTR
+            btn.ImageAlign = ContentAlignment.MiddleLeft;
             btn.TextImageRelation = TextImageRelation.ImageBeforeText;
-            btn.Padding = new Padding(12, 0, 0, 0); // Standard padding for icon
+            btn.Padding = new Padding(12, 0, 0, 0);
         }
 
         public static Image GetNuricon(string name)
@@ -955,28 +753,17 @@ namespace GenericInventorySystem
             try
             {
                 string filename = $"nuricon_{name}.png";
-                
-                // 1. Try StartupPath/Assets (Standard)
                 string path = System.IO.Path.Combine(Application.StartupPath, "Assets", filename);
                 Image img = null;
                 if (System.IO.File.Exists(path)) img = Image.FromFile(path);
 
-                // 2. Try StartupPath (Flat)
-                if (img == null)
-                {
-                    path = System.IO.Path.Combine(Application.StartupPath, filename);
-                    if (System.IO.File.Exists(path)) img = Image.FromFile(path);
-                }
-
-                // 3. Try climbing up for Dev Environment (bin/Debug/netX.X -> Assets)
                 if (img == null)
                 {
                     string currentDir = Application.StartupPath;
-                    for (int i = 0; i < 4; i++) // Up to 4 levels
+                    for (int i = 0; i < 4; i++)
                     {
                         string checkPath = System.IO.Path.Combine(currentDir, "Assets", filename);
                         if (System.IO.File.Exists(checkPath)) { img = Image.FromFile(checkPath); break; }
-                        
                         var parent = System.IO.Directory.GetParent(currentDir);
                         if (parent == null) break;
                         currentDir = parent.FullName;
@@ -985,20 +772,13 @@ namespace GenericInventorySystem
 
                 if (img != null)
                 {
-                    // Ensure transparency even if generated with white background
                     Bitmap bmp = new Bitmap(img);
                     bmp.MakeTransparent(Color.White);
                     return bmp;
                 }
-
-                // 4. Fallback: Procedural generation if file missing
                 return GenerateNuriconFallback(name);
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to load Nuricon '{name}': {ex.Message}");
-                return GenerateNuriconFallback(name); // Try fallback even on error
-            }
+            catch { return GenerateNuriconFallback(name); }
         }
 
         private static Image GenerateNuriconFallback(string name)
@@ -1008,7 +788,7 @@ namespace GenericInventorySystem
                 Bitmap bmp = new Bitmap(64, 64);
                 using (Graphics g = Graphics.FromImage(bmp))
                 {
-                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
                     g.Clear(Color.Transparent);
 
                     // Default Gradient (Blue to Purple)
@@ -1027,21 +807,22 @@ namespace GenericInventorySystem
                     else if (name == "check" || name == "success") { c1 = Color.FromArgb(16, 185, 129); c2 = Color.FromArgb(52, 211, 153); }
                     else if (name == "add" || name == "plus") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(147, 51, 234); }
                     else if (name == "pos") { c1 = Color.FromArgb(5, 205, 153); c2 = Color.FromArgb(20, 184, 166); }
-                    else if (name == "inventory") { c1 = Color.FromArgb(99, 102, 241); c2 = Color.FromArgb(168, 85, 247); } // Indigo to Purple
-                    else if (name == "customers") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(37, 99, 235); } // Blue to Dark Blue
-                    else if (name == "suppliers") { c1 = Color.FromArgb(20, 184, 166); c2 = Color.FromArgb(5, 150, 105); } // Teal to Green
-                    else if (name == "reports") { c1 = Color.FromArgb(16, 185, 129); c2 = Color.FromArgb(5, 150, 105); } // Emerald
-                    else if (name == "history" || name == "expenses") { c1 = Color.FromArgb(244, 63, 94); c2 = Color.FromArgb(225, 29, 72); } // Rose to Crimson
-                    else if (name == "quotations") { c1 = Color.FromArgb(14, 165, 233); c2 = Color.FromArgb(2, 132, 199); } // Sky Blue
-                    else if (name == "currencies") { c1 = Color.FromArgb(245, 158, 11); c2 = Color.FromArgb(217, 119, 6); } // Amber to Orange
-                    else if (name == "user") { c1 = Color.FromArgb(79, 70, 229); c2 = Color.FromArgb(67, 56, 202); } // Indigo
+                    else if (name == "inventory") { c1 = Color.FromArgb(99, 102, 241); c2 = Color.FromArgb(168, 85, 247); }
+                    else if (name == "customers") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(37, 99, 235); }
+                    else if (name == "suppliers") { c1 = Color.FromArgb(20, 184, 166); c2 = Color.FromArgb(5, 150, 105); }
+                    else if (name == "reports") { c1 = Color.FromArgb(16, 185, 129); c2 = Color.FromArgb(5, 150, 105); }
+                    else if (name == "history" || name == "expenses") { c1 = Color.FromArgb(244, 63, 94); c2 = Color.FromArgb(225, 29, 72); }
+                    else if (name == "quotations") { c1 = Color.FromArgb(14, 165, 233); c2 = Color.FromArgb(2, 132, 199); }
+                    else if (name == "currencies") { c1 = Color.FromArgb(245, 158, 11); c2 = Color.FromArgb(217, 119, 6); }
+                    else if (name == "user") { c1 = Color.FromArgb(79, 70, 229); c2 = Color.FromArgb(67, 56, 202); }
+                    else if (name == "barcode") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(139, 92, 246); }
 
-                    using (var brush = new System.Drawing.Drawing2D.LinearGradientBrush(new Rectangle(8, 8, 48, 48), c1, c2, 45f))
+                    using (var brush = new LinearGradientBrush(new Rectangle(8, 8, 48, 48), c1, c2, 45f))
                     {
                         if (name == "search")
                         {
                             g.DrawEllipse(new Pen(brush, 6), 12, 12, 28, 28);
-                            g.DrawLine(new Pen(brush, 8) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round }, 36, 36, 52, 52);
+                            g.DrawLine(new Pen(brush, 8) { StartCap = LineCap.Round, EndCap = LineCap.Round }, 36, 36, 52, 52);
                         }
                         else if (name == "import")
                         {
@@ -1057,34 +838,14 @@ namespace GenericInventorySystem
                         {
                             g.FillPolygon(brush, new Point[] { new Point(8, 8), new Point(56, 8), new Point(36, 34), new Point(36, 56), new Point(28, 56), new Point(28, 34) });
                         }
-                        else if (name == "view")
-                        {
-                            // Eye shape
-                            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                            g.DrawArc(new Pen(brush, 5), 10, 15, 44, 34, 0, -180); // Bottom arc
-                            g.DrawArc(new Pen(brush, 5), 10, 15, 44, 34, 0, 180);  // Top arc
-                            g.FillEllipse(brush, 24, 24, 16, 16); // Pupil
-                        }
-                        else if (name == "currency")
-                        {
-                            // Dollar sign ($)
-                            using (Font f = new Font("Segoe UI", 32, FontStyle.Bold))
-                            {
-                                StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                                g.DrawString("$", f, brush, new Rectangle(0, 0, 64, 64), sf);
-                            }
-                        }
                         else if (name == "orders")
                         {
                             Rectangle r = new Rectangle(0, 0, 64, 64);
-                            using (var bgBrush = new System.Drawing.Drawing2D.LinearGradientBrush(r, c1, c2, 45f))
-                            {
+                            using (var bgBrush = new LinearGradientBrush(r, c1, c2, 45f))
                                 g.FillEllipse(bgBrush, new Rectangle(2, 2, 60, 60));
-                            }
                             using (var whiteBrush = new SolidBrush(Color.White))
-                            using (var whitePen = new Pen(Color.White, 4) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
+                            using (var whitePen = new Pen(Color.White, 4) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                             {
-                                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                                 g.DrawLine(whitePen, 16, 20, 24, 20);
                                 g.DrawLine(whitePen, 24, 20, 30, 42);
                                 g.DrawLine(whitePen, 30, 42, 48, 42);
@@ -1094,95 +855,23 @@ namespace GenericInventorySystem
                                 g.FillEllipse(whiteBrush, 44, 46, 6, 6);
                             }
                         }
-                        else if (name == "revenue" || name == "sales")
+                        else if (name == "barcode")
                         {
-                            Rectangle r = new Rectangle(0, 0, 64, 64);
-                            using (var bgBrush = new System.Drawing.Drawing2D.LinearGradientBrush(r, c1, c2, 45f))
-                            {
-                                g.FillEllipse(bgBrush, new Rectangle(2, 2, 60, 60));
-                            }
-                            using (var whiteBrush = new SolidBrush(Color.White))
-                            using (Font f = new Font("Segoe UI", 28, FontStyle.Bold))
-                            {
-                                StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                                g.DrawString("$", f, whiteBrush, new Rectangle(0, 0, 64, 64), sf);
-                            }
-                        }
-                        else if (name == "part")
-                        {
-                            // A modern box/cube shape for parts
-                            using (var pen = new Pen(brush, 4) { LineJoin = System.Drawing.Drawing2D.LineJoin.Round })
-                            {
-                                // Hexagon/Cube outline
-                                Point[] points = new Point[] { 
-                                    new Point(32, 10), new Point(54, 22), new Point(54, 46), 
-                                    new Point(32, 58), new Point(10, 46), new Point(10, 22) 
-                                };
-                                g.DrawPolygon(pen, points);
-                                // Inner lines for cube effect
-                                g.DrawLine(pen, 32, 10, 32, 34);
-                                g.DrawLine(pen, 32, 34, 10, 22);
-                                g.DrawLine(pen, 32, 34, 54, 22);
-                                g.DrawLine(pen, 32, 34, 32, 58);
-                            }
-                        }
-                        else if (name == "warning")
-                        {
-                            g.FillPolygon(brush, new Point[] { new Point(32, 10), new Point(10, 50), new Point(54, 50) });
+                            g.FillEllipse(brush, 8, 8, 48, 48);
                             using (var whiteBrush = new SolidBrush(Color.White))
                             {
-                                g.FillRectangle(whiteBrush, 29, 24, 6, 14);
-                                g.FillEllipse(whiteBrush, 29, 42, 6, 6);
-                            }
-                        }
-                        else if (name == "info")
-                        {
-                            g.FillEllipse(brush, 10, 10, 44, 44);
-                            using (var whiteBrush = new SolidBrush(Color.White))
-                            {
-                                g.FillRectangle(whiteBrush, 29, 28, 6, 14);
-                                g.FillEllipse(whiteBrush, 29, 18, 6, 6);
-                            }
-                        }
-                        else if (name == "check" || name == "success")
-                        {
-                            g.FillEllipse(brush, 10, 10, 44, 44);
-                             using (var whitePen = new Pen(Color.White, 6) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round, LineJoin = System.Drawing.Drawing2D.LineJoin.Round })
-                             {
-                                 g.DrawLines(whitePen, new Point[] { new Point(20, 32), new Point(28, 40), new Point(44, 24) });
-                             }
-                        }
-                        else if (name == "add" || name == "plus")
-                        {
-                            using (var whitePen = new Pen(Color.White, 8) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
-                            {
-                                g.DrawLine(whitePen, 32, 16, 32, 48);
-                                g.DrawLine(whitePen, 16, 32, 48, 32);
-                            }
-                        }
-                        else if (name == "remove" || name == "delete" || name == "minus")
-                        {
-                            using (var whitePen = new Pen(Color.White, 8) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
-                            {
-                                g.DrawLine(whitePen, 16, 32, 48, 32);
-                            }
-                        }
-                        else if (name == "pos")
-                        {
-                            g.FillEllipse(brush, 10, 10, 44, 44);
-                            using (var whiteBrush = new SolidBrush(Color.White))
-                            {
-                                // Simple cash register / screen shape
-                                g.FillRectangle(whiteBrush, 20, 22, 24, 16); // Screen
-                                g.FillRectangle(whiteBrush, 18, 38, 28, 4);  // Base
+                                g.FillRectangle(whiteBrush, 14, 20, 4, 24); 
+                                g.FillRectangle(whiteBrush, 22, 20, 2, 24); 
+                                g.FillRectangle(whiteBrush, 28, 20, 6, 24); 
+                                g.FillRectangle(whiteBrush, 38, 20, 2, 24); 
+                                g.FillRectangle(whiteBrush, 44, 20, 4, 24); 
                             }
                         }
                         else if (name == "inventory")
                         {
                             g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whitePen = new Pen(Color.White, 3) { LineJoin = System.Drawing.Drawing2D.LineJoin.Round })
+                            using (var whitePen = new Pen(Color.White, 3) { LineJoin = LineJoin.Round })
                             {
-                                // Modern Box/Cube in white
                                 Point[] p = { new Point(32, 18), new Point(48, 26), new Point(48, 42), new Point(32, 50), new Point(16, 42), new Point(16, 26) };
                                 g.DrawPolygon(whitePen, p);
                                 g.DrawLine(whitePen, 32, 18, 32, 34);
@@ -1196,8 +885,8 @@ namespace GenericInventorySystem
                             g.FillEllipse(brush, 8, 8, 48, 48);
                             using (var whiteBrush = new SolidBrush(Color.White))
                             {
-                                g.FillEllipse(whiteBrush, 24, 18, 16, 16); // Head
-                                g.FillPie(whiteBrush, 16, 34, 32, 32, 180, 180); // Shoulders
+                                g.FillEllipse(whiteBrush, 24, 18, 16, 16); 
+                                g.FillPie(whiteBrush, 16, 34, 32, 32, 180, 180); 
                             }
                         }
                         else if (name == "suppliers")
@@ -1205,131 +894,66 @@ namespace GenericInventorySystem
                             g.FillEllipse(brush, 8, 8, 48, 48);
                             using (var whiteBrush = new SolidBrush(Color.White))
                             {
-                                g.FillRectangle(whiteBrush, 16, 26, 24, 16); // Truck body
-                                g.FillRectangle(whiteBrush, 40, 32, 8, 10);  // Truck head
-                                g.FillEllipse(whiteBrush, 20, 42, 6, 6);     // Wheel 1
-                                g.FillEllipse(whiteBrush, 36, 42, 6, 6);     // Wheel 2
+                                g.FillRectangle(whiteBrush, 16, 26, 24, 16); 
+                                g.FillRectangle(whiteBrush, 40, 32, 8, 10);  
+                                g.FillEllipse(whiteBrush, 20, 42, 6, 6);     
+                                g.FillEllipse(whiteBrush, 36, 42, 6, 6);     
                             }
                         }
-                        else if (name == "reports")
+                        else if (name == "expenses" || name == "history")
                         {
                             g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whiteBrush = new SolidBrush(Color.White))
-                            {
-                                g.FillRectangle(whiteBrush, 18, 38, 8, 12); // Bar 1
-                                g.FillRectangle(whiteBrush, 28, 28, 8, 22); // Bar 2
-                                g.FillRectangle(whiteBrush, 38, 18, 8, 32); // Bar 3
-                            }
-                        }
-                        else if (name == "history")
-                        {
-                            g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whitePen = new Pen(Color.White, 4) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
+                            using (var whitePen = new Pen(Color.White, 4) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                             {
                                 g.DrawArc(whitePen, 18, 18, 28, 28, 45, 270);
                                 g.DrawLine(whitePen, 32, 22, 32, 32);
                                 g.DrawLine(whitePen, 32, 32, 40, 32);
                             }
                         }
-                        else if (name == "quotations")
+                        else if (name == "add" || name == "plus")
                         {
-                            g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whiteBrush = new SolidBrush(Color.White))
+                            using (var whitePen = new Pen(Color.White, 8) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                             {
-                                g.FillRectangle(whiteBrush, 20, 18, 24, 28); // Paper
-                                g.FillRectangle(new SolidBrush(c1), 24, 24, 16, 2); // Line 1
-                                g.FillRectangle(new SolidBrush(c1), 24, 30, 16, 2); // Line 2
+                                g.DrawLine(whitePen, 32, 16, 32, 48);
+                                g.DrawLine(whitePen, 16, 32, 48, 32);
                             }
                         }
-                        else if (name == "help" || name == "contact_us")
+                        else if (name == "remove" || name == "delete" || name == "minus")
                         {
-                            g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whiteBrush = new SolidBrush(Color.White))
-                            using (Font f = new Font("Segoe UI", 28, FontStyle.Bold))
+                            using (var whitePen = new Pen(Color.White, 8) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                             {
-                                StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                                string text = name == "help" ? "?" : "@";
-                                g.DrawString(text, f, whiteBrush, new Rectangle(0, 0, 64, 64), sf);
-                            }
-                        }
-                        else if (name == "logout")
-                        {
-                            g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whitePen = new Pen(Color.White, 4) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
-                            {
-                                g.DrawArc(whitePen, 16, 16, 32, 32, -45, 270);
-                                g.DrawLine(whitePen, 32, 16, 48, 16); // Arrow line (conceptual)
-                                g.DrawLine(whitePen, 32, 16, 32, 32); 
-                            }
-                        }
-                        else if (name == "currencies" || name == "expenses")
-                        {
-                            g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whiteBrush = new SolidBrush(Color.White))
-                            using (Font f = new Font("Segoe UI", 24, FontStyle.Bold))
-                            {
-                                StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                                g.DrawString("$", f, whiteBrush, new Rectangle(0, 0, 64, 64), sf);
+                                g.DrawLine(whitePen, 16, 32, 48, 32);
                             }
                         }
                         else
                         {
-                            // Basic Box for others
-                            using (var path = GetRoundedPath(new Rectangle(12, 12, 40, 40), 10))
-                                g.FillPath(brush, path);
+                            g.FillEllipse(brush, 8, 8, 48, 48);
                         }
                     }
                 }
                 return bmp;
             } catch { return null; }
         }
+
         public static void ApplyFormIcon(Form form)
         {
             try
             {
-                string iconPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_icon.ico");
-                if (System.IO.File.Exists(iconPath))
-                {
-                    form.Icon = new Icon(iconPath);
-                }
+                string iconPath = Path.Combine(Application.StartupPath, "Assets", "inventory_icon.ico");
+                if (File.Exists(iconPath)) form.Icon = new Icon(iconPath);
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to apply form icon: {ex.Message}");
-            }
+            catch { }
         }
-        /// <summary>
-        /// Creates a styled (Panel + ComboBox) currency selector that matches the app's
-        /// search-bar aesthetic: rounded border, Segoe UI font, theme background.
-        /// Returns a tuple(panel, comboBox) — add the Panel to the container.
-        /// </summary>
+
         public static (Panel panel, ComboBox combo) CreateStyledCurrencySelector(int width = 140, int height = 36)
         {
-            ComboBox cbo = new ComboBox
-            {
-                DropDownStyle    = ComboBoxStyle.DropDownList,
-                Font             = StandardFont,
-                ForeColor        = TextColorDark,
-                BackColor        = SurfaceColor,
-                FlatStyle        = FlatStyle.Flat,
-                Dock             = DockStyle.Fill,
-                Margin           = new System.Windows.Forms.Padding(6, 0, 6, 0)
-            };
-            // Remove default border by placing inside a painted panel
-            Panel wrapper = new Panel
-            {
-                Size      = new System.Drawing.Size(width, height),
-                BackColor = SurfaceColor,
-                Padding   = new System.Windows.Forms.Padding(4, 4, 4, 0)
-            };
-            wrapper.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedPath(new System.Drawing.Rectangle(0, 0, wrapper.Width - 1, wrapper.Height - 1), 8))
-                using (var pen  = new System.Drawing.Pen(BorderColor, 1.5f))
-                using (var bg   = new System.Drawing.SolidBrush(SurfaceColor))
+            ComboBox cbo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Font = StandardFont, ForeColor = TextColorDark, BackColor = SurfaceColor, FlatStyle = FlatStyle.Flat, Dock = DockStyle.Fill };
+            Panel wrapper = new Panel { Size = new Size(width, height), BackColor = SurfaceColor, Padding = new Padding(4, 4, 4, 0) };
+            wrapper.Paint += (s, e) => {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = GetRoundedPath(new Rectangle(0, 0, wrapper.Width - 1, wrapper.Height - 1), 8))
+                using (var pen = new Pen(BorderColor, 1.5f))
                 {
-                    e.Graphics.FillPath(bg, path);
                     e.Graphics.DrawPath(pen, path);
                 }
             };
@@ -1339,104 +963,47 @@ namespace GenericInventorySystem
 
         public static Panel CreateCardPanel(Control inner)
         {
-            // The outer panel acts as the background container to avoid "white corners"
-            Panel p = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0) };
-            
-            // The actual card panel that draws the rounded background
+            Panel p = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
             Panel card = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(5) };
-            
-            card.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-                
-                // 1. Fill the entire area with PARENT background first to solve white corners
+            card.Paint += (s, e) => {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 Color parentColor = GetParentColor(card);
                 using (var bgBrush = new SolidBrush(parentColor))
                     e.Graphics.FillRectangle(bgBrush, -1, -1, card.Width + 2, card.Height + 2);
-
-                // 2. Draw Rounded Card with SurfaceColor
                 Rectangle rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
                 using (var cardBrush = new SolidBrush(SurfaceColor))
                 using (var path = GetRoundedPath(rect, 15))
                 {
                     e.Graphics.FillPath(cardBrush, path);
-                    
-                    // Subtle border to define the card
-                    using (var pen = new Pen(BorderColor, 1f))
-                        e.Graphics.DrawPath(pen, path);
+                    using (var pen = new Pen(BorderColor, 1f)) e.Graphics.DrawPath(pen, path);
                 }
             };
-
-            // To ensure the inner content doesn't cover the rounded corners, 
-            // we use a nested container or specific margins.
-            // But usually, the Grid inside looks fine if the card panel has some padding.
             card.Controls.Add(inner);
             inner.Dock = DockStyle.Fill;
-
             p.Controls.Add(card);
             return p;
         }
-
 
         public static void ApplyModernMenuTheme(ContextMenuStrip menu)
         {
             menu.Renderer = new ModernNotificationRenderer();
             menu.BackColor = SurfaceColor;
-            menu.ShowImageMargin = true;
-            menu.ShowCheckMargin = false;
-            menu.DropShadowEnabled = true;
         }
     }
 
     public class ModernNotificationRenderer : ToolStripProfessionalRenderer
     {
         public ModernNotificationRenderer() : base(new ModernColorTable()) { }
-
         protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
         {
             if (e.Item.Selected)
             {
                 Rectangle rc = new Rectangle(4, 2, e.Item.Width - 8, e.Item.Height - 4);
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 using(var path = ThemeConfig.GetRoundedPathPublic(rc, 8))
                 using(var brush = new SolidBrush(ThemeConfig.ActiveBackColor))
                     e.Graphics.FillPath(brush, path);
             }
-        }
-
-        protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
-        {
-            e.TextColor = ThemeConfig.TextColorDark;
-            e.TextFont = ThemeConfig.StandardFont;
-            
-            // If it's a ToolStripMenuItem and has a tag, we might want to emphasize title
-            base.OnRenderItemText(e);
-        }
-
-        protected override void OnRenderItemImage(ToolStripItemImageRenderEventArgs e)
-        {
-            Rectangle rc = e.ImageRectangle;
-            e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            e.Graphics.DrawImage(e.Image, rc);
-        }
-        
-        protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
-        {
-            Rectangle rc = new Rectangle(15, e.Item.Height / 2, e.Item.Width - 30, 1);
-            using(var pen = new Pen(ThemeConfig.BorderColor))
-                e.Graphics.DrawLine(pen, rc.Left, rc.Top, rc.Right, rc.Top);
-        }
-
-        protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
-        {
-             // Draw a subtle rounded border for the whole menu if possible, 
-             // but ContextMenuStrip is a top-level window. 
-             // We just draw a standard thin border.
-             using(var pen = new Pen(ThemeConfig.BorderColor))
-             {
-                 e.Graphics.DrawRectangle(pen, 0, 0, e.ToolStrip.Width - 1, e.ToolStrip.Height - 1);
-             }
         }
     }
 
@@ -1447,4 +1014,3 @@ namespace GenericInventorySystem
         public override Color ToolStripDropDownBackground => Color.White;
     }
 }
-

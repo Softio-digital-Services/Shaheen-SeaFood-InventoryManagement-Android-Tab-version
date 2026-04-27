@@ -478,7 +478,8 @@ namespace GenericInventorySystem.Forms
                     }
                     else 
                     { 
-                        MessageHelper.ShowWarning(LocalizationManager.GetString("POS_ProductNotFound") ?? $"Item not found for barcode: {barcode}"); 
+                        string notFoundMsg = LocalizationManager.GetString("POS_ProductNotFound") ?? $"Item not found for barcode: {barcode}";
+                        MessageHelper.ShowInfo(notFoundMsg); // Use Info (non-blocking notification) instead of Warning (modal)
                     }
 
                     return true; // Suppress Enter key so it doesn't click focused buttons

@@ -283,6 +283,7 @@ namespace GenericInventorySystem.Forms
             
             // Apply Theme LAST to ensure header styles override defaults
             ThemeConfig.ApplyGridTheme(dgvParts);
+            ThemeConfig.ApplyHeaderCheckBox(dgvParts, "colCheck");
 
             ((System.ComponentModel.ISupportInitialize)(this.dgvParts)).EndInit();
             this.ResumeLayout(false);
