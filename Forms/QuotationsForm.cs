@@ -80,10 +80,10 @@ namespace GenericInventorySystem.Forms
             pnlActions.Controls.Add(txtSearch);
 
             // Currency selector (aligned right)
-            ComboBox cboCurrency = new ComboBox();
-            ThemeConfig.ApplyComboBoxStyle(cboCurrency);
-            Panel currPanel = ThemeConfig.WrapInStyledInput(cboCurrency, 36); currPanel.Width = 110;
-            currPanel.Dock = DockStyle.Right;
+            ModernComboBox cboCurrency = new ModernComboBox();
+            cboCurrency.ShowLabel = false;
+            cboCurrency.Size = new Size(120, 40);
+            cboCurrency.Dock = DockStyle.Right;
             
             foreach (var c in CurrencyService.SupportedCurrencies)
                 cboCurrency.Items.Add(c);
@@ -93,12 +93,12 @@ namespace GenericInventorySystem.Forms
                 if (item is CurrencyInfo ci && ci.Code == CurrencyService.ActiveCurrency)
                 { cboCurrency.SelectedItem = item; break; }
             
-            cboCurrency.SelectedIndexChanged += (s, e) =>
+            cboCurrency.InnerComboBox.SelectedIndexChanged += (s, e) =>
             {
                 if (cboCurrency.SelectedItem is CurrencyInfo sel)
                     CurrencyService.ActiveCurrency = sel.Code;
             };
-            pnlActions.Controls.Add(currPanel);
+            pnlActions.Controls.Add(cboCurrency);
             tlp.Controls.Add(pnlActions, 0, 1);
 
 

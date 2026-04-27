@@ -164,14 +164,16 @@ namespace GenericInventorySystem.Forms
             txtSearch.TextChanged += (s, e) => ApplyFilter();
             pnlActions.Controls.Add(txtSearch);
 
+            Panel pnlRefreshWrapper = new Panel { Dock = DockStyle.Right, Width = 140, Padding = new Padding(5, 5, 0, 15) };
             Button btnRefresh = new Button();
             btnRefresh.Name = "btnRefresh";
             btnRefresh.Text = "Refresh";
-            btnRefresh.Size = new Size(120, 40);
-            btnRefresh.Dock = DockStyle.Right;
+            btnRefresh.Dock = DockStyle.Fill;
             ThemeConfig.ApplySecondaryButton(btnRefresh);
+            btnRefresh.Paint += (s, e) => ThemeConfig.DrawIconButton(btnRefresh, e.Graphics, "refresh", "Hist_Refresh", ThemeConfig.TextColorDark, ThemeConfig.BorderColor, true);
             btnRefresh.Click += (s, e) => LoadHistory();
-            pnlActions.Controls.Add(btnRefresh);
+            pnlRefreshWrapper.Controls.Add(btnRefresh);
+            pnlActions.Controls.Add(pnlRefreshWrapper);
 
             mainLayout.Controls.Add(pnlActions, 0, 1);
 

@@ -148,13 +148,13 @@ namespace GenericInventorySystem.Forms
             };
 
             // Filter Button (Rounded Outline)
-            btnFilter.Size = new Size(100, 40);
+            btnFilter.Size = new Size(110, 40);
             btnFilter.FlatStyle = FlatStyle.Flat;
             btnFilter.FlatAppearance.BorderSize = 0;
             btnFilter.BackColor = ThemeConfig.SurfaceColor;
             btnFilter.Cursor = Cursors.Hand;
             btnFilter.Click += BtnFilter_Click;
-            btnFilter.Paint += (s, e) => ThemeConfig.DrawIconButton(btnFilter, e.Graphics, "filter", "Parts_Filter", ThemeConfig.TextColorDark, ThemeConfig.BorderColor, true);
+            btnFilter.Paint += (s, e) => ThemeConfig.DrawIconButton(btnFilter, e.Graphics, "filter", "Parts_Filter", ThemeConfig.WarningColor, ThemeConfig.WarningColor, true);
             panelButtons.Controls.Add(btnFilter);
 
             // Export Button (Rounded Outline)
@@ -179,13 +179,13 @@ namespace GenericInventorySystem.Forms
 
             // Add Category Button
             btnAddCategory = new Button();
-            btnAddCategory.Size = new Size(130, 40);
+            btnAddCategory.Size = new Size(140, 40);
             btnAddCategory.FlatStyle = FlatStyle.Flat;
             btnAddCategory.FlatAppearance.BorderSize = 0;
             btnAddCategory.BackColor = ThemeConfig.SurfaceColor;
             btnAddCategory.Cursor = Cursors.Hand;
             btnAddCategory.Click += BtnAddCategory_Click;
-            btnAddCategory.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddCategory, e.Graphics, "pos", "Parts_AddCategory", ThemeConfig.TextColorDark, ThemeConfig.BorderColor, true);
+            btnAddCategory.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddCategory, e.Graphics, "add", "Parts_AddCategory", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
             panelButtons.Controls.Add(btnAddCategory);
 
             // Delete Selected Button

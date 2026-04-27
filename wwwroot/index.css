@@ -159,8 +159,9 @@ body {
 .brand .logo {
     width: 40px;
     height: 40px;
-    background: linear-gradient(135deg, var(--accent), #8b5cf6);
-    border-radius: 12px;
+    background: transparent url('nuricon_POS_web.png') no-repeat center;
+    background-size: contain;
+    border-radius: 0;
 }
 
 .brand h1 { font-size: 1.5rem; font-weight: 600; }

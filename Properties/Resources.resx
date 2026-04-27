@@ -581,5 +581,26 @@ Expires: {0:MMMM dd, yyyy}</value></data>
   <data name="Exp_ConfirmDelete" xml:space="preserve"><value>Are you sure you want to delete this expense?</value></data>
   <data name="POS_ReqCustomer" xml:space="preserve"><value>Please select a customer for this account sale.</value></data>
   <data name="PO_Predictive" xml:space="preserve"><value>Predictive Buy-List</value></data>
+  <data name="Exp_Total" xml:space="preserve">
+    <value>Total Monthly Expenses</value>
+  </data>
+  <data name="User_AddUser" xml:space="preserve">
+    <value>Add User</value>
+  </data>
+  <data name="PO_AddItem" xml:space="preserve">
+    <value>Add to Order</value>
+  </data>
+  <data name="Notif_UnpaidExpenses" xml:space="preserve">
+    <value>Unpaid Expenses</value>
+  </data>
+  <data name="Notif_UnpaidExpensesMsg" xml:space="preserve">
+    <value>You have {0} unpaid expenses to review for this month.</value>
+  </data>
+  <data name="Notif_MonthlyExpensesReady" xml:space="preserve">
+    <value>Monthly Summary Ready</value>
+  </data>
+  <data name="Notif_MonthlyExpensesReadyMsg" xml:space="preserve">
+    <value>Monthly expenses are ready for review. Total: {0}</value>
+  </data>
 </root>
 

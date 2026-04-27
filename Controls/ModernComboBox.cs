@@ -117,10 +117,10 @@ namespace GenericInventorySystem.Controls
             pnlContainer = new Panel();
             pnlContainer.BackColor = Color.Transparent;
             pnlContainer.Location = new Point(0, 25);
-            pnlContainer.Size = new Size(this.Width, this.Height - 25);
-            pnlContainer.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
+            pnlContainer.Size = new Size(this.Width, 45); // Match ModernTextBox height
+            pnlContainer.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             pnlContainer.Paint += PnlContainer_Paint;
-            pnlContainer.Padding = new Padding(10, 8, 10, 5);
+            pnlContainer.Padding = new Padding(12, 10, 12, 8); // Match ModernTextBox padding
             this.Controls.Add(pnlContainer);
 
             // ComboBox
@@ -143,7 +143,7 @@ namespace GenericInventorySystem.Controls
             if (pnlContainer == null) return;
             int labelHeight = _showLabel ? 25 : 0;
             pnlContainer.Location = new Point(0, labelHeight);
-            pnlContainer.Size = new Size(this.Width, this.Height - labelHeight);
+            pnlContainer.Size = new Size(this.Width, Math.Min(this.Height - labelHeight, 45));
         }
 
 

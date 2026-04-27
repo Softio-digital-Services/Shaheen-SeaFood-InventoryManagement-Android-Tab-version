@@ -98,13 +98,13 @@ namespace GenericInventorySystem.Plugins
 
             AddActionButton(card, ref y,
                 ar ? "\u0627\u0633\u062a\u0639\u0627\u062f\u0629 \u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629" : "Restore from Backup",
-                "restore", ThemeConfig.WarningBorder, DoRestore);
+                "restore_from_backup", ThemeConfig.WarningBorder, DoRestore);
 
             y += 10;
 
             AddActionButton(card, ref y,
                 ar ? "\u0641\u062a\u062d \u0645\u062c\u0644\u062f \u0627\u0644\u0646\u0633\u062e" : "Open Backup Folder",
-                "folder", ThemeConfig.SecondaryColor, OpenBackupFolder);
+                "open_backup_folder", ThemeConfig.SecondaryColor, OpenBackupFolder);
 
             // Tip note
             Label note = new Label

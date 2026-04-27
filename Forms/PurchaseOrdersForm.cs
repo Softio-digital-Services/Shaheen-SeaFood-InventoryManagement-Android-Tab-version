@@ -244,16 +244,17 @@ namespace GenericInventorySystem.Forms
 
         private void ShowNewPODialog(bool autoPopulateLowStock = false)
         {
-            BaseModalForm f = new BaseModalForm { TitleText = LocalizationManager.GetString("PO_New"), Size = new Size(1050, 750) };
+            string title = autoPopulateLowStock ? (LocalizationManager.IsArabic ? "توليد طلب شراء مقترح" : "Predictive Purchase Order Generation") : LocalizationManager.GetString("PO_New");
+            BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(1100, 800) }; // Decreased width
             
             // Root Container
             TableLayoutPanel tlpRoot = new TableLayoutPanel {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
                 RowCount = 3,
-                Padding = new Padding(20)
+                Padding = new Padding(25, 25, 25, 15)
             };
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 90F));  // Header
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 85F));  // Header (Increased to 85 to prevent any clipping)
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 100F)); // Footer
             f.ContentPanel.Controls.Add(tlpRoot);
@@ -261,19 +262,21 @@ namespace GenericInventorySystem.Forms
             // --- HEADER SECTION ---
             TableLayoutPanel tlpHeader = new TableLayoutPanel {
                 Dock = DockStyle.Fill,
-                ColumnCount = 3,
+                ColumnCount = 4,
                 RowCount = 1,
                 Margin = new Padding(0)
             };
-            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
-            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
-            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280F)); // Supplier
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 380F)); // Part Search
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));  // Spacer
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F)); // Add Button
 
             // 1. Supplier
             ModernComboBox cmbSup = new ModernComboBox { 
-                Dock = DockStyle.Fill, 
+                Height = 75, // Increased to ensure no clipping
+                Dock = DockStyle.Bottom, 
                 LabelText = LocalizationManager.GetString("PO_Supplier") + ":",
-                Margin = new Padding(0, 0, 10, 0)
+                Margin = new Padding(0, 0, 10, 5) // Bottom margin to prevent clipping
             };
             DataTable dtSup = DatabaseHelper.ExecuteDataTable("SELECT id, supplier_name FROM suppliers WHERE date_deleted IS NULL");
             cmbSup.DataSource = dtSup; cmbSup.DisplayMember = "supplier_name"; cmbSup.ValueMember = "id";
@@ -281,68 +284,70 @@ namespace GenericInventorySystem.Forms
 
             // 2. Part Search
             ModernComboBox cmbParts = new ModernComboBox { 
-                Dock = DockStyle.Fill, 
+                Height = 75, // Increased to ensure no clipping
+                Dock = DockStyle.Bottom, 
                 LabelText = (LocalizationManager.IsArabic ? "إضافة سريعة (بحث):" : "Quick Add Part (Search):"),
-                Margin = new Padding(0, 0, 10, 0)
+                Margin = new Padding(0, 0, 10, 5) // Bottom margin to prevent clipping
             };
             DataTable dtParts = DatabaseHelper.ExecuteDataTable("SELECT id, part_name, purchase_price FROM parts WHERE date_deleted IS NULL");
             cmbParts.DataSource = dtParts; cmbParts.DisplayMember = "part_name"; cmbParts.ValueMember = "id";
             tlpHeader.Controls.Add(cmbParts, 1, 0);
 
-            // 3. Add Button
+            // 3. Add Button (Right Aligned & Level)
             Button btnAddRow = new Button { 
-                Text = "+ " + (LocalizationManager.IsArabic ? "أضف للطلب" : "Add to Order"), 
-                Height = 42,
+                Text = "", 
+                Size = new Size(180, 42),
                 Dock = DockStyle.Bottom,
-                Margin = new Padding(0, 0, 0, 3) // Align with input bottoms
+                Margin = new Padding(0, 0, 0, 5), // Match dropdown bottom margin
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
             };
-            ThemeConfig.ApplyPrimaryButton(btnAddRow);
-            tlpHeader.Controls.Add(btnAddRow, 2, 0);
+            btnAddRow.FlatAppearance.BorderSize = 0;
+            btnAddRow.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddRow, e.Graphics, "add", "PO_AddItem", Color.White, ThemeConfig.PrimaryColor, false);
+            tlpHeader.Controls.Add(btnAddRow, 3, 0); 
 
             tlpRoot.Controls.Add(tlpHeader, 0, 0);
 
             // --- GRID SECTION ---
-            DataGridView dgvItems = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, BackgroundColor = Color.White };
+            DataGridView dgvItems = new DataGridView { 
+                Dock = DockStyle.Fill, 
+                AllowUserToAddRows = false, 
+                BackgroundColor = Color.White,
+                Margin = new Padding(0, 20, 0, 0) 
+            };
             ThemeConfig.ApplyGridTheme(dgvItems);
             dgvItems.Columns.Add("PartID", "ID"); dgvItems.Columns["PartID"].ReadOnly = true; dgvItems.Columns["PartID"].Width = 60;
             dgvItems.Columns.Add("PartName", LocalizationManager.GetString("AddPart_Product")); dgvItems.Columns["PartName"].ReadOnly = true; dgvItems.Columns["PartName"].Width = 350;
             dgvItems.Columns.Add("Qty", LocalizationManager.GetString("POS_GridQty")); dgvItems.Columns["Qty"].Width = 100;
             dgvItems.Columns.Add("Cost", LocalizationManager.GetString("POS_GridUnitCost")); dgvItems.Columns["Cost"].Width = 150;
             dgvItems.Columns.Add("Subtotal", "Subtotal"); dgvItems.Columns["Subtotal"].ReadOnly = true; dgvItems.Columns["Subtotal"].Width = 150;
-            tlpRoot.Controls.Add(dgvItems, 0, 1);
+            tlpRoot.Controls.Add(dgvItems, 0, 1); // RESTORED
 
             // --- FOOTER SECTION ---
-            TableLayoutPanel tlpFooter = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 1,
-                Margin = new Padding(0, 10, 0, 0)
-            };
-            tlpFooter.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60F));
-            tlpFooter.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
-
-            FlowLayoutPanel flpTotals = new FlowLayoutPanel {
-                FlowDirection = FlowDirection.TopDown,
-                Dock = DockStyle.Fill,
-                WrapContents = false
-            };
-
+            Panel pnlFooter = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
+            
             Label lblGrandTotal = new Label { 
-                Text = "Grand Total: 0.00", 
+                Text = "Grand Total: $0.00", 
                 AutoSize = true, 
                 Font = ThemeConfig.HeaderFont, 
                 ForeColor = ThemeConfig.TextColorDark,
-                Margin = new Padding(0, 0, 0, 10),
-                Anchor = AnchorStyles.Right
+                TextAlign = ContentAlignment.MiddleRight // Ensure right alignment
             };
+            pnlFooter.Controls.Add(lblGrandTotal);
 
-            Button btnSave = new ModernButton { Text = (LocalizationManager.IsArabic ? "إتمام طلب الشراء" : "Finalize Purchase Order"), Size = new Size(250, 45), Anchor = AnchorStyles.Right };
+            Button btnSave = new ModernButton { 
+                Text = (LocalizationManager.IsArabic ? "إتمام طلب الشراء" : "Finalize Purchase Order"), 
+                Size = new Size(280, 45), // Increased width to prevent text clipping
+            };
             ThemeConfig.ApplyPrimaryButton(btnSave);
+            pnlFooter.Controls.Add(btnSave);
             
-            flpTotals.Controls.Add(lblGrandTotal);
-            flpTotals.Controls.Add(btnSave);
-            tlpFooter.Controls.Add(flpTotals, 1, 0);
-            tlpRoot.Controls.Add(tlpFooter, 0, 2);
+            pnlFooter.Resize += (s, e) => {
+                lblGrandTotal.Location = new Point(pnlFooter.Width - lblGrandTotal.Width - 5, 10); // Moved down (10) and slight right margin
+                btnSave.Location = new Point(pnlFooter.Width - btnSave.Width, 52); // Moved lower (52)
+            };
+            
+            tlpRoot.Controls.Add(pnlFooter, 0, 2);
 
             // --- EVENTS ---
             btnAddRow.Click += (s, e) => {
@@ -373,6 +378,7 @@ namespace GenericInventorySystem.Forms
 
             if (autoPopulateLowStock) {
                 DataTable lowStock = DatabaseHelper.ExecuteDataTable("SELECT id, part_name, (minimum_stock_level - quantity_in_stock + reorder_quantity) as req_qty, purchase_price, supplier_id FROM parts WHERE quantity_in_stock <= minimum_stock_level AND status = 'Active'");
+                
                 cmbSup.InnerComboBox.SelectedIndexChanged += (s, e) => {
                     dgvItems.Rows.Clear();
                     if (cmbSup.SelectedValue != null && int.TryParse(cmbSup.SelectedValue.ToString(), out int supId)) {
@@ -384,6 +390,16 @@ namespace GenericInventorySystem.Forms
                         UpdatePOTotal(dgvItems, lblGrandTotal);
                     }
                 };
+
+                // Auto-select first supplier with low stock
+                if (lowStock.Rows.Count > 0)
+                {
+                    var firstSupplierId = lowStock.Rows[0]["supplier_id"];
+                    if (firstSupplierId != DBNull.Value)
+                    {
+                        cmbSup.SelectedValue = firstSupplierId;
+                    }
+                }
             }
 
             btnSave.Click += (s, e) => {

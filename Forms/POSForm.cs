@@ -145,7 +145,8 @@ namespace GenericInventorySystem.Forms
                 AutoSize = true,
                 WrapContents = false,
                 Height = 50,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                BackColor = ThemeConfig.SurfaceColor // Fix corners
             };
 
             btnAddItem = new ModernButton { Size = new Size(110, 36), Text = "Add Item", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0), Margin = new Padding(5, 7, 0, 0) };
@@ -184,6 +185,7 @@ namespace GenericInventorySystem.Forms
             tlpBottomArea.Controls.Add(pnlInfo, 0, 0);
             
             Panel pnlTotals = CreateCardPanel(); pnlTotals.Dock = DockStyle.Fill;
+            pnlTotals.BackColor = ThemeConfig.SurfaceColor; // Ensure child buttons clear with white
             pnlTotals.Controls.Add(new Label { Text = "Order Summary", Name = "lblTotalsTitle", Location = new Point(20, 15), AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark });
             ComboBox cboCurrency = new ComboBox();
             ThemeConfig.ApplyComboBoxStyle(cboCurrency);

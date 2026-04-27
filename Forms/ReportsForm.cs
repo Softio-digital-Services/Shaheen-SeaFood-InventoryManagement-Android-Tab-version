@@ -187,9 +187,9 @@ namespace GenericInventorySystem.Forms
                 Dock = DockStyle.Top, 
                 Font = ThemeConfig.SubHeaderFont, 
                 ForeColor = ThemeConfig.TextColorDark,
-                Height = 30
+                Height = 40,
+                Padding = new Padding(15, 10, 0, 0)
             };
-
         }
 
         private void ApplyTheme()
@@ -199,19 +199,21 @@ namespace GenericInventorySystem.Forms
             
             chartValuation.Titles.Clear();
             ThemeConfig.ApplyChartTheme(chartValuation);
+            if(chartValuation.ChartAreas.Count > 0)
+                chartValuation.ChartAreas[0].InnerPlotPosition = new ElementPosition(10, 10, 85, 75); // Padding for labels
             
             chartPie.Titles.Clear();
             ThemeConfig.ApplyChartTheme(chartPie);
-            
-            chartBar.Titles.Clear();
-            ThemeConfig.ApplyChartTheme(chartBar);
-            
-            // Tweak specific chart details
             if(chartPie.ChartAreas.Count > 0) 
             {
                 chartPie.ChartAreas[0].Area3DStyle.Enable3D = false;
                 chartPie.ChartAreas[0].InnerPlotPosition = new ElementPosition(5, 5, 90, 80);
             }
+            
+            chartBar.Titles.Clear();
+            ThemeConfig.ApplyChartTheme(chartBar);
+            if(chartBar.ChartAreas.Count > 0)
+                chartBar.ChartAreas[0].InnerPlotPosition = new ElementPosition(10, 10, 85, 75);
         }
         
 

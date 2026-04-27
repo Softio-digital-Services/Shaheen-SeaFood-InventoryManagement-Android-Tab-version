@@ -287,11 +287,27 @@ namespace GenericInventorySystem.Services
             {
                 notifications.Add(new Notification {
                     Type = "Alert",
-                    Title = "Unpaid Expenses",
-                    Message = $"You have {unpaidCount} unpaid expenses to review for this month.",
+                    Title = LocalizationManager.GetString("Notif_UnpaidExpenses"),
+                    Message = string.Format(LocalizationManager.GetString("Notif_UnpaidExpensesMsg"), unpaidCount),
                     Target = "btnMonthlyExpenses",
                     Timestamp = DateTime.Now
                 });
+            }
+
+            // 6. Monthly Expense Report (Every 25th)
+            if (DateTime.Now.Day >= 25)
+            {
+                decimal total = new ExpenseService().GetTotalExpenses(DateTime.Now.Month, DateTime.Now.Year);
+                if (total > 0)
+                {
+                    notifications.Add(new Notification {
+                        Type = "Info",
+                        Title = LocalizationManager.GetString("Notif_MonthlyExpensesReady"),
+                        Message = string.Format(LocalizationManager.GetString("Notif_MonthlyExpensesReadyMsg"), CurrencyService.Format(total)),
+                        Target = "btnMonthlyExpenses",
+                        Timestamp = DateTime.Now
+                    });
+                }
             }
 
             return notifications;

@@ -387,5 +387,24 @@
   <data name="Exp_ConfirmDelete" xml:space="preserve"><value>هل أنت متأكد أنك تريد حذف هذا المصروف؟</value></data>
   <data name="POS_ReqCustomer" xml:space="preserve"><value>يرجى اختيار عميل لعملية البيع الآجل هذه.</value></data>
   <data name="PO_Predictive" xml:space="preserve"><value>قائمة شراء مقترحة</value></data>
+  <data name="Exp_Total" xml:space="preserve"><value>إجمالي المصاريف الشهرية</value></data>
+  <data name="User_AddUser" xml:space="preserve">
+    <value>إضافة مستخدم</value>
+  </data>
+  <data name="PO_AddItem" xml:space="preserve">
+    <value>Ø£Ø¶Ù  Ù„Ù„Ø·Ù„Ø¨</value>
+  </data>
+  <data name="Notif_UnpaidExpenses" xml:space="preserve">
+    <value>مصروفات غير مدفوعة</value>
+  </data>
+  <data name="Notif_UnpaidExpensesMsg" xml:space="preserve">
+    <value>لديك {0} مصروفات غير مدفوعة للمراجعة هذا الشهر.</value>
+  </data>
+  <data name="Notif_MonthlyExpensesReady" xml:space="preserve">
+    <value>ملخص المصاريف جاهز</value>
+  </data>
+  <data name="Notif_MonthlyExpensesReadyMsg" xml:space="preserve">
+    <value>المصاريف الشهرية جاهزة للمراجعة. الإجمالي: {0}</value>
+  </data>
 </root>
 

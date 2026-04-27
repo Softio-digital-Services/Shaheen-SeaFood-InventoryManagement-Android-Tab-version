@@ -16,9 +16,8 @@ namespace GenericInventorySystem.Forms
         private Label lblExpensesTitle;
         private Label lblCategory;
         private Label lblDate;
-        private Label lblAmount;
         private Label lblDescription;
-        private ModernTextBox txtAmount;
+        private NumericUpDown numAmount;
         private ModernTextBox txtDescription;
         private ModernComboBox cmbCategory;
         private FlatDateTimePicker dtpDate;
@@ -43,9 +42,9 @@ namespace GenericInventorySystem.Forms
             this.BackColor = ThemeConfig.BackgroundColor;
 
             TableLayoutPanel mainLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 80F));
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 160F));
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70F));  // Header
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 180F)); // Entry (Increased for labels)
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid
             mainLayout.Padding = new Padding(20);
             this.Controls.Add(mainLayout);
 
@@ -55,61 +54,125 @@ namespace GenericInventorySystem.Forms
             lblExpensesTitle.Name = "lblExpensesTitle";
             pnlHeader.Controls.Add(lblExpensesTitle);
             
-            lblTotal = new Label { Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.DangerColor, AutoSize = true, Location = new Point(700, 0) };
+            lblTotal = new Label { 
+                Font = new Font("Segoe UI", 16F, FontStyle.Bold), 
+                ForeColor = ThemeConfig.DangerColor, 
+                AutoSize = true, 
+                Dock = DockStyle.Right,
+                TextAlign = ContentAlignment.MiddleRight
+            };
             pnlHeader.Controls.Add(lblTotal);
             mainLayout.Controls.Add(pnlHeader, 0, 0);
 
-            // Entry Panel
-            Panel pnlEntry = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor, Padding = new Padding(15) };
-            
-            // Main Grid for Entry
-            TableLayoutPanel grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 3 };
+            // --- ENTRY SECTION ---
+            TableLayoutPanel grid = new TableLayoutPanel { 
+                Dock = DockStyle.Fill, 
+                ColumnCount = 6, 
+                RowCount = 2, 
+                Padding = new Padding(10),
+                BackColor = ThemeConfig.SurfaceColor 
+            };
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F)); // Category
-            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200F)); // Date
-            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F)); // Amount
-            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));   // Description (Takes rest)
-            grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F)); // Spacing
-            grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 75F)); // Inputs (Increased for built-in labels)
-            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Buttons
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F)); // Date
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F)); // Amount
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F)); // Description
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));  // Spacer
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 320F)); // Actions (Right) - Increased to 320 to prevent clipping
+            
+            grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 85F)); // Increased to 85 to prevent clipping
+            grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 35F)); // Sub Row (Recurring)
 
-            cmbCategory = new ModernComboBox { Dock = DockStyle.Fill };
-            cmbCategory.PlaceholderText = "Category";
+            // 1. Category with Add Button
+            Panel pnlCatContainer = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
+            cmbCategory = new ModernComboBox { 
+                Width = 135,
+                Location = new Point(0, 0),
+                LabelText = LocalizationManager.IsArabic ? "الفئة" : "Expense Category"
+            };
             cmbCategory.Items.AddRange(new object[] { "Rent", "Utilities", "Wages", "Supplies", "Maintenance", "Other" });
             
-            dtpDate = new FlatDateTimePicker { Dock = DockStyle.Fill };
+            Button btnQuickAddCat = new Button { 
+                Size = new Size(32, 32), 
+                Location = new Point(138, 30), 
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
+            };
+            btnQuickAddCat.FlatAppearance.BorderSize = 0;
+            btnQuickAddCat.Paint += (s, e) => ThemeConfig.DrawIconButton(btnQuickAddCat, e.Graphics, "add", "", ThemeConfig.PrimaryColor, Color.Transparent, false);
+            btnQuickAddCat.Click += (s, e) => {
+                using (var f = new AddCategoryForm()) {
+                    if (f.ShowDialog() == DialogResult.OK) {
+                        // Refresh categories if needed, for now just a placeholder action
+                        MessageHelper.ShowInfo("Category added. Please refresh.");
+                    }
+                }
+            };
+            pnlCatContainer.Controls.Add(cmbCategory);
+            pnlCatContainer.Controls.Add(btnQuickAddCat);
             
-            txtAmount = new ModernTextBox { Dock = DockStyle.Fill };
-            txtAmount.PlaceholderText = "Amount";
+            Panel pnlDate = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
+            Label lblDateRef = new Label { Text = LocalizationManager.IsArabic ? "التاريخ" : "Expense Date", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };
+            dtpDate = new FlatDateTimePicker { Location = new Point(0, 25), Width = 170, Height = 42 };
+            pnlDate.Controls.Add(dtpDate); pnlDate.Controls.Add(lblDateRef);
             
-            txtDescription = new ModernTextBox { Dock = DockStyle.Fill };
-            txtDescription.PlaceholderText = "Description";
+            Panel pnlAmount = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
+            Label lblAmountRef = new Label { Text = LocalizationManager.IsArabic ? "المبلغ" : "Amount", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };
+            numAmount = new NumericUpDown { BorderStyle = BorderStyle.None, DecimalPlaces = 2, Maximum = 1000000, Font = ThemeConfig.StandardFont };
+            Panel pnlNumWrapper = ThemeConfig.WrapInStyledInput(numAmount, 42); 
+            pnlNumWrapper.Location = new Point(0, 25); pnlNumWrapper.Width = 110;
+            pnlAmount.Controls.Add(pnlNumWrapper); pnlAmount.Controls.Add(lblAmountRef);
             
-            grid.Controls.Add(cmbCategory, 0, 1);
-            grid.Controls.Add(dtpDate, 1, 1);
-            grid.Controls.Add(txtAmount, 2, 1);
-            grid.Controls.Add(txtDescription, 3, 1);
+            txtDescription = new ModernTextBox { 
+                Dock = DockStyle.Fill, 
+                LabelText = LocalizationManager.IsArabic ? "الوصف" : "Description",
+                PlaceholderText = "Expense details...",
+                Margin = new Padding(5, 5, 5, 10),
+                Multiline = true
+            };
 
-            FlowLayoutPanel buttonGroup = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 10, 0, 0) };
-            btnAdd = new Button { Text = "+ Log Expense", Size = new Size(150, 40) };
-            ThemeConfig.ApplyPrimaryButton(btnAdd);
+            // Actions Container (Right Aligned)
+            FlowLayoutPanel pnlActions = new FlowLayoutPanel { 
+                Dock = DockStyle.Fill, 
+                FlowDirection = FlowDirection.LeftToRight, 
+                Padding = new Padding(0, 30, 0, 0),
+                WrapContents = false
+            };
+
+            // Increased width to 140
+            btnAdd = new Button { Text = "", Size = new Size(140, 42), Margin = new Padding(5, 0, 5, 0), FlatStyle = FlatStyle.Flat };
+            btnAdd.FlatAppearance.BorderSize = 0;
+            btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Exp_Add", Color.White, ThemeConfig.PrimaryColor, false);
             btnAdd.Click += BtnAdd_Click;
 
-            btnDelete = new Button { Text = "Delete Selected", Size = new Size(150, 40) };
-            ThemeConfig.ApplyDangerButton(btnDelete);
+            btnDelete = new Button { Text = "", Size = new Size(140, 42), Margin = new Padding(5, 0, 5, 0), FlatStyle = FlatStyle.Flat };
+            btnDelete.FlatAppearance.BorderSize = 0;
+            btnDelete.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDelete, e.Graphics, "remove", "Exp_Delete", Color.White, ThemeConfig.DangerColor, false);
             btnDelete.Click += BtnDelete_Click;
 
-            chkRecurring = new CheckBox { Text = "Recurring (Auto-Add)", Font = ThemeConfig.SmallBoldFont, AutoSize = true, Margin = new Padding(10, 10, 0, 0) };
+            chkRecurring = new CheckBox { 
+                Text = LocalizationManager.IsArabic ? "تكرار" : "Recurring", 
+                Font = ThemeConfig.StandardFont, 
+                AutoSize = true, 
+                Margin = new Padding(5, 5, 0, 0),
+                Cursor = Cursors.Hand,
+                FlatStyle = FlatStyle.System
+            };
             
-            buttonGroup.Controls.Add(btnAdd);
-            buttonGroup.Controls.Add(btnDelete);
-            buttonGroup.Controls.Add(chkRecurring);
-            grid.Controls.Add(buttonGroup, 0, 2);
-            grid.SetColumnSpan(buttonGroup, 4);
+            pnlActions.Controls.Add(btnAdd);
+            pnlActions.Controls.Add(btnDelete);
+            
+            grid.Controls.Add(pnlCatContainer, 0, 0);
+            grid.Controls.Add(pnlDate, 1, 0);
+            grid.Controls.Add(pnlAmount, 2, 0);
+            grid.Controls.Add(txtDescription, 3, 0);
+            grid.Controls.Add(pnlActions, 5, 0);
+            grid.Controls.Add(chkRecurring, 0, 1);
 
             // Card for Entry Panel
             Panel pnlEntryCard = ThemeConfig.CreateCardPanel(grid);
             pnlEntryCard.Margin = new Padding(0, 0, 0, 15);
             mainLayout.Controls.Add(pnlEntryCard, 0, 1);
+
 
             // Grid
             dgvExpenses = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, AllowUserToAddRows = false, ReadOnly = true, AutoGenerateColumns = false };
@@ -126,6 +189,11 @@ namespace GenericInventorySystem.Forms
             dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", HeaderText = "Status", Width = 100 });
             dgvExpenses.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Recurring", HeaderText = "Auto", DataPropertyName = "is_recurring", Width = 60 });
             
+            mainLayout.Controls.Add(dgvExpenses, 0, 2);
+            ThemeConfig.ApplyGridTheme(dgvExpenses);
+
+            ApplyLocalization();
+
             DataGridViewButtonColumn btnPaid = new DataGridViewButtonColumn { 
                 Name = "Action", 
                 HeaderText = "Action", 
@@ -144,10 +212,11 @@ namespace GenericInventorySystem.Forms
         private void ApplyLocalization()
         {
             lblExpensesTitle.Text = LocalizationManager.GetString("Exp_Title");
-            btnAdd.Text = LocalizationManager.GetString("Exp_Add");
-            btnDelete.Text = LocalizationManager.GetString("Exp_Delete");
             
-            if (txtAmount != null) txtAmount.PlaceholderText = LocalizationManager.GetString("Exp_Amount");
+            // Text removed to preserve DrawIconButton icons
+            btnAdd.Text = ""; 
+            btnDelete.Text = "";
+            
             if (txtDescription != null) txtDescription.PlaceholderText = LocalizationManager.GetString("Exp_Description");
             if (cmbCategory != null) cmbCategory.PlaceholderText = LocalizationManager.GetString("Exp_Category");
             
@@ -160,8 +229,6 @@ namespace GenericInventorySystem.Forms
         private void ApplyTheme() 
         { 
             ThemeConfig.ApplyGridTheme(dgvExpenses); 
-            ThemeConfig.ApplyPrimaryButton(btnAdd);
-            ThemeConfig.ApplyDangerButton(btnDelete);
         }
 
         private void BtnAdd_Click(object sender, EventArgs e)
@@ -172,8 +239,11 @@ namespace GenericInventorySystem.Forms
                 return;
             }
 
-            if (!ValidationHelper.ValidateRequired(txtAmount, LocalizationManager.GetString("Exp_Amount"))) return;
-            if (!ValidationHelper.ValidateNumeric(txtAmount.Text, LocalizationManager.GetString("Exp_Amount"), out decimal amount)) return;
+            decimal amount = numAmount.Value;
+            if (amount <= 0) {
+                MessageHelper.ShowWarning(LocalizationManager.GetString("Exp_Amount") + " must be greater than 0");
+                return;
+            }
 
             DatabaseHelper.ExecuteNonQuery("INSERT INTO expenses (category, expense_date, amount, description, recorded_by, is_recurring, is_paid) VALUES (@cat, @date, @amt, @desc, @usr, @rec, 1)",
                 new SqlParameter("@cat", cmbCategory.SelectedItem.ToString()),
@@ -219,7 +289,7 @@ namespace GenericInventorySystem.Forms
         private void ClearForm()
         {
             cmbCategory.SelectedIndex = -1;
-            txtAmount.Clear();
+            numAmount.Value = 0;
             txtDescription.Clear();
             dtpDate.Value = DateTime.Now;
         }

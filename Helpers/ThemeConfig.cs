@@ -170,7 +170,7 @@ namespace GenericInventorySystem
         public static Color GetParentColor(Control ctrl)
         {
             Control p = ctrl.Parent;
-            while (p != null && (p.BackColor == Color.Transparent || p.BackColor.A == 0))
+            while (p != null && (p.BackColor == Color.Transparent || p.BackColor.A == 0 || p.BackColor == Color.Empty))
                 p = p.Parent;
             return p?.BackColor ?? BackgroundColor;
         }
@@ -185,10 +185,11 @@ namespace GenericInventorySystem
             Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
 
             // Handle background clearing (to prevent artifacts from parent)
+            // Use 1px inflation to ensure anti-aliased corners are fully covered
             using (var pb = new SolidBrush(GetParentColor(btn)))
-                g.FillRectangle(pb, new Rectangle(0, 0, btn.Width, btn.Height));
+                g.FillRectangle(pb, -1, -1, btn.Width + 2, btn.Height + 2);
 
-            using (var path = GetRoundedPath(r, 8))
+            using (var path = GetRoundedPath(r, 12)) // Increased to 12 to match ModernTextBox
             {
                 if (isOutline)
                 {
@@ -209,7 +210,14 @@ namespace GenericInventorySystem
             // Icon Position
             int iconX = isArabic ? (btn.Width - iconSize - margin) : margin;
             int iconY = (btn.Height - iconSize) / 2;
-            if (img != null) g.DrawImage(img, new Rectangle(iconX, iconY, iconSize, iconSize));
+            
+            if (img != null)
+            {
+                using (var tinted = TintImage(img, textColor))
+                {
+                    g.DrawImage(tinted, new Rectangle(iconX, iconY, iconSize, iconSize));
+                }
+            }
 
             // Text Position (Centered in the remaining area)
             int textX = isArabic ? margin : (iconX + iconSize + 4);
@@ -565,100 +573,92 @@ namespace GenericInventorySystem
             
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             
-            Rectangle r = new Rectangle(0, 0, btn.Width, btn.Height);
-            using (var path = GetRoundedPath(new Rectangle(0, 0, btn.Width - 1, btn.Height - 1), 8)) // 8px Radius
+            Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+            
+            // 1. Clear background with PARENT color to solve "white corners bug"
+            using (var parentBrush = new SolidBrush(GetParentColor(btn)))
+                g.FillRectangle(parentBrush, -1, -1, btn.Width + 2, btn.Height + 2);
+                
+            using (var path = GetRoundedPath(r, 12)) 
             using (var brush = new SolidBrush(btn.BackColor))
             {
-                // Clear background artifact (Paint parent background)
-                using (var parentBrush = new SolidBrush(GetParentColor(btn)))
-                    g.FillRectangle(parentBrush, r);
-                
-                // Fill Rounded
                 g.FillPath(brush, path);
-                
-                // Subtle Glowing Edge / Highlight
-                using (var glowPen = new Pen(Color.FromArgb(80, Color.White), 1.2f))
+                using (var glowPen = new Pen(Color.FromArgb(50, Color.White), 1f))
                     g.DrawPath(glowPen, path);
-                
-                // Text Alignment & Format
-                StringFormat sf = new StringFormat();
-                sf.HotkeyPrefix = System.Drawing.Text.HotkeyPrefix.None;
-                
-                // Horizontal
-                switch (btn.TextAlign)
-                {
-                    case ContentAlignment.TopLeft:
-                    case ContentAlignment.MiddleLeft:
-                    case ContentAlignment.BottomLeft:
-                        sf.Alignment = StringAlignment.Near;
-                        break;
-                    case ContentAlignment.TopCenter:
-                    case ContentAlignment.MiddleCenter:
-                    case ContentAlignment.BottomCenter:
-                        sf.Alignment = StringAlignment.Center;
-                        break;
-                    case ContentAlignment.TopRight:
-                    case ContentAlignment.MiddleRight:
-                    case ContentAlignment.BottomRight:
-                        sf.Alignment = StringAlignment.Far;
-                        break;
-                }
-                
-                // Vertical
-                switch (btn.TextAlign)
-                {
-                    case ContentAlignment.TopLeft:
-                    case ContentAlignment.TopCenter:
-                    case ContentAlignment.TopRight:
-                        sf.LineAlignment = StringAlignment.Near;
-                        break;
-                    case ContentAlignment.MiddleLeft:
-                    case ContentAlignment.MiddleCenter:
-                    case ContentAlignment.MiddleRight:
-                        sf.LineAlignment = StringAlignment.Center;
-                        break;
-                    case ContentAlignment.BottomLeft:
-                    case ContentAlignment.BottomCenter:
-                    case ContentAlignment.BottomRight:
-                        sf.LineAlignment = StringAlignment.Far;
-                        break;
-                }
+            }    
 
-                // Rect with Padding
-                RectangleF contentRect = new RectangleF(
-                    r.X + btn.Padding.Left,
-                    r.Y + btn.Padding.Top,
-                    r.Width - (btn.Padding.Right + btn.Padding.Left),
-                    r.Height - (btn.Padding.Bottom + btn.Padding.Top));
-
-                // Support Icons
-                if (btn.Image != null)
-                {
-                    int iconSize = (int)(btn.Height * 0.6f);
-                    int iconX = (int)contentRect.X;
-                    int iconY = (int)(contentRect.Y + (contentRect.Height - iconSize) / 2);
-
-                    if (btn.TextImageRelation == TextImageRelation.ImageBeforeText)
-                    {
-                        g.DrawImage(btn.Image, new Rectangle(iconX, iconY, iconSize, iconSize));
-                        contentRect.X += iconSize + 4;
-                        contentRect.Width -= iconSize + 4;
-                    }
-                    else if (btn.TextImageRelation == TextImageRelation.Overlay || btn.TextAlign == ContentAlignment.MiddleCenter)
-                    {
-                        // Draw centered or overlay
-                        g.DrawImage(btn.Image, new Rectangle((int)(r.X + (r.Width - iconSize)/2), iconY, iconSize, iconSize));
-                    }
-                }
-
-                // Draw Text using TextRenderer for better compatibility and RTL support
-                TextFormatFlags flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
-                if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
-                    flags |= TextFormatFlags.RightToLeft;
-
-                Rectangle textRect = Rectangle.Round(contentRect);
-                TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor, flags);
+            // Text Alignment & Format
+            StringFormat sf = new StringFormat();
+            sf.HotkeyPrefix = System.Drawing.Text.HotkeyPrefix.None;
+            
+            switch (btn.TextAlign)
+            {
+                case ContentAlignment.TopLeft:
+                case ContentAlignment.MiddleLeft:
+                case ContentAlignment.BottomLeft:
+                    sf.Alignment = StringAlignment.Near;
+                    break;
+                case ContentAlignment.TopCenter:
+                case ContentAlignment.MiddleCenter:
+                case ContentAlignment.BottomCenter:
+                    sf.Alignment = StringAlignment.Center;
+                    break;
+                case ContentAlignment.TopRight:
+                case ContentAlignment.MiddleRight:
+                case ContentAlignment.BottomRight:
+                    sf.Alignment = StringAlignment.Far;
+                    break;
             }
+            
+            switch (btn.TextAlign)
+            {
+                case ContentAlignment.TopLeft:
+                case ContentAlignment.TopCenter:
+                case ContentAlignment.TopRight:
+                    sf.LineAlignment = StringAlignment.Near;
+                    break;
+                case ContentAlignment.MiddleLeft:
+                case ContentAlignment.MiddleCenter:
+                case ContentAlignment.MiddleRight:
+                    sf.LineAlignment = StringAlignment.Center;
+                    break;
+                case ContentAlignment.BottomLeft:
+                case ContentAlignment.BottomCenter:
+                case ContentAlignment.BottomRight:
+                    sf.LineAlignment = StringAlignment.Far;
+                    break;
+            }
+
+            RectangleF contentRect = new RectangleF(
+                r.X + btn.Padding.Left,
+                r.Y + btn.Padding.Top,
+                r.Width - (btn.Padding.Right + btn.Padding.Left),
+                r.Height - (btn.Padding.Bottom + btn.Padding.Top));
+
+            if (btn.Image != null)
+            {
+                int iconSize = (int)(btn.Height * 0.6f);
+                int iconX = (int)contentRect.X;
+                int iconY = (int)(contentRect.Y + (contentRect.Height - iconSize) / 2);
+
+                if (btn.TextImageRelation == TextImageRelation.ImageBeforeText)
+                {
+                    g.DrawImage(btn.Image, new Rectangle(iconX, iconY, iconSize, iconSize));
+                    contentRect.X += iconSize + 4;
+                    contentRect.Width -= iconSize + 4;
+                }
+                else if (btn.TextImageRelation == TextImageRelation.Overlay || btn.TextAlign == ContentAlignment.MiddleCenter)
+                {
+                    g.DrawImage(btn.Image, new Rectangle((int)(r.X + (r.Width - iconSize)/2), iconY, iconSize, iconSize));
+                }
+            }
+
+            TextFormatFlags flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
+            if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
+                flags |= TextFormatFlags.RightToLeft;
+
+            Rectangle textRect = Rectangle.Round(contentRect);
+            TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor, flags);
         }
 
         private static void Btn_PaintRounded(object sender, PaintEventArgs e)
@@ -862,6 +862,42 @@ namespace GenericInventorySystem
             };
             
             grid.Visible = true;
+
+            // Custom Button Painting for any Button columns to ensure modern look
+            grid.CellPainting += (s, e) =>
+            {
+                if (e.RowIndex < 0 || e.ColumnIndex < 0 || e.Handled) return;
+                
+                if (grid.Columns[e.ColumnIndex] is DataGridViewButtonColumn)
+                {
+                    string text = e.FormattedValue?.ToString();
+                    if (string.IsNullOrEmpty(text)) return; // Don't draw giant blue blocks for empty buttons
+
+                    // Paint background correctly based on selection state
+                    bool isSelected = (e.State & DataGridViewElementStates.Selected) != 0;
+                    Color bgColor = isSelected ? grid.DefaultCellStyle.SelectionBackColor : e.CellStyle.BackColor;
+                    
+                    using (var bgBrush = new SolidBrush(bgColor))
+                        e.Graphics.FillRectangle(bgBrush, e.CellBounds);
+
+                    // Paint borders
+                    e.Paint(e.CellBounds, DataGridViewPaintParts.Border);
+
+                    var rect = e.CellBounds;
+                    rect.Inflate(-6, -6);
+                    
+                    using (var path = GetRoundedPath(rect, 8))
+                    using (var brush = new SolidBrush(PrimaryColor))
+                    {
+                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        e.Graphics.FillPath(brush, path);
+                        
+                        TextRenderer.DrawText(e.Graphics, text, SmallBoldFont, rect, Color.White, 
+                            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                    }
+                    e.Handled = true;
+                }
+            };
         }
 
         public static Image TintImage(Image source, Color tintColor)
@@ -1124,6 +1160,13 @@ namespace GenericInventorySystem
                                 g.DrawLine(whitePen, 16, 32, 48, 32);
                             }
                         }
+                        else if (name == "remove" || name == "delete" || name == "minus")
+                        {
+                            using (var whitePen = new Pen(Color.White, 8) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
+                            {
+                                g.DrawLine(whitePen, 16, 32, 48, 32);
+                            }
+                        }
                         else if (name == "pos")
                         {
                             g.FillEllipse(brush, 10, 10, 44, 44);
@@ -1196,6 +1239,27 @@ namespace GenericInventorySystem
                                 g.FillRectangle(whiteBrush, 20, 18, 24, 28); // Paper
                                 g.FillRectangle(new SolidBrush(c1), 24, 24, 16, 2); // Line 1
                                 g.FillRectangle(new SolidBrush(c1), 24, 30, 16, 2); // Line 2
+                            }
+                        }
+                        else if (name == "help" || name == "contact_us")
+                        {
+                            g.FillEllipse(brush, 8, 8, 48, 48);
+                            using (var whiteBrush = new SolidBrush(Color.White))
+                            using (Font f = new Font("Segoe UI", 28, FontStyle.Bold))
+                            {
+                                StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                                string text = name == "help" ? "?" : "@";
+                                g.DrawString(text, f, whiteBrush, new Rectangle(0, 0, 64, 64), sf);
+                            }
+                        }
+                        else if (name == "logout")
+                        {
+                            g.FillEllipse(brush, 8, 8, 48, 48);
+                            using (var whitePen = new Pen(Color.White, 4) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
+                            {
+                                g.DrawArc(whitePen, 16, 16, 32, 32, -45, 270);
+                                g.DrawLine(whitePen, 32, 16, 48, 16); // Arrow line (conceptual)
+                                g.DrawLine(whitePen, 32, 16, 32, 32); 
                             }
                         }
                         else if (name == "currencies" || name == "expenses")

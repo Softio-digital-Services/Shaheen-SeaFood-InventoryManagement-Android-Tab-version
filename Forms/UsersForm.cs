@@ -45,8 +45,11 @@ namespace GenericInventorySystem.Forms
             txtSearch.TextChanged += (s, e) => LoadData(txtSearch.Text);
             pnlHeader.Controls.Add(txtSearch);
 
-            btnAddUser = new ModernButton { Text = "+ Add User", Size = new Size(150, 40) };
-            ThemeConfig.ApplyPrimaryButton(btnAddUser);
+            btnAddUser = new Button { Text = "", Size = new Size(160, 40) };
+            btnAddUser.FlatStyle = FlatStyle.Flat;
+            btnAddUser.FlatAppearance.BorderSize = 0;
+            btnAddUser.Cursor = Cursors.Hand;
+            btnAddUser.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddUser, e.Graphics, "add", "User_AddUser", Color.White, ThemeConfig.PrimaryColor, false);
             btnAddUser.Click += btnAddUser_Click;
             pnlHeader.Controls.Add(btnAddUser);
             
@@ -90,7 +93,7 @@ namespace GenericInventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
             lblUsersTitle.Text = isArabic ? "إدارة المستخدمين" : "User Management";
-            btnAddUser.Text = isArabic ? "+ إضافة مستخدم" : "+ Add User";
+            btnAddUser.Invalidate(); // Refresh the painted icon and text
             if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = isArabic ? "المعرف" : "ID";
             if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = isArabic ? "اسم المستخدم" : "Username";
             if (dgvUsers.Columns["actions"] != null) dgvUsers.Columns["actions"].HeaderText = isArabic ? "الإجراءات" : "Actions";

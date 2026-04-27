@@ -162,7 +162,7 @@ namespace GenericInventorySystem
             var pbLogo = panel1.Controls.Find("pbLogo", true).FirstOrDefault() as PictureBox;
             if (pbLogo != null)
             {
-                pbLogo.Location = isAr ? new Point(panel1.Width - pbLogo.Width - 0, Math.Max(0, (panel1.Height - pbLogo.Height) / 2)) : new Point(0, Math.Max(0, (panel1.Height - pbLogo.Height) / 2));
+                pbLogo.Location = isAr ? new Point(panel1.Width - pbLogo.Width - 20, (panel1.Height - pbLogo.Height) / 2) : new Point(20, (panel1.Height - pbLogo.Height) / 2);
             }
             label2.Location = isAr ? new Point(panel1.Width - label2.Width - 20, (panel1.Height - label2.Height) / 2) : new Point(20, (panel1.Height - label2.Height) / 2);
         }
@@ -318,6 +318,50 @@ namespace GenericInventorySystem
             button3.FlatAppearance.MouseOverBackColor = ThemeConfig.DangerLight;
 
             SetupHeaderIcons();
+            SetupFooter();
+        }
+
+        private void SetupFooter()
+        {
+            Panel pnlFooter = new Panel {
+                Name = "pnlFooter",
+                Dock = DockStyle.Bottom,
+                Height = 30,
+                BackColor = ThemeConfig.SurfaceColor,
+                Padding = new Padding(15, 0, 15, 0)
+            };
+            this.Controls.Add(pnlFooter);
+            pnlFooter.BringToFront(); // Ensure it stays on top of the fill panel
+
+            Label lblVersion = new Label {
+                Text = "Generic Inventory System | Version 1.0.2 | © 2026 Softio Services",
+                AutoSize = true,
+                Font = new Font("Segoe UI", 8.5f),
+                ForeColor = ThemeConfig.TextColorDark,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Dock = DockStyle.Left
+            };
+            pnlFooter.Controls.Add(lblVersion);
+
+            Label lblDeveloper = new Label {
+                Text = "Developed by Softio",
+                AutoSize = true,
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
+                ForeColor = ThemeConfig.PrimaryColor,
+                TextAlign = ContentAlignment.MiddleRight,
+                Dock = DockStyle.Right
+            };
+            pnlFooter.Controls.Add(lblDeveloper);
+            
+            // Adjust panel3 to not be covered (it's Dock=Fill)
+            panel3.BringToFront(); // No, panel3 should be BEHIND the footer if it's Dock=Fill?
+            // Actually, in WinForms, the LAST control added with Dock=Fill takes the remaining space.
+            // But Dock=Bottom takes space from the container. 
+            // Let's ensure the order is correct.
+            pnlFooter.SendToBack(); 
+            panel2.SendToBack();
+            panel1.SendToBack();
+            panel3.BringToFront();
         }
 
         private void SetupHeaderIcons()
@@ -364,6 +408,16 @@ namespace GenericInventorySystem
             ThemeConfig.ApplyHeaderIconStyle(pbCurrencies);
             pbCurrencies.Click += (s, e) => { using (var f = new Forms.CurrencySettingsForm()) f.ShowDialog(this); };
             rightPanel.Controls.Add(pbCurrencies);
+
+            // Contact Us
+            PictureBox pbContact = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 485, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("contact_us"), Color.White) };
+            ThemeConfig.ApplyHeaderIconStyle(pbContact);
+            ToolTip tt = new ToolTip(); tt.SetToolTip(pbContact, "Contact Us: softioservices@gmail.com");
+            pbContact.Click += (s, e) => {
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mailto:softioservices@gmail.com") { UseShellExecute = true }); }
+                catch { MessageHelper.ShowInfo("Contact us at: softioservices@gmail.com"); }
+            };
+            rightPanel.Controls.Add(pbContact);
 
             panel1.Controls.Add(rightPanel);
         }
@@ -465,23 +519,23 @@ namespace GenericInventorySystem
             {
                 PictureBox pbLogo = new PictureBox {
                     Name = "pbLogo",
-                    Size = new Size(400, 84), // Doubled size
+                    Size = new Size(220, 60), 
                     SizeMode = PictureBoxSizeMode.Zoom,
                     BackColor = Color.Transparent
                 };
                 try { 
                     string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png");
                     if(System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath); 
-                    // Fallback to white version if it exists or use tinted if we had one
                 } catch { }
                 panel1.Controls.Add(pbLogo);
                 pbLogo.BringToFront();
+                pbLogo.Location = new Point(0, (panel1.Height - pbLogo.Height) / 2); // Far left
                 pbLogo.MouseDown += Header_MouseDown;
             }
 
             var existingLogo = panel1.Controls.Find("pbLogo", true).FirstOrDefault() as PictureBox;
             if (existingLogo != null) {
-                existingLogo.Location = new Point(0, Math.Max(0, (panel1.Height - existingLogo.Height) / 2));
+                existingLogo.Location = new Point(0, (panel1.Height - existingLogo.Height) / 2); // Far left
             }
 
             label1.Text = "Welcome, " + UserSession.FullName;
