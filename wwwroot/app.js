@@ -16,6 +16,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnClearCart').addEventListener('click', clearCart);
     document.getElementById('btnCheckout').addEventListener('click', processCheckout);
     
+    // Camera Scanner listeners
+    document.getElementById('btnCameraScan').addEventListener('click', () => barcodeScannerManager.start('search'));
+    document.getElementById('btnModalCameraScan').addEventListener('click', () => barcodeScannerManager.start('modal'));
+    document.getElementById('btnCloseScanner').addEventListener('click', () => barcodeScannerManager.stop());
+    
     // Admin Modal listeners
     document.getElementById('btnOpenAddModal').addEventListener('click', () => {
         document.getElementById('addItemModal').classList.remove('hidden');
@@ -203,6 +208,62 @@ async function updateCategoryButtons() {
 
 // ── Scanner Logic ───────────────────────────────────────────
 let barcodeBuffer = '';
+
+// ── Camera Scanner Manager ───────────────────────────────────
+const barcodeScannerManager = {
+    scanner: null,
+    target: 'search', // 'search' or 'modal'
+
+    async start(target = 'search') {
+        this.target = target;
+        const modal = document.getElementById('cameraScannerModal');
+        modal.classList.remove('hidden');
+
+        if (!this.scanner) {
+            this.scanner = new Html5Qrcode("reader");
+        }
+
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+        try {
+            await this.scanner.start(
+                { facingMode: "environment" }, 
+                config,
+                (decodedText) => {
+                    this.onScanSuccess(decodedText);
+                },
+                (errorMessage) => {
+                    // console.log(errorMessage);
+                }
+            );
+        } catch (err) {
+            showToast("Camera access denied or not found", "error");
+            this.stop();
+        }
+    },
+
+    stop() {
+        if (this.scanner) {
+            this.scanner.stop().catch(err => console.error(err));
+        }
+        document.getElementById('cameraScannerModal').classList.add('hidden');
+    },
+
+    onScanSuccess(decodedText) {
+        // Vibrate if supported
+        if (navigator.vibrate) navigator.vibrate(100);
+        
+        showToast(`Scanned: ${decodedText}`, 'success');
+        
+        if (this.target === 'modal') {
+            document.getElementById('newItemBarcode').value = decodedText;
+            this.stop();
+        } else {
+            handleBarcodeScan(decodedText);
+            this.stop();
+        }
+    }
+};
 let barcodeTimer  = null;
 
 function setupBarcodeScanner() {

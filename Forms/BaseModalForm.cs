@@ -215,7 +215,7 @@ namespace GenericInventorySystem.Forms
             int totalRequiredHeight = headerH + footerH + contentHeight + ContentPanel.Padding.Vertical + extraHeight + 20; 
             
             // 3. Apply responsive constraints
-            int minH = Math.Min(350, maxH); 
+            int minH = Math.Min(180, maxH); // Reduced from 350 for message boxes
             this.Height = Math.Max(minH, Math.Min(totalRequiredHeight, maxH));
             
             CenterOnScreen();

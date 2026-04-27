@@ -30,7 +30,7 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeModernUI()
         {
-            this.Size = new Size(400, 200);
+            this.Size = new Size(380, 180);
             this.EnforceMinWidth = false;
 
             // Content Area
@@ -43,24 +43,25 @@ namespace GenericInventorySystem.Forms
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink
             };
-            tlpContent.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
+            tlpContent.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50F)); // Reduced from 60
             tlpContent.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
             picIcon = new PictureBox
             {
-                Size = new Size(48, 48),
+                Size = new Size(32, 32), // Reduced from 48x48
                 SizeMode = PictureBoxSizeMode.Zoom,
-                Margin = new Padding(0, 5, 10, 0)
+                Margin = new Padding(0, 0, 10, 0),
+                Anchor = AnchorStyles.None // Center vertically in row
             };
 
             lblMessage = new Label
             {
                 Text = "Message Text",
-                Font = ThemeConfig.StandardFont,
+                Font = new Font("Segoe UI", 10.5F, FontStyle.Regular), // Increased from StandardFont (9pt)
                 ForeColor = ThemeConfig.TextColorDark,
-                Dock = DockStyle.Top,
+                Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft,
-                AutoSize = true
+                AutoSize = false 
             };
 
             tlpContent.Controls.Add(picIcon, 0, 0);
@@ -74,19 +75,19 @@ namespace GenericInventorySystem.Forms
             switch (icon)
             {
                 case MessageBoxIcon.Error:
-                    picIcon.Image = SystemIcons.Error.ToBitmap();
+                    picIcon.Image = ThemeConfig.GetNuricon("error");
                     this.BorderColor = ThemeConfig.DangerColor;
                     break;
                 case MessageBoxIcon.Information:
-                    picIcon.Image = SystemIcons.Information.ToBitmap();
+                    picIcon.Image = ThemeConfig.GetNuricon("info");
                     this.BorderColor = ThemeConfig.PrimaryColor;
                     break;
                 case MessageBoxIcon.Question:
-                    picIcon.Image = SystemIcons.Question.ToBitmap();
+                    picIcon.Image = ThemeConfig.GetNuricon("info"); // Using info for question as requested
                     this.BorderColor = ThemeConfig.PrimaryColor;
                     break;
                 case MessageBoxIcon.Exclamation:
-                    picIcon.Image = SystemIcons.Warning.ToBitmap();
+                    picIcon.Image = ThemeConfig.GetNuricon("warning");
                     this.BorderColor = ThemeConfig.WarningColor;
                     break;
                 default:
@@ -132,8 +133,8 @@ namespace GenericInventorySystem.Forms
 
         private void AdjustSize(string text)
         {
-            // Initial size estimate
-            this.Width = 400;
+            // Initial size estimate - smaller for simple alerts
+            this.Width = 380;
             
             // Allow BaseModalForm.OnLoad to handle the final FitToContent
             // But we can trigger it early if we want immediate results

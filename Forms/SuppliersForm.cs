@@ -58,6 +58,8 @@ namespace GenericInventorySystem.Forms
                 if (dgvSuppliers.Columns.Contains("colContact")) dgvSuppliers.Columns["colContact"].HeaderText = L("Sup_GridContact");
                 if (dgvSuppliers.Columns.Contains("colPhone")) dgvSuppliers.Columns["colPhone"].HeaderText = L("Sup_GridPhone");
                 if (dgvSuppliers.Columns.Contains("colEmail")) dgvSuppliers.Columns["colEmail"].HeaderText = L("Sup_GridEmail");
+                if (dgvSuppliers.Columns.Contains("colAddress")) dgvSuppliers.Columns["colAddress"].HeaderText = L("Cust_GridAddress") ?? "Address";
+                if (dgvSuppliers.Columns.Contains("colBalance")) dgvSuppliers.Columns["colBalance"].HeaderText = L("Cust_GridBalance") ?? "Balance Due";
                 if (dgvSuppliers.Columns.Contains("colActiveOrders")) dgvSuppliers.Columns["colActiveOrders"].HeaderText = L("Sup_GridActiveOrders");
                 if (dgvSuppliers.Columns.Contains("colDueDate")) dgvSuppliers.Columns["colDueDate"].HeaderText = L("AddSup_DueDate") ?? "Due Date";
                 if (dgvSuppliers.Columns.Contains("colActions")) dgvSuppliers.Columns["colActions"].HeaderText = L("Sup_GridActions");
@@ -281,12 +283,12 @@ namespace GenericInventorySystem.Forms
             dgvSuppliers.Columns.Clear();
             dgvSuppliers.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colCheck", HeaderText = "", Width = 30, ReadOnly = false });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCompany", HeaderText = "Company Name", DataPropertyName = "supplier_name", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colContact", HeaderText = "Contact Person", DataPropertyName = "contact_person", Width = 150, ReadOnly = true });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPhone", HeaderText = "Phone", DataPropertyName = "phone", Width = 120, ReadOnly = true });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmail", HeaderText = "Email", DataPropertyName = "email", Width = 200, ReadOnly = true });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActiveOrders", HeaderText = "Active Orders", DataPropertyName = "active_orders", Width = 100, ReadOnly = true });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colAddress", HeaderText = "Address", DataPropertyName = "address", Width = 200, ReadOnly = true });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBalance", HeaderText = "Balance Due", DataPropertyName = "balance_due", Width = 120, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colDueDate", HeaderText = "Due Date", DataPropertyName = "payment_due_date", Width = 100, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "yyyy-MM-dd" } });
-            dgvSuppliers.Columns.Add(new DataGridViewButtonColumn { Name = "colActions", HeaderText = "Actions", Width = 100, ReadOnly = true });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = "Actions", Width = 100, ReadOnly = true });
 
             // Hidden Fields
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "ID", DataPropertyName = "id", Visible = false });

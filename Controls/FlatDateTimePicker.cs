@@ -126,11 +126,11 @@ namespace GenericInventorySystem.Controls
                     e.Graphics.FillPath(brush, path);
                 }
 
-                // 3. Draw Border
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f))
-                {
-                    e.Graphics.DrawPath(pen, path);
-                }
+                // 3. Draw Border removed to prevent double borders when wrapped in WrapInStyledInput
+                // using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f))
+                // {
+                //     e.Graphics.DrawPath(pen, path);
+                // }
             }
         }
 

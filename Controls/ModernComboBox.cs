@@ -131,7 +131,12 @@ namespace GenericInventorySystem.Controls
             cmbInput.Dock = DockStyle.Fill;
             cmbInput.BackColor = Color.White;
 
-            cmbInput.GotFocus += (s, e) => { _isFocused = true; pnlContainer.Invalidate(); };
+            cmbInput.GotFocus += (s, e) => { 
+                _isFocused = true; 
+                pnlContainer.Invalidate();
+                // Prevent auto-selection of text
+                this.BeginInvoke(new Action(() => { cmbInput.SelectionLength = 0; }));
+            };
             cmbInput.LostFocus += (s, e) => { _isFocused = false; pnlContainer.Invalidate(); };
 
             pnlContainer.Controls.Add(cmbInput);

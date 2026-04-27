@@ -205,13 +205,18 @@ namespace GenericInventorySystem
                 dashboardForm.Dock = DockStyle.Fill;
             }
             panel3.Controls.Add(dashboardForm);
+            panel3.Controls.Add(dashboardForm);
+            
+            // Consolidate Dashboard Button logic to avoid redundant subscriptions and visual lag
             Dashboard_btn.Click -= button1_Click;
-            Dashboard_btn.Click += (s, e) => { ShowForm(dashboardForm); HighlightSelectedButton(Dashboard_btn); };
-            // Style Dashboard_btn exactly like every other nav button via AddNavButton
+            Dashboard_btn.Click += (s, e) => { 
+                ShowForm(dashboardForm); 
+                HighlightSelectedButton(Dashboard_btn); 
+            };
+            
             Image dashIcon = ThemeConfig.GetNuricon("dashboard");
             ThemeConfig.ApplySidebarButtonIcon(Dashboard_btn, dashIcon != null ? ResizeImage(dashIcon, 22, 22) : null, false);
             Dashboard_btn.Text = "  " + LocalizationManager.GetString("Nav_Dashboard");
-            Dashboard_btn.Click += (s, e) => HighlightSelectedButton(Dashboard_btn);
 
             // Forms Setup
             usersForm = InitializeForm<Forms.UsersForm>();
@@ -233,7 +238,6 @@ namespace GenericInventorySystem
             Dashboard_btn.Text = "  Dashboard";
             Dashboard_btn.Image = ResizeImage(ThemeConfig.GetNuricon("dashboard"), 22, 22);
             ThemeConfig.ApplySidebarButtonIcon(Dashboard_btn, Dashboard_btn.Image, false);
-            Dashboard_btn.Click += (s, e) => HighlightSelectedButton(Dashboard_btn);
             Dashboard_btn.BringToFront(); // Place below logo
             pnlNav.Controls.Add(Dashboard_btn);
             Dashboard_btn.BringToFront(); 

@@ -167,7 +167,13 @@ namespace GenericInventorySystem.Controls
                 UpdatePlaceholder();
             };
             
-            txtInput.GotFocus += (s, e) => { _isFocused = true; pnlContainer.Invalidate(); UpdatePlaceholder(); };
+            txtInput.GotFocus += (s, e) => { 
+                _isFocused = true; 
+                pnlContainer.Invalidate(); 
+                UpdatePlaceholder();
+                // Prevent auto-selection of text
+                this.BeginInvoke(new Action(() => { txtInput.SelectionLength = 0; }));
+            };
             txtInput.LostFocus += (s, e) => { _isFocused = false; pnlContainer.Invalidate(); UpdatePlaceholder(); };
 
             pnlContainer.Controls.Add(txtInput);

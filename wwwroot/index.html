@@ -7,6 +7,8 @@
     <title>POS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
+    <!-- Camera Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 
 <body>
@@ -44,6 +46,12 @@
                 <div class="top-actions">
                     <div class="search-bar">
                         <input type="text" id="searchInput" placeholder="Search inventory...">
+                        <button class="btn-camera-scan" id="btnCameraScan" title="Scan Barcode with Camera">
+                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                        </button>
                     </div>
                     <div class="notification-bell" id="btnNotifications">
                         <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2"
@@ -133,6 +141,20 @@
         </aside>
     </div>
 
+    <!-- Camera Scanner Overlay -->
+    <div id="cameraScannerModal" class="overlay hidden">
+        <div class="scanner-card">
+            <div class="scanner-header">
+                <h3>Camera Barcode Scanner</h3>
+                <button class="btn-close" id="btnCloseScanner">&times;</button>
+            </div>
+            <div id="reader"></div>
+            <div class="scanner-footer">
+                <p>Align barcode within the frame to scan</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Add Item Modal -->
     <div id="addItemModal" class="modal-overlay hidden">
         <div class="modal-card">
@@ -168,7 +190,7 @@
                         <label>Barcode (Scan now or type)</label>
                         <div class="scanner-input-wrap">
                             <input type="text" id="newItemBarcode" placeholder="Scanning ready...">
-                            <span class="scan-indicator">📷</span>
+                            <span class="scan-indicator" id="btnModalCameraScan" style="cursor:pointer;" title="Scan with Camera">📷</span>
                         </div>
                     </div>
                 </div>

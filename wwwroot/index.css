@@ -189,6 +189,32 @@ body {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
+.search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.btn-camera-scan {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-camera-scan:hover {
+    color: var(--accent);
+    background: rgba(16, 185, 129, 0.1);
+}
+
 .notification-bell {
     position: relative;
     cursor: pointer;
@@ -543,20 +569,71 @@ body {
 +
  
 /* TABLET FOOTER */
-.tablet-footer {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    text-align: center;
     padding: 12px;
-    font-size: 0.85rem;
+    text-align: center;
+    font-size: 0.8rem;
     color: var(--text-muted);
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    z-index: 1000;
+    background: var(--bg-primary);
     border-top: 1px solid var(--border-color);
+    z-index: 1000;
     letter-spacing: 0.5px;
+}
+
+/* CAMERA SCANNER STYLES */
+.scanner-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    width: 90%;
+    max-width: 500px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.scanner-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#reader {
+    width: 100% !important;
+    border: none !important;
+    background: #000;
+}
+
+#reader__scan_region {
+    background: #000;
+}
+
+#reader__dashboard {
+    padding: 20px !important;
+    background: var(--bg-secondary);
+    color: var(--text-main);
+}
+
+#reader__dashboard button {
+    background: var(--accent) !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+}
+
+.scanner-footer {
+    padding: 15px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    background: rgba(0,0,0,0.2);
 }
 
 /* Adjust container to not hide behind footer */

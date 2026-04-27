@@ -170,7 +170,7 @@ namespace GenericInventorySystem.Forms
             btnRefresh.Text = "Refresh";
             btnRefresh.Dock = DockStyle.Fill;
             ThemeConfig.ApplySecondaryButton(btnRefresh);
-            btnRefresh.Paint += (s, e) => ThemeConfig.DrawIconButton(btnRefresh, e.Graphics, "refresh", "Hist_Refresh", ThemeConfig.TextColorDark, ThemeConfig.BorderColor, true);
+            btnRefresh.Paint += (s, e) => ThemeConfig.DrawIconButton(btnRefresh, e.Graphics, "refresh", "Hist_Refresh", ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, true);
             btnRefresh.Click += (s, e) => LoadHistory();
             pnlRefreshWrapper.Controls.Add(btnRefresh);
             pnlActions.Controls.Add(pnlRefreshWrapper);
