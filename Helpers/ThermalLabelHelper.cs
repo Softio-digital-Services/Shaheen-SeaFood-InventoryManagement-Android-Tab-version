@@ -37,13 +37,9 @@ namespace GenericInventorySystem.Helpers
             using (PrintPreviewDialog preview = new PrintPreviewDialog())
             {
                 preview.Document = pd;
-                preview.Width = 600;
-                preview.Height = 800;
                 preview.Text = LocalizationManager.IsArabic ? "معاينة الملصقات" : "Label Preview";
-                preview.ShowIcon = false;
                 
-                // Set the zoom level for better visibility of small labels
-                preview.PrintPreviewControl.Zoom = 1.5;
+                ThemeConfig.ApplyPrintPreviewTheme(preview);
 
                 if (preview.ShowDialog() == DialogResult.OK)
                 {

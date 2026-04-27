@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using GenericInventorySystem.Controls;
 using GenericInventorySystem.Data;
@@ -113,6 +114,7 @@ namespace GenericInventorySystem.Forms
             Panel pnlDate = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
             Label lblDateRef = new Label { Text = LocalizationManager.IsArabic ? "التاريخ" : "Expense Date", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };
             dtpDate = new FlatDateTimePicker { Width = 170, Height = 42 };
+            // Using a simple wrapper but ensuring it has a solid card look to prevent border loss
             Panel pnlDateWrapper = ThemeConfig.WrapInStyledInput(dtpDate, 42);
             pnlDateWrapper.Location = new Point(0, 25);
             pnlDate.Controls.Add(pnlDateWrapper); pnlDate.Controls.Add(lblDateRef);
@@ -201,9 +203,28 @@ namespace GenericInventorySystem.Forms
                 HeaderText = "Action", 
                 Text = "Pay Now", 
                 UseColumnTextForButtonValue = true, 
-                Width = 120 
+                Width = 120,
+                FlatStyle = FlatStyle.Flat
             };
             dgvExpenses.Columns.Add(btnPaid);
+            dgvExpenses.CellPainting += (s, e) => {
+                if (e.RowIndex >= 0 && e.ColumnIndex >= 0 && dgvExpenses.Columns[e.ColumnIndex].Name == "Action") {
+                    e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
+                    var drv = dgvExpenses.Rows[e.RowIndex].DataBoundItem as DataRowView;
+                    bool isPaid = drv != null && drv["is_paid"] != DBNull.Value ? Convert.ToBoolean(drv["is_paid"]) : true;
+                    
+                    if (!isPaid) {
+                        Rectangle r = new Rectangle(e.CellBounds.X + 8, e.CellBounds.Y + 8, e.CellBounds.Width - 16, e.CellBounds.Height - 16);
+                        using (var path = ThemeConfig.GetRoundedPathPublic(r, 8))
+                        using (var brush = new SolidBrush(ThemeConfig.PrimaryColor)) {
+                            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                            e.Graphics.FillPath(brush, path);
+                            TextRenderer.DrawText(e.Graphics, "Pay Now", ThemeConfig.SmallBoldFont, r, Color.White, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                        }
+                    }
+                    e.Handled = true;
+                }
+            };
             dgvExpenses.CellContentClick += DgvExpenses_CellContentClick;
 
             // Card for Grid

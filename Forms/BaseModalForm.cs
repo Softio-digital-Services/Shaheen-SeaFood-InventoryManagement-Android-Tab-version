@@ -125,7 +125,7 @@ namespace GenericInventorySystem.Forms
                 BackColor = Color.Transparent,
                 Dock = DockStyle.Fill,
                 Padding = new Padding(30, 10, 30, 10),
-                Margin = new Padding(0)
+                Margin = new Padding(0, 0, 5, 0) // Inset from right to avoid border overlap
             };
             tlpRoot.Controls.Add(ContentPanel, 0, 1);
 
@@ -134,7 +134,7 @@ namespace GenericInventorySystem.Forms
                 Dock = DockStyle.Fill,
                 BackColor = Color.Transparent, // Match parent
                 Padding = new Padding(30, 15, 30, 15), 
-                Margin = new Padding(0)
+                Margin = new Padding(0, 0, 5, 0) // Align with content panel
             };
 
             tlpRoot.Controls.Add(FooterPanel, 0, 2);

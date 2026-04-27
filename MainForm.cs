@@ -184,10 +184,28 @@ namespace GenericInventorySystem
             panel2.Controls.Add(pnlNav);
             pnlNav.BringToFront();
 
-            PictureBox pbSidebarLogo = new PictureBox { Name = "pbSidebarLogo", Size = new Size(100, 100), SizeMode = PictureBoxSizeMode.Zoom, Dock = DockStyle.Top, Padding = new Padding(30, 30, 30, 30) };
-            try { string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png"); if(System.IO.File.Exists(logoPath)) pbSidebarLogo.Image = Image.FromFile(logoPath); } catch { }
-            pnlNav.Controls.Add(pbSidebarLogo);
-            pbSidebarLogo.BringToFront(); // Highest index in Dock=Top is top, index 0 is bottom. No, wait. 
+            // Dedicated Logo Container to prevent layout overrides and ensure margins
+            Panel pnlLogoContainer = new Panel { 
+                Name = "pnlLogoContainer", 
+                Dock = DockStyle.Top, 
+                Height = 120, // Sufficient height for logo + gaps
+                BackColor = Color.Transparent,
+                Padding = new Padding(0, 15, 0, 10) // 15px top margin from header, 10px bottom margin from menu
+            };
+            pnlNav.Controls.Add(pnlLogoContainer);
+            pnlLogoContainer.BringToFront();
+
+            PictureBox pbSidebarLogo = new PictureBox { 
+                Name = "pbSidebarLogo", 
+                Dock = DockStyle.Fill,
+                SizeMode = PictureBoxSizeMode.Zoom,
+                BackColor = Color.Transparent
+            };
+            try { 
+                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png"); 
+                if(System.IO.File.Exists(logoPath)) pbSidebarLogo.Image = Image.FromFile(logoPath); 
+            } catch { }
+            pnlLogoContainer.Controls.Add(pbSidebarLogo);
             // In WinForms Dock=Top: The control with the HIGHEST z-order index is at the top.
             // BringToFront sets index to 0. SendToBack sets to last.
             // So for A to be above B: A should have higher index than B.

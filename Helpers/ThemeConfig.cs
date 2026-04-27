@@ -5,6 +5,7 @@ using System.Windows.Forms.DataVisualization.Charting;
 using System.Text.Json;
 using System.IO;
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 
 namespace GenericInventorySystem
 {
@@ -545,7 +546,7 @@ namespace GenericInventorySystem
              DrawRoundedButton(sender as Button, e.Graphics);
         }
 
-        private static GraphicsPath GetRoundedPath(Rectangle rect, int radius)
+        public static GraphicsPath GetRoundedPathPublic(Rectangle rect, int radius)
         {
             var path = new GraphicsPath();
             int d = radius * 2;
@@ -562,10 +563,148 @@ namespace GenericInventorySystem
             return path;
         }
 
-        public static GraphicsPath GetRoundedPathPublic(Rectangle rect, int radius)
+        private static GraphicsPath GetRoundedPath(Rectangle rect, int radius)
         {
-            return GetRoundedPath(rect, radius);
+            return GetRoundedPathPublic(rect, radius);
         }
+
+        public static void ApplyPrintPreviewTheme(PrintPreviewDialog preview)
+        {
+            if (preview == null) return;
+
+            Rectangle workingArea = Screen.PrimaryScreen.WorkingArea;
+            preview.FormBorderStyle = FormBorderStyle.None;
+            preview.BackColor = Color.White;
+            preview.ShowIcon = false;
+            preview.WindowState = FormWindowState.Normal;
+            
+            // A4 Ratio (210:297) - Approx 1:1.41
+            int targetHeight = (int)(workingArea.Height * 0.85);
+            int targetWidth = (int)(targetHeight / 1.414);
+            
+            // Limit width if it exceeds screen
+            if (targetWidth > workingArea.Width * 0.9)
+            {
+                targetWidth = (int)(workingArea.Width * 0.9);
+                targetHeight = (int)(targetWidth * 1.414);
+            }
+
+            preview.Size = new Size(targetWidth, targetHeight);
+            preview.StartPosition = FormStartPosition.CenterParent;
+
+            // Internal components
+            ToolStrip ts = null;
+            PrintPreviewControl ppc = null;
+            foreach (Control c in preview.Controls)
+            {
+                if (c is ToolStrip) ts = (ToolStrip)c;
+                if (c is PrintPreviewControl) ppc = (PrintPreviewControl)c;
+            }
+
+            // 1. Position the ToolStrip in our "Styled Header" area
+            if (ts != null)
+            {
+                ts.BackColor = Color.White;
+                ts.GripStyle = ToolStripGripStyle.Hidden;
+                ts.AutoSize = false;
+                ts.Height = 40;
+                ts.Dock = DockStyle.None;
+                ts.Location = new Point(20, 25); 
+                ts.Width = preview.Width - 100;
+                ts.Padding = new Padding(0);
+                ts.Renderer = new ModernNotificationRenderer();
+
+                foreach (ToolStripItem item in ts.Items)
+                {
+                    if (item is ToolStripButton btn)
+                    {
+                        btn.AutoSize = false;
+                        btn.Size = new Size(32, 32);
+                        btn.Margin = new Padding(2);
+                        btn.DisplayStyle = ToolStripItemDisplayStyle.Image;
+                        
+                        // Map internal names to themed icons
+                        string name = btn.Name.ToLower();
+                        if (name.Contains("print")) btn.Image = GetNuricon("pos");
+                        else if (name.Contains("zoom")) btn.Image = GetNuricon("search");
+                        else if (name.Contains("onepage")) btn.Image = GetNuricon("check");
+                        else if (name.Contains("page")) btn.Image = GetNuricon("view");
+                        else btn.Image = GetNuricon("info");
+                    }
+                    else if (item is ToolStripSeparator)
+                    {
+                        item.Visible = false; // Hide separators for cleaner look
+                    }
+                }
+            }
+
+            // 2. Styled Close Button & Title
+            Label lblTitle = new Label { 
+                Text = preview.Text.ToUpper(), 
+                Font = new Font("Segoe UI", 9, FontStyle.Bold), 
+                ForeColor = Color.Gray,
+                AutoSize = true,
+                Location = new Point(20, 10)
+            };
+            preview.Controls.Add(lblTitle);
+
+            Button btnClose = new Button { Size = new Size(32, 32), Location = new Point(preview.Width - 40, 15), Cursor = Cursors.Hand };
+            ApplyWindowControl(btnClose, "Close");
+            btnClose.Click += (s, e) => preview.Close();
+            preview.Controls.Add(btnClose);
+            btnClose.BringToFront();
+
+            // 3. PrintPreviewControl
+            if (ppc != null)
+            {
+                ppc.BackColor = BackgroundColor;
+                ppc.Dock = DockStyle.None;
+                ppc.Location = new Point(8, 72); // Inset from left/right to protect borders
+                ppc.Size = new Size(preview.Width - 16, preview.Height - 80);
+                ppc.Zoom = 1.0;
+                ppc.Columns = 1;
+                ppc.AutoZoom = true;
+            }
+
+            // 4. Painting (Header & Neon Border)
+            preview.Paint += (s, e) => {
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(Color.White);
+
+                Rectangle rect = new Rectangle(0, 0, preview.Width - 1, preview.Height - 1);
+                int radius = 16;
+
+                using (var path = GetRoundedPathPublic(rect, radius))
+                {
+                    // Clip the form
+                    preview.Region = new Region(path);
+
+                    // Neon Border with Glow
+                    Color neonColor = PrimaryColor;
+                    using (Pen glow1 = new Pen(Color.FromArgb(40, neonColor), 4f)) g.DrawPath(glow1, path);
+                    using (Pen glow2 = new Pen(Color.FromArgb(70, neonColor), 2f)) g.DrawPath(glow2, path);
+                    // Main Sharp Neon Border (Refined 1.8px)
+                    using (Pen mainPen = new Pen(neonColor, 1.8f)) g.DrawPath(mainPen, path);
+
+                    // Header Separator line - Darker and more obvious
+                    using (Pen sep = new Pen(Color.FromArgb(220, 225, 235), 1.5f))
+                        g.DrawLine(sep, 1, 70, preview.Width - 2, 70);
+                }
+            };
+
+            // Support dragging
+            preview.MouseDown += (s, e) => {
+                if (e.Button == MouseButtons.Left && e.Y < 70)
+                {
+                    ReleaseCapture();
+                    SendMessage(preview.Handle, 0xA1, 0x2, 0);
+                }
+            };
+        }
+
+        [DllImport("user32.dll")] private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+        [DllImport("user32.dll")] private static extern bool ReleaseCapture();
 
         public static void ApplyDangerButton(Button btn)
         {

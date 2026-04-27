@@ -20,8 +20,9 @@ namespace GenericInventorySystem.Forms
             _orderService = new OrderService();
             
             this.TitleText = "Quotation Preview - #" + orderId;
-            this.Size = new Size(850, 900);
+            this.Size = new Size(950, 950); // Increased width to ensure A4 fits
             this.BackColor = ThemeConfig.BackgroundColor;
+            this.ContentPanel.Padding = new Padding(20, 20, 20, 20); // Add safety margin
 
             InitializeUI();
             LoadData();
@@ -40,22 +41,20 @@ namespace GenericInventorySystem.Forms
 
             // The actual document (A4-ish proportions)
             pnlContent = new Panel { 
-                Width = 750, 
+                Width = 800, 
                 Height = 1100, 
                 BackColor = Color.White, 
-                Anchor = AnchorStyles.Top,
-                BorderStyle = BorderStyle.FixedSingle 
+                Margin = new Padding(0, 0, 0, 40),
+                BorderStyle = BorderStyle.FixedSingle,
+                Anchor = AnchorStyles.Top
             };
             
-            // Container to center the document
-            Panel pnlCenter = new Panel { Dock = DockStyle.Top, Height = 1150, BackColor = Color.Transparent };
+            // Center in ContentPanel
             pnlContent.Left = (this.ContentPanel.Width - pnlContent.Width) / 2;
-            pnlCenter.Controls.Add(pnlContent);
-
-            this.ContentPanel.Controls.Add(pnlCenter);
+            this.ContentPanel.Controls.Add(pnlContent);
             
             this.ContentPanel.Resize += (s, e) => {
-                pnlContent.Left = Math.Max(20, (this.ContentPanel.Width - pnlContent.Width) / 2);
+                pnlContent.Left = Math.Max(0, (this.ContentPanel.Width - pnlContent.Width) / 2);
             };
         }
 
@@ -84,7 +83,12 @@ namespace GenericInventorySystem.Forms
 
             // Header - Logo Placeholder
             PictureBox pbLogo = new PictureBox { Size = new Size(80, 80), Location = new Point(40, y), SizeMode = PictureBoxSizeMode.Zoom };
-            try { pbLogo.Image = Image.FromFile(System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png")); } catch { pbLogo.BackColor = ThemeConfig.PrimaryColor; }
+            pbLogo.Image = ThemeConfig.GetNuricon("pos"); // Use a generic themed icon if logo missing
+            try 
+            { 
+                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png");
+                if (System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath);
+            } catch { }
             pnlContent.Controls.Add(pbLogo);
 
             Label lblCompany = new Label { 
@@ -117,7 +121,7 @@ namespace GenericInventorySystem.Forms
             Label lblBillToTitle = new Label { Text = "BILL TO:", Font = new Font("Segoe UI", 10, FontStyle.Bold), Location = new Point(40, y), AutoSize = true };
             pnlContent.Controls.Add(lblBillToTitle);
 
-            // Need to fetch customer name from DB based on order
+            // Fetch customer name
             string customerName = DatabaseHelper.ExecuteScalar<string>($@"
                 SELECT ISNULL(c.full_name, 'Walk-in Customer') 
                 FROM orders o LEFT JOIN customers c ON o.customer_id = c.customer_id 
@@ -148,30 +152,36 @@ namespace GenericInventorySystem.Forms
             grid.BackgroundColor = Color.White;
             grid.BorderStyle = BorderStyle.None;
             grid.ScrollBars = ScrollBars.None;
+            grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            grid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+            grid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
             grid.ClearSelection();
             grid.DataError += (s, ev) => { ev.ThrowException = false; };
             
             ThemeConfig.ApplyGridTheme(grid);
+            grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(240, 244, 250);
 
-            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Description", HeaderText = "Description", Width = 380, AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Qty", HeaderText = "Qty", Width = 80, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
-            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitPrice", HeaderText = "Unit Price", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
-            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = "Total", Width = 120, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9.5F, FontStyle.Bold) } });
+            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Item", HeaderText = "Item / Description", Width = 380, AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Qty", HeaderText = "Qty", Width = 60, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
+            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitPrice", HeaderText = "Price", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
+            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = "Total", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9.5F, FontStyle.Bold) } });
 
             foreach(var item in items)
             {
-                string partName = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {item.PartId}");
-                grid.Rows.Add(partName, item.Quantity, item.UnitPrice.ToString("C2"), (item.Quantity * item.UnitPrice).ToString("C2"));
+                string displayName = item.PartName;
+                if (!string.IsNullOrEmpty(item.Description))
+                    displayName += "\n" + item.Description;
+
+                grid.Rows.Add(displayName, item.Quantity, item.UnitPrice.ToString("C2"), (item.Quantity * item.UnitPrice).ToString("C2"));
             }
 
+            // Adjust grid height based on content
             int gridHeight = grid.ColumnHeadersHeight;
             foreach (DataGridViewRow row in grid.Rows) gridHeight += row.Height;
-            grid.Height = gridHeight + 2;
+            grid.Height = gridHeight + 5;
 
             pnlContent.Controls.Add(grid);
-            y += grid.Height + 20;
-
-            y += 40;
+            y += grid.Height + 30;
 
             // Summary
             Label lblTotalLabel = new Label { Text = "GRAND TOTAL:", Font = new Font("Segoe UI", 12, FontStyle.Bold), Location = new Point(pnlContent.Width - 350, y), Size = new Size(150, 30), TextAlign = ContentAlignment.TopRight };

@@ -408,7 +408,12 @@ namespace GenericInventorySystem.Forms
             System.Drawing.Printing.PrintDocument pd = new System.Drawing.Printing.PrintDocument();
             try { pd.DefaultPageSettings.PaperSize = new System.Drawing.Printing.PaperSize("Receipt", 315, 600); } catch { }
             pd.PrintPage += PrintReceiptPage;
-            new PrintPreviewDialog { Document = pd, ShowIcon = false, Text = LocalizationManager.GetString("POS_PrintReceipt"), Width = 400, Height = 600 }.ShowDialog();
+            var preview = new PrintPreviewDialog { 
+                Document = pd, 
+                Text = LocalizationManager.GetString("POS_PrintReceipt") 
+            };
+            ThemeConfig.ApplyPrintPreviewTheme(preview);
+            preview.ShowDialog();
         }
 
         private void PrintReceiptPage(object sender, System.Drawing.Printing.PrintPageEventArgs e)
