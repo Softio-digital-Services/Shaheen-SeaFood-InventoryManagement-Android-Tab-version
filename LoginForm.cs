@@ -8,12 +8,70 @@ namespace GenericInventorySystem
 {
     public partial class LoginForm : Form
     {
+        private bool _isDragging = false;
+        private Point _dragStartPoint = Point.Empty;
+
         public LoginForm()
         {
             InitializeComponent();
             ApplyTheme();
             ThemeConfig.ApplyFormIcon(this);
             ApplyLocalization();
+            SetupDragging();
+        }
+
+        private void SetupDragging()
+        {
+            // Attach dragging to form background and main panels
+            this.MouseDown += OnDraggingMouseDown;
+            this.MouseMove += OnDraggingMouseMove;
+            this.MouseUp += OnDraggingMouseUp;
+
+            if (tableLayoutPanel1 != null)
+            {
+                tableLayoutPanel1.MouseDown += OnDraggingMouseDown;
+                tableLayoutPanel1.MouseMove += OnDraggingMouseMove;
+                tableLayoutPanel1.MouseUp += OnDraggingMouseUp;
+            }
+
+            if (panelLoginCard != null)
+            {
+                panelLoginCard.MouseDown += OnDraggingMouseDown;
+                panelLoginCard.MouseMove += OnDraggingMouseMove;
+                panelLoginCard.MouseUp += OnDraggingMouseUp;
+
+                // Also allow dragging from labels
+                labelTitle.MouseDown += OnDraggingMouseDown;
+                labelTitle.MouseMove += OnDraggingMouseMove;
+                labelTitle.MouseUp += OnDraggingMouseUp;
+
+                labelSubtitle.MouseDown += OnDraggingMouseDown;
+                labelSubtitle.MouseMove += OnDraggingMouseMove;
+                labelSubtitle.MouseUp += OnDraggingMouseUp;
+            }
+        }
+
+        private void OnDraggingMouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                _isDragging = true;
+                _dragStartPoint = new Point(e.X, e.Y);
+            }
+        }
+
+        private void OnDraggingMouseMove(object sender, MouseEventArgs e)
+        {
+            if (_isDragging)
+            {
+                Point p = PointToScreen(e.Location);
+                this.Location = new Point(p.X - _dragStartPoint.X, p.Y - _dragStartPoint.Y);
+            }
+        }
+
+        private void OnDraggingMouseUp(object sender, MouseEventArgs e)
+        {
+            _isDragging = false;
         }
 
         private void ApplyLocalization()

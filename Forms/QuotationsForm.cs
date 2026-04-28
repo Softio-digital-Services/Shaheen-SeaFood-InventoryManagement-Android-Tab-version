@@ -218,7 +218,7 @@ namespace GenericInventorySystem.Forms
                 int startX = e.CellBounds.X + (e.CellBounds.Width - totalW) / 2;
                 int startY = e.CellBounds.Y + (e.CellBounds.Height - btnH) / 2;
 
-                Image imgView = ThemeConfig.GetNuricon("view");
+                Image imgView = ThemeConfig.GetNuricon("preview_doc");
                 Image imgOk = ThemeConfig.GetNuricon("check");
                 Image imgDel = ThemeConfig.GetNuricon("delete");
 

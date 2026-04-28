@@ -228,6 +228,26 @@ namespace GenericInventorySystem
             cbo.BackColor = SurfaceColor;
             cbo.ForeColor = TextColorDark;
             cbo.Cursor = Cursors.Hand;
+            
+            // Prevent blue selection highlight on focus
+            cbo.Enter += (s, e) => {
+                if (cbo.IsHandleCreated) {
+                    cbo.BeginInvoke(new Action(() => {
+                        cbo.Select(0, 0);
+                        cbo.SelectionLength = 0;
+                    }));
+                }
+            };
+            
+            // Also clear on choice to prevent focus-highlight after selection
+            cbo.SelectedIndexChanged += (s, e) => {
+                if (cbo.IsHandleCreated) {
+                    cbo.BeginInvoke(new Action(() => {
+                        cbo.Select(0, 0);
+                        cbo.SelectionLength = 0;
+                    }));
+                }
+            };
         }
 
         public static Panel WrapInStyledInput(Control innerControl, int height, bool isMultiline = false)
@@ -287,7 +307,7 @@ namespace GenericInventorySystem
 
         public static void ApplyChartTheme(Chart chart)
         {
-            chart.BackColor = SurfaceColor;
+            chart.BackColor = Color.Transparent; // Changed from SurfaceColor to prevent covering rounded corners
             chart.AntiAliasing = AntiAliasingStyles.All;
             chart.TextAntiAliasingQuality = TextAntiAliasingQuality.High;
 
@@ -534,11 +554,72 @@ namespace GenericInventorySystem
                     g.DrawPath(glowPen, path);
             }    
 
+            // Draw image if exists
+            if (btn.Image != null)
+            {
+                Rectangle imgRect = GetImageRectangle(btn);
+                using (var tinted = TintImage(btn.Image, btn.ForeColor))
+                {
+                    g.DrawImage(tinted, imgRect);
+                }
+            }
+
             TextFormatFlags flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
             if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
                 flags |= TextFormatFlags.RightToLeft;
 
-            TextRenderer.DrawText(g, btn.Text, btn.Font, Rectangle.Round(r), btn.ForeColor, flags);
+            Rectangle textRect = Rectangle.Round(r);
+            if (btn.Image != null && btn.TextImageRelation == TextImageRelation.ImageBeforeText)
+            {
+                Rectangle imgRect = GetImageRectangle(btn);
+                int offset = imgRect.Right + 8; // Margin between icon and text
+                textRect = new Rectangle(offset, 0, btn.Width - offset - 4, btn.Height);
+                flags &= ~TextFormatFlags.HorizontalCenter;
+                flags |= TextFormatFlags.Left;
+            }
+
+            TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor, flags);
+        }
+
+        private static Rectangle GetImageRectangle(Button btn)
+        {
+            if (btn.Image == null) return Rectangle.Empty;
+
+            int imgW = btn.Image.Width;
+            int imgH = btn.Image.Height;
+
+            // Scale to fit
+            // If button has text, make icon smaller (approx 18-20px)
+            int targetH = btn.Height - 16;
+            if (!string.IsNullOrEmpty(btn.Text)) targetH = Math.Min(targetH, 20);
+            int targetW = targetH; // Keep square icons
+
+            float ratio = Math.Min((float)targetW / imgW, (float)targetH / imgH);
+            imgW = (int)(imgW * ratio);
+            imgH = (int)(imgH * ratio);
+
+            int x = (btn.Width - imgW) / 2;
+            int y = (btn.Height - imgH) / 2;
+
+            if (btn.TextImageRelation == TextImageRelation.ImageBeforeText)
+            {
+                x = 12; // Left aligned with padding
+            }
+            else
+            {
+                switch (btn.ImageAlign)
+                {
+                    case ContentAlignment.TopLeft: x = 8; y = 8; break;
+                    case ContentAlignment.TopCenter: y = 8; break;
+                    case ContentAlignment.TopRight: x = btn.Width - imgW - 8; y = 8; break;
+                    case ContentAlignment.MiddleLeft: x = 8; break;
+                    case ContentAlignment.MiddleRight: x = btn.Width - imgW - 8; break;
+                    case ContentAlignment.BottomLeft: x = 8; y = btn.Height - imgH - 8; break;
+                    case ContentAlignment.BottomCenter: y = btn.Height - imgH - 8; break;
+                    case ContentAlignment.BottomRight: x = btn.Width - imgW - 8; y = btn.Height - imgH - 8; break;
+                }
+            }
+            return new Rectangle(x, y, imgW, imgH);
         }
 
         private static void Btn_PaintRounded(object sender, PaintEventArgs e)
@@ -609,8 +690,9 @@ namespace GenericInventorySystem
                 ts.AutoSize = false;
                 ts.Height = 40;
                 ts.Dock = DockStyle.None;
-                ts.Location = new Point(20, 25); 
-                ts.Width = preview.Width - 100;
+                ts.CanOverflow = false; // Remove the extra section / overflow arrow
+                ts.Location = new Point(180, 12); 
+                ts.Width = preview.Width - 220;
                 ts.Padding = new Padding(0);
                 ts.Renderer = new ModernNotificationRenderer();
 
@@ -624,12 +706,17 @@ namespace GenericInventorySystem
                         btn.DisplayStyle = ToolStripItemDisplayStyle.Image;
                         
                         // Map internal names to themed icons
-                        string name = btn.Name.ToLower();
-                        if (name.Contains("print")) btn.Image = GetNuricon("pos");
-                        else if (name.Contains("zoom")) btn.Image = GetNuricon("search");
-                        else if (name.Contains("onepage")) btn.Image = GetNuricon("check");
-                        else if (name.Contains("page")) btn.Image = GetNuricon("view");
-                        else btn.Image = GetNuricon("info");
+                        string name = item.Name.ToLower();
+                        if (name.Contains("close") || name.Contains("info")) { item.Visible = false; continue; }
+
+                        if (name.Contains("print")) item.Image = GetNuricon("print");
+                        else if (name.Contains("zoom") || name.Contains("search")) item.Image = GetNuricon("search");
+                        else if (name.Contains("onepage")) item.Image = GetNuricon("one_page");
+                        else if (name.Contains("twopage")) item.Image = GetNuricon("two_pages");
+                        else if (name.Contains("threepage")) item.Image = GetNuricon("three_pages");
+                        else if (name.Contains("fourpage")) item.Image = GetNuricon("four_pages"); 
+                        else if (name.Contains("sixpage")) item.Image = GetNuricon("six_pages");
+                        else item.Image = GetNuricon("view");
                     }
                     else if (item is ToolStripSeparator)
                     {
@@ -642,9 +729,9 @@ namespace GenericInventorySystem
             Label lblTitle = new Label { 
                 Text = preview.Text.ToUpper(), 
                 Font = new Font("Segoe UI", 9, FontStyle.Bold), 
-                ForeColor = Color.Gray,
+                ForeColor = ThemeConfig.PrimaryColor,
                 AutoSize = true,
-                Location = new Point(20, 10)
+                Location = new Point(20, 15)
             };
             preview.Controls.Add(lblTitle);
 
@@ -1103,7 +1190,7 @@ namespace GenericInventorySystem
         public static Panel CreateCardPanel(Control inner)
         {
             Panel p = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
-            Panel card = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(5) };
+            Panel card = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(15) };
             card.Paint += (s, e) => {
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 Color parentColor = GetParentColor(card);

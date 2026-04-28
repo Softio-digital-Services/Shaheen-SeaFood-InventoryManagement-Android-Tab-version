@@ -194,7 +194,7 @@ namespace GenericInventorySystem.Forms
             tlpMain.Controls.Add(txtName, 0, 2);
 
             // Names Row
-            TableLayoutPanel pnlNames = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Height = 80, Margin = new Padding(0) };
+            TableLayoutPanel pnlNames = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, AutoSize = true, Margin = new Padding(0) };
             pnlNames.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             pnlNames.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
 
@@ -215,24 +215,43 @@ namespace GenericInventorySystem.Forms
             txtCreditLimit = new ModernTextBox { LabelText = "Credit Limit", Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), Text = "1000.00" };
             tlpMain.Controls.Add(txtCreditLimit, 0, 6);
 
-            // Reminder Group
-            TableLayoutPanel pnlReminders = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, AutoSize = true, Margin = new Padding(0, 0, 0, 15) };
-            pnlReminders.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-            pnlReminders.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            // Reminder Card
+            Panel cardReminders = new Panel { Dock = DockStyle.Fill, AutoSize = true, Padding = new Padding(15), Margin = new Padding(0, 5, 0, 15) };
+            cardReminders.Paint += (s, e) => {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                Rectangle rect = new Rectangle(0, 0, cardReminders.Width - 1, cardReminders.Height - 1);
+                using (var path = ThemeConfig.GetRoundedPathPublic(rect, 12))
+                using (var brush = new SolidBrush(Color.FromArgb(252, 253, 255)))
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                {
+                    e.Graphics.FillPath(brush, path);
+                    e.Graphics.DrawPath(pen, path);
+                }
+            };
 
-            chkEnableReminder = new CheckBox { Text = "Enable Payment Reminder", AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(5, 0, 0, 10) };
-            tlpMain.Controls.Add(chkEnableReminder, 0, 7);
+            TableLayoutPanel tlpRemContent = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 2, RowCount = 2, AutoSize = true };
+            tlpRemContent.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            tlpRemContent.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
 
-            Label lblDueDate = new Label { Name = "lblDueDate", Text = "Payment Due Date", Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true };
+            chkEnableReminder = new CheckBox { Text = "Enable Payment Reminder", AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 15) };
+            
+            Label lblDueDate = new Label { Name = "lblDueDate", Text = "Payment Due Date", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
             dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Enabled = false, Height = 40 };
-            pnlReminders.Controls.Add(lblDueDate, 0, 0);
-            pnlReminders.Controls.Add(dtDueDate, 0, 1);
-
-            Label lblRemDays = new Label { Name = "lblRemDays", Text = "Reminder (Days Before)", Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true };
+            
+            Label lblRemDays = new Label { Name = "lblRemDays", Text = "Reminder (Days Before)", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
             numReminderDays = new NumericUpDown { Dock = DockStyle.Fill, Minimum = 0, Maximum = 365, Enabled = false, Font = ThemeConfig.StandardFont, Height = 40 };
-            pnlReminders.Controls.Add(lblRemDays, 1, 0);
-            pnlReminders.Controls.Add(numReminderDays, 1, 1);
-            tlpMain.Controls.Add(pnlReminders, 0, 8);
+            
+            tlpRemContent.Controls.Add(lblDueDate, 0, 0);
+            tlpRemContent.Controls.Add(dtDueDate, 0, 1);
+            tlpRemContent.Controls.Add(lblRemDays, 1, 0);
+            tlpRemContent.Controls.Add(numReminderDays, 1, 1);
+            
+            FlowLayoutPanel flpRemWrapper = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true };
+            flpRemWrapper.Controls.Add(chkEnableReminder);
+            flpRemWrapper.Controls.Add(tlpRemContent);
+            
+            cardReminders.Controls.Add(flpRemWrapper);
+            tlpMain.Controls.Add(cardReminders, 0, 7);
 
             chkEnableReminder.CheckedChanged += (s, e) => { dtDueDate.Enabled = numReminderDays.Enabled = chkEnableReminder.Checked; };
 

@@ -10,6 +10,7 @@ namespace GenericInventorySystem.Services
         public int PartId { get; set; }
         public string PartName { get; set; }
         public string Description { get; set; }
+        public string PartImage { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal Total => Quantity * UnitPrice;
@@ -218,7 +219,7 @@ namespace GenericInventorySystem.Services
         public List<OrderItem> GetOrderItems(int orderId)
         {
              string sql = @"
-                SELECT i.part_id, p.part_name, i.quantity, i.price, p.description
+                SELECT i.part_id, p.part_name, i.quantity, i.price, p.description, p.part_image
                 FROM order_items i
                 JOIN parts p ON i.part_id = p.id
                 WHERE i.order_id = @oid";
@@ -229,7 +230,8 @@ namespace GenericInventorySystem.Services
                  PartName = reader.GetString(1),
                  Quantity = reader.GetInt32(2),
                  UnitPrice = reader.GetDecimal(3),
-                 Description = reader.IsDBNull(4) ? "" : reader.GetString(4)
+                 Description = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                 PartImage = reader.IsDBNull(5) ? "" : reader.GetString(5)
              }, new SqlParameter("@oid", orderId));
         }
 

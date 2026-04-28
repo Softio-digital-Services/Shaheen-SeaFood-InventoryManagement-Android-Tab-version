@@ -98,7 +98,7 @@ namespace GenericInventorySystem.Forms
             
             Label lblValTitle = GetTitleLabel("Inventory Valuation Over Time");
             lblValTitle.Name = "lblValTitle";
-            pnlValuation.Controls.Add(lblValTitle);
+            pnlValuation.Controls[0].Controls.Add(lblValTitle);
             lblValTitle.BringToFront(); // Ensure title is visible above chart in card
 
             tlpTop.Controls.Add(pnlValuation, 0, 0);
@@ -111,7 +111,7 @@ namespace GenericInventorySystem.Forms
             
             Label lblPieTitle = GetTitleLabel("Sales by Category");
             lblPieTitle.Name = "lblPieTitle";
-            pnlPie.Controls.Add(lblPieTitle);
+            pnlPie.Controls[0].Controls.Add(lblPieTitle);
             lblPieTitle.BringToFront();
 
             tlpTop.Controls.Add(pnlPie, 1, 0);
@@ -173,7 +173,7 @@ namespace GenericInventorySystem.Forms
             
             Label lblBarTitle = GetTitleLabel("Top Selling Products (This Month)");
             lblBarTitle.Name = "lblBarTitle";
-            pnlBar.Controls.Add(lblBarTitle);
+            pnlBar.Controls[0].Controls.Add(lblBarTitle);
             lblBarTitle.BringToFront();
 
             tlpBottom.Controls.Add(pnlBar, 1, 0);

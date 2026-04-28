@@ -636,7 +636,7 @@ namespace GenericInventorySystem.Forms
         private void ShowAdjustmentDialog(int partId, string partName)
         {
             string title = (LocalizationManager.IsArabic ? "تعديل المخزون: " : "Adjust Stock: ") + partName;
-            BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(450, 420) };
+            BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(450, 280) };
             
             TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 1, RowCount = 5, AutoSize = true, Padding = new Padding(10) };
             tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));

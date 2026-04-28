@@ -14,7 +14,7 @@ namespace GenericInventorySystem.Forms
         public OrderIdPromptForm()
         {
             this.TitleText = LocalizationManager.IsArabic ? "إرجاع طلب" : "Return Order";
-            this.Size = new Size(400, 220);
+            this.Size = new Size(400, 280);
 
             Panel pnl = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20) };
             

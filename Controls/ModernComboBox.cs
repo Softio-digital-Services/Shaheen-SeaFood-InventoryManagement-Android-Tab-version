@@ -35,6 +35,12 @@ namespace GenericInventorySystem.Controls
             set => cmbInput.SelectedIndex = value;
         }
 
+        public ComboBoxStyle DropDownStyle
+        {
+            get => cmbInput.DropDownStyle;
+            set => cmbInput.DropDownStyle = value;
+        }
+
         public ComboBox.ObjectCollection Items => cmbInput.Items;
 
         public object DataSource
@@ -131,17 +137,18 @@ namespace GenericInventorySystem.Controls
             cmbInput.Dock = DockStyle.Fill;
             cmbInput.BackColor = Color.White;
 
-            cmbInput.GotFocus += (s, e) => { 
+            cmbInput.Enter += (s, e) => { 
                 _isFocused = true; 
                 pnlContainer.Invalidate();
                 // Prevent auto-selection of text
-                if (this.IsHandleCreated) this.BeginInvoke(new Action(() => { cmbInput.SelectionLength = 0; }));
+                if (cmbInput.IsHandleCreated) cmbInput.BeginInvoke(new Action(() => { cmbInput.Select(0, 0); cmbInput.SelectionLength = 0; }));
             };
+            cmbInput.GotFocus += (s, e) => { _isFocused = true; pnlContainer.Invalidate(); };
             cmbInput.LostFocus += (s, e) => { _isFocused = false; pnlContainer.Invalidate(); };
 
-            // Clear selection after a choice is made
+            // Clear selection after a choice is made to prevent blue highlight
             cmbInput.SelectedIndexChanged += (s, e) => {
-                if (this.IsHandleCreated) this.BeginInvoke(new Action(() => { cmbInput.SelectionLength = 0; }));
+                if (cmbInput.IsHandleCreated) cmbInput.BeginInvoke(new Action(() => { cmbInput.Select(0, 0); cmbInput.SelectionLength = 0; }));
             };
 
             pnlContainer.Controls.Add(cmbInput);

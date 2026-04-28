@@ -20,7 +20,7 @@ namespace GenericInventorySystem.Forms
             this.txtBarcode = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
             this.btnScan = new GenericInventorySystem.Controls.ModernButton { Text = "Scan", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
             this.txtPartName = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsRequired = true };
-            this.txtPartNumber = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
+            this.txtPartNumber = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
             this.txtLocation = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
             this.txtShelf = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(5, 0, 0, 0) };
             
@@ -36,8 +36,8 @@ namespace GenericInventorySystem.Forms
             this.lblStatus = new System.Windows.Forms.Label { AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
             this.cmbStatus = new System.Windows.Forms.ComboBox { Font = new Font("Segoe UI", 10F), Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
             
-            this.pbImage = new System.Windows.Forms.PictureBox { Dock = DockStyle.Top, Height = 160, BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke };
-            this.btnUpload = new GenericInventorySystem.Controls.ModernButton { Text = "Upload Image", Dock = DockStyle.Top, Height = 35, Margin = new Padding(0, 10, 0, 0) };
+            this.pbImage = new System.Windows.Forms.PictureBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke };
+            this.btnUpload = new GenericInventorySystem.Controls.ModernButton { Text = "Upload Image", Dock = DockStyle.Top, Height = 35, Margin = new Padding(0) };
 
             ((System.ComponentModel.ISupportInitialize)(this.numQuantity)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numMinStock)).BeginInit();
@@ -110,9 +110,12 @@ namespace GenericInventorySystem.Forms
             tlpFields.Controls.Add(pnlStatus, 0, 8);
 
             // Image Column
-            Panel pnlImage = new Panel { Dock = DockStyle.Fill, Padding = new Padding(15, 0, 0, 0) };
-            pnlImage.Controls.Add(btnUpload);
-            pnlImage.Controls.Add(pbImage);
+            TableLayoutPanel pnlImage = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 1, RowCount = 2, Padding = new Padding(15, 0, 0, 0), AutoSize = true };
+            pnlImage.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            pnlImage.RowStyles.Add(new RowStyle(SizeType.Absolute, 215F));
+            pnlImage.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            pnlImage.Controls.Add(pbImage, 0, 0);
+            pnlImage.Controls.Add(btnUpload, 0, 1);
 
             tlpOuter.Controls.Add(tlpFields, 0, 0);
             tlpOuter.Controls.Add(pnlImage, 1, 0);

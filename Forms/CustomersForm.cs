@@ -222,6 +222,7 @@ namespace GenericInventorySystem.Forms
             btnImport.BackColor = ThemeConfig.SurfaceColor;
             btnImport.Cursor = Cursors.Hand;
             this.btnImport.Margin = new Padding(0, 0, 10, 0);
+            this.btnImport.Click += btnImport_Click;
             this.btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Cust_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
             panelButtons.Controls.Add(btnImport);
 
@@ -317,6 +318,10 @@ namespace GenericInventorySystem.Forms
             ThemeConfig.ApplyGridTheme(dgvCustomers);
             ThemeConfig.ApplyHeaderCheckBox(dgvCustomers, "colSelect");
             
+            // Register Events
+            dgvCustomers.CellPainting += DgvCustomers_CellPainting;
+            dgvCustomers.CellMouseDown += DgvCustomers_CellMouseDown;
+            
             Panel pnlCard = ThemeConfig.CreateCardPanel(dgvCustomers);
             tlpMain.Controls.Add(pnlCard, 0, 1);
 
@@ -399,24 +404,20 @@ namespace GenericInventorySystem.Forms
             }
         }
 
-        private void DgvCustomers_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void DgvCustomers_CellMouseDown(object sender, DataGridViewCellMouseEventArgs e)
         {
-            if (e.RowIndex < 0) return;
+            if (e.RowIndex < 0 || e.Button != MouseButtons.Left) return;
             
             string colName = dgvCustomers.Columns[e.ColumnIndex].Name;
             if (colName != "colActions") return;
 
             int id = Convert.ToInt32(dgvCustomers.Rows[e.RowIndex].Cells["colId"].Value);
             
-            Point clientPoint = dgvCustomers.PointToClient(Control.MousePosition);
-            Rectangle cellRect = dgvCustomers.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, false);
-            int relativeX = clientPoint.X - cellRect.X;
-
-            if (relativeX >= 10 && relativeX <= 40)
+            if (e.X >= 8 && e.X <= 40) // Edit Rect (12-36, added tolerance)
             {
                 EditCustomer(id);
             }
-            else if (relativeX >= 45 && relativeX <= 75)
+            else if (e.X >= 44 && e.X <= 76) // Delete Rect (48-72, added tolerance)
             {
                 DeleteCustomer(id);
             }
@@ -520,7 +521,137 @@ namespace GenericInventorySystem.Forms
 
         private void btnExport_Click(object sender, EventArgs e)
         {
-            MessageHelper.ShowInfo("Export feature coming soon!");
+            ExportToCsv();
+        }
+
+        private void btnImport_Click(object sender, EventArgs e)
+        {
+            ImportFromCsv();
+        }
+
+        private void ExportToCsv()
+        {
+            try
+            {
+                SaveFileDialog saveDialog = new SaveFileDialog();
+                saveDialog.Filter = "CSV Files (*.csv)|*.csv";
+                saveDialog.FileName = $"Customers_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                saveDialog.Title = "Export Customers to CSV";
+
+                if (saveDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string sql = "SELECT full_name as CustomerName, phone as Phone, email as Email, address as Address, type as CustomerType, current_balance as Balance, credit_limit as CreditLimit FROM customers WHERE date_deleted IS NULL ORDER BY full_name";
+                    DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
+                    
+                    if (dt == null || dt.Rows.Count == 0)
+                    {
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات للتصدير." : "No data to export.");
+                        return;
+                    }
+
+                    if (Helpers.ImportExportHelper.ExportToCsv(dt, saveDialog.FileName))
+                    {
+                        string successMsg = LocalizationManager.IsArabic 
+                            ? $"تم تصدير {dt.Rows.Count} من العملاء إلى ملف CSV بنجاح!" 
+                            : $"Exported {dt.Rows.Count} customers to CSV successfully!";
+                        MessageHelper.ShowSuccess(successMsg);
+                    }
+                    else
+                    {
+                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "فشل تصدير البيانات." : "Failed to export data.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في التصدير: " : "Export error: ") + ex.Message);
+            }
+        }
+
+        private void ImportFromCsv()
+        {
+            try
+            {
+                OpenFileDialog openDialog = new OpenFileDialog();
+                openDialog.Filter = "CSV Files (*.csv)|*.csv";
+                openDialog.Title = "Import Customers from CSV";
+
+                if (openDialog.ShowDialog() == DialogResult.OK)
+                {
+                    DataTable dt = Helpers.ImportExportHelper.ImportFromCsv(openDialog.FileName);
+                    
+                     if (dt == null || dt.Rows.Count == 0)
+                    {
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات في الملف." : "No data found in the file.");
+                        return;
+                    }
+
+                     if (!dt.Columns.Contains("CustomerName"))
+                    {
+                        MessageHelper.ShowError(LocalizationManager.IsArabic 
+                            ? "تنسيق ملف غير صالح. الأعمدة المطلوبة: CustomerName, Phone, Email, Address, CustomerType" 
+                            : "Invalid file format. Required columns: CustomerName, Phone, Email, Address, CustomerType");
+                        return;
+                    }
+
+                    int imported = 0;
+                    int skipped = 0;
+
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        try
+                        {
+                            string custName = row.Table.Columns.Contains("CustomerName") ? row["CustomerName"].ToString() : "";
+                            
+                            if (string.IsNullOrWhiteSpace(custName))
+                            {
+                                skipped++;
+                                continue;
+                            }
+
+                            string checkSql = "SELECT COUNT(*) FROM customers WHERE full_name = @n AND date_deleted IS NULL";
+                            int count = DatabaseHelper.ExecuteScalar<int>(checkSql, new System.Data.SqlClient.SqlParameter("@n", custName));
+                            
+                            if (count > 0)
+                            {
+                                skipped++;
+                                continue;
+                            }
+
+                            string phone = row.Table.Columns.Contains("Phone") ? row["Phone"].ToString() : "";
+                            string email = row.Table.Columns.Contains("Email") ? row["Email"].ToString() : "";
+                            string address = row.Table.Columns.Contains("Address") ? row["Address"].ToString() : "";
+                            string type = row.Table.Columns.Contains("CustomerType") ? row["CustomerType"].ToString() : "Individual";
+
+                            string sql = "INSERT INTO customers (full_name, phone, email, address, type, current_balance, date_added) " +
+                                         "VALUES (@name, @phone, @email, @addr, @type, 0, GETDATE())";
+                            
+                            DatabaseHelper.ExecuteNonQuery(sql,
+                                new System.Data.SqlClient.SqlParameter("@name", custName),
+                                new System.Data.SqlClient.SqlParameter("@phone", phone),
+                                new System.Data.SqlClient.SqlParameter("@email", email),
+                                new System.Data.SqlClient.SqlParameter("@addr", address),
+                                new System.Data.SqlClient.SqlParameter("@type", type));
+                                
+                            imported++;
+                        }
+                        catch
+                        {
+                            skipped++;
+                        }
+                    }
+
+                    LoadData();
+                    string completeMsg = LocalizationManager.IsArabic 
+                        ? $"اكتمل الاستيراد!\nتم استيراد: {imported}\nتم تخطي: {skipped}" 
+                        : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
+                    MessageHelper.ShowSuccess(completeMsg);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في الاستيراد: " : "Import error: ") + ex.Message);
+            }
         }
 
         private void txtSearch_TextChanged(object sender, EventArgs e)

@@ -11,6 +11,7 @@ namespace GenericInventorySystem.Forms
     {
         private Label lblTitle;
         private Button btnClose;
+        private Button btnMaximize;
         private Panel pnlHeader;
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public Controls.ModernScrollPanel ContentPanel { get; private set; }
@@ -48,9 +49,10 @@ namespace GenericInventorySystem.Forms
         {
             base.OnResize(e);
             UpdateRegion();
-            if (btnClose != null && pnlHeader != null)
+            if (pnlHeader != null)
             {
-                btnClose.Location = new Point(pnlHeader.Width - 35, 12);
+                if (btnClose != null) btnClose.Location = new Point(pnlHeader.Width - 35, 12);
+                if (btnMaximize != null) btnMaximize.Location = new Point(pnlHeader.Width - 70, 12);
             }
             this.Invalidate(); 
         }
@@ -59,6 +61,12 @@ namespace GenericInventorySystem.Forms
         {
             using (var path = new GraphicsPath())
             {
+                if (this.WindowState == FormWindowState.Maximized)
+                {
+                    this.Region = null;
+                    return;
+                }
+
                 int radius = 16;
                 int d = radius * 2;
                 Rectangle r = new Rectangle(0, 0, this.Width, this.Height);
@@ -116,9 +124,33 @@ namespace GenericInventorySystem.Forms
             ThemeConfig.ApplyWindowControl(btnClose, "Close");
             btnClose.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
             pnlHeader.Controls.Add(btnClose);
-            
+
+            // Maximize Button
+            btnMaximize = new Button {
+                Size = new Size(32, 32),
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Tag = "Maximize"
+            };
+            ThemeConfig.ApplyWindowControl(btnMaximize, "Maximize");
+            btnMaximize.Click += (s, e) => {
+                if (this.WindowState == FormWindowState.Maximized)
+                {
+                    this.WindowState = FormWindowState.Normal;
+                    btnMaximize.Tag = "Maximize";
+                }
+                else
+                {
+                    this.WindowState = FormWindowState.Maximized;
+                    btnMaximize.Tag = "Restore";
+                }
+                ThemeConfig.ApplyWindowControl(btnMaximize, "Maximize");
+            };
+            pnlHeader.Controls.Add(btnMaximize);
+
             // Initial positioning (will be refined in Resize)
             btnClose.Location = new Point(pnlHeader.Width - 40, 15);
+            btnMaximize.Location = new Point(pnlHeader.Width - 75, 15);
 
             // 2. Content Panel
             ContentPanel = new Controls.ModernScrollPanel {

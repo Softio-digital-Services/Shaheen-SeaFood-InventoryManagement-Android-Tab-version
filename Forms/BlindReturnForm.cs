@@ -46,7 +46,7 @@ namespace GenericInventorySystem.Forms
             };
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F)); // Search area
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid space
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 180F)); // Bottom area
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 260F)); // Bottom area
 
             // Label indicating scanner is active
             Panel pnlSearch = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
@@ -76,7 +76,9 @@ namespace GenericInventorySystem.Forms
 
             dgvItems.CellValueChanged += DgvItems_CellValueChanged;
             dgvItems.CellContentClick += DgvItems_CellContentClick;
-            tlpMain.Controls.Add(dgvItems, 0, 1);
+            
+            Panel pnlGridCard = ThemeConfig.CreateCardPanel(dgvItems);
+            tlpMain.Controls.Add(pnlGridCard, 0, 1);
 
             _itemsTable = new DataTable();
             _itemsTable.Columns.Add("part_id", typeof(int));
@@ -99,25 +101,31 @@ namespace GenericInventorySystem.Forms
             tlpBottom.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
 
             // Reason and Customer Section (Left)
-            TableLayoutPanel tlpReason = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4 };
-            tlpReason.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            tlpReason.RowStyles.Add(new RowStyle(SizeType.Absolute, 35F));
-            tlpReason.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            tlpReason.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-
-            Label lblCustomer = new Label { Text = (LocalizationManager.IsArabic ? "العميل (اختياري، للخصم من الرصيد)" : "Customer (Optional, to credit balance)") + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Margin = new Padding(0, 0, 0, 5) };
-            cmbCustomer = new ComboBox { Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(0, 0, 10, 10) };
+            Panel pnlLeft = new Panel { Dock = DockStyle.Fill };
+            
+            // Customer Section
+            Panel pnlCust = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0, 0, 0, 10) };
+            Label lblCustomer = new Label { Text = (LocalizationManager.IsArabic ? "العميل (اختياري، للخصم من الرصيد)" : "Customer (Optional, to credit balance)") + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Margin = new Padding(0, 0, 0, 5) };
+            cmbCustomer = new ComboBox { Font = ThemeConfig.StandardFont, DropDownStyle = ComboBoxStyle.DropDownList };
             ThemeConfig.ApplyComboBoxStyle(cmbCustomer);
+            Panel pnlCmbWrapper = ThemeConfig.WrapInStyledInput(cmbCustomer, 42); 
+            pnlCmbWrapper.Dock = DockStyle.Fill;
+            pnlCust.Controls.Add(pnlCmbWrapper); pnlCmbWrapper.BringToFront();
+            pnlCust.Controls.Add(lblCustomer);
+            
+            // Reason Section
+            Panel pnlReason = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 10, 10, 0) };
+            Label lblReason = new Label { Text = (LocalizationManager.IsArabic ? "سبب الإرجاع" : "Return Reason") + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Margin = new Padding(0, 0, 0, 5) };
+            txtReason = new TextBox { Multiline = true, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, BorderStyle = BorderStyle.None };
+            Panel pnlTxtWrapper = ThemeConfig.WrapInStyledInput(txtReason, 80, true); 
+            pnlTxtWrapper.Dock = DockStyle.Fill;
+            pnlReason.Controls.Add(pnlTxtWrapper); pnlTxtWrapper.BringToFront();
+            pnlReason.Controls.Add(lblReason);
 
-            Label lblReason = new Label { Text = (LocalizationManager.IsArabic ? "سبب الإرجاع" : "Return Reason") + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Margin = new Padding(0, 0, 0, 5) };
-            txtReason = new TextBox { Multiline = true, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 10, 0) };
+            pnlLeft.Controls.Add(pnlReason); pnlReason.BringToFront();
+            pnlLeft.Controls.Add(pnlCust);
             
-            tlpReason.Controls.Add(lblCustomer, 0, 0);
-            tlpReason.Controls.Add(cmbCustomer, 0, 1);
-            tlpReason.Controls.Add(lblReason, 0, 2);
-            tlpReason.Controls.Add(txtReason, 0, 3);
-            
-            tlpBottom.Controls.Add(tlpReason, 0, 0);
+            tlpBottom.Controls.Add(pnlLeft, 0, 0);
 
             LoadCustomers();
 
@@ -147,9 +155,10 @@ namespace GenericInventorySystem.Forms
                 dt.Rows.InsertAt(dt.NewRow(), 0);
                 dt.Rows[0]["id"] = -1;
                 dt.Rows[0]["name"] = LocalizationManager.IsArabic ? "-- لا يوجد / إرجاع نقدي --" : "-- None / Cash Return --";
-                cmbCustomer.DataSource = dt;
+                
                 cmbCustomer.DisplayMember = "name";
                 cmbCustomer.ValueMember = "id";
+                cmbCustomer.DataSource = dt;
             }
             catch { }
         }

@@ -255,7 +255,7 @@ namespace GenericInventorySystem.Controls
             }
 
             Rectangle r = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
-            using (var path = GetRoundedRect(r, 12))
+            using (var path = GetRoundedRect(r, 15))
             {
                 // 2. Fill rounded card with surface color (White)
                 using (var brush = new SolidBrush(Color.White))

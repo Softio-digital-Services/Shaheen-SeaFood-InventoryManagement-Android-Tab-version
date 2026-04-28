@@ -199,7 +199,7 @@ namespace GenericInventorySystem.Forms
                     var chkCell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
                     if (chkCell != null && Convert.ToBoolean(chkCell.Value ?? false))
                     {
-                        if (int.TryParse(row.Cells["supplier_id"].Value?.ToString(), out int sId))
+                        if (int.TryParse(row.Cells["ID"].Value?.ToString(), out int sId))
                             checkedIds.Add(sId);
                     }
                 }
@@ -270,9 +270,8 @@ namespace GenericInventorySystem.Forms
             ThemeConfig.ApplyGridTheme(dgvSuppliers);
             ThemeConfig.ApplyHeaderCheckBox(dgvSuppliers, "colCheck");
 
-            // Events
             dgvSuppliers.CellPainting += DgvSuppliers_CellPainting;
-            dgvSuppliers.CellContentClick += DgvSuppliers_CellContentClick;
+            dgvSuppliers.CellMouseDown += DgvSuppliers_CellMouseDown;
             dgvSuppliers.CellMouseMove += DgvSuppliers_CellMouseMove;
             dgvSuppliers.CellMouseLeave += DgvSuppliers_CellMouseLeave;
             dgvSuppliers.DataError += (s, e) => {
@@ -294,7 +293,7 @@ namespace GenericInventorySystem.Forms
             // Hidden Fields
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "ID", DataPropertyName = "id", Visible = false });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "reminder_days", DataPropertyName = "reminder_days", Visible = false });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "address", DataPropertyName = "address", Visible = false });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colContact", DataPropertyName = "contact_person", Visible = false });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "type", DataPropertyName = "type", Visible = false });
 
             // Card Panel (Rounded body)
@@ -331,20 +330,16 @@ namespace GenericInventorySystem.Forms
             }
         }
 
-        private void DgvSuppliers_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void DgvSuppliers_CellMouseDown(object sender, DataGridViewCellMouseEventArgs e)
         {
-             if (e.RowIndex < 0) return;
+             if (e.RowIndex < 0 || e.Button != MouseButtons.Left) return;
             
             string colName = dgvSuppliers.Columns[e.ColumnIndex].Name;
             if (colName != "colActions") return;
 
             int id = Convert.ToInt32(dgvSuppliers.Rows[e.RowIndex].Cells["ID"].Value);
-            
-            Point cur = dgvSuppliers.PointToClient(Cursor.Position);
-            Rectangle cellBounds = dgvSuppliers.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
-            int relX = cur.X - cellBounds.X;
 
-            if (relX >= 5 && relX <= 37) // Edit Rect (5, 14, 32, 32)
+            if (e.X >= 5 && e.X <= 42) // Edit Rect (8, 14, 32, 32) + tolerance
             {
                 // Edit
                 if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
@@ -357,7 +352,7 @@ namespace GenericInventorySystem.Forms
                 string phone = dgvSuppliers.Rows[e.RowIndex].Cells["colPhone"].Value?.ToString() ?? "";
                 string email = dgvSuppliers.Rows[e.RowIndex].Cells["colEmail"].Value?.ToString() ?? "";
                 string contact = dgvSuppliers.Rows[e.RowIndex].Cells["colContact"].Value?.ToString() ?? "";
-                string address = dgvSuppliers.Rows[e.RowIndex].Cells["address"].Value?.ToString() ?? "";
+                string address = dgvSuppliers.Rows[e.RowIndex].Cells["colAddress"].Value?.ToString() ?? "";
                 string type = dgvSuppliers.Rows[e.RowIndex].Cells["type"].Value?.ToString() ?? "Company";
                 DateTime? dueDate = dgvSuppliers.Rows[e.RowIndex].Cells["colDueDate"].Value as DateTime?;
                 
@@ -371,7 +366,7 @@ namespace GenericInventorySystem.Forms
                     LoadData();
                 }
             }
-            else if (relX >= 45 && relX <= 77) // Delete Rect (45, 14, 32, 32)
+            else if (e.X >= 45 && e.X <= 82) // Delete Rect (48, 14, 32, 32) + tolerance
             {
                 // Delete
                 if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)

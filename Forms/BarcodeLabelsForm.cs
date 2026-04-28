@@ -54,13 +54,14 @@ namespace GenericInventorySystem.Forms
             
             lblTitle.Text = isAr ? "طباعة ملصقات الباركود" : "Barcode Labels Generation";
             txtSearch.PlaceholderText = isAr ? "ابحث عن المنتجات..." : "Search items...";
-            btnGenerate.Text = isAr ? "✨ معاينة وطباعة" : "✨ Preview & Print";
+            btnGenerate.Text = isAr ? "✨ معاينة وطباعة" : "✨ Preview and Print";
 
             if (dgvItems.Columns.Count > 0)
             {
                 dgvItems.Columns["colSelect"].HeaderText = ""; // Empty because we have a checkbox
                 dgvItems.Columns["colName"].HeaderText = isAr ? "الاسم" : "Product Name";
                 dgvItems.Columns["colSku"].HeaderText = isAr ? "الرمز (SKU)" : "SKU";
+                dgvItems.Columns["colBarcode"].HeaderText = isAr ? "الباركود" : "Barcode";
                 dgvItems.Columns["colQty"].HeaderText = isAr ? "الكمية" : "Qty";
                 dgvItems.Columns["colMinus"].HeaderText = "";
                 dgvItems.Columns["colPlus"].HeaderText = "";
@@ -101,6 +102,10 @@ namespace GenericInventorySystem.Forms
                 row.Cells["colSelect"].Value = false;
                 row.Cells["colMinus"].Value = "-";
                 row.Cells["colPlus"].Value = "+";
+                
+                // Render barcode preview
+                BarcodeService bs = new BarcodeService();
+                row.Cells["colBarcode"].Value = bs.RenderCode128(r["part_number"]?.ToString() ?? "", 120, 30);
             }
         }
 
@@ -158,12 +163,13 @@ namespace GenericInventorySystem.Forms
             
             dgvItems.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colSelect", Width = 50 });
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colId", Visible = false });
-            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", Width = 250, ReadOnly = true });
-            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSku", Width = 180, ReadOnly = false });
+            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", Width = 200, ReadOnly = true });
+            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSku", Width = 120, ReadOnly = false });
+            dgvItems.Columns.Add(new DataGridViewImageColumn { Name = "colBarcode", Width = 140, ImageLayout = DataGridViewImageCellLayout.Zoom, ReadOnly = true });
             
-            dgvItems.Columns.Add(new DataGridViewButtonColumn { Name = "colMinus", Width = 30, FlatStyle = FlatStyle.Flat });
-            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colQty", Width = 50, ReadOnly = false });
-            dgvItems.Columns.Add(new DataGridViewButtonColumn { Name = "colPlus", Width = 30, FlatStyle = FlatStyle.Flat });
+            dgvItems.Columns.Add(new DataGridViewButtonColumn { Name = "colMinus", Width = 25, FlatStyle = FlatStyle.Flat });
+            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colQty", Width = 40, ReadOnly = false });
+            dgvItems.Columns.Add(new DataGridViewButtonColumn { Name = "colPlus", Width = 25, FlatStyle = FlatStyle.Flat });
 
             dgvItems.CellContentClick += DgvItems_CellContentClick;
             dgvItems.CellPainting += DgvItems_CellPainting;

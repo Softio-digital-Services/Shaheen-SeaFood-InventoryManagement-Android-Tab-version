@@ -113,11 +113,9 @@ namespace GenericInventorySystem.Forms
             
             Panel pnlDate = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
             Label lblDateRef = new Label { Text = LocalizationManager.IsArabic ? "التاريخ" : "Expense Date", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };
-            dtpDate = new FlatDateTimePicker { Width = 170, Height = 42 };
-            // Using a simple wrapper but ensuring it has a solid card look to prevent border loss
-            Panel pnlDateWrapper = ThemeConfig.WrapInStyledInput(dtpDate, 42);
-            pnlDateWrapper.Location = new Point(0, 25);
-            pnlDate.Controls.Add(pnlDateWrapper); pnlDate.Controls.Add(lblDateRef);
+            dtpDate = new FlatDateTimePicker { Width = 170, Height = 42, Location = new Point(0, 25) };
+            pnlDate.Controls.Add(dtpDate); 
+            pnlDate.Controls.Add(lblDateRef);
             
             Panel pnlAmount = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
             Label lblAmountRef = new Label { Text = LocalizationManager.IsArabic ? "المبلغ" : "Amount", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };

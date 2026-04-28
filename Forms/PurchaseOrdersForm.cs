@@ -245,7 +245,7 @@ namespace GenericInventorySystem.Forms
         private void ShowNewPODialog(bool autoPopulateLowStock = false)
         {
             string title = autoPopulateLowStock ? (LocalizationManager.IsArabic ? "توليد طلب شراء مقترح" : "Predictive Purchase Order Generation") : LocalizationManager.GetString("PO_New");
-            BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(1100, 800) }; // Decreased width
+            BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(1100, 700) }; // Decreased height to remove whitespace
             
             // Root Container
             TableLayoutPanel tlpRoot = new TableLayoutPanel {
@@ -276,7 +276,8 @@ namespace GenericInventorySystem.Forms
                 Height = 75, // Increased to ensure no clipping
                 Dock = DockStyle.Bottom, 
                 LabelText = LocalizationManager.GetString("PO_Supplier") + ":",
-                Margin = new Padding(0, 0, 10, 5) // Bottom margin to prevent clipping
+                Margin = new Padding(0, 0, 10, 5), // Bottom margin to prevent clipping
+                DropDownStyle = ComboBoxStyle.DropDownList
             };
             DataTable dtSup = DatabaseHelper.ExecuteDataTable("SELECT id, supplier_name FROM suppliers WHERE date_deleted IS NULL");
             cmbSup.DataSource = dtSup; cmbSup.DisplayMember = "supplier_name"; cmbSup.ValueMember = "id";

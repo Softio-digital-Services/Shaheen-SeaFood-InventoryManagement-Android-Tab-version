@@ -64,7 +64,7 @@ namespace GenericInventorySystem.Forms
         private void InitializeComponent() {
             this.SuspendLayout(); this.Size = new Size(1100, 750); this.BackColor = ThemeConfig.BackgroundColor; 
             TableLayoutPanel tlpRoot = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 320F));
             this.Controls.Add(tlpRoot);
 
             Panel pnlHeader = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
@@ -110,20 +110,17 @@ namespace GenericInventorySystem.Forms
             Panel pnlDate1 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0,0,10,0) };
             pnlDate1.Controls.Add(new Label { Text = "Order Date", Name = "lblDateTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             dtOrderDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont };
-            Panel pnlDateWrapper = ThemeConfig.WrapInStyledInput(dtOrderDate, 42); pnlDateWrapper.Dock = DockStyle.Fill;
-            pnlDate1.Controls.Add(pnlDateWrapper); pnlDateWrapper.BringToFront(); tblInfo.Controls.Add(pnlDate1, 0, 1);
+            pnlDate1.Controls.Add(dtOrderDate); dtOrderDate.BringToFront(); tblInfo.Controls.Add(pnlDate1, 0, 1);
 
             Panel pnlDate2 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0,0,10,0) };
             pnlDate2.Controls.Add(new Label { Text = "Delivery", Name = "lblDelTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             dtDeliveryDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Value = null, MinDate = DateTime.Today };
-            Panel pnlDelWrapper = ThemeConfig.WrapInStyledInput(dtDeliveryDate, 42); pnlDelWrapper.Dock = DockStyle.Fill;
-            pnlDate2.Controls.Add(pnlDelWrapper); pnlDelWrapper.BringToFront(); tblInfo.Controls.Add(pnlDate2, 0, 2);
+            pnlDate2.Controls.Add(dtDeliveryDate); dtDeliveryDate.BringToFront(); tblInfo.Controls.Add(pnlDate2, 0, 2);
 
             Panel pnlDate3 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0, 0, 10, 0) };
             pnlDate3.Controls.Add(new Label { Text = "Due Date", Name = "lblDueTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             dtDueDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Value = DateTime.Today.AddDays(30) };
-            Panel pnlDueWrapper = ThemeConfig.WrapInStyledInput(dtDueDate, 42); pnlDueWrapper.Dock = DockStyle.Fill;
-            pnlDate3.Controls.Add(pnlDueWrapper); pnlDueWrapper.BringToFront(); tblInfo.Controls.Add(pnlDate3, 1, 2);
+            pnlDate3.Controls.Add(dtDueDate); dtDueDate.BringToFront(); tblInfo.Controls.Add(pnlDate3, 1, 2);
 
             Panel pnlCol3 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
             pnlCol3.Controls.Add(new Label { Text = "Shipping To", Name = "lblAddrTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
@@ -181,25 +178,30 @@ namespace GenericInventorySystem.Forms
             ThemeConfig.ApplyGridTheme(dgvCart); tlpGrid.Controls.Add(dgvCart, 0, 1); tlpRoot.Controls.Add(pnlItems, 0, 2);
 
             TableLayoutPanel tlpBottomArea = new TableLayoutPanel { Dock = DockStyle.Top, Height = 310, ColumnCount = 2, Margin = new Padding(0, 10, 0, 0), BackColor = Color.Transparent };
-            tlpBottomArea.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F)); tlpBottomArea.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 420F));
+            tlpBottomArea.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F)); tlpBottomArea.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55F));
             tlpBottomArea.Controls.Add(pnlInfo, 0, 0);
             
             Panel pnlTotals = CreateCardPanel(); pnlTotals.Dock = DockStyle.Fill;
-            pnlTotals.BackColor = ThemeConfig.SurfaceColor; // Ensure child buttons clear with white
             pnlTotals.Controls.Add(new Label { Text = "Order Summary", Name = "lblTotalsTitle", Location = new Point(20, 15), AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark });
             ComboBox cboCurrency = new ComboBox();
+            cboCurrency.DropDownStyle = ComboBoxStyle.DropDownList;
             ThemeConfig.ApplyComboBoxStyle(cboCurrency);
-            Panel currPanel = ThemeConfig.WrapInStyledInput(cboCurrency, 42); currPanel.Width = 110; currPanel.Location = new Point(92, 43);
+            Panel currPanel = ThemeConfig.WrapInStyledInput(cboCurrency, 42); currPanel.Width = 110; currPanel.Location = new Point(415, 15);
             foreach (var c in CurrencyService.SupportedCurrencies) cboCurrency.Items.Add(c);
             // Select USD by default
             for(int i=0; i<cboCurrency.Items.Count; i++) if((cboCurrency.Items[i] as CurrencyInfo)?.Code == "USD") { cboCurrency.SelectedIndex = i; break; }
             cboCurrency.SelectedIndexChanged += (s, e) => { if (cboCurrency.SelectedItem is CurrencyInfo selected) { CurrencyService.ActiveCurrency = selected.Code; UpdateTotal(); } };
             pnlTotals.Controls.Add(currPanel);
+            pnlTotals.Resize += (s, e) => {
+                currPanel.Left = pnlTotals.Width - currPanel.Width - 25;
+            };
 
             Action<string, string, int, bool> addTotalRow = (l, v, y, b) => {
                  pnlTotals.Controls.Add(new Label { Text = l, Name = "lblTotal_" + l, Location = new Point(20, y), AutoSize = true, Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor });
-                 Label val = new Label { Text = v, Location = new Point(250, y), Size = new Size(130, 20), TextAlign = ContentAlignment.MiddleRight, Font = b ? ThemeConfig.SubHeaderFont : ThemeConfig.StandardFont, ForeColor = ThemeConfig.TextColorDark };
-                 pnlTotals.Controls.Add(val); if(l == "Subtotal") lblSubtotalVal = val; else if(l.Contains("VAT")) lblTaxVal = val; else if(l == "Shipping") lblShippingVal = val; else if(l.Contains("Grand")) lblTotalVal = val;
+                 Label val = new Label { Text = v, Name = "lblVal_" + l, Size = new Size(130, 20), TextAlign = ContentAlignment.MiddleRight, Font = b ? ThemeConfig.SubHeaderFont : ThemeConfig.StandardFont, ForeColor = ThemeConfig.TextColorDark };
+                 pnlTotals.Controls.Add(val);
+                 pnlTotals.Resize += (s, ev) => { val.Left = pnlTotals.Width - val.Width - 25; val.Top = y; };
+                 if(l == "Subtotal") lblSubtotalVal = val; else if(l.Contains("VAT")) lblTaxVal = val; else if(l == "Shipping") lblShippingVal = val; else if(l.Contains("Grand")) lblTotalVal = val;
              };
              addTotalRow("Subtotal", "$0.00", 78, false); 
              
@@ -221,30 +223,35 @@ namespace GenericInventorySystem.Forms
              var lblShip = pnlTotals.Controls.Find("lblTotal_Shipping", true)[0];
              lblShip.Location = new Point(45, 128);
 
-             numShipping = new NumericUpDown { DecimalPlaces = 2, Width = 80, Location = new Point(250, 126), Visible = false, Font = ThemeConfig.StandardFont };
+             numShipping = new NumericUpDown { DecimalPlaces = 2, Width = 80, Location = new Point(445, 126), Visible = false, Font = ThemeConfig.StandardFont };
              numShipping.ValueChanged += (s, e) => UpdateTotal();
              pnlTotals.Controls.Add(numShipping); numShipping.BringToFront();
+             pnlTotals.Resize += (s, e) => { numShipping.Left = pnlTotals.Width - numShipping.Width - 25; numShipping.Top = 126; };
 
              addTotalRow("Grand Total", "$0.00", 168, true);
-             
-             Button btnDraft = new ModernButton { Name = "btnDraft", Size = new Size(115, 40), Location = new Point(25, 205), Text = "Save Draft", Cursor = Cursors.Hand };
-             btnDraft.Click += BtnSaveDraft_Click; ThemeConfig.ApplySecondaryButton(btnDraft); pnlTotals.Controls.Add(btnDraft);
-             
-             btnPayLater = new ModernButton { Name = "btnPayLater", Size = new Size(115, 40), Location = new Point(152, 205), Text = "Pay Later", Cursor = Cursors.Hand };
-             btnPayLater.Click += BtnPayLater_Click; ThemeConfig.ApplyEmojiButton(btnPayLater, Color.FromArgb(255, 152, 0), Color.FromArgb(230, 126, 34), Color.White);
-             btnPayLater.Enabled = false; // Initially disabled (Walk-In)
-             pnlTotals.Controls.Add(btnPayLater);
+                 FlowLayoutPanel pnlButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 60, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 10, 10, 10), BackColor = ThemeConfig.SurfaceColor };
+              
+              btnCheckout = new ModernButton { Text = "Checkout", Size = new Size(140, 40), Image = ThemeConfig.GetNuricon("pos"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0) };
+              btnCheckout.Click += BtnCheckout_Click; ThemeConfig.ApplyPrimaryButton(btnCheckout); 
 
-             btnCheckout = new ModernButton { Text = "Checkout", Size = new Size(115, 40), Location = new Point(280, 205) };
-             btnCheckout.Click += BtnCheckout_Click; ThemeConfig.ApplyPrimaryButton(btnCheckout); pnlTotals.Controls.Add(btnCheckout);
-             
-             btnQuotation = new ModernButton { Name = "btnQuotation", Size = new Size(170, 40), Location = new Point(25, 252), Text = "Save as Quotation", Cursor = Cursors.Hand };
-             btnQuotation.Click += BtnSaveQuotation_Click; ThemeConfig.ApplyEmojiButton(btnQuotation, ThemeConfig.ActiveBackColor, ThemeConfig.PrimaryColor, ThemeConfig.TextColorDark);
-             pnlTotals.Controls.Add(btnQuotation);
-             
-             Button btnPrintReceipt = new ModernButton { Name = "btnPrintReceipt", Size = new Size(170, 40), Location = new Point(225, 252), Text = LocalizationManager.GetString("POS_PrintReceipt"), Cursor = Cursors.Hand };
-             btnPrintReceipt.Click += BtnPrintReceipt_Click; ThemeConfig.ApplyEmojiButton(btnPrintReceipt, ThemeConfig.ActiveBackColor, ThemeConfig.SuccessColor, ThemeConfig.TextColorDark);
-             pnlTotals.Controls.Add(btnPrintReceipt);
+              btnPayLater = new ModernButton { Name = "btnPayLater", Size = new Size(150, 40), Text = "Pay Later", Image = ThemeConfig.GetNuricon("history"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
+              btnPayLater.Enabled = false; btnPayLater.Click += BtnPayLater_Click; ThemeConfig.ApplyEmojiButton(btnPayLater, Color.FromArgb(255, 152, 0), Color.FromArgb(230, 126, 34), Color.White);
+
+              Button btnDraft = new ModernButton { Name = "btnDraft", Size = new Size(140, 40), Text = "Draft", Image = ThemeConfig.GetNuricon("export"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
+              btnDraft.Click += BtnSaveDraft_Click; ThemeConfig.ApplySecondaryButton(btnDraft); 
+
+              Button btnPrintReceipt = new ModernButton { Name = "btnPrintReceipt", Size = new Size(160, 40), Text = "Receipt", Image = ThemeConfig.GetNuricon("print"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
+              btnPrintReceipt.Click += BtnPrintReceipt_Click; ThemeConfig.ApplyEmojiButton(btnPrintReceipt, ThemeConfig.ActiveBackColor, ThemeConfig.SuccessColor, ThemeConfig.TextColorDark);
+
+              btnQuotation = new ModernButton { Name = "btnQuotation", Size = new Size(180, 40), Text = "Quotation", Image = ThemeConfig.GetNuricon("quotations"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(0), Cursor = Cursors.Hand };
+              btnQuotation.Click += BtnSaveQuotation_Click; ThemeConfig.ApplyEmojiButton(btnQuotation, ThemeConfig.ActiveBackColor, ThemeConfig.PrimaryColor, ThemeConfig.TextColorDark);
+
+              pnlButtons.Controls.Add(btnCheckout);
+              pnlButtons.Controls.Add(btnPayLater);
+              pnlButtons.Controls.Add(btnDraft);
+              pnlButtons.Controls.Add(btnPrintReceipt);
+              pnlButtons.Controls.Add(btnQuotation);
+              pnlTotals.Controls.Add(pnlButtons);
              tlpBottomArea.Controls.Add(pnlTotals, 1, 0); tlpRoot.Controls.Add(tlpBottomArea, 0, 3);
             this.ResumeLayout(false);
         }
@@ -254,6 +261,8 @@ namespace GenericInventorySystem.Forms
             Panel p = new Panel(); 
             p.BackColor = Color.Transparent; 
             p.BorderStyle = BorderStyle.None;
+            p.Padding = new Padding(15);
+            
             p.Paint += (s, e) => {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
@@ -267,17 +276,16 @@ namespace GenericInventorySystem.Forms
 
                 // 2. Draw Rounded Surface (White)
                 Rectangle r = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
-                using (var path = GetRoundedRect(r, 12))
+                using (var path = GetRoundedRect(r, 15))
                 {
                     using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
                     {
                         e.Graphics.FillPath(brush, path);
                     }
-
-                    // 3. Draw Border
-                    using (var pen = new Pen(ThemeConfig.BorderColor, 1)) 
-                    { 
-                        e.Graphics.DrawPath(pen, path); 
+                    // Border
+                    using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                    {
+                        e.Graphics.DrawPath(pen, path);
                     }
                 }
             };
