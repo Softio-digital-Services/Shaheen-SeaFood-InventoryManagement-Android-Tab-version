@@ -15,7 +15,7 @@ namespace GenericInventorySystem.Forms
         private ModernTextBox txtEmail;
         private ModernTextBox txtAddress;
         private FlatDateTimePicker dtDueDate;
-        private NumericUpDown numReminderDays;
+        private ModernNumericUpDown numReminderDays;
         private CheckBox chkEnableReminder;
         
         public string SupplierName => rdoCompany.Checked ? txtName.Text.Trim() : ContactPerson;
@@ -219,13 +219,12 @@ namespace GenericInventorySystem.Forms
             Label lblDueDate = new Label { Name = "lblDueDate", Text = "Payment Due Date", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
             dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Enabled = false, Height = 40 };
             
-            Label lblRemDays = new Label { Name = "lblRemDays", Text = "Reminder (Days Before)", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
-            numReminderDays = new NumericUpDown { Dock = DockStyle.Fill, Minimum = 0, Maximum = 365, Enabled = false, Font = ThemeConfig.StandardFont, Height = 40 };
+            numReminderDays = new ModernNumericUpDown { LabelText = "Reminder (Days Before)", Dock = DockStyle.Fill, Minimum = 0, Maximum = 365, Enabled = false, Increment = 1 };
             
             tlpRemContent.Controls.Add(lblDueDate, 0, 0);
             tlpRemContent.Controls.Add(dtDueDate, 0, 1);
-            tlpRemContent.Controls.Add(lblRemDays, 1, 0);
-            tlpRemContent.Controls.Add(numReminderDays, 1, 1);
+            tlpRemContent.Controls.Add(numReminderDays, 1, 0);
+            tlpRemContent.SetRowSpan(numReminderDays, 2);
             
             FlowLayoutPanel flpRemWrapper = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true };
             flpRemWrapper.Controls.Add(chkEnableReminder);

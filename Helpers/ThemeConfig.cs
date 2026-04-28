@@ -1151,6 +1151,16 @@ namespace GenericInventorySystem
                                 g.DrawLine(whitePen, 16, 32, 48, 32);
                             }
                         }
+                        else if (name == "chevron_up")
+                        {
+                            using (var p = new Pen(brush, 8) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+                                g.DrawLines(p, new Point[] { new Point(12, 44), new Point(32, 20), new Point(52, 44) });
+                        }
+                        else if (name == "chevron_down")
+                        {
+                            using (var p = new Pen(brush, 8) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+                                g.DrawLines(p, new Point[] { new Point(12, 20), new Point(32, 44), new Point(52, 20) });
+                        }
                         else
                         {
                             g.FillEllipse(brush, 8, 8, 48, 48);

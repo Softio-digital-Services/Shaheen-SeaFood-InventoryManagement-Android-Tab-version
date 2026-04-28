@@ -18,7 +18,7 @@ namespace GenericInventorySystem.Forms
         private Label lblCategory;
         private Label lblDate;
         private Label lblDescription;
-        private NumericUpDown numAmount;
+        private ModernNumericUpDown numAmount;
         private ModernTextBox txtDescription;
         private ModernComboBox cmbCategory;
         private FlatDateTimePicker dtpDate;
@@ -117,12 +117,13 @@ namespace GenericInventorySystem.Forms
             pnlDate.Controls.Add(dtpDate); 
             pnlDate.Controls.Add(lblDateRef);
             
-            Panel pnlAmount = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
-            Label lblAmountRef = new Label { Text = LocalizationManager.IsArabic ? "المبلغ" : "Amount", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };
-            numAmount = new NumericUpDown { BorderStyle = BorderStyle.None, DecimalPlaces = 2, Maximum = 1000000, Font = ThemeConfig.StandardFont };
-            Panel pnlNumWrapper = ThemeConfig.WrapInStyledInput(numAmount, 42); 
-            pnlNumWrapper.Location = new Point(0, 25); pnlNumWrapper.Width = 110;
-            pnlAmount.Controls.Add(pnlNumWrapper); pnlAmount.Controls.Add(lblAmountRef);
+            numAmount = new ModernNumericUpDown { 
+                LabelText = LocalizationManager.IsArabic ? "المبلغ" : "Amount",
+                DecimalPlaces = 2, 
+                Maximum = 1000000, 
+                Width = 120 
+            };
+
             
             txtDescription = new ModernTextBox { 
                 Dock = DockStyle.Fill, 
@@ -165,7 +166,7 @@ namespace GenericInventorySystem.Forms
             
             grid.Controls.Add(pnlCatContainer, 0, 0);
             grid.Controls.Add(pnlDate, 1, 0);
-            grid.Controls.Add(pnlAmount, 2, 0);
+            grid.Controls.Add(numAmount, 2, 0);
             grid.Controls.Add(txtDescription, 3, 0);
             grid.Controls.Add(pnlActions, 5, 0);
             grid.Controls.Add(chkRecurring, 0, 1);

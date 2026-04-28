@@ -646,8 +646,7 @@ namespace GenericInventorySystem.Forms
             tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
 
             string instrText = LocalizationManager.IsArabic ? "أدخل الكمية للإضافة (+) أو الطرح (-):" : "Enter quantity to add (+) or subtract (-):";
-            Label lblInstr = new Label { Text = instrText, AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 10, 0, 5) };
-            NumericUpDown numQty = new NumericUpDown { Width = 200, Minimum = -99999, Maximum = 99999, Font = ThemeConfig.SubHeaderFont, Margin = new Padding(0, 0, 0, 20) };
+            ModernNumericUpDown numQty = new ModernNumericUpDown { LabelText = instrText, Width = 380, Minimum = -99999, Maximum = 99999, Margin = new Padding(0, 0, 0, 20) };
             
             string reasonLabelText = LocalizationManager.IsArabic ? "السبب:" : "Reason:";
             Label lblReason = new Label { Text = reasonLabelText, AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 5) };
@@ -677,7 +676,6 @@ namespace GenericInventorySystem.Forms
                 } catch(Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
             };
 
-            tlp.Controls.Add(lblInstr, 0, 0);
             tlp.Controls.Add(numQty, 0, 1);
             tlp.Controls.Add(lblReason, 0, 2);
             tlp.Controls.Add(txtReasonAdjust, 0, 3);

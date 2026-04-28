@@ -29,10 +29,6 @@ namespace GenericInventorySystem.Forms
             LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             cmbCategory.SelectedIndexChanged += CmbCategory_SelectedIndexChanged;
             
-            // Disable MouseWheel on NumericUpDowns to prevent accidental scrolling
-            numQuantity.MouseWheel += PreventNumericScroll;
-            numPrice.MouseWheel += PreventNumericScroll;
-            numMinStock.MouseWheel += PreventNumericScroll;
             btnAutoSKU.Click += BtnAutoSKU_Click;
         }
 
@@ -49,14 +45,7 @@ namespace GenericInventorySystem.Forms
             txtPartNumber.Text = suggestedSku;
         }
 
-        private void PreventNumericScroll(object sender, MouseEventArgs e)
-        {
-            // Handled = true stops the built-in numeric scrolling
-            if (e is HandledMouseEventArgs handledArgs)
-            {
-                handledArgs.Handled = true;
-            }
-        }
+
 
         private void ApplyTheme()
         {
@@ -334,11 +323,12 @@ namespace GenericInventorySystem.Forms
             txtShelf.LabelText = LocalizationManager.GetString("AddPart_Shelf");
             btnAutoSKU.Text = isArabic ? "✨ تلقائي" : "✨ Auto";
 
-            // Labels
+            // Modern Numeric Inputs
             string currSymbol = GenericInventorySystem.Services.CurrencyService.GetSymbol("USD");
-            lblQuantity.Text = LocalizationManager.GetString("AddPart_Stock");
-            lblMinStock.Text = LocalizationManager.GetString("AddPart_MinStock");
-            lblPrice.Text = string.Format(LocalizationManager.GetString("AddPart_Price"), "USD", currSymbol);
+            numQuantity.LabelText = LocalizationManager.GetString("AddPart_Stock");
+            numMinStock.LabelText = LocalizationManager.GetString("AddPart_MinStock");
+            numPrice.LabelText = string.Format(LocalizationManager.GetString("AddPart_Price"), "USD", currSymbol);
+
             lblCategory.Text = LocalizationManager.GetString("AddPart_Category");
             lblStatus.Text = LocalizationManager.GetString("AddPart_Status");
 

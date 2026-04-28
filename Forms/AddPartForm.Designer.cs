@@ -24,12 +24,9 @@ namespace GenericInventorySystem.Forms
             this.txtLocation = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
             this.txtShelf = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(5, 0, 0, 0) };
             
-            this.lblQuantity = new System.Windows.Forms.Label { AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
-            this.numQuantity = new System.Windows.Forms.NumericUpDown { Font = new Font("Segoe UI", 11F), Maximum = 10000, Dock = DockStyle.Fill };
-            this.lblMinStock = new System.Windows.Forms.Label { AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
-            this.numMinStock = new System.Windows.Forms.NumericUpDown { Font = new Font("Segoe UI", 11F), Maximum = 10000, Dock = DockStyle.Fill };
-            this.lblPrice = new System.Windows.Forms.Label { AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
-            this.numPrice = new System.Windows.Forms.NumericUpDown { Font = new Font("Segoe UI", 11F), DecimalPlaces = 2, Maximum = 10000, Dock = DockStyle.Fill };
+            this.numQuantity = new GenericInventorySystem.Controls.ModernNumericUpDown { Maximum = 10000, Dock = DockStyle.Fill };
+            this.numMinStock = new GenericInventorySystem.Controls.ModernNumericUpDown { Maximum = 10000, Dock = DockStyle.Fill };
+            this.numPrice = new GenericInventorySystem.Controls.ModernNumericUpDown { DecimalPlaces = 2, Maximum = 10000, Dock = DockStyle.Fill };
             
             this.lblCategory = new System.Windows.Forms.Label { AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
             this.cmbCategory = new System.Windows.Forms.ComboBox { Font = new Font("Segoe UI", 10F), Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDown, AutoCompleteMode = AutoCompleteMode.SuggestAppend, AutoCompleteSource = AutoCompleteSource.ListItems };
@@ -39,9 +36,6 @@ namespace GenericInventorySystem.Forms
             this.pbImage = new System.Windows.Forms.PictureBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke };
             this.btnUpload = new GenericInventorySystem.Controls.ModernButton { Text = "Upload Image", Dock = DockStyle.Top, Height = 35, Margin = new Padding(0) };
 
-            ((System.ComponentModel.ISupportInitialize)(this.numQuantity)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numMinStock)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numPrice)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbImage)).BeginInit();
             this.SuspendLayout();
 
@@ -73,19 +67,16 @@ namespace GenericInventorySystem.Forms
             tlpFields.Controls.Add(pnlSKU, 0, 2);
 
             // Stock/Price Row
-            TableLayoutPanel pnlStock = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2, Height = 67, Margin = new Padding(0, 0, 0, 10) };
+            TableLayoutPanel pnlStock = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2, Height = 67, Margin = new Padding(0, 0, 0, 20) };
             pnlStock.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             pnlStock.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             pnlStock.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
-            pnlStock.RowStyles.Add(new RowStyle(SizeType.Absolute, 25F)); // Label
-            pnlStock.RowStyles.Add(new RowStyle(SizeType.Absolute, 42F)); // Control
-            
-            pnlStock.Controls.Add(lblQuantity, 0, 0);
-            pnlStock.Controls.Add(ThemeConfig.WrapInStyledInput(numQuantity, 42), 0, 1);
-            pnlStock.Controls.Add(lblMinStock, 1, 0);
-            pnlStock.Controls.Add(ThemeConfig.WrapInStyledInput(numMinStock, 42), 1, 1);
-            pnlStock.Controls.Add(lblPrice, 2, 0);
-            pnlStock.Controls.Add(ThemeConfig.WrapInStyledInput(numPrice, 42), 2, 1);
+            pnlStock.Controls.Add(numQuantity, 0, 0);
+            pnlStock.SetRowSpan(numQuantity, 2);
+            pnlStock.Controls.Add(numMinStock, 1, 0);
+            pnlStock.SetRowSpan(numMinStock, 2);
+            pnlStock.Controls.Add(numPrice, 2, 0);
+            pnlStock.SetRowSpan(numPrice, 2);
             tlpFields.Controls.Add(pnlStock, 0, 3);
             
             // Location Row
@@ -126,9 +117,6 @@ namespace GenericInventorySystem.Forms
             btnScan.Click += new System.EventHandler(this.btnScan_Click);
             btnUpload.Click += new System.EventHandler(this.btnUpload_Click);
 
-            ((System.ComponentModel.ISupportInitialize)(this.numQuantity)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numMinStock)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numPrice)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbImage)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -143,12 +131,9 @@ namespace GenericInventorySystem.Forms
         private GenericInventorySystem.Controls.ModernTextBox txtLocation;
         private GenericInventorySystem.Controls.ModernTextBox txtShelf;
         
-        private System.Windows.Forms.Label lblQuantity;
-        private System.Windows.Forms.NumericUpDown numQuantity;
-        private System.Windows.Forms.Label lblMinStock;
-        private System.Windows.Forms.NumericUpDown numMinStock;
-        private System.Windows.Forms.Label lblPrice;
-        private System.Windows.Forms.NumericUpDown numPrice;
+        private GenericInventorySystem.Controls.ModernNumericUpDown numQuantity;
+        private GenericInventorySystem.Controls.ModernNumericUpDown numMinStock;
+        private GenericInventorySystem.Controls.ModernNumericUpDown numPrice;
         private System.Windows.Forms.Label lblCategory;
         private System.Windows.Forms.ComboBox cmbCategory;
         private System.Windows.Forms.Label lblStatus;
