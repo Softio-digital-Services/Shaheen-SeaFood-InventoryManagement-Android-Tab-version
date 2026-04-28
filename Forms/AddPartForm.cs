@@ -12,10 +12,15 @@ namespace GenericInventorySystem.Forms
         public int? EditPartId { get; set; } = null;
         private int _minStock = 5; // Default
 
+        private EventHandler langHandler;
+
         public AddPartForm()
         {
             InitializeComponent();
-            // Sizing is handled automatically by BaseModalForm.OnLoad
+            
+            langHandler = (s, e) => ApplyLocalization();
+            LocalizationManager.LanguageChanged += langHandler;
+
             SetFooterButtons(
                 LocalizationManager.GetString("AddPart_Save"), 
                 LocalizationManager.GetString("AddPart_Cancel"), 
@@ -26,10 +31,12 @@ namespace GenericInventorySystem.Forms
             this.TitleText = LocalizationManager.GetString("AddPart_TitleNew");
             ApplyTheme();
             ApplyLocalization();
-            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             cmbCategory.SelectedIndexChanged += CmbCategory_SelectedIndexChanged;
-            
             btnAutoSKU.Click += BtnAutoSKU_Click;
+
+            this.Disposed += (s, e) => {
+                LocalizationManager.LanguageChanged -= langHandler;
+            };
         }
 
         private void BtnAutoSKU_Click(object sender, EventArgs e)
@@ -108,7 +115,10 @@ namespace GenericInventorySystem.Forms
                          byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
                          using (var ms = new System.IO.MemoryStream(bytes))
                          {
-                             if(pbImage.Image != null) pbImage.Image.Dispose();
+                             var oldImg = pbImage.Image;
+                             pbImage.Image = null; // Detach before disposal
+                             if (oldImg != null) oldImg.Dispose();
+                             
                              pbImage.Image = System.Drawing.Image.FromStream(ms);
                          }
                      }
@@ -224,10 +234,12 @@ namespace GenericInventorySystem.Forms
                 string number = partNum;
                 int qty = (int)numQuantity.Value;
                 decimal price = numPrice.Value;
-                string status = cmbStatus.SelectedItem?.ToString() ?? "Active";
+                string rawStatus = cmbStatus.SelectedItem?.ToString() ?? "Active";
+                string status = (rawStatus == LocalizationManager.GetString("Status_Active") || rawStatus == "Active") ? "Active" : "Inactive";
+                
                 string location = txtLocation.Text.Trim();
                 string shelf = txtShelf.Text.Trim();
-                string category = cmbCategory.Text; // Use Text to allow new categories or typed ones
+                string category = cmbCategory.Text; 
                 
                 string image = _currentImagePath; 
                 if(string.IsNullOrEmpty(image)) image = null;
@@ -239,12 +251,14 @@ namespace GenericInventorySystem.Forms
                 {
                     // ADD
                    service.AddPart(name, number, category, qty, price, _minStock, image, barcode, location, shelf, status);
+                   _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{name}' added via WinForms");
                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم إضافة الصنف بنجاح!" : "Part added successfully!");
                 }
                 else
                 {
                     // UPDATE
                     service.UpdatePart(EditPartId.Value, name, number, category, price, qty, _minStock, image, barcode, location, shelf, status);
+                    _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{name}' updated via WinForms");
                     MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم تحديث الصنف بنجاح!" : "Part updated successfully!");
                 }
                 
@@ -281,7 +295,10 @@ namespace GenericInventorySystem.Forms
                     byte[] bytes = System.IO.File.ReadAllBytes(destPath);
                     using (var ms = new System.IO.MemoryStream(bytes))
                     {
-                        if(pbImage.Image != null) pbImage.Image.Dispose();
+                        var oldImg = pbImage.Image;
+                        pbImage.Image = null; // Detach before disposal
+                        if (oldImg != null) oldImg.Dispose();
+
                         pbImage.Image = System.Drawing.Image.FromStream(ms);
                     }
                     

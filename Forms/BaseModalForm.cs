@@ -63,7 +63,9 @@ namespace GenericInventorySystem.Forms
             {
                 if (this.WindowState == FormWindowState.Maximized)
                 {
+                    var oldRegion = this.Region;
                     this.Region = null;
+                    if (oldRegion != null) oldRegion.Dispose();
                     return;
                 }
 
@@ -77,7 +79,10 @@ namespace GenericInventorySystem.Forms
                 path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
                 path.CloseFigure();
                 
-                this.Region = new Region(path);
+                var newRegion = new Region(path);
+                var prevRegion = this.Region;
+                this.Region = newRegion;
+                if (prevRegion != null) prevRegion.Dispose();
             }
         }
 

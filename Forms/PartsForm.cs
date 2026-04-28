@@ -31,20 +31,26 @@ namespace GenericInventorySystem.Forms
             InitializeComponent();
             _inventoryService = new InventoryService();
             
-            GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
-            ApplyLocalization(); // Apply initially
+            EventHandler langHandler = (s, e) => ApplyLocalization();
+            EventHandler currHandler = (s, e) => { dgvParts.Invalidate(); };
+
+            GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += langHandler;
+            GenericInventorySystem.Services.CurrencyService.CurrencyChanged += currHandler;
+
+            ApplyLocalization(); 
             ApplyPermissions();
-            
             LoadData(); 
 
-            // Sync with global currency changes
-            GenericInventorySystem.Services.CurrencyService.CurrencyChanged += (s, e) => { dgvParts.Invalidate(); };
-
-            // Auto-refresh every 30 seconds to pick up Web POS changes
             var syncTimer = new System.Windows.Forms.Timer { Interval = 30000 };
             syncTimer.Tick += (s, e) => { if (this.Visible) LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text); };
             syncTimer.Start();
-            this.Disposed += (s, e) => syncTimer.Dispose();
+
+            this.Disposed += (s, e) => {
+                syncTimer.Stop();
+                syncTimer.Dispose();
+                GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged -= langHandler;
+                GenericInventorySystem.Services.CurrencyService.CurrencyChanged -= currHandler;
+            };
         }
 
         private void ApplyLocalization()
@@ -669,6 +675,8 @@ namespace GenericInventorySystem.Forms
                 
                 try {
                     _inventoryService.AdjustStock(partId, (int)numQty.Value, txtReasonAdjust.Text);
+                    // Notify all connected web POS tablets in real-time
+                    InventoryBroadcaster.BroadcastStockChange("desktop-adjustment");
                     MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم تعديل المخزون بنجاح!" : "Stock adjusted successfully.");
                     f.DialogResult = DialogResult.OK;
                     f.Close();
@@ -709,27 +717,11 @@ namespace GenericInventorySystem.Forms
             using (AddPartForm form = new AddPartForm())
             {
                 if (form.ShowDialog() == DialogResult.OK)
+                {
                     LoadData();
+                }
             }
         }
-
-        // ... CreateProductImage ... (unchanged, but replace block needs to handle context)
-        // Wait, I am replacing LoadData AND BtnFilter_Click. 
-        // I will target LoadData first, then BtnFilter_Click separately or use a larger block?
-        // Larger block is risky if lines between are changed.
-        // I will use replace_file_content for LoadData first.
-        
-        // Actually, let's do the filter button first, assuming LoadData signature changes.
-        // Wait, if I change LoadData signature, I break existing calls!
-        // Existing calls: LoadData() (no args), LoadData(txtSearch.Text).
-        // C# optional params handles this gracefully IF I append the new optional param at the end.
-        // My definition: (string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null)
-        // Previous calls: LoadData() -> search="", low=false, active=false, cat=null. OK.
-        // LoadData(str) -> search=str ... OK.
-        // So it is safe.
-        
-        // So I will update LoadData in this step.
-        // And BtnFilter_Click in next step to keep chunks manageable.
         
         private void BtnFilter_Click(object sender, EventArgs e)
         {

@@ -298,8 +298,31 @@ namespace GenericInventorySystem.Helpers
                 
                 -- Cleanup legacy admin completely
                 DELETE FROM users WHERE username = 'admin';
+
+                -- Ensure Services category exists
+                IF NOT EXISTS (SELECT 1 FROM categories WHERE category_name = 'Services')
+                BEGIN
+                    INSERT INTO categories (category_name) VALUES ('Services');
+                END
+
+                -- Seed Service Items if missing
+                DECLARE @svcId INT = (SELECT id FROM categories WHERE category_name = 'Services');
+                IF NOT EXISTS (SELECT 1 FROM parts WHERE part_name = 'Standard Labor (1hr)')
+                BEGIN
+                    INSERT INTO parts (part_name, part_number, category_id, selling_price, quantity_in_stock, status, barcode, description)
+                    VALUES ('Standard Labor (1hr)', 'SVC-001', @svcId, 80.00, 999, 'Active', '', 'Professional labor service per hour');
+                END
+
+                IF NOT EXISTS (SELECT 1 FROM parts WHERE part_name = 'Diagnostic Check')
+                BEGIN
+                    INSERT INTO parts (part_name, part_number, category_id, selling_price, quantity_in_stock, status, barcode, description)
+                    VALUES ('Diagnostic Check', 'SVC-002', @svcId, 40.00, 999, 'Active', '', 'Full system diagnostic and report');
+                END
             ";
             DatabaseHelper.ExecuteNonQuery(sql);
+
+            // Repair: Ensure all Active/Inactive statuses are in English (Fixes Arabic UI bug)
+            DatabaseHelper.ExecuteNonQuery("UPDATE parts SET status = 'Active' WHERE status NOT IN ('Active', 'Inactive') AND date_deleted IS NULL");
 
             // Backfill Data if empty
             int count = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM order_items");

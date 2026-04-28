@@ -351,6 +351,8 @@ namespace GenericInventorySystem.Forms
                 int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
                 int orderId = new OrderService().PlaceOrder(customerId, items, total, true); // true = Paid
                 DatabaseHelper.LogTransaction("SALE", "Order #" + orderId, "Paid Total: $" + total);
+                // Notify all connected web POS tablets in real-time
+                InventoryBroadcaster.BroadcastStockChange("desktop-sale");
                 MessageHelper.ShowSuccess("Order Sent! Order #" + orderId); cartTable.Rows.Clear(); UpdateTotal(); RefreshStats(); 
             } catch(Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
         }
@@ -406,6 +408,8 @@ namespace GenericInventorySystem.Forms
                 foreach(DataRow row in cartTable.Rows) items.Add(new OrderItem { PartId = (int)row["PartID"], Quantity = (int)row["Quantity"], UnitPrice = (decimal)row["SellingPrice"] });
                 int orderId = new OrderService().PlaceOrder(customerId, items, total, false, "Completed", dtDueDate.Value); // false = Unpaid
                 DatabaseHelper.LogTransaction("SALE_DEBT", "Order #" + orderId, "Unpaid Total: $" + total);
+                // Notify all connected web POS tablets in real-time
+                InventoryBroadcaster.BroadcastStockChange("desktop-pay-later");
                 MessageHelper.ShowSuccess("Order Billed! Order #" + orderId); cartTable.Rows.Clear(); UpdateTotal(); RefreshStats(); 
             } catch(Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
         }

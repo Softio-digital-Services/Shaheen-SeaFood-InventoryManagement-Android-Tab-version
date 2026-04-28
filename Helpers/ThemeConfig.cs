@@ -274,7 +274,9 @@ namespace GenericInventorySystem
                 positionControl();
                 using (var path = GetRoundedPath(new Rectangle(0, 0, p.Width, p.Height), 12))
                 {
+                    var oldRegion = p.Region;
                     p.Region = new Region(path);
+                    if (oldRegion != null) oldRegion.Dispose();
                 }
                 p.Invalidate();
             };
@@ -282,7 +284,9 @@ namespace GenericInventorySystem
             positionControl();
             using (var path = GetRoundedPath(new Rectangle(0, 0, p.Width, p.Height), 12))
             {
+                var oldRegion = p.Region;
                 p.Region = new Region(path);
+                if (oldRegion != null) oldRegion.Dispose();
             }
 
             p.Paint += (s, e) =>
@@ -998,9 +1002,12 @@ namespace GenericInventorySystem
 
                 if (img != null)
                 {
-                    Bitmap bmp = new Bitmap(img);
-                    bmp.MakeTransparent(Color.White);
-                    return bmp;
+                    using (img) // CRITICAL: Dispose the original file-locked image
+                    {
+                        Bitmap bmp = new Bitmap(img);
+                        bmp.MakeTransparent(Color.White);
+                        return bmp;
+                    }
                 }
                 return GenerateNuriconFallback(name);
             }

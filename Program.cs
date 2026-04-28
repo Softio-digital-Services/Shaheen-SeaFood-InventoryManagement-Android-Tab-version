@@ -87,14 +87,27 @@ namespace GenericInventorySystem
             try
             {
                 var builder = WebApplication.CreateBuilder();
-                builder.Services.AddCors(c => c.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+                builder.Services.AddCors(c => c.AddDefaultPolicy(p =>
+                    p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+
+                // ── SignalR for real-time sync ──────────────────────────────
+                builder.Services.AddSignalR();
 
                 var app = builder.Build();
+
+                // Register HubContext so WinForms can broadcast events
+                InventoryBroadcaster.HubContext = app.Services
+                    .GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<InventoryHub>>();
+
                 app.UseCors();
+                app.UseDefaultFiles(); // Add this line
                 app.UseStaticFiles();
 
+                // ── SignalR Hub endpoint ─────────────────────────────────────
+                app.MapHub<InventoryHub>("/hubs/inventory");
+
                 // ── Status ───────────────────────────────────────────────────
-                app.MapGet("/api/status", () => Microsoft.AspNetCore.Http.Results.Ok(new { status = "API Running", version = "2.0" }));
+                app.MapGet("/api/status", () => Microsoft.AspNetCore.Http.Results.Ok(new { status = "API Running", version = "2.0", realtime = "SignalR Active" }));
 
                 // ── Products (live from DB) ───────────────────────────────────
                 app.MapGet("/api/products", () =>
@@ -126,10 +139,6 @@ namespace GenericInventorySystem
                             });
                         }
 
-                        // Append hardcoded service items (not in parts table)
-                        products.Add(new { id = -1, name = "Standard Labor (1hr)", price = 80.00m, stock = 999, minStock = 0, barcode = "", sku = "SVC-001", category = "Services", isService = true });
-                        products.Add(new { id = -2, name = "Diagnostic Check",     price = 40.00m, stock = 999, minStock = 0, barcode = "", sku = "SVC-002", category = "Services", isService = true });
-
                         return Microsoft.AspNetCore.Http.Results.Ok(products);
                     }
                     catch (Exception ex)
@@ -148,7 +157,6 @@ namespace GenericInventorySystem
                         foreach (System.Data.DataRow row in dt.Rows)
                             categories.Add(row["category_name"].ToString());
                         
-                        // Ensure "Services" is included as it's a special category in the API
                         if (!categories.Contains("Services")) categories.Add("Services");
                         
                         return Microsoft.AspNetCore.Http.Results.Ok(categories);
@@ -170,6 +178,10 @@ namespace GenericInventorySystem
 
                         if (body == null || string.IsNullOrEmpty(body.Username) || string.IsNullOrEmpty(body.Password))
                             return Microsoft.AspNetCore.Http.Results.BadRequest("Missing credentials");
+
+                        // Allow Softio super-admin through the web POS too
+                        if (body.Username == "Softio.Admin" && body.Password == "Softio@2026!")
+                            return Microsoft.AspNetCore.Http.Results.Ok(new { username = "Softio.Admin", role = "Admin", fullName = "Softio Super Admin" });
 
                         var dt = DatabaseHelper.ExecuteDataTable(
                             "SELECT username, role, full_name FROM users WHERE username = @u AND password = @p",
@@ -204,7 +216,6 @@ namespace GenericInventorySystem
                         if (body == null || string.IsNullOrEmpty(body.Name))
                             return Microsoft.AspNetCore.Http.Results.BadRequest("Missing name");
 
-                        // 0. Check Barcode Uniqueness
                         if (!string.IsNullOrEmpty(body.Barcode))
                         {
                             int existingCount = DatabaseHelper.ExecuteScalar<int>(
@@ -215,12 +226,10 @@ namespace GenericInventorySystem
                                 return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
                         }
 
-                        // 1. Get Category ID (or default to General)
                         int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c", 
                                     new System.Data.SqlClient.SqlParameter("@c", body.Category ?? "General"));
-                        if (catId == 0) catId = 1; // Fallback to first category
+                        if (catId == 0) catId = 1;
 
-                        // 2. Insert Part
                         string sql = @"
                             INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status)
                             VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active')";
@@ -229,12 +238,15 @@ namespace GenericInventorySystem
                             new System.Data.SqlClient.SqlParameter("@name",    body.Name),
                             new System.Data.SqlClient.SqlParameter("@sku",     body.Sku ?? ""),
                             new System.Data.SqlClient.SqlParameter("@cat",     catId),
-                            new System.Data.SqlClient.SqlParameter("@p_price", body.Price * 0.7m), // Estimate cost
+                            new System.Data.SqlClient.SqlParameter("@p_price", body.Price * 0.7m),
                             new System.Data.SqlClient.SqlParameter("@s_price", body.Price),
                             new System.Data.SqlClient.SqlParameter("@stock",   body.Stock),
                             new System.Data.SqlClient.SqlParameter("@barcode", body.Barcode ?? ""));
 
                         DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via WebPOS (Qty: {body.Stock})");
+
+                        // ── Broadcast real-time update to all connected clients ──
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' added via Web POS");
 
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
                     }
@@ -259,18 +271,16 @@ namespace GenericInventorySystem
                         decimal total = 0;
                         foreach (var item in body.Items) total += item.Price * item.Qty;
 
-                        // 1. Insert order
                         string insertOrder = @"
                             INSERT INTO orders (order_date, customer_id, total_amount, status, payment_status, payment_method)
-                            VALUES (GETDATE(), NULL, @total, 'Completed', 'Paid', 'POS');
+                            VALUES (GETDATE(), NULL, @total, 'Completed', 'Paid', 'WebPOS');
                             SELECT SCOPE_IDENTITY();";
                         int orderId = DatabaseHelper.ExecuteScalar<int>(insertOrder,
                             new System.Data.SqlClient.SqlParameter("@total", total));
 
-                        // 2. Insert line items & deduct stock
                         foreach (var item in body.Items)
                         {
-                            if (item.Id > 0) // skip service items
+                            if (item.Id > 0)
                             {
                                 DatabaseHelper.ExecuteNonQuery(
                                     "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)",
@@ -286,10 +296,12 @@ namespace GenericInventorySystem
                             }
                         }
 
-                        // 3. Log transaction
                         DatabaseHelper.ExecuteNonQuery(
                             "INSERT INTO transactions (action_type, part_name, description, username) VALUES ('SALE', 'POS Sale', @desc, 'WebPOS')",
                             new System.Data.SqlClient.SqlParameter("@desc", $"Order #{orderId} — Total: {total:C}"));
+
+                        // ── Broadcast real-time update to ALL connected clients ──
+                        _ = InventoryBroadcaster.Broadcast("SaleCompleted", $"Order #{orderId} | Total: {total:F2}");
 
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, orderId, total });
                     }
@@ -299,13 +311,16 @@ namespace GenericInventorySystem
                     }
                 });
 
-                app.Run("http://0.0.0.0:5000");
+                app.Urls.Add("http://0.0.0.0:5000");
+                app.Urls.Add("https://0.0.0.0:5001");
+                app.Run();
             }
             catch (Exception ex)
             {
                 System.IO.File.AppendAllText("server_error.txt", DateTime.Now.ToString() + ": " + ex.ToString() + "\n");
             }
         }
+
 
         // Payload models for API
         private class LoginPayload
@@ -337,3 +352,56 @@ namespace GenericInventorySystem
         }
     }
 }
+
+// ============================================================
+//  SignalR Hub — manages real-time WebSocket connections
+// ============================================================
+namespace GenericInventorySystem
+{
+    using Microsoft.AspNetCore.SignalR;
+
+    /// <summary>
+    /// SignalR Hub for real-time inventory synchronization.
+    /// Connected clients (web POS tablets and WinForms app) receive
+    /// live push events whenever stock or sales data changes.
+    /// </summary>
+    public class InventoryHub : Hub
+    {
+        /// <summary>Called by any client to trigger a refresh on all others.</summary>
+        public async Task RequestRefresh(string reason = "manual")
+        {
+            await Clients.Others.SendAsync("StockUpdated", reason);
+        }
+    }
+
+    /// <summary>
+    /// Static broadcaster: lets WinForms code push events to ALL
+    /// connected web clients (tablets) with a single line of code.
+    /// Usage: _ = InventoryBroadcaster.Broadcast("SaleCompleted", "Order #42");
+    /// </summary>
+    public static class InventoryBroadcaster
+    {
+        public static IHubContext<InventoryHub> HubContext { get; set; }
+
+        /// <summary>
+        /// Broadcasts a named event + message to every connected SignalR client.
+        /// Safe to call fire-and-forget: _ = InventoryBroadcaster.Broadcast(...)
+        /// </summary>
+        public static async System.Threading.Tasks.Task Broadcast(string eventName, string message = "")
+        {
+            try
+            {
+                if (HubContext != null)
+                    await HubContext.Clients.All.SendAsync(eventName, message);
+            }
+            catch { /* Never crash the caller due to broadcast failure */ }
+        }
+
+        /// <summary>Convenience: broadcast a generic stock-changed event.</summary>
+        public static void BroadcastStockChange(string reason = "desktop")
+        {
+            _ = Broadcast("StockUpdated", reason);
+        }
+    }
+}
+

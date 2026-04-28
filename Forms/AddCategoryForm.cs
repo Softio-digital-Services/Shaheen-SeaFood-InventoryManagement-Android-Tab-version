@@ -42,6 +42,10 @@ namespace GenericInventorySystem.Forms
             {
                 CategoryData.AddCategory(txtName.Text.Trim(), txtDesc.Text.Trim());
                 NewCategoryName = txtName.Text.Trim();
+                
+                // Real-time Sync: Tell all Web POS clients to refresh categories
+                _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Category '{NewCategoryName}' added");
+                
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             }
