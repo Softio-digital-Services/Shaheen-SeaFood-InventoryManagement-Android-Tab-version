@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using GenericInventorySystem.Services;
+using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem
 {
@@ -133,8 +134,9 @@ namespace GenericInventorySystem
                     {
                         var dt = DatabaseHelper.ExecuteDataTable(
                             @"SELECT p.id, p.part_name, p.selling_price, p.quantity_in_stock,
-                                     p.minimum_stock_level, p.barcode, p.part_number,
-                                     COALESCE(c.category_name, 'General') AS category
+                                     p.minimum_stock_level, p.barcode, p.part_number, p.part_image,
+                                     COALESCE(c.category_name, 'General') AS category,
+                                     c.category_image
                               FROM parts p
                               LEFT JOIN categories c ON p.category_id = c.id
                               WHERE p.date_deleted IS NULL AND p.status = 'Active'
@@ -152,6 +154,8 @@ namespace GenericInventorySystem
                                 barcode  = row["barcode"].ToString(),
                                 sku      = row["part_number"].ToString(),
                                 category = row["category"].ToString(),
+                                image    = row["part_image"].ToString(),
+                                categoryImage = row["category_image"].ToString(),
                                 isService = false
                             });
                         }
@@ -327,6 +331,117 @@ namespace GenericInventorySystem
                         return Microsoft.AspNetCore.Http.Results.Problem("Checkout failed: " + ex.Message);
                     }
                 });
+                
+                // ── Currencies (GET) ───────────────────────────────────────────
+                app.MapGet("/api/currencies", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable("SELECT code, name, symbol, rate FROM currencies ORDER BY code");
+                        var currencies = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            currencies.Add(new {
+                                code = row["code"].ToString(),
+                                name = row["name"].ToString(),
+                                symbol = row["symbol"].ToString(),
+                                rate = Convert.ToDecimal(row["rate"])
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(currencies);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // ── Recent Sales (GET) ─────────────────────────────────────────
+                app.MapGet("/api/recent-sales", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT o.order_id, o.order_date, o.total_amount, 
+                                     COALESCE(c.full_name, 'Cash Customer') as customer_name
+                              FROM orders o
+                              LEFT JOIN customers c ON o.customer_id = c.customer_id
+                              WHERE o.status != 'Cancelled'
+                              ORDER BY o.order_id DESC LIMIT 50");
+                        
+                        var sales = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            sales.Add(new {
+                                orderId = Convert.ToInt32(row["order_id"]),
+                                date = Convert.ToDateTime(row["order_date"]),
+                                total = Convert.ToDecimal(row["total_amount"]),
+                                customer = row["customer_name"].ToString()
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(sales);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // ── Order Details (GET) ────────────────────────────────────────
+                app.MapGet("/api/order-details/{id}", (int id) =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT oi.part_id, p.part_name, oi.quantity, oi.price
+                              FROM order_items oi
+                              JOIN parts p ON oi.part_id = p.id
+                              WHERE oi.order_id = @id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+                        
+                        var items = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            items.Add(new {
+                                partId = Convert.ToInt32(row["part_id"]),
+                                name = row["part_name"].ToString(),
+                                qty = Convert.ToInt32(row["quantity"]),
+                                price = Convert.ToDecimal(row["price"])
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(items);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // ── Return Item (POST) ─────────────────────────────────────────
+                app.MapPost("/api/return-item", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<ReturnPayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                        if (body == null || body.Items == null || body.Items.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest("No items to return");
+
+                        var returnService = new ReturnService();
+                        var items = new System.Collections.Generic.List<ReturnItemInfo>();
+                        foreach(var i in body.Items)
+                        {
+                            items.Add(new ReturnItemInfo { 
+                                PartId = i.PartId, 
+                                Quantity = i.Qty, 
+                                RefundAmount = i.RefundAmount 
+                            });
+                        }
+
+                        // Use a dummy user or extract from context if we have one
+                        UserSession.Username = "WebPOS"; 
+
+                        returnService.ProcessReturn(body.OrderId, items, body.Reason);
+                        
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Return processed for Order #{body.OrderId}");
+                        
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
 
                 // Ports are configured via Kestrel above
                 app.Run();
@@ -365,6 +480,19 @@ namespace GenericInventorySystem
             public string  Name  { get; set; }
             public decimal Price { get; set; }
             public int     Qty   { get; set; }
+        }
+
+        private class ReturnPayload
+        {
+            public int OrderId { get; set; }
+            public string Reason { get; set; }
+            public System.Collections.Generic.List<ReturnItemDetail> Items { get; set; }
+        }
+        private class ReturnItemDetail
+        {
+            public int PartId { get; set; }
+            public int Qty { get; set; }
+            public decimal RefundAmount { get; set; }
         }
     }
 }

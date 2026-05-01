@@ -152,6 +152,7 @@ namespace GenericInventorySystem
                         id              INTEGER PRIMARY KEY AUTOINCREMENT,
                         category_name   TEXT NOT NULL UNIQUE,
                         description     TEXT,
+                        category_image  TEXT,
                         date_created    TEXT DEFAULT (datetime('now'))
                     );
 
@@ -253,7 +254,8 @@ namespace GenericInventorySystem
                         entity_id       INTEGER,
                         amount          REAL,
                         payment_date    TEXT DEFAULT (datetime('now')),
-                        notes           TEXT
+                        notes           TEXT,
+                        due_date        TEXT
                     );
 
                     CREATE TABLE IF NOT EXISTS purchase_orders (
@@ -312,11 +314,33 @@ namespace GenericInventorySystem
                     if (!string.IsNullOrWhiteSpace(trimmed))
                         ExecuteNonQuery(trimmed + ";");
                 }
+
+                // --- MIGRATIONS ---
+                // Add due_date to payments if missing
+                if (!ColumnExists("payments", "due_date"))
+                {
+                    ExecuteNonQuery("ALTER TABLE payments ADD COLUMN due_date TEXT;");
+                }
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "EnsureSchema failed");
             }
+        }
+
+        private static bool ColumnExists(string tableName, string columnName)
+        {
+            try
+            {
+                DataTable dt = ExecuteDataTable($"PRAGMA table_info({tableName})");
+                foreach (DataRow row in dt.Rows)
+                {
+                    if (row["name"].ToString().Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+            catch { }
+            return false;
         }
     }
 }

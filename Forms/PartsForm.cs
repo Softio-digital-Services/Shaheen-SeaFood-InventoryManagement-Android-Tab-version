@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -19,6 +19,7 @@ namespace GenericInventorySystem.Forms
     {
         private DataGridView dgvParts;
         private Button btnAdd;
+        private Button btnService;
         private Button btnAddCategory;
         private Button btnFilter;
         private Button btnImport;
@@ -69,6 +70,7 @@ namespace GenericInventorySystem.Forms
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
 
             if (btnAdd != null) btnAdd.Invalidate(); 
+            if (btnService != null) btnService.Invalidate();
             if (btnAddCategory != null) btnAddCategory.Invalidate();
             if (btnFilter != null) btnFilter.Invalidate();
             if (btnImport != null) btnImport.Invalidate();
@@ -107,6 +109,7 @@ namespace GenericInventorySystem.Forms
         {
             this.dgvParts = new DataGridView();
             this.btnAdd = new Button();
+            this.btnService = new Button();
             this.btnFilter = new Button();
             this.btnImport = new Button();
             this.btnExport = new Button();
@@ -225,6 +228,16 @@ namespace GenericInventorySystem.Forms
             btnAdd.Click += BtnAdd_Click;
             btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Parts_AddProduct", Color.White, ThemeConfig.PrimaryColor, false);
             panelButtons.Controls.Add(btnAdd);
+
+            // Add Service Button
+            btnService.Size = new Size(160, 40);
+            btnService.FlatStyle = FlatStyle.Flat;
+            btnService.FlatAppearance.BorderSize = 0;
+            btnService.BackColor = ThemeConfig.SurfaceColor;
+            btnService.Cursor = Cursors.Hand;
+            btnService.Click += BtnService_Click;
+            btnService.Paint += (s, e) => ThemeConfig.DrawIconButton(btnService, e.Graphics, "add", "Parts_AddService", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
+            panelButtons.Controls.Add(btnService);
 
             panelTop.Controls.Add(panelButtons);
             
@@ -614,16 +627,30 @@ namespace GenericInventorySystem.Forms
                     object minVal = row.Cells["minimum_stock_level"].Value;
                     int minStock = (minVal == null || minVal == DBNull.Value) ? 0 : Convert.ToInt32(minVal);
 
-                    using (AddPartForm form = new AddPartForm())
+                    if (category == "Services")
                     {
-                        form.LoadPartData(id, name, sku, qty, price, minStock, status, barcode, location, shelf, image, category);
-                        
-                        if (form.ShowDialog() == DialogResult.OK)
+                        using (AddServiceForm form = new AddServiceForm())
                         {
-                             // Refresh grid AND preserve current search/filter context
-                             string currentSearch = txtSearch.Text == "Search..." ? "" : txtSearch.Text;
-                             LoadData(currentSearch); 
-                             MessageHelper.ShowSuccess("Item updated successfully.");
+                            form.LoadServiceData(id, name, sku, price, status, image);
+                            if (form.ShowDialog() == DialogResult.OK)
+                            {
+                                string currentSearch = txtSearch.Text == "Search..." ? "" : txtSearch.Text;
+                                LoadData(currentSearch);
+                                MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø®Ø¯Ù…Ø© Ø¨Ù†Ø¬Ø§Ø­." : "Service updated successfully.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        using (AddPartForm form = new AddPartForm())
+                        {
+                            form.LoadPartData(id, name, sku, qty, price, minStock, status, barcode, location, shelf, image, category);
+                            if (form.ShowDialog() == DialogResult.OK)
+                            {
+                                string currentSearch = txtSearch.Text == "Search..." ? "" : txtSearch.Text;
+                                LoadData(currentSearch);
+                                MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„ØµÙ†Ù  Ø¨Ù†Ø¬Ø§Ø­." : "Item updated successfully.");
+                            }
                         }
                     }
                 }
@@ -715,6 +742,17 @@ namespace GenericInventorySystem.Forms
         private void BtnAdd_Click(object sender, EventArgs e)
         {
             using (AddPartForm form = new AddPartForm())
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    LoadData();
+                }
+            }
+        }
+
+        private void BtnService_Click(object sender, EventArgs e)
+        {
+            using (AddServiceForm form = new AddServiceForm())
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {

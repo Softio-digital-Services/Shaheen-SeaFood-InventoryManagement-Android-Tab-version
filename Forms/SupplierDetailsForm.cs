@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -35,7 +35,7 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.TitleText = (LocalizationManager.IsArabic ? "ØªÙØ§ØµÙŠÙ„ " : "Details - ") + _supplierName;
+            this.TitleText = (LocalizationManager.IsArabic ? "\u062A\u0641\u0627\u0635\u064A\u0644 " : "Details - ") + _supplierName;
 
             // Main Layout container
             TableLayoutPanel tlpMain = new TableLayoutPanel {
@@ -103,13 +103,13 @@ namespace GenericInventorySystem.Forms
             tlpBalance.Controls.Add(lblDueDate, 0, 2);
             
             // 2. Add Bill button
-            btnAddBill = new ModernButton { Text = "ðŸ§¾ " + (LocalizationManager.IsArabic ? "Ø¥Ø¶Ø§ÙØ© ÙØ§ØªÙˆØ±Ø©" : "Add Bill"), Size = new Size(155, 45) };
+            btnAddBill = new ModernButton { Text = "\uD83E\uDDFE " + (LocalizationManager.IsArabic ? "\u0625\u0636\u0627\u0641\u0629 \u0641\u0627\u062A\u0648\u0631\u0629" : "Add Bill"), Size = new Size(155, 45) };
             ThemeConfig.ApplyEmojiButton(btnAddBill, ThemeConfig.WarningColor, ThemeConfig.WarningColor, Color.White);
             btnAddBill.Click += BtnAddBill_Click;
             btnAddBill.Margin = new Padding(5, 5, 5, 5);
 
             // 3. Pay Supplier button
-            btnPayment = new ModernButton { Text = "ðŸ’¸ " + (LocalizationManager.IsArabic ? "Ø¯ÙØ¹ Ù„Ù„Ù…ÙˆØ±Ø¯" : "Pay Supplier"), Size = new Size(165, 45) };
+            btnPayment = new ModernButton { Text = "\uD83D\uDCB8 " + (LocalizationManager.IsArabic ? "\u062F\u0641\u0639 \u0644\u0644\u0645\u0648\u0631\u062F" : "Pay Supplier"), Size = new Size(165, 45) };
             ThemeConfig.ApplyEmojiButton(btnPayment, ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, Color.White);
             btnPayment.Click += BtnPayment_Click;
             btnPayment.Margin = new Padding(5, 5, 5, 5); 
@@ -135,7 +135,7 @@ namespace GenericInventorySystem.Forms
             this.ContentPanel.Controls.Add(tlpMain);
 
             SetFooterButtons(
-                LocalizationManager.IsArabic ? "Ø¥ØºÙ„Ø§Ù‚" : "Close",
+                LocalizationManager.IsArabic ? "\u0625\u063A\u0644\u0627\u0642" : "Close",
                 "",
                 (s, e) => this.Close(),
                 null
@@ -158,16 +158,20 @@ namespace GenericInventorySystem.Forms
                     lblBalance.Text = $"${bal:N2}";
 
                     // Fetch earliest upcoming from transactions
-                    string sqlUpcoming = $@"SELECT MIN(due_date) FROM payments 
+                    string sqlUpcoming = $@"SELECT due_date FROM payments 
                                           WHERE entity_type = 'Supplier' AND entity_id = {_supplierId} 
-                                          AND due_date >= CAST(datetime('now') AS DATE)";
+                                          AND due_date IS NOT NULL AND due_date != ''
+                                          AND date(due_date) >= date('now')
+                                          ORDER BY date(due_date) ASC LIMIT 1";
                     object nextDue = DatabaseHelper.ExecuteScalar<object>(sqlUpcoming);
 
                     if (nextDue != null && nextDue != DBNull.Value)
                     {
-                        DateTime due = (DateTime)nextDue;
-                        lblDueDate.Text = (LocalizationManager.IsArabic ? "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0627\u0633\u062A\u062D\u0642\u0627\u0642: " : "Next Due: ") + due.ToString("yyyy-MM-dd");
-                        lblDueDate.Visible = true;
+                        if (DateTime.TryParse(nextDue.ToString(), out DateTime due))
+                        {
+                            lblDueDate.Text = (LocalizationManager.IsArabic ? "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0627\u0633\u062A\u062D\u0642\u0627\u0642: " : "Next Due: ") + due.ToString("yyyy-MM-dd");
+                            lblDueDate.Visible = true;
+                        }
                     }
                     else
                     {
@@ -178,8 +182,8 @@ namespace GenericInventorySystem.Forms
                 // Load History
                 string sqlHistory = $@"
                     SELECT payment_date as 'Date', 
-                           CASE WHEN notes LIKE '[Sale]%' OR notes LIKE '%Bill%' OR notes LIKE '%Sale%' THEN 'Payment Due' 
-                                 ELSE 'Payment Received' END as 'Action',
+                           CASE WHEN notes LIKE '[Sale]%' OR notes LIKE '%Bill%' OR notes LIKE '%Sale%' THEN 'Tran_PaymentDue' 
+                                 ELSE 'Tran_PaymentReceived' END as 'Action',
                            amount as 'Amount',
                            due_date as 'Due Date',
                            CASE WHEN notes IS NULL OR notes = '' OR notes = 'None' THEN 'None'
@@ -199,8 +203,8 @@ namespace GenericInventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            this.TitleText = (isArabic ? "ØªÙØ§ØµÙŠÙ„ " : "Details - ") + _supplierName;
-            lblBalTitle.Text = isArabic ? "Ø§Ù„Ø±ØµÙŠØ¯ Ø§Ù„Ù…Ø³ØªØ­Ù‚" : "Balance Due";
+            this.TitleText = (isArabic ? "\u062A\u0641\u0627\u0635\u064A\u0644 " : "Details - ") + _supplierName;
+            lblBalTitle.Text = isArabic ? "\u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u0633\u062A\u062D\u0642" : "Balance Due";
 
             ApplyGridLocalizations();
         }
@@ -225,11 +229,7 @@ namespace GenericInventorySystem.Forms
             if (colName == "Action")
             {
                 string actionKey = e.Value.ToString();
-                string translated = LocalizationManager.GetString("Action_" + actionKey);
-                if (!string.IsNullOrEmpty(translated) && translated != "Action_" + actionKey)
-                    e.Value = translated;
-                else
-                    e.Value = actionKey.Replace("Action_", "");
+                e.Value = LocalizationManager.GetString(actionKey);
             }
             else if (colName == "Details")
             {
@@ -259,7 +259,7 @@ namespace GenericInventorySystem.Forms
                         return;
                  }
 
-                 // 1. Update Balance â€” use InvariantCulture
+                 // 1. Update Balance - use InvariantCulture
                  string amountStr = amount.ToString(System.Globalization.CultureInfo.InvariantCulture);
                  string sql1 = $"UPDATE suppliers SET balance_due = balance_due - {amountStr} WHERE id = {_supplierId}";
                  DatabaseHelper.ExecuteNonQuery(sql1);

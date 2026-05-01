@@ -1,4 +1,4 @@
-﻿namespace GenericInventorySystem.Forms
+namespace GenericInventorySystem.Forms
 {
     partial class AddCategoryForm
     {
@@ -13,7 +13,9 @@
         private void InitializeComponent()
         {
             this.txtName = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsRequired = true };
-            this.txtDesc = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
+            this.txtDesc = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
+            this.pbImage = new System.Windows.Forms.PictureBox { Width = 150, Height = 150, BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke, Anchor = AnchorStyles.Top };
+            this.btnUpload = new GenericInventorySystem.Controls.ModernButton { Text = "Upload Image", Height = 40, Width = 150, Anchor = AnchorStyles.Top };
             
             this.SuspendLayout();
 
@@ -21,20 +23,24 @@
             {
                 Dock = DockStyle.Top,
                 ColumnCount = 1,
-                RowCount = 2,
+                RowCount = 3,
                 Padding = new Padding(25),
                 AutoSize = true
             };
             tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            this.txtName.LabelText = "Category Name";
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
             tlpMain.Controls.Add(this.txtName, 0, 0);
-
-            this.txtDesc.LabelText = "Description";
             tlpMain.Controls.Add(this.txtDesc, 0, 1);
+            
+            FlowLayoutPanel flpImg = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, Anchor = AnchorStyles.Top };
+            flpImg.Controls.Add(this.pbImage);
+            flpImg.Controls.Add(this.btnUpload);
+            tlpMain.Controls.Add(flpImg, 0, 2);
 
-            this.ClientSize = new System.Drawing.Size(450, 320);
+            this.ClientSize = new System.Drawing.Size(450, 520);
             this.ContentPanel.Controls.Add(tlpMain);
 
             this.Name = "AddCategoryForm";
@@ -46,5 +52,7 @@
 
         private GenericInventorySystem.Controls.ModernTextBox txtName;
         private GenericInventorySystem.Controls.ModernTextBox txtDesc;
+        private System.Windows.Forms.PictureBox pbImage;
+        private GenericInventorySystem.Controls.ModernButton btnUpload;
     }
 }

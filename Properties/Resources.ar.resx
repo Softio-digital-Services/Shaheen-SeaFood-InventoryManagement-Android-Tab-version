@@ -119,6 +119,7 @@
   <data name="Parts_Filter" xml:space="preserve"><value>تصفية</value></data>
   <data name="Parts_AddCategory" xml:space="preserve"><value>إضافة فئة</value></data>
   <data name="Parts_AddProduct" xml:space="preserve"><value>إضافة منتج جديد</value></data>
+  <data name="Parts_AddService" xml:space="preserve"><value>إضافة خدمة جديدة</value></data>
   <data name="Parts_Import" xml:space="preserve"><value>استيراد</value></data>
   <data name="Parts_Export" xml:space="preserve"><value>تصدير</value></data>
   <data name="Parts_Delete" xml:space="preserve"><value>حذف</value></data>
@@ -360,5 +361,22 @@
   <data name="AddUser_MsgSaveErr" xml:space="preserve"><value>خطأ في حفظ المستخدم</value></data>
   <data name="Hist_LoadError" xml:space="preserve"><value>خطأ في تحميل السجل</value></data>
   <data name="Hist_ReturnCompletedOnly" xml:space="preserve"><value>يمكن إرجاع الطلبات المكتملة فقط.</value></data>
+  <data name="Curr_SettingsTitle" xml:space="preserve"><value>إعدادات العملة</value></data>
+  <data name="Curr_AddBtn" xml:space="preserve"><value>إضافة عملة</value></data>
+  <data name="Curr_RefreshBtn" xml:space="preserve"><value>تحديث الأسعار المباشرة</value></data>
+  <data name="Curr_SaveBtn" xml:space="preserve"><value>حفظ التعديلات</value></data>
+  <data name="Curr_StatusLastUpdate" xml:space="preserve"><value>آخر تحديث للأسعار: {0}</value></data>
+  <data name="Curr_ColCode" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Curr_ColName" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Curr_ColSymbol" xml:space="preserve"><value>العلامة</value></data>
+  <data name="Curr_ColRate" xml:space="preserve"><value>السعر مقابل USD</value></data>
+  <data name="Curr_ColUpdate" xml:space="preserve"><value>آخر تحديث</value></data>
+  <data name="Curr_MsgBaseDelete" xml:space="preserve"><value>لا يمكن حذف العملة الأساسية (USD)</value></data>
+  <data name="Curr_MsgDeleteConfirm" xml:space="preserve"><value>هل أنت متأكد من حذف {0}؟</value></data>
+  <data name="Curr_InfoBox" xml:space="preserve"><value>الأسعار بالنسبة للدولار. يمكنك تعديل الحقول واضغط Enter للحفظ. انقر بزر الماوس الأيمن للحذف.</value></data>
+  <data name="Curr_PromptCode" xml:space="preserve"><value>أدخل رمز العملة (مثلاً SAR):</value></data>
+  <data name="Curr_PromptName" xml:space="preserve"><value>أدخل اسم العملة:</value></data>
+  <data name="Curr_PromptSymbol" xml:space="preserve"><value>أدخل رمز العملة:</value></data>
+  <data name="Curr_MsgExists" xml:space="preserve"><value>هذه العملة موجودة بالفعل</value></data>
 </root>
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -23,8 +23,14 @@ namespace GenericInventorySystem.Forms
             InitializeComponent();
             ApplyTheme();
             GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
             ApplyLocalization();
         }
+
 
         private void ApplyLocalization()
         {
@@ -199,21 +205,12 @@ namespace GenericInventorySystem.Forms
             
             chartValuation.Titles.Clear();
             ThemeConfig.ApplyChartTheme(chartValuation);
-            if(chartValuation.ChartAreas.Count > 0)
-                chartValuation.ChartAreas[0].InnerPlotPosition = new ElementPosition(10, 10, 85, 75); // Padding for labels
             
             chartPie.Titles.Clear();
             ThemeConfig.ApplyChartTheme(chartPie);
-            if(chartPie.ChartAreas.Count > 0) 
-            {
-                chartPie.ChartAreas[0].Area3DStyle.Enable3D = false;
-                chartPie.ChartAreas[0].InnerPlotPosition = new ElementPosition(5, 5, 90, 80);
-            }
             
             chartBar.Titles.Clear();
             ThemeConfig.ApplyChartTheme(chartBar);
-            if(chartBar.ChartAreas.Count > 0)
-                chartBar.ChartAreas[0].InnerPlotPosition = new ElementPosition(10, 10, 85, 75);
         }
         
 
@@ -221,14 +218,23 @@ namespace GenericInventorySystem.Forms
         {
             try 
             {
+                // Ensure chart areas are initialized with the expected name
+                if (chartValuation.ChartAreas.Count == 0) chartValuation.ChartAreas.Add("Default");
+                chartValuation.ChartAreas[0].Name = "Default";
+                
+                if (chartPie.ChartAreas.Count == 0) chartPie.ChartAreas.Add("Default");
+                chartPie.ChartAreas[0].Name = "Default";
+
+                if (chartBar.ChartAreas.Count == 0) chartBar.ChartAreas.Add("Default");
+                chartBar.ChartAreas[0].Name = "Default";
+
                 LoadValuationChart();
                 LoadCategoryChart();
                 LoadTopProductsChart();
             }
             catch (Exception ex)
             {
-                // Silent fail or log
-                Console.WriteLine(ex.Message);
+                System.Diagnostics.Debug.WriteLine("Chart Load Error: " + ex.Message);
             }
         }
 
@@ -236,17 +242,15 @@ namespace GenericInventorySystem.Forms
         {
             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
             chartValuation.Series.Clear();
-            var s = chartValuation.Series.Add(L("Rep_ChartValuation"));
-            s.ChartType = SeriesChartType.SplineArea; // Filled area looks premium
-            s.Color = Color.FromArgb(40, ThemeConfig.PrimaryColor); // Subtle Blue Fill
-            s.BorderColor = ThemeConfig.PrimaryColor; // Solid Blue Line
+            var s = new Series(L("Rep_ChartValuation"));
+            s.ChartArea = "Default";
+            s.ChartType = SeriesChartType.SplineArea; 
+            s.Color = Color.FromArgb(40, ThemeConfig.PrimaryColor); 
+            s.BorderColor = ThemeConfig.PrimaryColor; 
             s.BorderWidth = 4;
-
-            s.MarkerStyle = MarkerStyle.Circle;
-            s.MarkerSize = 8;
-            s.MarkerColor = Color.White;
-            s.MarkerBorderColor = s.BorderColor;
-            s.MarkerBorderWidth = 2;
+            
+            // Add to chart before points
+            chartValuation.Series.Add(s);
 
             // Database Data
             var monthlyRevenue = _dashboardService.GetMonthlyRevenue();
@@ -254,6 +258,8 @@ namespace GenericInventorySystem.Forms
             {
                 s.Points.AddXY(kvp.Key, kvp.Value);
             }
+
+            ThemeConfig.ApplyChartTheme(chartValuation);
 
             // Update KPIs
             lblKPI1Value.Text = _dashboardService.GetTotalSalesYTD().ToString("C");
@@ -263,8 +269,10 @@ namespace GenericInventorySystem.Forms
         private void LoadCategoryChart()
         {
             chartPie.Series.Clear();
-            var s = chartPie.Series.Add("Series1");
+            var s = new Series("Series1");
+            s.ChartArea = "Default";
             s.ChartType = SeriesChartType.Doughnut;
+            chartPie.Series.Add(s);
             
             // Database Data
             DataTable dt = _dashboardService.GetSalesByCategory();
@@ -273,27 +281,21 @@ namespace GenericInventorySystem.Forms
                 s.Points.AddXY(row["category_name"].ToString(), Convert.ToDecimal(row["total_sales"]));
             }
             
-            // Custom Colors from Palette
-            for(int i=0; i<s.Points.Count; i++) s.Points[i].Color = ThemeConfig.ChartPalette[i % ThemeConfig.ChartPalette.Length];
-
+            ThemeConfig.ApplyChartTheme(chartPie);
             
-            // Fix Clipping at top
-            if(chartPie.ChartAreas.Count > 0)
-            {
-                 // Give it breathing room inside the chart area
-                 chartPie.ChartAreas[0].InnerPlotPosition = new ElementPosition(5, 5, 90, 80); // X, Y, W, H (Percentages)
-            }
+            // Colors from Palette
+            for(int i=0; i<s.Points.Count; i++) s.Points[i].Color = ThemeConfig.ChartPalette[i % ThemeConfig.ChartPalette.Length];
         }
 
         private void LoadTopProductsChart()
         {
             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
             chartBar.Series.Clear();
-            var s = chartBar.Series.Add(L("Rep_ChartSales"));
-            s.ChartType = SeriesChartType.Column; // Vertical Bar
+            var s = new Series(L("Rep_ChartSales"));
+            s.ChartArea = "Default";
+            s.ChartType = SeriesChartType.Column; 
             s.Color = ThemeConfig.PrimaryColor;
-            s.BackGradientStyle = GradientStyle.TopBottom;
-            s.BackSecondaryColor = Color.FromArgb(150, ThemeConfig.PrimaryColor);
+            chartBar.Series.Add(s);
 
             // Database Data
             DataTable dt = _dashboardService.GetTopSellingItems(5);
@@ -301,8 +303,9 @@ namespace GenericInventorySystem.Forms
             {
                 s.Points.AddXY(row["part_name"].ToString(), Convert.ToInt32(row["total_sold"]));
             }
+
+            ThemeConfig.ApplyChartTheme(chartBar);
         }
 
     }
 }
-

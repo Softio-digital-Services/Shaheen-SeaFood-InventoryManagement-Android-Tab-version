@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -28,11 +28,10 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeForm()
         {
-            GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            bool ar = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
+            LocalizationManager.ApplyRTL(this);
             
             // Adaptive sizing handled by BaseModalForm.OnLoad
-            this.TitleText = ar ? "Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø§Ù„Ø¹Ù…Ù„Ø©" : "Currency Settings";
+            this.TitleText = LocalizationManager.GetString("Curr_SettingsTitle");
 
             this.SuspendLayout();
 
@@ -49,7 +48,7 @@ namespace GenericInventorySystem.Forms
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Grid
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F)); // Info
 
-            // â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ————————————————— Header ——————————————————————————————————————
             TableLayoutPanel tlpHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1 };
             tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160F));
@@ -59,7 +58,7 @@ namespace GenericInventorySystem.Forms
 
             Button btnAdd = new ModernButton
             {
-                Text = ar ? "Ø¥Ø¶Ø§ÙØ© Ø¹Ù…Ù„Ø©" : "Add Currency",
+                Text = LocalizationManager.GetString("Curr_AddBtn"),
                 Height = 45,
                 Dock = DockStyle.Top,
                 Cursor = Cursors.Hand,
@@ -71,7 +70,7 @@ namespace GenericInventorySystem.Forms
 
             btnRefresh = new ModernButton
             {
-                Text = ar ? "ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø£Ø³Ø¹Ø§Ø±" : "Refresh Live Rates",
+                Text = LocalizationManager.GetString("Curr_RefreshBtn"),
                 Height = 45,
                 Dock = DockStyle.Top,
                 Cursor = Cursors.Hand,
@@ -83,18 +82,18 @@ namespace GenericInventorySystem.Forms
 
             tlpMain.Controls.Add(tlpHeader, 0, 0);
 
-            // â”€â”€â”€ Status label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ————————————————— Status label —————————————————————————————————
             lblStatus = new Label
             {
                 Dock = DockStyle.Fill,
                 AutoSize = true,
                 ForeColor = ThemeConfig.SecondaryColor,
                 Font = new Font("Segoe UI", 8f, FontStyle.Italic),
-                TextAlign = ContentAlignment.BottomLeft
+                TextAlign = LocalizationManager.IsArabic ? ContentAlignment.BottomRight : ContentAlignment.BottomLeft
             };
             tlpMain.Controls.Add(lblStatus, 0, 1);
 
-            // â”€â”€â”€ Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ————————————————— Grid ————————————————————————————————————————
             dgvRates = new DataGridView
             {
                 Dock = DockStyle.Fill,
@@ -109,23 +108,23 @@ namespace GenericInventorySystem.Forms
             dgvRates.DataError += (s, e) => { e.ThrowException = false; };
             ThemeConfig.ApplyGridTheme(dgvRates);
 
-            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "code", HeaderText = ar ? "Ø§Ù„Ø±Ù…Ø²" : "Code", DataPropertyName = "code", Width = 60, ReadOnly = true });
-            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "name", HeaderText = ar ? "Ø§Ù„Ø§Ø³Ù…" : "Name", DataPropertyName = "name", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = false });
-            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "symbol", HeaderText = ar ? "Ø§Ù„Ø¹Ù„Ø§Ù…Ø©" : "Symbol", DataPropertyName = "symbol", Width = 70, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
-            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate_vs_usd", HeaderText = ar ? "Ø§Ù„Ø³Ø¹Ø± Ù…Ù‚Ø§Ø¨Ù„ USD" : "Rate vs USD", DataPropertyName = "rate_vs_usd", Width = 130, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
-            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "last_updated", HeaderText = ar ? "Ø¢Ø®Ø± ØªØ­Ø¯ÙŠØ«" : "Last Updated", DataPropertyName = "last_updated", Width = 150, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "g" } });
+            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "code", HeaderText = LocalizationManager.GetString("Curr_ColCode"), DataPropertyName = "code", Width = 60, ReadOnly = true });
+            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "name", HeaderText = LocalizationManager.GetString("Curr_ColName"), DataPropertyName = "name", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = false });
+            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "symbol", HeaderText = LocalizationManager.GetString("Curr_ColSymbol"), DataPropertyName = "symbol", Width = 70, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
+            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate_vs_usd", HeaderText = LocalizationManager.GetString("Curr_ColRate"), DataPropertyName = "rate_vs_usd", Width = 130, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
+            dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "last_updated", HeaderText = LocalizationManager.GetString("Curr_ColUpdate"), DataPropertyName = "last_updated", Width = 150, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "g" } });
 
             // Context Menu for Deletion
             ContextMenuStrip cms = new ContextMenuStrip();
-            var tsmiDelete = new ToolStripMenuItem(ar ? "Ø­Ø°Ù" : "Delete");
+            var tsmiDelete = new ToolStripMenuItem(LocalizationManager.GetString("Parts_Delete"));
             tsmiDelete.Click += (s, e) => {
                 if (dgvRates.CurrentRow != null) {
                     string code = dgvRates.CurrentRow.Cells["code"].Value.ToString();
                     if (code == "USD") {
-                        MessageHelper.ShowWarning(ar ? "Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø­Ø°Ù Ø§Ù„Ø¹Ù…Ù„Ø© Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ© (USD)" : "Cannot delete base currency (USD)");
+                        MessageHelper.ShowWarning(LocalizationManager.GetString("Curr_MsgBaseDelete"));
                         return;
                     }
-                    if (MessageHelper.ShowConfirm(ar ? $"Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø­Ø°Ù {code}ØŸ" : $"Are you sure you want to delete {code}?")) {
+                    if (MessageHelper.ShowConfirm(string.Format(LocalizationManager.GetString("Curr_MsgDeleteConfirm"), code))) {
                         DatabaseHelper.ExecuteNonQuery($"DELETE FROM currency_rates WHERE code = '{code}'");
                         CurrencyService.LoadRatesFromDb();
                         LoadRates();
@@ -137,24 +136,22 @@ namespace GenericInventorySystem.Forms
 
             tlpMain.Controls.Add(dgvRates, 0, 2);
 
-            // â”€â”€â”€ Info box â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ————————————————— Info box —————————————————————————————————————
             Label lblInfo = new Label
             {
-                Text = ar 
-                    ? "Ø§Ù„Ø£Ø³Ø¹Ø§Ø± Ø¨Ø§Ù„Ù†Ø³Ø¨Ø© Ù„Ù„Ø¯ÙˆÙ„Ø§Ø±. ÙŠÙ…ÙƒÙ†Ùƒ ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ø­Ù‚ÙˆÙ„ ÙˆØ§Ø¶ØºØ· Enter Ù„Ù„Ø­ÙØ¸. Ø§Ù†Ù‚Ø± Ø¨Ø²Ø± Ø§Ù„Ù…Ø§ÙˆØ³ Ø§Ù„Ø£ÙŠÙ…Ù† Ù„Ù„Ø­Ø°Ù." 
-                    : "Rates are relative to USD. You can edit cells and press Enter. Right-click to delete.",
+                Text = LocalizationManager.GetString("Curr_InfoBox"),
                 Dock = DockStyle.Fill,
                 Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
                 ForeColor = ThemeConfig.SecondaryColor,
-                TextAlign = ContentAlignment.MiddleLeft
+                TextAlign = LocalizationManager.IsArabic ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft
             };
             tlpMain.Controls.Add(lblInfo, 0, 3);
 
             this.ContentPanel.Controls.Add(tlpMain);
 
             SetFooterButtons(
-                ar ? "Ø­ÙØ¸ Ø§Ù„ØªØ¹Ø¯ÙŠÙ„Ø§Øª" : "Save Changes",
-                ar ? "Ø¥ØºÙ„Ø§Ù‚" : "Close",
+                LocalizationManager.GetString("Curr_SaveBtn"),
+                LocalizationManager.GetString("Popup_Cancel"),
                 BtnSave_Click,
                 (s, e) => this.Close()
             );
@@ -165,23 +162,14 @@ namespace GenericInventorySystem.Forms
 
         private void BtnAdd_Click(object sender, EventArgs e)
         {
-            bool ar = LocalizationManager.IsArabic;
-            string code = Microsoft.VisualBasic.Interaction.InputBox(ar ? "Ø£Ø¯Ø®Ù„ Ø±Ù…Ø² Ø§Ù„Ø¹Ù…Ù„Ø© (Ù…Ø«Ù„Ø§Ù‹ SAR):" : "Enter Currency Code (e.g., SAR):", ar ? "Ø¥Ø¶Ø§ÙØ© Ø¹Ù…Ù„Ø©" : "Add Currency", "").ToUpper();
-            if (string.IsNullOrWhiteSpace(code) || code.Length > 10) return;
-
-            // Check if exists
-            var check = DatabaseHelper.ExecuteScalar<int>($"SELECT COUNT(*) FROM currency_rates WHERE code = '{code}'");
-            if (Convert.ToInt32(check) > 0) {
-                MessageHelper.ShowWarning(ar ? "Ù‡Ø°Ù‡ Ø§Ù„Ø¹Ù…Ù„Ø© Ù…ÙˆØ¬ÙˆØ¯Ø© Ø¨Ø§Ù„ÙØ¹Ù„" : "This currency already exists");
-                return;
+            using (var form = new AddCurrencyForm())
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    LoadRates();
+                    MessageHelper.ShowSuccess(LocalizationManager.GetString("AddUser_MsgAddSuccess"));
+                }
             }
-
-            string name = Microsoft.VisualBasic.Interaction.InputBox(ar ? "Ø£Ø¯Ø®Ù„ Ø§Ø³Ù… Ø§Ù„Ø¹Ù…Ù„Ø©:" : "Enter Currency Name:", ar ? "Ø¥Ø¶Ø§ÙØ© Ø¹Ù…Ù„Ø©" : "Add Currency", code);
-            string symbol = Microsoft.VisualBasic.Interaction.InputBox(ar ? "Ø£Ø¯Ø®Ù„ Ø±Ù…Ø² Ø§Ù„Ø¹Ù…Ù„Ø©:" : "Enter Currency Symbol:", ar ? "Ø¥Ø¶Ø§ÙØ© Ø¹Ù…Ù„Ø©" : "Add Currency", "$");
-
-            DatabaseHelper.ExecuteNonQuery($"INSERT INTO currency_rates (code, name, symbol, rate_vs_usd) VALUES ('{code}', '{name}', '{symbol}', 1)");
-            CurrencyService.LoadRatesFromDb();
-            LoadRates();
         }
 
         private void LoadRates()
@@ -192,7 +180,7 @@ namespace GenericInventorySystem.Forms
                 dgvRates.DataSource = dt;
 
                 // Find latest update
-                string lastUpdate = "â€”";
+                string lastUpdate = "—";
                 foreach (System.Data.DataRow row in dt.Rows)
                 {
                     if (row["last_updated"] != DBNull.Value)
@@ -201,21 +189,20 @@ namespace GenericInventorySystem.Forms
                         break;
                     }
                 }
-                lblStatus.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? $"Ø¢Ø®Ø± ØªØ­Ø¯ÙŠØ«: {lastUpdate}" : $"Last rate update: {lastUpdate}";
+                lblStatus.Text = string.Format(LocalizationManager.GetString("Curr_StatusLastUpdate"), lastUpdate);
             }
             catch (Exception ex)
             {
-                lblStatus.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? $"Ù„Ù… ÙŠØªÙ… Ø§Ù„Ø¬Ù„Ø¨: {ex.Message}" : "Could not load rates: " + ex.Message;
+                lblStatus.Text = LocalizationManager.GetString("Msg_Error") + ": " + ex.Message;
             }
         }
 
         private async void BtnRefresh_Click(object sender, EventArgs e)
         {
-            bool ar = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
             btnRefresh.Enabled = false;
-            btnRefresh.Text    = ar ? "Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø¬Ù„Ø¨..." : "Fetching...";
+            btnRefresh.Text    = LocalizationManager.IsArabic ? "جاري الجلب..." : "Fetching...";
             lblStatus.ForeColor = ThemeConfig.SecondaryColor;
-            lblStatus.Text     = ar ? "Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ø®Ø¯Ù…Ø© Ø§Ù„Ø£Ø³Ø¹Ø§Ø±..." : "Connecting to exchange rate service...";
+            lblStatus.Text     = LocalizationManager.IsArabic ? "جاري الاتصال بخدمة الأسعار..." : "Connecting to exchange rate service...";
 
             var rates = await CurrencyService.FetchLiveRatesAsync();
 
@@ -224,16 +211,16 @@ namespace GenericInventorySystem.Forms
                 CurrencyService.SaveRatesToDb(rates);
                 LoadRates();
                 lblStatus.ForeColor = ThemeConfig.SuccessColor;
-                lblStatus.Text      = ar ? $"ØªÙ… Ø§Ù„ØªØ­Ø¯ÙŠØ«: {DateTime.Now:g}" : $"Rates updated at {DateTime.Now:g}";
+                lblStatus.Text      = string.Format(LocalizationManager.GetString("Curr_StatusLastUpdate"), DateTime.Now.ToString("g"));
             }
             else
             {
                 lblStatus.ForeColor = ThemeConfig.DangerColor;
-                lblStatus.Text      = ar ? "ØªØ¹Ø°Ø± Ø§Ù„Ø§ØªØµØ§Ù„. ÙŠØªÙ… Ø§Ø³ØªØ®Ø¯Ø§Ù… Ø§Ù„Ø£Ø³Ø¹Ø§Ø± Ø§Ù„Ù…Ø®Ø²Ù†Ø©." : "Could not reach server. Using cached rates.";
+                lblStatus.Text      = LocalizationManager.IsArabic ? "تعذر الاتصال. يتم استخدام الأسعار المخزنة." : "Could not reach server. Using cached rates.";
             }
 
             btnRefresh.Enabled = true;
-            btnRefresh.Text    = ar ? "ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø£Ø³Ø¹Ø§Ø±" : "Refresh Live Rates";
+            btnRefresh.Text    = LocalizationManager.GetString("Curr_RefreshBtn");
         }
 
         private void BtnSave_Click(object sender, EventArgs e)
@@ -248,14 +235,14 @@ namespace GenericInventorySystem.Forms
                 
                 if (decimal.TryParse(row.Cells["rate_vs_usd"].Value?.ToString(),
                     System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.CurrentCulture, out decimal rate))
+                    System.Globalization.CultureInfo.InvariantCulture, out decimal rate))
                 {
                     CurrencyService.UpdateCurrency(code, name, symbol, rate);
                 }
             }
             
             lblStatus.ForeColor = ThemeConfig.SuccessColor;
-            lblStatus.Text = GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? "ØªÙ… Ø­ÙØ¸ Ø¬Ù…ÙŠØ¹ Ø§Ù„ØªØ¹Ø¯ÙŠÙ„Ø§Øª" : "All changes saved successfully";
+            lblStatus.Text = LocalizationManager.GetString("AddUser_MsgUpdateSuccess");
             LoadRates();
         }
     }

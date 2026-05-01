@@ -31,7 +31,7 @@ namespace GenericInventorySystem
         
         private Services.DashboardService _dashboardService;
         private System.Windows.Forms.Timer _notificationTimer;
-        private int _lowStockCount = 0;
+        private int _alertCount = 0;
         private Helpers.Plugins.PluginContext _pluginContext;
 
         public MainForm()
@@ -408,7 +408,7 @@ namespace GenericInventorySystem
 
             pbNotification = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 235, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("bell"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbNotification);
-            pbNotification.Paint += (s, e) => { if (_lowStockCount > 0) { e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias; using (SolidBrush b = new SolidBrush(ThemeConfig.DangerColorBright)) e.Graphics.FillEllipse(b, 24, 6, 8, 8); } };
+            pbNotification.Paint += (s, e) => { if (_alertCount > 0) { e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias; using (SolidBrush b = new SolidBrush(ThemeConfig.DangerColorBright)) e.Graphics.FillEllipse(b, 24, 6, 8, 8); } };
             pbNotification.Click += (s, e) => ShowNotifications(s, e);
             rightPanel.Controls.Add(pbNotification);
 
@@ -528,9 +528,9 @@ namespace GenericInventorySystem
         }
 
         private void RefreshNotificationBadge() {
-            int oldCount = _lowStockCount; 
-            _lowStockCount = _dashboardService.GetLowStockCount() + _dashboardService.GetPaymentRemindersCount();
-            if (oldCount != _lowStockCount && pbNotification != null) pbNotification.Invalidate();
+            int oldCount = _alertCount; 
+            _alertCount = _dashboardService.GetLowStockCount() + _dashboardService.GetPaymentRemindersCount() + _dashboardService.GetUnpaidExpensesCount();
+            if (oldCount != _alertCount && pbNotification != null) pbNotification.Invalidate();
         }
 
         private void ApplyTheme() {

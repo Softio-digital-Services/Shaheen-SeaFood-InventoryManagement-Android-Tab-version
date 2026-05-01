@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -54,7 +54,7 @@ namespace GenericInventorySystem.Forms
             
             lblTitle.Text = isAr ? "Ø·Ø¨Ø§Ø¹Ø© Ù…Ù„ØµÙ‚Ø§Øª Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯" : "Barcode Labels Generation";
             txtSearch.PlaceholderText = isAr ? "Ø§Ø¨Ø­Ø« Ø¹Ù† Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª..." : "Search items...";
-            btnGenerate.Text = isAr ? "âœ¨ Ù…Ø¹Ø§ÙŠÙ†Ø© ÙˆØ·Ø¨Ø§Ø¹Ø©" : "âœ¨ Preview and Print";
+            btnGenerate.Text = isAr ? "\u2728 \u0645\u0639\u0627\u064A\u0646\u0623 \u0648\u0637\u0628\u0627\u0639\u0629" : "\u2728 Preview and Print";
 
             if (dgvItems.Columns.Count > 0)
             {

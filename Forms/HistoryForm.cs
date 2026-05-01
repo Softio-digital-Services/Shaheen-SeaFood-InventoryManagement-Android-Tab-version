@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -229,7 +229,15 @@ namespace GenericInventorySystem.Forms
             // Grids
             dgvInventory = CreateGrid();
             dgvCustomers = CreateGrid();
+            
             dgvSuppliers = CreateGrid();
+            dgvSuppliers.AutoGenerateColumns = false;
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", DataPropertyName = "Date", Width = 150 });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Type", DataPropertyName = "Type", Width = 120 });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Supplier", DataPropertyName = "Supplier", Width = 200 });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Amount", DataPropertyName = "Amount", Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Details", DataPropertyName = "Details", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+
             dgvOrders = CreateGrid(); 
             dgvOrders.CellFormatting += DgvOrders_CellFormatting;
             dgvOrders.CellContentClick += DgvOrders_CellContentClick;
@@ -345,6 +353,13 @@ namespace GenericInventorySystem.Forms
 
             dgv.BorderStyle = BorderStyle.None;
             dgv.RowHeadersVisible = false;
+            
+            // Critical: Handle data errors to prevent "Red X" or dialog crashes
+            dgv.DataError += (s, e) => { 
+                Console.WriteLine($"Grid Error: {e.Exception?.Message}");
+                e.ThrowException = false; 
+            };
+            
             ThemeConfig.ApplyGridTheme(dgv);
             return dgv;
         }

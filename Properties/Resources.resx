@@ -198,6 +198,7 @@ Click NO to put on Account.</value>
   <data name="Parts_Filter" xml:space="preserve"><value>Filter</value></data>
   <data name="Parts_AddCategory" xml:space="preserve"><value>Add Category</value></data>
   <data name="Parts_AddProduct" xml:space="preserve"><value>Add New Product</value></data>
+  <data name="Parts_AddService" xml:space="preserve"><value>Add New Service</value></data>
   <data name="Parts_Import" xml:space="preserve"><value>Import</value></data>
   <data name="Parts_Export" xml:space="preserve"><value>Export</value></data>
   <data name="Parts_Delete" xml:space="preserve"><value>Delete</value></data>
@@ -602,5 +603,21 @@ Expires: {0:MMMM dd, yyyy}</value></data>
   <data name="Notif_MonthlyExpensesReadyMsg" xml:space="preserve">
     <value>Monthly expenses are ready for review. Total: {0}</value>
   </data>
+  <data name="Curr_SettingsTitle" xml:space="preserve"><value>Currency Settings</value></data>
+  <data name="Curr_AddBtn" xml:space="preserve"><value>Add Currency</value></data>
+  <data name="Curr_RefreshBtn" xml:space="preserve"><value>Refresh Live Rates</value></data>
+  <data name="Curr_SaveBtn" xml:space="preserve"><value>Save Changes</value></data>
+  <data name="Curr_StatusLastUpdate" xml:space="preserve"><value>Last rate update: {0}</value></data>
+  <data name="Curr_ColCode" xml:space="preserve"><value>Code</value></data>
+  <data name="Curr_ColName" xml:space="preserve"><value>Name</value></data>
+  <data name="Curr_ColSymbol" xml:space="preserve"><value>Symbol</value></data>
+  <data name="Curr_ColRate" xml:space="preserve"><value>Rate vs USD</value></data>
+  <data name="Curr_ColUpdate" xml:space="preserve"><value>Last Updated</value></data>
+  <data name="Curr_MsgBaseDelete" xml:space="preserve"><value>Cannot delete base currency (USD)</value></data>
+  <data name="Curr_MsgDeleteConfirm" xml:space="preserve"><value>Are you sure you want to delete {0}?</value></data>
+  <data name="Curr_InfoBox" xml:space="preserve"><value>Rates are relative to USD. You can edit cells and press Enter. Right-click to delete.</value></data>
+  <data name="Curr_PromptCode" xml:space="preserve"><value>Enter Currency Code (e.g., SAR):</value></data>
+  <data name="Curr_PromptName" xml:space="preserve"><value>Enter Currency Name:</value></data>
+  <data name="Curr_PromptSymbol" xml:space="preserve"><value>Enter Currency Symbol:</value></data>
+  <data name="Curr_MsgExists" xml:space="preserve"><value>This currency already exists</value></data>
 </root>
-

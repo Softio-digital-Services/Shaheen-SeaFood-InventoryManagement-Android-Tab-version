@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -44,37 +44,60 @@ namespace GenericInventorySystem.Services
             { "LBP", 89500m },
         };
 
-        // â”€â”€â”€ DB bootstrap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ————————————————————————————————— DB bootstrap —————————————————————————————————
         public static void EnsureTable()
         {
-            // Create table if it doesn't exist
+            // Create table if it doesn't exist (SQLite style)
             DatabaseHelper.ExecuteNonQuery(@"
-                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'currency_rates')
-                BEGIN
-                    CREATE TABLE currency_rates (
-                        code        NVARCHAR(10)  PRIMARY KEY,
-                        name        NVARCHAR(100),
-                        symbol      NVARCHAR(10),
-                        rate_vs_usd DECIMAL(18,6) DEFAULT 1,
-                        last_updated DATETIME DEFAULT datetime('now')
-                    );
+                CREATE TABLE IF NOT EXISTS currency_rates (
+                    code        TEXT PRIMARY KEY,
+                    name        TEXT,
+                    symbol      TEXT,
+                    rate_vs_usd REAL DEFAULT 1,
+                    last_updated TEXT DEFAULT (datetime('now'))
+                );");
+
+            // Seed if empty
+            int count = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM currency_rates");
+            if (count == 0)
+            {
+                DatabaseHelper.ExecuteNonQuery(@"
                     INSERT INTO currency_rates (code, name, symbol, rate_vs_usd) VALUES
                         ('USD', 'US Dollar',      '$',   1),
-                        ('EUR', 'Euro',           'â‚¬',   0.92),
-                        ('LBP', 'Lebanese Lira',  N'Ù„.Ù„', 89500);
-                END");
+                        ('EUR', 'Euro',           '€',   0.92),
+                        ('LBP', 'Lebanese Lira',  'ل.ل', 89500);");
+            }
 
-            // Ensure orders table has currency columns
-            DatabaseHelper.ExecuteNonQuery(@"
-                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='orders' AND COLUMN_NAME='currency_code')
-                    ALTER TABLE orders ADD currency_code NVARCHAR(10) DEFAULT 'USD';
-                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='orders' AND COLUMN_NAME='exchange_rate')
-                    ALTER TABLE orders ADD exchange_rate DECIMAL(18,6) DEFAULT 1;");
+            // Ensure orders table has currency columns (SQLite doesn't support IF NOT EXISTS in ALTER TABLE)
+            AddColumnIfNotExists("orders", "currency_code", "TEXT DEFAULT 'USD'");
+            AddColumnIfNotExists("orders", "exchange_rate", "REAL DEFAULT 1");
 
             LoadRatesFromDb();
         }
 
-        // â”€â”€â”€ DB rate persistence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        private static void AddColumnIfNotExists(string tableName, string columnName, string columnDefinition)
+        {
+            try
+            {
+                var dt = DatabaseHelper.ExecuteDataTable($"PRAGMA table_info({tableName})");
+                bool exists = false;
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    if (row["name"].ToString().Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists)
+                {
+                    DatabaseHelper.ExecuteNonQuery($"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnDefinition}");
+                }
+            }
+            catch { }
+        }
+
+        // ————————————————————————————————— DB rate persistence ———————————————————————————
         public static void LoadRatesFromDb()
         {
             try
@@ -211,6 +234,37 @@ namespace GenericInventorySystem.Services
                 return $"{symbol} {converted:N0}";
 
             return $"{symbol}{converted:N2}";
+        }
+
+        public static async Task<decimal?> FetchRateAsync(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code) || code.ToUpper() == "USD") return 1m;
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    string url = $"https://api.frankfurter.app/latest?from=USD&to={code.ToUpper()}";
+                    string json = await client.GetStringAsync(url);
+                    
+                    int ratesIdx = json.IndexOf("\"rates\":");
+                    if (ratesIdx < 0) return null;
+
+                    string ratesPart = json.Substring(ratesIdx);
+                    string key = $"\"{code.ToUpper()}\":";
+                    int idx = ratesPart.IndexOf(key);
+                    if (idx < 0) return null;
+                    idx += key.Length;
+                    int end = ratesPart.IndexOfAny(new[] { ',', '}' }, idx);
+                    string valStr = ratesPart.Substring(idx, end - idx).Trim().Replace("\"", "").Replace(":", "");
+                    if (decimal.TryParse(valStr, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out decimal val))
+                    {
+                        return val;
+                    }
+                }
+            }
+            catch { }
+            return null;
         }
 
         /// <summary>Gets all currencies with current rates from DB.</summary>

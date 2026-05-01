@@ -9,6 +9,8 @@ const DEFAULT_PRODUCTS = [
 let allProducts = [...DEFAULT_PRODUCTS];
 let cart = [];
 let currentCategory = 'All';
+let currencies = [];
+let currentCurrency = { code: 'USD', symbol: '$', rate: 1 };
 const API_BASE = ''; 
 
 // CORE INITIALIZATION
@@ -68,8 +70,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     safeListen('btnClearCart', 'click', clearCart);
     safeListen('btnCheckout', 'click', processCheckout);
     safeListen('btnLogin', 'click', handleLogin);
+    safeListen('btnLock', 'click', handleLock);
+    safeListen('btnUnlock', 'click', handleUnlock);
+    safeListen('btnLockLogout', 'click', handleLogout);
     safeListen('btnLogout', 'click', handleLogout); 
+    safeListen('btnOpenReturns', 'click', openReturnsModal);
+    safeListen('btnCloseReturnsModal', 'click', () => document.getElementById('returnsModal').classList.add('hidden'));
+    safeListen('btnProcessReturn', 'click', processReturn);
     
+    safeListen('currencySelect', 'change', (e) => {
+        const code = e.target.value;
+        const curr = currencies.find(c => c.code === code);
+        if (curr) {
+            currentCurrency = curr;
+            renderProducts();
+            updateCartUI();
+        }
+    });    
+    safeListen('lockPass', 'keydown', (e) => {
+        if (e.key === 'Enter') handleUnlock();
+    });    
     // PASSWORD TOGGLE
     const toggle = document.getElementById('togglePassword');
     const passIn = document.getElementById('loginPass');
@@ -81,6 +101,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('eyeClosed').classList.toggle('hidden', !isShowing);
             toggle.classList.toggle('active-green', !isShowing);
         };
+        
+        // Login on Enter key
+        passIn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+        const userIn = document.getElementById('loginUser');
+        if (userIn) {
+            userIn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+        }
     }
 
     // SEARCH HANDLER
@@ -105,11 +136,31 @@ async function initApp() {
     try {
         await fetchInventory();
         await fetchCategories();
+        await fetchCurrencies();
+        checkLowStockAlerts();
     } catch (e) {
         console.error("Init failed", e);
     }
     renderProducts();
     updateCartUI();
+}
+
+async function fetchCurrencies() {
+    try {
+        const res = await fetch(`${API_BASE}/api/currencies`);
+        if (res.ok) {
+            currencies = await res.json();
+            const select = document.getElementById('currencySelect');
+            if (select) {
+                select.innerHTML = currencies.map(c => `<option value="${c.code}" ${c.code === currentCurrency.code ? 'selected' : ''}>${c.code} (${c.symbol})</option>`).join('');
+            }
+        }
+    } catch (e) { console.error("Currencies failed", e); }
+}
+
+function formatPrice(usdPrice) {
+    const converted = usdPrice * currentCurrency.rate;
+    return `${currentCurrency.symbol}${converted.toFixed(2)}`;
 }
 
 async function fetchInventory() {
@@ -179,14 +230,15 @@ function renderProducts() {
         const card = document.createElement('div');
         card.className = 'product-card';
         card.onclick = () => addToCart(p);
+        const displayImage = p.image || p.categoryImage || '📦';
         card.innerHTML = `
             <div class="card-edit-btn" onclick="event.stopPropagation(); openEditModal(${p.id})">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path></svg>
             </div>
-            <div class="product-img">${p.image || '📦'}</div>
+            <div class="product-img">${displayImage}</div>
             <div class="product-info">
                 <div class="product-name">${p.name}</div>
-                <div class="product-price">$${p.price.toFixed(2)}</div>
+                <div class="product-price">${formatPrice(p.price)}</div>
                 <div class="product-stock ${p.stock < 5 ? 'low' : ''}">Stock: ${p.stock}</div>
             </div>
         `;
@@ -271,23 +323,23 @@ function updateCartUI() {
         div.innerHTML = `
             <div class="cart-item-info">
                 <div class="cart-item-name">${item.name}</div>
-                <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                <div class="cart-item-price">${formatPrice(item.price)}</div>
             </div>
             <div class="qty-controls">
                 <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
                 <div class="qty-val">${item.quantity}</div>
                 <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
             </div>
-            <div class="cart-item-total">$${total.toFixed(2)}</div>
+            <div class="cart-item-total">${formatPrice(total)}</div>
         `;
         list.appendChild(div);
     });
 
     const taxRate = document.getElementById('applyTax')?.checked ? 0.10 : 0;
     const tax = subtotal * taxRate;
-    document.getElementById('subTotal').innerText = `$${subtotal.toFixed(2)}`;
-    document.getElementById('taxTotal').innerText = `$${tax.toFixed(2)}`;
-    document.getElementById('grandTotal').innerText = `$${(subtotal + tax).toFixed(2)}`;
+    document.getElementById('subTotal').innerText = formatPrice(subtotal);
+    document.getElementById('taxTotal').innerText = formatPrice(tax);
+    document.getElementById('grandTotal').innerText = formatPrice(subtotal + tax);
 }
 
 function changeQty(id, delta) {
@@ -354,6 +406,7 @@ async function handleLogin() {
         if (res.ok) {
             const data = await res.json();
             localStorage.setItem('pos_loggedIn', 'true');
+            localStorage.setItem('pos_username', data.username);
             localStorage.setItem('pos_user', data.fullName);
             document.getElementById('loginScreen').classList.add('hidden');
             showToast(`Logged in as ${data.fullName}`, "success");
@@ -369,8 +422,42 @@ async function handleLogin() {
 
 function handleLogout() {
     localStorage.removeItem('pos_loggedIn');
+    localStorage.removeItem('pos_username');
+    localStorage.removeItem('pos_user');
+    document.getElementById('lockScreen').classList.add('hidden');
     document.getElementById('loginScreen').classList.remove('hidden');
     showToast("Logged out", "info");
+}
+
+function handleLock() {
+    const user = localStorage.getItem('pos_user') || 'User';
+    document.getElementById('lockUserDisplay').innerText = user;
+    document.getElementById('lockPass').value = '';
+    document.getElementById('lockScreen').classList.remove('hidden');
+}
+
+async function handleUnlock() {
+    const user = localStorage.getItem('pos_username');
+    const pass = document.getElementById('lockPass').value;
+    
+    if (!user) { handleLogout(); return; }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user, password: pass })
+        });
+
+        if (res.ok) {
+            document.getElementById('lockScreen').classList.add('hidden');
+            showToast("Session Unlocked", "success");
+        } else {
+            showToast("Invalid password", "error");
+        }
+    } catch (err) {
+        showToast("Server offline", "error");
+    }
 }
 
 // ── GLOBAL HID BARCODE SCANNER ──────────────────────────────────────────────
@@ -396,6 +483,9 @@ const globalBarcodeScanner = {
         const loginScreen = document.getElementById('loginScreen');
         if (loginScreen && !loginScreen.classList.contains('hidden')) return;
 
+        const lockScreen = document.getElementById('lockScreen');
+        if (lockScreen && !lockScreen.classList.contains('hidden')) return;
+
         // Ignore if a modal is open
         const modal = document.getElementById('addItemModal');
         if (modal && !modal.classList.contains('hidden')) return;
@@ -408,7 +498,13 @@ const globalBarcodeScanner = {
             const code = this.buffer.trim();
             this.buffer = '';
             if (code.length >= this.MIN_LENGTH) {
+                e.preventDefault();
+                e.stopPropagation();
                 this.processBarcode(code);
+                // Force blur any focused button to prevent accidental re-triggers
+                if (document.activeElement instanceof HTMLElement) {
+                    document.activeElement.blur();
+                }
             }
             return;
         }
@@ -486,7 +582,10 @@ async function setupSignalR() {
 
     connection.on("StockUpdated", (reason) => {
         console.log("Real-time sync: StockUpdated", reason);
-        fetchInventory().then(() => renderProducts());
+        fetchInventory().then(() => {
+            renderProducts();
+            checkLowStockAlerts();
+        });
     });
 
     connection.on("InventoryChanged", (msg) => {
@@ -522,8 +621,111 @@ const barcodeScannerManager = {
         else {
             const p = allProducts.find(x => x.barcode === decodedText);
             if (p) { addToCart(p); showToast(`Added: ${p.name}`, "success"); }
-            else showToast("Unknown barcode", "error");
-        }
-        this.stop();
     }
 };
+
+// ── RETURNS SYSTEM ────────────────────────────────────────────────────────
+let selectedReturnOrder = null;
+
+async function openReturnsModal() {
+    document.getElementById('returnsModal').classList.remove('hidden');
+    backToOrderList();
+    await fetchRecentSales();
+}
+
+async function fetchRecentSales() {
+    try {
+        const res = await fetch(`${API_BASE}/api/recent-sales`);
+        if (res.ok) {
+            const sales = await res.json();
+            const container = document.getElementById('returnsOrderList');
+            container.innerHTML = sales.map(s => `
+                <div class="order-row" onclick="selectOrderForReturn(${s.orderId})">
+                    <div>
+                        <div style="font-weight:800; font-size:1rem;">Order #${s.orderId}</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted);">${new Date(s.date).toLocaleString()}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:800; color:var(--accent);">${formatPrice(s.total)}</div>
+                        <div style="font-size:0.75rem;">${s.customer}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (e) { showToast("Failed to fetch history", "error"); }
+}
+
+async function selectOrderForReturn(orderId) {
+    try {
+        const res = await fetch(`${API_BASE}/api/order-details/${orderId}`);
+        if (res.ok) {
+            selectedReturnOrder = { id: orderId, items: await res.json() };
+            document.getElementById('returnsOrderList').classList.add('hidden');
+            document.getElementById('returnsItemSelection').classList.remove('hidden');
+            
+            const container = document.getElementById('returnItemsList');
+            container.innerHTML = `<h3>Items in Order #${orderId}</h3>` + selectedReturnOrder.items.map(i => `
+                <div class="return-item-row">
+                    <div style="flex:1;">
+                        <div style="font-weight:700;">${i.name}</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted);">Purchased: ${i.qty} @ ${formatPrice(i.price)}</div>
+                    </div>
+                    <div>
+                        <label style="font-size:0.6rem; display:block; margin-bottom:2px;">QTY TO RETURN</label>
+                        <input type="number" class="return-qty-input" data-pid="${i.partId}" data-price="${i.price}" value="0" min="0" max="${i.qty}">
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (e) { showToast("Failed to load details", "error"); }
+}
+
+function backToOrderList() {
+    document.getElementById('returnsOrderList').classList.remove('hidden');
+    document.getElementById('returnsItemSelection').classList.add('hidden');
+    selectedReturnOrder = null;
+}
+
+async function processReturn() {
+    if (!selectedReturnOrder) return;
+    
+    const inputs = document.querySelectorAll('.return-qty-input');
+    const items = [];
+    inputs.forEach(input => {
+        const qty = parseInt(input.value);
+        if (qty > 0) {
+            items.push({
+                partId: parseInt(input.dataset.pid),
+                qty: qty,
+                refundAmount: qty * parseFloat(input.dataset.price)
+            });
+        }
+    });
+
+    if (items.length === 0) {
+        showToast("Select at least one item to return", "warn");
+        return;
+    }
+
+    const payload = {
+        orderId: selectedReturnOrder.id,
+        reason: document.getElementById('returnReason').value || "Customer request",
+        items: items
+    };
+
+    try {
+        const res = await fetch(`${API_BASE}/api/return-item`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            showToast("Refund processed successfully", "success");
+            document.getElementById('returnsModal').classList.add('hidden');
+            await initApp(); // Refresh inventory
+        } else {
+            showToast("Failed to process return", "error");
+        }
+    } catch (e) { showToast("Connection error", "error"); }
+}

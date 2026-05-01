@@ -41,7 +41,12 @@ namespace GenericInventorySystem.Forms
             _dashboardService = new DashboardService();
             InitializeComponent();
             InitializeDashboardLayout();
-            ApplyLocalization(); // Moved here, AFTER InitializeDashboardLayout
+            ApplyLocalization(); 
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
             LoadData();
         }
 
@@ -142,17 +147,12 @@ namespace GenericInventorySystem.Forms
             // Scan-to-Connect button
             var btnScan = new Button
             {
-                Text = "📱  Scan to Connect",
-                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
-                ForeColor = Color.White,
-                BackColor = ThemeConfig.PrimaryColor,
-                FlatStyle = FlatStyle.Flat,
+                Text = LocalizationManager.IsArabic ? "📱  Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ø§Ù„Ù‡Ø§ØªÙ " : "📱  Scan to Connect",
                 Dock = DockStyle.Right,
                 Width = 145,
-                Cursor = Cursors.Hand,
-                Margin = new Padding(0, 8, 0, 8)
+                Margin = new Padding(10, 6, 10, 6)
             };
-            btnScan.FlatAppearance.BorderSize = 0;
+            ThemeConfig.ApplyPrimaryButton(btnScan);
             btnScan.Click += (s, e) => new ScanToConnectForm().ShowDialog();
 
             titleRow.Controls.Add(lblDashboardTitle);
@@ -198,7 +198,7 @@ namespace GenericInventorySystem.Forms
             _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F)); 
             
             // Bar Chart Card
-            _chartWeeklyRevenue = CreateModernChart("Weekly Revenue");
+            _chartWeeklyRevenue = CreateModernChart();
             Panel pnlWeeklyCard = ThemeConfig.CreateCardPanel(_chartWeeklyRevenue);
             pnlWeeklyCard.Margin = new Padding(0, 0, 10, 0);
             _middleLayout.Controls.Add(pnlWeeklyCard, 0, 0);
@@ -236,7 +236,7 @@ namespace GenericInventorySystem.Forms
             _lblTrend = new Label { Name = "lblTrend", Text = "Sales Trends", Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Height = 30, ForeColor = ThemeConfig.TextColorDark };
             bottomContent.Controls.Add(_lblTrend);
 
-            _chartTrends = CreateModernChart("Monthly Trends");
+            _chartTrends = CreateModernChart();
             _chartTrends.Series.Clear(); 
             _chartTrends.Dock = DockStyle.Fill;
             bottomContent.Controls.Add(_chartTrends);
@@ -261,13 +261,11 @@ namespace GenericInventorySystem.Forms
             return card;
         }
 
-        private Chart CreateModernChart(string title)
+        private Chart CreateModernChart()
         {
-            Chart chart = new Chart();
-            chart.Dock = DockStyle.Fill;
-            
-            // Add Title before applying theme so it gets styled
-            chart.Titles.Add(new Title(title));
+            Chart chart = new Chart { Dock = DockStyle.Fill, BackColor = Color.White };
+            ChartArea area = new ChartArea("Default");
+            chart.ChartAreas.Add(area);
             
             ThemeConfig.ApplyChartTheme(chart);
             
@@ -318,24 +316,27 @@ namespace GenericInventorySystem.Forms
 
                 
                 // 2. Bar Chart (Weekly Revenue)
-                _chartWeeklyRevenue.Series.Clear();
-                Series seriesBar = new Series(L("Rep_ChartSales"));
-                seriesBar.ChartType = SeriesChartType.Column;
-                seriesBar.Color = ThemeConfig.PrimaryColor; // Horizon Blue
-                seriesBar.BackGradientStyle = GradientStyle.TopBottom;
-                seriesBar.BackSecondaryColor = Color.FromArgb(120, ThemeConfig.PrimaryColor); // 120/255 transparency
-
-                seriesBar.BorderWidth = 0;
-                
-                var weeklyData = _dashboardService.GetWeeklyRevenue();
-                foreach(var kvp in weeklyData)
+                try
                 {
-                    seriesBar.Points.AddXY(kvp.Key, kvp.Value);
-                }
-                _chartWeeklyRevenue.Series.Add(seriesBar);
+                    _chartWeeklyRevenue.Series.Clear();
+                    Series seriesBar = new Series(L("Rep_ChartSales"));
+                    seriesBar.ChartType = SeriesChartType.Column;
+                    seriesBar.ChartArea = "Default"; // Explicit link to the area we forced in ThemeConfig
+                    
+                    // Add series first, then points (safer for some Chart versions)
+                    _chartWeeklyRevenue.Series.Add(seriesBar);
 
-            // 3. Top Items Grid
-                // Enable Scrolling explicit
+                    var weeklyData = _dashboardService.GetWeeklyRevenue();
+                    foreach(var kvp in weeklyData)
+                    {
+                        seriesBar.Points.AddXY(kvp.Key, kvp.Value);
+                    }
+
+                    ThemeConfig.ApplyChartTheme(_chartWeeklyRevenue);
+                }
+                catch { /* Fail gracefully */ }
+
+                // 3. Top Items Grid
                 _gridTopItems.ScrollBars = ScrollBars.Both; // Ensure horizontal scroll if needed too
                 _gridTopItems.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None; // Enforce fixed height
                 
@@ -348,26 +349,27 @@ namespace GenericInventorySystem.Forms
                 }
 
                 // 4. Line Chart (Trends)
-                _chartTrends.Series.Clear();
-                Series seriesSpline = new Series(L("Dash_SalesTrends"));
-                seriesSpline.ChartType = SeriesChartType.SplineArea;
-                seriesSpline.Color = Color.FromArgb(40, ThemeConfig.SuccessColor); // More subtle transparent fill
-                seriesSpline.BorderWidth = 4;
-                seriesSpline.BorderColor = ThemeConfig.SuccessColor;
-                seriesSpline.MarkerStyle = MarkerStyle.Circle;
-                seriesSpline.MarkerSize = 8;
-                seriesSpline.MarkerColor = Color.White;
-                seriesSpline.MarkerBorderColor = ThemeConfig.SuccessColor;
-                seriesSpline.MarkerBorderWidth = 2;
-
-                
-                var trendData = _dashboardService.GetMonthlySalesTrend();
-                foreach(var kvp in trendData)
+                try
                 {
-                    seriesSpline.Points.AddXY(kvp.Key, kvp.Value);
-                }
-                _chartTrends.Series.Add(seriesSpline);
+                    _chartTrends.Series.Clear();
+                    Series seriesSpline = new Series(L("Dash_SalesTrends"));
+                    seriesSpline.ChartArea = "Default";
+                    seriesSpline.ChartType = SeriesChartType.SplineArea;
+                    seriesSpline.Color = Color.FromArgb(40, ThemeConfig.SuccessColor); 
+                    seriesSpline.BorderWidth = 4;
+                    seriesSpline.BorderColor = ThemeConfig.SuccessColor;
+                    
+                    _chartTrends.Series.Add(seriesSpline);
 
+                    var trendData = _dashboardService.GetMonthlySalesTrend();
+                    foreach (var kvp in trendData)
+                    {
+                        seriesSpline.Points.AddXY(kvp.Key, kvp.Value);
+                    }
+
+                    ThemeConfig.ApplyChartTheme(_chartTrends);
+                }
+                catch { /* Fail gracefully */ }
             }
             catch (Exception ex)
             {

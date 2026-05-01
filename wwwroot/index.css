@@ -476,3 +476,59 @@ body {
 .pulse { animation: pulse-scanner 2s infinite ease-in-out; }
 
 .hidden { display: none !important; }
+
+/* NEW COMPONENTS */
+.currency-select {
+    background: var(--surface-glass);
+    border: 1px solid var(--border-color);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.currency-select:focus { border-color: var(--accent); }
+
+.returns-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 50vh;
+    overflow-y: auto;
+    margin-top: 15px;
+}
+
+.order-row {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.order-row:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); }
+
+.return-item-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+.return-item-row:last-child { border-bottom: none; }
+
+.return-qty-input {
+    width: 60px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+    color: white;
+    padding: 5px;
+    border-radius: 6px;
+    text-align: center;
+}

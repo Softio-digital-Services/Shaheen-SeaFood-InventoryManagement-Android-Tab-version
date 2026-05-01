@@ -11,7 +11,8 @@ namespace GenericInventorySystem.Services
         {
             string sql = @"SELECT p.id as part_id, p.part_number, p.part_name,
                            COALESCE(c.category_name, 'Category') as category_name,
-                           p.quantity_in_stock, p.selling_price, p.status, p.part_image,
+                           p.quantity_in_stock, p.selling_price, p.status, 
+                           COALESCE(NULLIF(p.part_image, ''), NULLIF(c.category_image, '')) as part_image,
                            p.minimum_stock_level, p.location, p.barcode, p.shelf
                            FROM parts p
                            LEFT JOIN categories c ON p.category_id = c.id

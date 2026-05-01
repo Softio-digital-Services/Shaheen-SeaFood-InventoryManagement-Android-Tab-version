@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Helpers;
@@ -10,12 +10,49 @@ namespace GenericInventorySystem.Forms
     public partial class AddCategoryForm : BaseModalForm
     {
         public string NewCategoryName { get; private set; }
+        private string _currentImagePath = "";
 
         public AddCategoryForm()
         {
             InitializeComponent();
             this.TitleText = LocalizationManager.IsArabic ? "Ø¥Ø¶Ø§ÙØ© ÙØ¦Ø© Ø¬Ø¯ÙŠØ¯Ø©" : "Add New Category";
+            btnUpload.Click += BtnUpload_Click;
             ApplyLocalization();
+        }
+
+        private void BtnUpload_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog ofd = new OpenFileDialog())
+            {
+                ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        string ext = System.IO.Path.GetExtension(ofd.FileName);
+                        string fileName = "cat_" + Guid.NewGuid().ToString().Substring(0, 8) + ext;
+                        string targetDir = System.IO.Path.Combine(Application.StartupPath, "Assets", "Categories");
+                        
+                        if (!System.IO.Directory.Exists(targetDir))
+                            System.IO.Directory.CreateDirectory(targetDir);
+
+                        string targetPath = System.IO.Path.Combine(targetDir, fileName);
+                        System.IO.File.Copy(ofd.FileName, targetPath, true);
+
+                        _currentImagePath = "Assets/Categories/" + fileName;
+                        
+                        using (var stream = new System.IO.FileStream(targetPath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                        {
+                            if (pbImage.Image != null) pbImage.Image.Dispose();
+                            pbImage.Image = Image.FromStream(stream);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageHelper.ShowError("Error uploading image: " + ex.Message);
+                    }
+                }
+            }
         }
 
         private void ApplyLocalization()
@@ -23,11 +60,12 @@ namespace GenericInventorySystem.Forms
             bool ar = LocalizationManager.IsArabic;
             this.RightToLeft = ar ? RightToLeft.Yes : RightToLeft.No;
             
-            txtName.LabelText = ar ? "Ø§Ø³Ù… Ø§Ù„ÙØ¦Ø©" : "Category Name";
-            txtDesc.LabelText = ar ? "Ø§Ù„ÙˆØµÙ" : "Description";
+            txtName.LabelText = ar ? "Ø§Ø³Ù… Ø§Ù„Ù Ø¦Ø©" : "Category Name";
+            txtDesc.LabelText = ar ? "Ø§Ù„ÙˆØµÙ " : "Description";
+            btnUpload.Text = ar ? "ØªØ­Ù…ÙŠÙ„ ØµÙˆØ±Ø©" : "Upload Image";
             
             SetFooterButtons(
-                ar ? "Ø­ÙØ¸" : "Save",
+                ar ? "Ø­Ù Ø¸" : "Save",
                 ar ? "Ø¥Ù„ØºØ§Ø¡" : "Cancel",
                 btnSave_Click,
                 (s, e) => this.Close()
@@ -40,7 +78,7 @@ namespace GenericInventorySystem.Forms
 
             try
             {
-                CategoryData.AddCategory(txtName.Text.Trim(), txtDesc.Text.Trim());
+                CategoryData.AddCategory(txtName.Text.Trim(), txtDesc.Text.Trim(), _currentImagePath);
                 NewCategoryName = txtName.Text.Trim();
                 
                 // Real-time Sync: Tell all Web POS clients to refresh categories

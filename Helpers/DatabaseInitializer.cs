@@ -21,10 +21,27 @@ namespace GenericInventorySystem.Helpers
         /// </summary>
         private static void UpdateSchema()
         {
-            // Ensure Services category exists
-            DatabaseHelper.ExecuteNonQuery(
-                "INSERT OR IGNORE INTO categories (category_name) VALUES ('Engine'),('Brakes'),('Suspension'),('Electrical'),('Body'),('Interior'),('Accessories'),('Services');"
-            );
+            // Ensure category_image column exists for existing databases
+            DatabaseHelper.ExecuteNonQuery("ALTER TABLE categories ADD COLUMN category_image TEXT;");
+
+            // Ensure Services category exists with default icons
+            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Engine', '⚙️');");
+            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Brakes', '🛑');");
+            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Suspension', '🚜');");
+            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Electrical', '⚡');");
+            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Body', '🚗');");
+            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Interior', '💺');");
+            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Accessories', '💎');");
+            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Services', '🛠️');");
+            
+            // Update existing categories if they have no image
+            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '⚙️' WHERE category_name = 'Engine' AND category_image IS NULL;");
+            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '🛑' WHERE category_name = 'Brakes' AND category_image IS NULL;");
+            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '🛠️' WHERE category_name = 'Services' AND category_image IS NULL;");
+            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '⚡' WHERE category_name = 'Electrical' AND category_image IS NULL;");
+            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '🚗' WHERE category_name = 'Body' AND category_image IS NULL;");
+            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '💎' WHERE category_name = 'Accessories' AND category_image IS NULL;");
+
 
             // Ensure admin user exists
             DatabaseHelper.ExecuteNonQuery(

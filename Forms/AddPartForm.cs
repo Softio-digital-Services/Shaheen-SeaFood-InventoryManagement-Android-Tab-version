@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using GenericInventorySystem.Data;
 using GenericInventorySystem;
@@ -103,28 +103,41 @@ namespace GenericInventorySystem.Forms
             }
 
             _currentImagePath = imagePath;
-            
-            if(!string.IsNullOrEmpty(imagePath))
+            UpdateImagePreview(imagePath);
+        }
+
+        private void UpdateImagePreview(string imagePath)
+        {
+            if (string.IsNullOrEmpty(imagePath))
             {
-                 try
-                 {
-                     string fullPath = System.IO.Path.Combine(Application.StartupPath, imagePath); 
-                     if(System.IO.File.Exists(fullPath))
-                     {
-                         // Use MemoryStream to avoid file locking
-                         byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
-                         using (var ms = new System.IO.MemoryStream(bytes))
-                         {
-                             var oldImg = pbImage.Image;
-                             pbImage.Image = null; // Detach before disposal
-                             if (oldImg != null) oldImg.Dispose();
-                             
-                             pbImage.Image = System.Drawing.Image.FromStream(ms);
-                         }
-                     }
-                 }
-                 catch { /* Silently fail and use placeholder / empty */ }
+                // If product has no image, try getting it from category
+                if (cmbCategory.SelectedItem is CategoryData cat && !string.IsNullOrEmpty(cat.CategoryImage))
+                {
+                    imagePath = cat.CategoryImage;
+                }
+                else
+                {
+                    pbImage.Image = null;
+                    return;
+                }
             }
+
+            try
+            {
+                string fullPath = System.IO.Path.Combine(Application.StartupPath, imagePath);
+                if (System.IO.File.Exists(fullPath))
+                {
+                    byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
+                    using (var ms = new System.IO.MemoryStream(bytes))
+                    {
+                        var oldImg = pbImage.Image;
+                        pbImage.Image = null;
+                        if (oldImg != null) oldImg.Dispose();
+                        pbImage.Image = System.Drawing.Image.FromStream(ms);
+                    }
+                }
+            }
+            catch { pbImage.Image = null; }
         }
 
         private bool _isCategoryLoading = false;
@@ -132,27 +145,33 @@ namespace GenericInventorySystem.Forms
         {
             if (_isCategoryLoading || cmbCategory.DataSource == null) return;
 
-            if (cmbCategory.SelectedItem is CategoryData cat && cat.Id == -1)
+            if (cmbCategory.SelectedItem is CategoryData cat)
             {
-                using (var f = new AddCategoryForm())
+                if (cat.Id == -1)
                 {
-                    if (f.ShowDialog() == DialogResult.OK)
+                    using (var f = new AddCategoryForm())
                     {
-                        string newCat = f.NewCategoryName;
-                        LoadCategories();
-                        
-                        // Select the new one
-                        int idx = -1;
-                        for(int i=0; i<cmbCategory.Items.Count; i++) {
-                            if ((cmbCategory.Items[i] as CategoryData)?.CategoryName == newCat) { idx = i; break; }
+                        if (f.ShowDialog() == DialogResult.OK)
+                        {
+                            string newCat = f.NewCategoryName;
+                            LoadCategories();
+                            
+                            // Select the new one
+                            int idx = -1;
+                            for(int i=0; i<cmbCategory.Items.Count; i++) {
+                                if ((cmbCategory.Items[i] as CategoryData)?.CategoryName == newCat) { idx = i; break; }
+                            }
+                            if (idx >= 0) cmbCategory.SelectedIndex = idx;
                         }
-                        if (idx >= 0) cmbCategory.SelectedIndex = idx;
+                        else
+                        {
+                            if (cmbCategory.Items.Count > 0) cmbCategory.SelectedIndex = 0;
+                        }
                     }
-                    else
-                    {
-                        // Reset to first item
-                        if (cmbCategory.Items.Count > 0) cmbCategory.SelectedIndex = 0;
-                    }
+                }
+                else if (string.IsNullOrEmpty(_currentImagePath))
+                {
+                    UpdateImagePreview(null);
                 }
             }
         }
@@ -281,7 +300,6 @@ namespace GenericInventorySystem.Forms
             {
                 try
                 {
-                    // Copy to Assets/Products
                     string assetsDir = System.IO.Path.Combine(Application.StartupPath, "Assets", "Products");
                     if(!System.IO.Directory.Exists(assetsDir)) System.IO.Directory.CreateDirectory(assetsDir);
                     
@@ -291,19 +309,8 @@ namespace GenericInventorySystem.Forms
                     
                     System.IO.File.Copy(ofd.FileName, destPath, true);
                     
-                    // Show preview using MemoryStream to avoid file locking
-                    byte[] bytes = System.IO.File.ReadAllBytes(destPath);
-                    using (var ms = new System.IO.MemoryStream(bytes))
-                    {
-                        var oldImg = pbImage.Image;
-                        pbImage.Image = null; // Detach before disposal
-                        if (oldImg != null) oldImg.Dispose();
-
-                        pbImage.Image = System.Drawing.Image.FromStream(ms);
-                    }
-                    
-                    // Store relative path "Assets/Products/filename.ext"
                     _currentImagePath = "Assets/Products/" + newName;
+                    UpdateImagePreview(_currentImagePath);
                 }
                 catch(Exception ex)
                 {
@@ -338,7 +345,7 @@ namespace GenericInventorySystem.Forms
             txtPartNumber.LabelText = LocalizationManager.GetString("AddPart_SKU");
             txtLocation.LabelText = LocalizationManager.GetString("AddPart_Location");
             txtShelf.LabelText = LocalizationManager.GetString("AddPart_Shelf");
-            btnAutoSKU.Text = isArabic ? "âœ¨ ØªÙ„Ù‚Ø§Ø¦ÙŠ" : "âœ¨ Auto";
+            btnAutoSKU.Text = isArabic ? "\u2728 \u062A\u0644\u0642\u0627\u0626\u064A" : "\u2728 Auto";
 
             // Modern Numeric Inputs
             string currSymbol = GenericInventorySystem.Services.CurrencyService.GetSymbol("USD");

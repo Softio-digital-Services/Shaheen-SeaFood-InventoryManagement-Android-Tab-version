@@ -9,6 +9,7 @@ namespace GenericInventorySystem.Data
         public int Id { get; set; }
         public string CategoryName { get; set; }
         public string Description { get; set; }
+        public string CategoryImage { get; set; }
         public DateTime DateCreated { get; set; }
 
         public static List<CategoryData> GetAllCategories()
@@ -23,7 +24,8 @@ namespace GenericInventorySystem.Data
             {
                 Id           = reader.GetInt32(reader.GetOrdinal("id")),
                 CategoryName = reader.GetString(reader.GetOrdinal("category_name")),
-                Description  = reader.IsDBNull(reader.GetOrdinal("description")) ? "" : reader.GetString(reader.GetOrdinal("description"))
+                Description  = reader.IsDBNull(reader.GetOrdinal("description")) ? "" : reader.GetString(reader.GetOrdinal("description")),
+                CategoryImage = reader.IsDBNull(reader.GetOrdinal("category_image")) ? "" : reader.GetString(reader.GetOrdinal("category_image"))
             };
 
             try
@@ -37,13 +39,14 @@ namespace GenericInventorySystem.Data
             return cat;
         }
 
-        public static void AddCategory(string name, string description)
+        public static void AddCategory(string name, string description, string image = "")
         {
-            string sql = "INSERT INTO categories (category_name, description, date_created) " +
-                         "VALUES (@name, @desc, datetime('now'))";
+            string sql = "INSERT INTO categories (category_name, description, category_image, date_created) " +
+                         "VALUES (@name, @desc, @img, datetime('now'))";
             DatabaseHelper.ExecuteNonQuery(sql,
                 new SqliteParameter("@name", name),
-                new SqliteParameter("@desc", description));
+                new SqliteParameter("@desc", description),
+                new SqliteParameter("@img",  image));
         }
     }
 }

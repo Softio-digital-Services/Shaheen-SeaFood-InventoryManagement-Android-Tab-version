@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using GenericInventorySystem.Helpers;
 
@@ -14,17 +14,17 @@ namespace GenericInventorySystem.Services
         public DataTable GetCustomerHistory()
         {
             string sql = @"
-                SELECT order_date as 'Date', 'Order' as 'Type', c.full_name as 'Customer', total_amount as 'Amount', 'Order #' + CAST(order_id AS VARCHAR) as 'Details' 
+                SELECT order_date as 'Date', 'Order' as 'Type', c.full_name as 'Customer', CAST(total_amount AS DECIMAL(18,2)) as 'Amount', 'Order #' || CAST(order_id AS TEXT) as 'Details' 
                 FROM orders o
                 JOIN customers c ON o.customer_id = c.customer_id
                 UNION ALL
-                SELECT payment_date as 'Date', 'Payment' as 'Type', c.full_name as 'Customer', amount as 'Amount', notes as 'Details' 
+                SELECT payment_date as 'Date', 'Payment' as 'Type', c.full_name as 'Customer', CAST(amount AS DECIMAL(18,2)) as 'Amount', COALESCE(notes, '') as 'Details' 
                 FROM payments p
                 JOIN customers c ON p.entity_id = c.customer_id
                 UNION ALL
-                SELECT timestamp as 'Date', REPLACE(action_type, 'CUSTOMER_', '') as 'Type', 
+                SELECT timestamp as 'Date', CAST(REPLACE(action_type, 'CUSTOMER_', '') AS TEXT) as 'Type', 
                        CASE WHEN part_name = 'N/A' THEN 'System' ELSE part_name END as 'Customer', 
-                       CAST(0 AS DECIMAL(18,2)) as 'Amount', description as 'Details'
+                       CAST(0 AS DECIMAL(18,2)) as 'Amount', COALESCE(description, '') as 'Details'
                 FROM transactions
                 WHERE action_type LIKE 'CUSTOMER_%'
                 ORDER BY 1 DESC
@@ -60,10 +60,10 @@ namespace GenericInventorySystem.Services
         {
             string sql = @"
                 SELECT payment_date as 'Date', 
-                       CASE WHEN notes LIKE '%Bill%' THEN 'Bill (Owing)' ELSE 'Payment (Paid)' END as 'Type', 
+                       CAST(CASE WHEN notes LIKE '%Bill%' THEN 'Bill (Owing)' ELSE 'Payment (Paid)' END AS TEXT) as 'Type', 
                        s.supplier_name as 'Supplier', 
-                       amount as 'Amount', 
-                       notes as 'Details'
+                       CAST(amount AS DECIMAL(18,2)) as 'Amount', 
+                       COALESCE(notes, '') as 'Details'
                 FROM payments p
                 JOIN suppliers s ON p.entity_id = s.id
                 WHERE p.entity_type = 'Supplier'
@@ -71,10 +71,10 @@ namespace GenericInventorySystem.Services
                 UNION ALL
                 
                 SELECT timestamp as 'Date',
-                       REPLACE(action_type, 'SUPPLIER_', '') as 'Type',
+                       CAST(REPLACE(action_type, 'SUPPLIER_', '') AS TEXT) as 'Type',
                        CASE WHEN part_name = 'N/A' THEN 'System' ELSE part_name END as 'Supplier',
                        CAST(0 AS DECIMAL(18,2)) as 'Amount',
-                       description as 'Details'
+                       COALESCE(description, '') as 'Details'
                 FROM transactions
                 WHERE action_type LIKE 'SUPPLIER_%'
                 

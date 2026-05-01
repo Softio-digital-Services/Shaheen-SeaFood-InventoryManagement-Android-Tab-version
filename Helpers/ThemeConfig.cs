@@ -311,41 +311,69 @@ namespace GenericInventorySystem
 
         public static void ApplyChartTheme(Chart chart)
         {
-            chart.BackColor = Color.Transparent; // Changed from SurfaceColor to prevent covering rounded corners
-            chart.AntiAliasing = AntiAliasingStyles.All;
-            chart.TextAntiAliasingQuality = TextAntiAliasingQuality.High;
-
-            chart.ChartAreas.Clear();
-            var area = chart.ChartAreas.Add("MainArea");
-            area.BackColor = Color.Transparent;
-
-            area.AxisX.LabelStyle.Font = StandardFont;
-            area.AxisY.LabelStyle.Font = StandardFont;
-            area.AxisX.LabelStyle.ForeColor = SecondaryColor;
-            area.AxisY.LabelStyle.ForeColor = SecondaryColor;
-
-            area.AxisX.LineColor = Color.FromArgb(230, 230, 230);
-            area.AxisY.LineColor = Color.Transparent;
-
-            area.AxisX.MajorGrid.LineColor = Color.FromArgb(245, 245, 245);
-            area.AxisY.MajorGrid.LineColor = Color.FromArgb(245, 245, 245);
-            area.AxisX.MajorGrid.Enabled = false;
-
-            foreach (var title in chart.Titles)
+            try
             {
-                title.Font = SubHeaderFont;
-                title.ForeColor = TextColorDark;
-                title.Alignment = ContentAlignment.TopLeft;
-                title.Docking = Docking.Top;
-            }
+                chart.BeginInit();
+                chart.BackColor = SurfaceColor;
+                
+                // Re-enable high quality rendering (now safe with new library)
+                chart.AntiAliasing = AntiAliasingStyles.All; 
+                chart.TextAntiAliasingQuality = TextAntiAliasingQuality.High;
 
-            chart.Legends.Clear();
-            var legend = chart.Legends.Add("Default");
-            legend.BackColor = Color.Transparent;
-            legend.Font = StandardFont;
-            legend.ForeColor = SecondaryColor;
-            legend.Docking = Docking.Bottom;
-            legend.Alignment = StringAlignment.Center;
+                if (chart.ChartAreas.Count == 0)
+                {
+                    chart.ChartAreas.Add("Default");
+                }
+                
+                var area = chart.ChartAreas[0];
+                area.Name = "Default";
+                area.BackColor = SurfaceColor;
+                
+                // Optimized Positioning to prevent clipping
+                area.Position.Auto = false;
+                area.Position.X = 3;
+                area.Position.Y = 10;
+                area.Position.Width = 92;
+                area.Position.Height = 85;
+
+                area.InnerPlotPosition.Auto = true; // Let it calculate based on labels
+
+                area.AxisX.LabelStyle.Font = StandardFont;
+                area.AxisY.LabelStyle.Font = StandardFont;
+                area.AxisX.LabelStyle.ForeColor = SecondaryColor;
+                area.AxisY.LabelStyle.ForeColor = SecondaryColor;
+
+                area.AxisX.LineColor = Color.FromArgb(230, 230, 230);
+                area.AxisY.LineColor = Color.Transparent;
+
+                area.AxisX.MajorGrid.LineColor = Color.FromArgb(245, 245, 245);
+                area.AxisY.MajorGrid.LineColor = Color.FromArgb(245, 245, 245);
+                area.AxisX.MajorGrid.Enabled = false;
+                
+                // Restore premium look for series
+                foreach (var s in chart.Series)
+                {
+                    // Smooth curves where appropriate
+                    if (s.ChartType == SeriesChartType.Area) s.ChartType = SeriesChartType.SplineArea;
+                    if (s.ChartType == SeriesChartType.Line) s.ChartType = SeriesChartType.Spline;
+                    if (s.ChartType == SeriesChartType.Pie) s.ChartType = SeriesChartType.Doughnut;
+
+                    if (s.ChartType == SeriesChartType.SplineArea || s.ChartType == SeriesChartType.Column)
+                    {
+                        s.BackGradientStyle = GradientStyle.TopBottom;
+                        s.BackSecondaryColor = Color.FromArgb(100, s.Color);
+                    }
+                    
+                    if (s.ChartType == SeriesChartType.Doughnut)
+                    {
+                        s["PieLabelStyle"] = "Outside";
+                        s["PieDrawingStyle"] = "SoftEdge";
+                    }
+                }
+
+                chart.EndInit();
+            }
+            catch { /* Chart error should not crash the app */ }
         }
 
         public static void ApplyEmojiButton(Button btn, Color backColor, Color hoverColor, Color textColor)
@@ -847,12 +875,12 @@ namespace GenericInventorySystem
             grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None; 
             grid.ColumnHeadersHeight = 45; 
             grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
 
             grid.DefaultCellStyle.BackColor = SurfaceColor;
             grid.DefaultCellStyle.ForeColor = TextColorDark;
             grid.DefaultCellStyle.Font = StandardFont; 
-            grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             
             grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(237, 242, 247);
             grid.DefaultCellStyle.SelectionForeColor = TextColorDark;
