@@ -86,7 +86,24 @@ namespace GenericInventorySystem
         {
             try
             {
+                string certPath = System.IO.Path.Combine(Application.StartupPath, "Database", "pos_cert.pfx");
+                const string certPassword = "SoftioPos2026!";
+
                 var builder = WebApplication.CreateBuilder();
+                
+                // Configure Kestrel for both HTTP and HTTPS
+                builder.WebHost.ConfigureKestrel(options =>
+                {
+                    options.ListenAnyIP(5000); // HTTP
+                    if (System.IO.File.Exists(certPath))
+                    {
+                        options.ListenAnyIP(5001, listenOptions =>
+                        {
+                            listenOptions.UseHttps(certPath, certPassword);
+                        });
+                    }
+                });
+
                 builder.Services.AddCors(c => c.AddDefaultPolicy(p =>
                     p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
@@ -117,7 +134,7 @@ namespace GenericInventorySystem
                         var dt = DatabaseHelper.ExecuteDataTable(
                             @"SELECT p.id, p.part_name, p.selling_price, p.quantity_in_stock,
                                      p.minimum_stock_level, p.barcode, p.part_number,
-                                     ISNULL(c.category_name, 'General') AS category
+                                     COALESCE(c.category_name, 'General') AS category
                               FROM parts p
                               LEFT JOIN categories c ON p.category_id = c.id
                               WHERE p.date_deleted IS NULL AND p.status = 'Active'
@@ -185,8 +202,8 @@ namespace GenericInventorySystem
 
                         var dt = DatabaseHelper.ExecuteDataTable(
                             "SELECT username, role, full_name FROM users WHERE username = @u AND password = @p",
-                            new System.Data.SqlClient.SqlParameter("@u", body.Username),
-                            new System.Data.SqlClient.SqlParameter("@p", body.Password));
+                            new Microsoft.Data.Sqlite.SqliteParameter("@u", body.Username),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@p", body.Password));
 
                         if (dt.Rows.Count == 0)
                             return Microsoft.AspNetCore.Http.Results.Unauthorized();
@@ -220,14 +237,14 @@ namespace GenericInventorySystem
                         {
                             int existingCount = DatabaseHelper.ExecuteScalar<int>(
                                 "SELECT COUNT(*) FROM parts WHERE barcode = @b AND date_deleted IS NULL",
-                                new System.Data.SqlClient.SqlParameter("@b", body.Barcode));
-                            
+                                new Microsoft.Data.Sqlite.SqliteParameter("@b", body.Barcode));
+
                             if (existingCount > 0)
                                 return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
                         }
 
-                        int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c", 
-                                    new System.Data.SqlClient.SqlParameter("@c", body.Category ?? "General"));
+                        int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c",
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@c", body.Category ?? "General"));
                         if (catId == 0) catId = 1;
 
                         string sql = @"
@@ -235,13 +252,13 @@ namespace GenericInventorySystem
                             VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active')";
 
                         DatabaseHelper.ExecuteNonQuery(sql,
-                            new System.Data.SqlClient.SqlParameter("@name",    body.Name),
-                            new System.Data.SqlClient.SqlParameter("@sku",     body.Sku ?? ""),
-                            new System.Data.SqlClient.SqlParameter("@cat",     catId),
-                            new System.Data.SqlClient.SqlParameter("@p_price", body.Price * 0.7m),
-                            new System.Data.SqlClient.SqlParameter("@s_price", body.Price),
-                            new System.Data.SqlClient.SqlParameter("@stock",   body.Stock),
-                            new System.Data.SqlClient.SqlParameter("@barcode", body.Barcode ?? ""));
+                            new Microsoft.Data.Sqlite.SqliteParameter("@name",    body.Name),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@sku",     body.Sku ?? ""),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@cat",     catId),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@p_price", body.Price * 0.7m),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@s_price", body.Price),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@stock",   body.Stock),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@barcode", body.Barcode ?? ""));
 
                         DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via WebPOS (Qty: {body.Stock})");
 
@@ -271,12 +288,12 @@ namespace GenericInventorySystem
                         decimal total = 0;
                         foreach (var item in body.Items) total += item.Price * item.Qty;
 
-                        string insertOrder = @"
-                            INSERT INTO orders (order_date, customer_id, total_amount, status, payment_status, payment_method)
-                            VALUES (GETDATE(), NULL, @total, 'Completed', 'Paid', 'WebPOS');
-                            SELECT SCOPE_IDENTITY();";
-                        int orderId = DatabaseHelper.ExecuteScalar<int>(insertOrder,
-                            new System.Data.SqlClient.SqlParameter("@total", total));
+                        // SQLite: insert order then get its rowid separately
+                        DatabaseHelper.ExecuteNonQuery(
+                            "INSERT INTO orders (order_date, customer_id, total_amount, status, payment_status, payment_method) " +
+                            "VALUES (datetime('now'), NULL, @total, 'Completed', 'Paid', 'WebPOS')",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@total", total));
+                        long orderId = DatabaseHelper.ExecuteScalar<long>("SELECT last_insert_rowid()");
 
                         foreach (var item in body.Items)
                         {
@@ -284,21 +301,21 @@ namespace GenericInventorySystem
                             {
                                 DatabaseHelper.ExecuteNonQuery(
                                     "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)",
-                                    new System.Data.SqlClient.SqlParameter("@oid",   orderId),
-                                    new System.Data.SqlClient.SqlParameter("@pid",   item.Id),
-                                    new System.Data.SqlClient.SqlParameter("@qty",   item.Qty),
-                                    new System.Data.SqlClient.SqlParameter("@price", item.Price));
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@oid",   orderId),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@pid",   item.Id),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@qty",   item.Qty),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@price", item.Price));
 
                                 DatabaseHelper.ExecuteNonQuery(
                                     "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid",
-                                    new System.Data.SqlClient.SqlParameter("@qty", item.Qty),
-                                    new System.Data.SqlClient.SqlParameter("@pid", item.Id));
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@pid", item.Id));
                             }
                         }
 
                         DatabaseHelper.ExecuteNonQuery(
                             "INSERT INTO transactions (action_type, part_name, description, username) VALUES ('SALE', 'POS Sale', @desc, 'WebPOS')",
-                            new System.Data.SqlClient.SqlParameter("@desc", $"Order #{orderId} — Total: {total:C}"));
+                            new Microsoft.Data.Sqlite.SqliteParameter("@desc", $"Order #{orderId} — Total: {total:C}"));
 
                         // ── Broadcast real-time update to ALL connected clients ──
                         _ = InventoryBroadcaster.Broadcast("SaleCompleted", $"Order #{orderId} | Total: {total:F2}");
@@ -311,8 +328,7 @@ namespace GenericInventorySystem
                     }
                 });
 
-                app.Urls.Add("http://0.0.0.0:5000");
-                app.Urls.Add("https://0.0.0.0:5001");
+                // Ports are configured via Kestrel above
                 app.Run();
             }
             catch (Exception ex)

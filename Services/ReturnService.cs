@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem.Services
@@ -20,13 +20,13 @@ namespace GenericInventorySystem.Services
 
                 // 2. Insert Return Record
                 string sqlReturn = "INSERT INTO returns (order_id, return_date, total_refund, reason, performed_by) " +
-                                  "VALUES (@oid, GETDATE(), @refund, @reason, @user); SELECT SCOPE_IDENTITY();";
+                                  "VALUES (@oid, datetime('now'), @refund, @reason, @user); SELECT SCOPE_IDENTITY();";
                 
                 object returnIdObj = DatabaseHelper.ExecuteScalar<object>(sqlReturn,
-                    new SqlParameter("@oid", orderId),
-                    new SqlParameter("@refund", totalRefund),
-                    new SqlParameter("@reason", reason),
-                    new SqlParameter("@user", UserSession.Username));
+                    new SqliteParameter("@oid", orderId),
+                    new SqliteParameter("@refund", totalRefund),
+                    new SqliteParameter("@reason", reason),
+                    new SqliteParameter("@user", UserSession.Username));
                 
                 int returnId = Convert.ToInt32(returnIdObj);
 
@@ -37,25 +37,25 @@ namespace GenericInventorySystem.Services
                     string sqlItem = "INSERT INTO return_items (return_id, part_id, quantity, refund_amount) " +
                                      "VALUES (@rid, @pid, @qty, @refund)";
                     DatabaseHelper.ExecuteNonQuery(sqlItem,
-                        new SqlParameter("@rid", returnId),
-                        new SqlParameter("@pid", item.PartId),
-                        new SqlParameter("@qty", item.Quantity),
-                        new SqlParameter("@refund", item.RefundAmount));
+                        new SqliteParameter("@rid", returnId),
+                        new SqliteParameter("@pid", item.PartId),
+                        new SqliteParameter("@qty", item.Quantity),
+                        new SqliteParameter("@refund", item.RefundAmount));
 
                     // Update stock
                     string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock + @qty WHERE id = @pid";
                     DatabaseHelper.ExecuteNonQuery(sqlStock,
-                        new SqlParameter("@qty", item.Quantity),
-                        new SqlParameter("@pid", item.PartId));
+                        new SqliteParameter("@qty", item.Quantity),
+                        new SqliteParameter("@pid", item.PartId));
 
                     // Log stock movement
                     string sqlLog = "INSERT INTO stock_movements (part_id, movement_type, quantity, performed_by, notes, movement_date) " +
-                                    "VALUES (@pid, 'RETURN', @qty, @user, @notes, GETDATE())";
+                                    "VALUES (@pid, 'RETURN', @qty, @user, @notes, datetime('now'))";
                     DatabaseHelper.ExecuteNonQuery(sqlLog,
-                        new SqlParameter("@pid", item.PartId),
-                        new SqlParameter("@qty", item.Quantity),
-                        new SqlParameter("@user", UserSession.Username),
-                        new SqlParameter("@notes", "Returned from Order #" + orderId));
+                        new SqliteParameter("@pid", item.PartId),
+                        new SqliteParameter("@qty", item.Quantity),
+                        new SqliteParameter("@user", UserSession.Username),
+                        new SqliteParameter("@notes", "Returned from Order #" + orderId));
                 }
 
                 // 4. Update Customer Balance if applicable
@@ -69,15 +69,15 @@ namespace GenericInventorySystem.Services
                         // Reduce customer balance
                         string sqlBalance = "UPDATE customers SET current_balance = current_balance - @refund WHERE customer_id = @cid";
                         DatabaseHelper.ExecuteNonQuery(sqlBalance,
-                            new SqlParameter("@refund", totalRefund),
-                            new SqlParameter("@cid", customerId));
+                            new SqliteParameter("@refund", totalRefund),
+                            new SqliteParameter("@cid", customerId));
 
                         // Record payment record (negative payment/credit note)
-                        string sqlPayRecord = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Customer', @cid, @amount, GETDATE(), @notes)";
+                        string sqlPayRecord = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Customer', @cid, @amount, datetime('now'), @notes)";
                         DatabaseHelper.ExecuteNonQuery(sqlPayRecord,
-                            new SqlParameter("@cid", customerId),
-                            new SqlParameter("@amount", -totalRefund),
-                            new SqlParameter("@notes", "[Return] Refund for Order #" + orderId)
+                            new SqliteParameter("@cid", customerId),
+                            new SqliteParameter("@amount", -totalRefund),
+                            new SqliteParameter("@notes", "[Return] Refund for Order #" + orderId)
                         );
                     }
                 }
@@ -109,12 +109,12 @@ namespace GenericInventorySystem.Services
 
                 // 2. Insert Return Record (order_id is NULL)
                 string sqlReturn = "INSERT INTO returns (return_date, total_refund, reason, performed_by) " +
-                                  "VALUES (GETDATE(), @refund, @reason, @user); SELECT SCOPE_IDENTITY();";
+                                  "VALUES (datetime('now'), @refund, @reason, @user); SELECT SCOPE_IDENTITY();";
                 
                 object returnIdObj = DatabaseHelper.ExecuteScalar<object>(sqlReturn,
-                    new SqlParameter("@refund", totalRefund),
-                    new SqlParameter("@reason", reason ?? (object)DBNull.Value),
-                    new SqlParameter("@user", UserSession.Username));
+                    new SqliteParameter("@refund", totalRefund),
+                    new SqliteParameter("@reason", reason ?? (object)DBNull.Value),
+                    new SqliteParameter("@user", UserSession.Username));
                 
                 int returnId = Convert.ToInt32(returnIdObj);
 
@@ -125,25 +125,25 @@ namespace GenericInventorySystem.Services
                     string sqlItem = "INSERT INTO return_items (return_id, part_id, quantity, refund_amount) " +
                                      "VALUES (@rid, @pid, @qty, @refund)";
                     DatabaseHelper.ExecuteNonQuery(sqlItem,
-                        new SqlParameter("@rid", returnId),
-                        new SqlParameter("@pid", item.PartId),
-                        new SqlParameter("@qty", item.Quantity),
-                        new SqlParameter("@refund", item.RefundAmount));
+                        new SqliteParameter("@rid", returnId),
+                        new SqliteParameter("@pid", item.PartId),
+                        new SqliteParameter("@qty", item.Quantity),
+                        new SqliteParameter("@refund", item.RefundAmount));
 
                     // Update stock
                     string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock + @qty WHERE id = @pid";
                     DatabaseHelper.ExecuteNonQuery(sqlStock,
-                        new SqlParameter("@qty", item.Quantity),
-                        new SqlParameter("@pid", item.PartId));
+                        new SqliteParameter("@qty", item.Quantity),
+                        new SqliteParameter("@pid", item.PartId));
 
                     // Log stock movement
                     string sqlLog = "INSERT INTO stock_movements (part_id, movement_type, quantity, performed_by, notes, movement_date) " +
-                                    "VALUES (@pid, 'RETURN', @qty, @user, @notes, GETDATE())";
+                                    "VALUES (@pid, 'RETURN', @qty, @user, @notes, datetime('now'))";
                     DatabaseHelper.ExecuteNonQuery(sqlLog,
-                        new SqlParameter("@pid", item.PartId),
-                        new SqlParameter("@qty", item.Quantity),
-                        new SqlParameter("@user", UserSession.Username),
-                        new SqlParameter("@notes", "Unlinked Return (Blind Return)"));
+                        new SqliteParameter("@pid", item.PartId),
+                        new SqliteParameter("@qty", item.Quantity),
+                        new SqliteParameter("@user", UserSession.Username),
+                        new SqliteParameter("@notes", "Unlinked Return (Blind Return)"));
                 }
 
                 // 4. Update Customer Balance if applicable
@@ -151,17 +151,17 @@ namespace GenericInventorySystem.Services
                 {
                     string sqlUpdateBalance = "UPDATE customers SET current_balance = current_balance - @refund WHERE id = @cid";
                     DatabaseHelper.ExecuteNonQuery(sqlUpdateBalance,
-                        new SqlParameter("@refund", totalRefund),
-                        new SqlParameter("@cid", customerId)
+                        new SqliteParameter("@refund", totalRefund),
+                        new SqliteParameter("@cid", customerId)
                     );
 
                     string sqlTrans = "INSERT INTO customer_transactions (customer_id, transaction_date, amount, transaction_type, reference, notes) " +
-                                      "VALUES (@cid, GETDATE(), @amt, 'PAYMENT', @ref, @notes)";
+                                      "VALUES (@cid, datetime('now'), @amt, 'PAYMENT', @ref, @notes)";
                     DatabaseHelper.ExecuteNonQuery(sqlTrans,
-                        new SqlParameter("@cid", customerId),
-                        new SqlParameter("@amt", totalRefund),
-                        new SqlParameter("@ref", "Return #" + returnId),
-                        new SqlParameter("@notes", "[Return] Refund for Blind Return")
+                        new SqliteParameter("@cid", customerId),
+                        new SqliteParameter("@amt", totalRefund),
+                        new SqliteParameter("@ref", "Return #" + returnId),
+                        new SqliteParameter("@notes", "[Return] Refund for Blind Return")
                     );
                 }
 

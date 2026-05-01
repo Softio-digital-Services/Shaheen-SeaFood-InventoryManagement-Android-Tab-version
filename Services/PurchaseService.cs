@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem.Services
@@ -16,12 +16,12 @@ namespace GenericInventorySystem.Services
                 foreach (var item in items) total += item.Quantity * item.CostPrice;
 
                 string sql = "INSERT INTO purchase_orders (supplier_id, order_date, total_amount, status, notes) " +
-                             "VALUES (@sid, GETDATE(), @total, 'Pending', @notes); SELECT SCOPE_IDENTITY();";
+                             "VALUES (@sid, datetime('now'), @total, 'Pending', @notes); SELECT SCOPE_IDENTITY();";
                 
                 object idObj = DatabaseHelper.ExecuteScalar<object>(sql,
-                    new SqlParameter("@sid", supplierId),
-                    new SqlParameter("@total", total),
-                    new SqlParameter("@notes", notes));
+                    new SqliteParameter("@sid", supplierId),
+                    new SqliteParameter("@total", total),
+                    new SqliteParameter("@notes", notes));
 
                 int poId = Convert.ToInt32(idObj);
 
@@ -29,10 +29,10 @@ namespace GenericInventorySystem.Services
                 {
                     string itemSql = "INSERT INTO purchase_order_items (po_id, part_id, quantity, cost_price) VALUES (@poid, @pid, @qty, @cost)";
                     DatabaseHelper.ExecuteNonQuery(itemSql,
-                        new SqlParameter("@poid", poId),
-                        new SqlParameter("@pid", item.PartId),
-                        new SqlParameter("@qty", item.Quantity),
-                        new SqlParameter("@cost", item.CostPrice));
+                        new SqliteParameter("@poid", poId),
+                        new SqliteParameter("@pid", item.PartId),
+                        new SqliteParameter("@qty", item.Quantity),
+                        new SqliteParameter("@cost", item.CostPrice));
                 }
 
                 DatabaseHelper.LogTransaction("PO_CREATE", "PO #" + poId, "Total: " + total);
@@ -66,21 +66,21 @@ namespace GenericInventorySystem.Services
                     // Update parts: stock and optionally update purchase_price
                     string sqlPart = "UPDATE parts SET quantity_in_stock = quantity_in_stock + @qty WHERE id = @pid";
                     DatabaseHelper.ExecuteNonQuery(sqlPart,
-                        new SqlParameter("@qty", qty),
-                        new SqlParameter("@pid", partId));
+                        new SqliteParameter("@qty", qty),
+                        new SqliteParameter("@pid", partId));
 
                     // Log movement
                     string sqlLog = "INSERT INTO stock_movements (part_id, movement_type, quantity, performed_by, notes, movement_date) " +
-                                    "VALUES (@pid, 'IN', @qty, @user, @notes, GETDATE())";
+                                    "VALUES (@pid, 'IN', @qty, @user, @notes, datetime('now'))";
                     DatabaseHelper.ExecuteNonQuery(sqlLog,
-                        new SqlParameter("@pid", partId),
-                        new SqlParameter("@qty", qty),
-                        new SqlParameter("@user", UserSession.Username),
-                        new SqlParameter("@notes", "Received from PO #" + poId));
+                        new SqliteParameter("@pid", partId),
+                        new SqliteParameter("@qty", qty),
+                        new SqliteParameter("@user", UserSession.Username),
+                        new SqliteParameter("@notes", "Received from PO #" + poId));
                 }
 
                 // 4. Update PO status
-                DatabaseHelper.ExecuteNonQuery("UPDATE purchase_orders SET status = 'Received', received_date = GETDATE() WHERE po_id = " + poId);
+                DatabaseHelper.ExecuteNonQuery("UPDATE purchase_orders SET status = 'Received', received_date = datetime('now') WHERE po_id = " + poId);
 
                 // 5. Update Supplier Balance
                 DataTable poInfo = DatabaseHelper.ExecuteDataTable("SELECT supplier_id, total_amount FROM purchase_orders WHERE po_id = " + poId);
@@ -91,15 +91,15 @@ namespace GenericInventorySystem.Services
 
                     // Increase supplier debt/balance
                     DatabaseHelper.ExecuteNonQuery("UPDATE suppliers SET current_balance = current_balance + @total WHERE id = @sid",
-                        new SqlParameter("@total", total),
-                        new SqlParameter("@sid", supplierId));
+                        new SqliteParameter("@total", total),
+                        new SqliteParameter("@sid", supplierId));
                     
                     // Log to payments (as a negative/debt record)
-                    string sqlLogPay = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Supplier', @sid, @amount, GETDATE(), @notes)";
+                    string sqlLogPay = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Supplier', @sid, @amount, datetime('now'), @notes)";
                     DatabaseHelper.ExecuteNonQuery(sqlLogPay,
-                        new SqlParameter("@sid", supplierId),
-                        new SqlParameter("@amount", -total), // Supplier balance increases (debt), but in payment ledger it's a liability
-                        new SqlParameter("@notes", "[PO] Stock Received #" + poId)
+                        new SqliteParameter("@sid", supplierId),
+                        new SqliteParameter("@amount", -total), // Supplier balance increases (debt), but in payment ledger it's a liability
+                        new SqliteParameter("@notes", "[PO] Stock Received #" + poId)
                     );
                 }
 

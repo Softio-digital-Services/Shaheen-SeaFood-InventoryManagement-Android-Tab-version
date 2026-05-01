@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Controls;
@@ -99,10 +99,10 @@ namespace GenericInventorySystem.Forms
 
         private void SetButtons(MessageBoxButtons buttons, bool isArabic)
         {
-            string ok = isArabic ? "موافق" : "OK";
-            string cancel = isArabic ? "إلغاء" : "Cancel";
-            string yes = isArabic ? "نعم" : "Yes";
-            string no = isArabic ? "لا" : "No";
+            string ok = isArabic ? "Ù…ÙˆØ§ÙÙ‚" : "OK";
+            string cancel = isArabic ? "Ø¥Ù„ØºØ§Ø¡" : "Cancel";
+            string yes = isArabic ? "Ù†Ø¹Ù…" : "Yes";
+            string no = isArabic ? "Ù„Ø§" : "No";
 
             switch (buttons)
             {

@@ -1,4 +1,4 @@
-namespace GenericInventorySystem.Forms
+﻿namespace GenericInventorySystem.Forms
 {
     partial class AddCategoryForm
     {

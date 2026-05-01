@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -348,17 +348,17 @@ namespace GenericInventorySystem.Forms
             try
             {
                 string sql = "INSERT INTO customers (full_name, phone, email, address, type, current_balance, credit_limit, payment_due_date, reminder_days, date_added) " +
-                             "VALUES (@name, @phone, @email, @addr, @type, 0, @limit, @due, @rem, GETDATE())";
+                             "VALUES (@name, @phone, @email, @addr, @type, 0, @limit, @due, @rem, datetime('now'))";
                 
                 DatabaseHelper.ExecuteNonQuery(sql,
-                    new System.Data.SqlClient.SqlParameter("@name", form.CustomerName),
-                    new System.Data.SqlClient.SqlParameter("@phone", form.Phone),
-                    new System.Data.SqlClient.SqlParameter("@email", form.Email),
-                    new System.Data.SqlClient.SqlParameter("@addr", form.Address),
-                    new System.Data.SqlClient.SqlParameter("@type", form.CustomerType),
-                    new System.Data.SqlClient.SqlParameter("@limit", form.CreditLimit),
-                    new System.Data.SqlClient.SqlParameter("@due", (object)form.DueDate ?? DBNull.Value),
-                    new System.Data.SqlClient.SqlParameter("@rem", form.ReminderDays));
+                    new Microsoft.Data.Sqlite.SqliteParameter("@name", form.CustomerName),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@phone", form.Phone),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@email", form.Email),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@addr", form.Address),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@type", form.CustomerType),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@limit", form.CreditLimit),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@due", (object)form.DueDate ?? DBNull.Value),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@rem", form.ReminderDays));
             }
             catch (Exception ex)
             {
@@ -457,15 +457,15 @@ namespace GenericInventorySystem.Forms
             {
                 string sql = "UPDATE customers SET full_name=@name, phone=@phone, email=@email, address=@addr, type=@type, credit_limit=@limit, payment_due_date=@due, reminder_days=@rem WHERE customer_id=@id";
                 DatabaseHelper.ExecuteNonQuery(sql,
-                    new System.Data.SqlClient.SqlParameter("@name", form.CustomerName),
-                    new System.Data.SqlClient.SqlParameter("@phone", form.Phone),
-                    new System.Data.SqlClient.SqlParameter("@email", form.Email),
-                    new System.Data.SqlClient.SqlParameter("@addr", form.Address),
-                    new System.Data.SqlClient.SqlParameter("@type", form.CustomerType),
-                    new System.Data.SqlClient.SqlParameter("@limit", form.CreditLimit),
-                    new System.Data.SqlClient.SqlParameter("@due", (object)form.DueDate ?? DBNull.Value),
-                    new System.Data.SqlClient.SqlParameter("@rem", form.ReminderDays),
-                    new System.Data.SqlClient.SqlParameter("@id", id));
+                    new Microsoft.Data.Sqlite.SqliteParameter("@name", form.CustomerName),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@phone", form.Phone),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@email", form.Email),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@addr", form.Address),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@type", form.CustomerType),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@limit", form.CreditLimit),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@due", (object)form.DueDate ?? DBNull.Value),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@rem", form.ReminderDays),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
             }
             catch (Exception ex)
             {
@@ -479,7 +479,7 @@ namespace GenericInventorySystem.Forms
             {
                 try
                 {
-                    DatabaseHelper.ExecuteNonQuery("UPDATE customers SET date_deleted = GETDATE() WHERE customer_id = @id", new System.Data.SqlClient.SqlParameter("@id", id));
+                    DatabaseHelper.ExecuteNonQuery("UPDATE customers SET date_deleted = datetime('now') WHERE customer_id = @id", new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
                     LoadData();
                 }
                 catch (Exception ex)
@@ -508,7 +508,7 @@ namespace GenericInventorySystem.Forms
                 {
                     foreach (int id in ids)
                     {
-                        DatabaseHelper.ExecuteNonQuery("UPDATE customers SET date_deleted = GETDATE() WHERE customer_id = @id", new System.Data.SqlClient.SqlParameter("@id", id));
+                        DatabaseHelper.ExecuteNonQuery("UPDATE customers SET date_deleted = datetime('now') WHERE customer_id = @id", new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
                     }
                     LoadData();
                 }
@@ -545,26 +545,26 @@ namespace GenericInventorySystem.Forms
                     
                     if (dt == null || dt.Rows.Count == 0)
                     {
-                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات للتصدير." : "No data to export.");
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª Ù„Ù„ØªØµØ¯ÙŠØ±." : "No data to export.");
                         return;
                     }
 
                     if (Helpers.ImportExportHelper.ExportToCsv(dt, saveDialog.FileName))
                     {
                         string successMsg = LocalizationManager.IsArabic 
-                            ? $"تم تصدير {dt.Rows.Count} من العملاء إلى ملف CSV بنجاح!" 
+                            ? $"ØªÙ… ØªØµØ¯ÙŠØ± {dt.Rows.Count} Ù…Ù† Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡ Ø¥Ù„Ù‰ Ù…Ù„Ù CSV Ø¨Ù†Ø¬Ø§Ø­!" 
                             : $"Exported {dt.Rows.Count} customers to CSV successfully!";
                         MessageHelper.ShowSuccess(successMsg);
                     }
                     else
                     {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "فشل تصدير البيانات." : "Failed to export data.");
+                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "ÙØ´Ù„ ØªØµØ¯ÙŠØ± Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª." : "Failed to export data.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في التصدير: " : "Export error: ") + ex.Message);
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ Ø§Ù„ØªØµØ¯ÙŠØ±: " : "Export error: ") + ex.Message);
             }
         }
 
@@ -582,14 +582,14 @@ namespace GenericInventorySystem.Forms
                     
                      if (dt == null || dt.Rows.Count == 0)
                     {
-                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات في الملف." : "No data found in the file.");
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª ÙÙŠ Ø§Ù„Ù…Ù„Ù." : "No data found in the file.");
                         return;
                     }
 
                      if (!dt.Columns.Contains("CustomerName"))
                     {
                         MessageHelper.ShowError(LocalizationManager.IsArabic 
-                            ? "تنسيق ملف غير صالح. الأعمدة المطلوبة: CustomerName, Phone, Email, Address, CustomerType" 
+                            ? "ØªÙ†Ø³ÙŠÙ‚ Ù…Ù„Ù ØºÙŠØ± ØµØ§Ù„Ø­. Ø§Ù„Ø£Ø¹Ù…Ø¯Ø© Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø©: CustomerName, Phone, Email, Address, CustomerType" 
                             : "Invalid file format. Required columns: CustomerName, Phone, Email, Address, CustomerType");
                         return;
                     }
@@ -610,7 +610,7 @@ namespace GenericInventorySystem.Forms
                             }
 
                             string checkSql = "SELECT COUNT(*) FROM customers WHERE full_name = @n AND date_deleted IS NULL";
-                            int count = DatabaseHelper.ExecuteScalar<int>(checkSql, new System.Data.SqlClient.SqlParameter("@n", custName));
+                            int count = DatabaseHelper.ExecuteScalar<int>(checkSql, new Microsoft.Data.Sqlite.SqliteParameter("@n", custName));
                             
                             if (count > 0)
                             {
@@ -624,14 +624,14 @@ namespace GenericInventorySystem.Forms
                             string type = row.Table.Columns.Contains("CustomerType") ? row["CustomerType"].ToString() : "Individual";
 
                             string sql = "INSERT INTO customers (full_name, phone, email, address, type, current_balance, date_added) " +
-                                         "VALUES (@name, @phone, @email, @addr, @type, 0, GETDATE())";
+                                         "VALUES (@name, @phone, @email, @addr, @type, 0, datetime('now'))";
                             
                             DatabaseHelper.ExecuteNonQuery(sql,
-                                new System.Data.SqlClient.SqlParameter("@name", custName),
-                                new System.Data.SqlClient.SqlParameter("@phone", phone),
-                                new System.Data.SqlClient.SqlParameter("@email", email),
-                                new System.Data.SqlClient.SqlParameter("@addr", address),
-                                new System.Data.SqlClient.SqlParameter("@type", type));
+                                new Microsoft.Data.Sqlite.SqliteParameter("@name", custName),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@phone", phone),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@email", email),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@addr", address),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@type", type));
                                 
                             imported++;
                         }
@@ -643,14 +643,14 @@ namespace GenericInventorySystem.Forms
 
                     LoadData();
                     string completeMsg = LocalizationManager.IsArabic 
-                        ? $"اكتمل الاستيراد!\nتم استيراد: {imported}\nتم تخطي: {skipped}" 
+                        ? $"Ø§ÙƒØªÙ…Ù„ Ø§Ù„Ø§Ø³ØªÙŠØ±Ø§Ø¯!\nØªÙ… Ø§Ø³ØªÙŠØ±Ø§Ø¯: {imported}\nØªÙ… ØªØ®Ø·ÙŠ: {skipped}" 
                         : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
                     MessageHelper.ShowSuccess(completeMsg);
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في الاستيراد: " : "Import error: ") + ex.Message);
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ Ø§Ù„Ø§Ø³ØªÙŠØ±Ø§Ø¯: " : "Import error: ") + ex.Message);
             }
         }
 

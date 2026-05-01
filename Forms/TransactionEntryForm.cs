@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Controls;
@@ -108,7 +108,7 @@ namespace GenericInventorySystem.Forms
             {
                 if (val <= 0)
                 {
-                    string msg = LocalizationManager.IsArabic ? "يجب أن يكون المبلغ أكبر من صفر" : "Amount must be greater than zero.";
+                    string msg = LocalizationManager.IsArabic ? "ÙŠØ¬Ø¨ Ø£Ù† ÙŠÙƒÙˆÙ† Ø§Ù„Ù…Ø¨Ù„Øº Ø£ÙƒØ¨Ø± Ù…Ù† ØµÙØ±" : "Amount must be greater than zero.";
                     MessageHelper.ShowWarning(msg);
                     return;
                 }

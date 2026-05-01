@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Globalization;
@@ -36,7 +36,7 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.TitleText = (LocalizationManager.IsArabic ? "تفاصيل " : "Details - ") + _customerName;
+            this.TitleText = (LocalizationManager.IsArabic ? "ØªÙØ§ØµÙŠÙ„ " : "Details - ") + _customerName;
 
             // Main Layout container
             TableLayoutPanel tlpMain = new TableLayoutPanel {
@@ -105,13 +105,13 @@ namespace GenericInventorySystem.Forms
             tlpBalance.Controls.Add(lblDueDate, 0, 2);
             
             // 2. Receive Payment Button
-            btnReceivePayment = new ModernButton { Text = "💵 " + (LocalizationManager.IsArabic ? "قبض دفعة" : "Receive Payment"), Size = new Size(165, 45) };
+            btnReceivePayment = new ModernButton { Text = "ðŸ’µ " + (LocalizationManager.IsArabic ? "Ù‚Ø¨Ø¶ Ø¯ÙØ¹Ø©" : "Receive Payment"), Size = new Size(165, 45) };
             ThemeConfig.ApplyEmojiButton(btnReceivePayment, ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, Color.White);
             btnReceivePayment.Click += BtnReceivePayment_Click;
             btnReceivePayment.Margin = new Padding(5, 5, 5, 5);
 
             // 3. Record Sale button
-            btnRecordSale = new ModernButton { Text = "🛒 " + (LocalizationManager.IsArabic ? "تسجيل بيع" : "Record Sale"), Size = new Size(155, 45) };
+            btnRecordSale = new ModernButton { Text = "ðŸ›’ " + (LocalizationManager.IsArabic ? "ØªØ³Ø¬ÙŠÙ„ Ø¨ÙŠØ¹" : "Record Sale"), Size = new Size(155, 45) };
             ThemeConfig.ApplyEmojiButton(btnRecordSale, ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, Color.White);
             btnRecordSale.Click += BtnRecordSale_Click;
             btnRecordSale.Margin = new Padding(5, 5, 5, 5);
@@ -137,7 +137,7 @@ namespace GenericInventorySystem.Forms
             this.ContentPanel.Controls.Add(tlpMain);
 
             SetFooterButtons(
-                LocalizationManager.IsArabic ? "إغلاق" : "Close",
+                LocalizationManager.IsArabic ? "Ø¥ØºÙ„Ø§Ù‚" : "Close",
                 "",
                 (s, e) => this.Close(),
                 null
@@ -166,7 +166,7 @@ namespace GenericInventorySystem.Forms
                     // Fetch the earliest upcoming due date from transactions
                     string sqlUpcoming = $@"SELECT MIN(due_date) FROM payments 
                                           WHERE entity_type = 'Customer' AND entity_id = {_customerId} 
-                                          AND due_date >= CAST(GETDATE() AS DATE)";
+                                          AND due_date >= CAST(datetime('now') AS DATE)";
                     object nextDue = DatabaseHelper.ExecuteScalar<object>(sqlUpcoming);
 
                     if (nextDue != null && nextDue != DBNull.Value)
@@ -181,7 +181,7 @@ namespace GenericInventorySystem.Forms
                     }
                 }
 
-                // Load History — combines sales (balance additions) and payments received
+                // Load History â€” combines sales (balance additions) and payments received
                 string sqlHistory = $@"
                     SELECT payment_date as 'Date', 
                            CASE WHEN notes LIKE '[Sale]%' OR notes LIKE '%Sale%' OR notes LIKE '%Order%' THEN 'Payment Due'
@@ -205,8 +205,8 @@ namespace GenericInventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            this.TitleText = (isArabic ? "تفاصيل " : "Details - ") + _customerName;
-            lblBalTitle.Text = isArabic ? "الرصيد المستحق" : "Balance Due";
+            this.TitleText = (isArabic ? "ØªÙØ§ØµÙŠÙ„ " : "Details - ") + _customerName;
+            lblBalTitle.Text = isArabic ? "Ø§Ù„Ø±ØµÙŠØ¯ Ø§Ù„Ù…Ø³ØªØ­Ù‚" : "Balance Due";
 
             ApplyGridLocalizations();
         }
@@ -264,27 +264,27 @@ namespace GenericInventorySystem.Forms
 
                 // 1. Update Balance & Due Date
                 string sql1 = "UPDATE customers SET current_balance = current_balance + @amount";
-                var parameters = new System.Collections.Generic.List<System.Data.SqlClient.SqlParameter> {
-                    new System.Data.SqlClient.SqlParameter("@amount", amount),
-                    new System.Data.SqlClient.SqlParameter("@cid", _customerId)
+                var parameters = new System.Collections.Generic.List<Microsoft.Data.Sqlite.SqliteParameter> {
+                    new Microsoft.Data.Sqlite.SqliteParameter("@amount", amount),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@cid", _customerId)
                 };
 
                 if (form.DueDate.HasValue)
                 {
                     sql1 += ", payment_due_date = @dueDate";
-                    parameters.Add(new System.Data.SqlClient.SqlParameter("@dueDate", form.DueDate.Value));
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@dueDate", form.DueDate.Value));
                 }
 
                 sql1 += " WHERE customer_id = @cid";
                 DatabaseHelper.ExecuteNonQuery(sql1, parameters.ToArray());
 
                 // 2. Record transaction log
-                string sql2 = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes, due_date) VALUES ('Customer', @cid, @amount, GETDATE(), @notes, @ddate)";
+                string sql2 = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes, due_date) VALUES ('Customer', @cid, @amount, datetime('now'), @notes, @ddate)";
                 DatabaseHelper.ExecuteNonQuery(sql2, 
-                    new System.Data.SqlClient.SqlParameter("@cid", _customerId),
-                    new System.Data.SqlClient.SqlParameter("@amount", amount),
-                    new System.Data.SqlClient.SqlParameter("@notes", dbNotes),
-                    new System.Data.SqlClient.SqlParameter("@ddate", (object)form.DueDate ?? DBNull.Value));
+                    new Microsoft.Data.Sqlite.SqliteParameter("@cid", _customerId),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@amount", amount),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@notes", dbNotes),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@ddate", (object)form.DueDate ?? DBNull.Value));
 
                 GlobalEvents.RaiseCustomersUpdated(); // Sync main grid
                 LoadDetails();
@@ -314,13 +314,13 @@ namespace GenericInventorySystem.Forms
 
                 string amountStr = amount.ToString(CultureInfo.InvariantCulture);
 
-                // 1. Update Balance â€” customers table uses current_balance
+                // 1. Update Balance Ã¢â‚¬â€ customers table uses current_balance
                 string sql1 = $"UPDATE customers SET current_balance = current_balance - {amountStr} WHERE customer_id = {_customerId}";
                 DatabaseHelper.ExecuteNonQuery(sql1);
  
                 // 2. Record Payment
-                string sql2 = $"INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Customer', {_customerId}, {amountStr}, GETDATE(), @notes)";
-                DatabaseHelper.ExecuteNonQuery(sql2, new System.Data.SqlClient.SqlParameter("@notes", dbNotes));
+                string sql2 = $"INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Customer', {_customerId}, {amountStr}, datetime('now'), @notes)";
+                DatabaseHelper.ExecuteNonQuery(sql2, new Microsoft.Data.Sqlite.SqliteParameter("@notes", dbNotes));
  
                 GlobalEvents.RaiseCustomersUpdated(); // Sync main grid
                 LoadDetails();

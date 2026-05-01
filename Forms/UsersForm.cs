@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -92,11 +92,11 @@ namespace GenericInventorySystem.Forms
         {
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
-            lblUsersTitle.Text = isArabic ? "إدارة المستخدمين" : "User Management";
+            lblUsersTitle.Text = isArabic ? "Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†" : "User Management";
             btnAddUser.Invalidate(); // Refresh the painted icon and text
-            if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = isArabic ? "المعرف" : "ID";
-            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = isArabic ? "اسم المستخدم" : "Username";
-            if (dgvUsers.Columns["actions"] != null) dgvUsers.Columns["actions"].HeaderText = isArabic ? "الإجراءات" : "Actions";
+            if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = isArabic ? "Ø§Ù„Ù…Ø¹Ø±Ù" : "ID";
+            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = isArabic ? "Ø§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…" : "Username";
+            if (dgvUsers.Columns["actions"] != null) dgvUsers.Columns["actions"].HeaderText = isArabic ? "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª" : "Actions";
         }
 
         public void LoadData(string search = "")

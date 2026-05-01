@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -205,18 +205,18 @@ namespace GenericInventorySystem.Forms
                 }
                 if (checkedIds.Count == 0)
                 {
-                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يرجى تحديد مورد واحد على الأقل لحذفه." : "Please select at least one supplier to delete.");
+                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ ØªØ­Ø¯ÙŠØ¯ Ù…ÙˆØ±Ø¯ ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„ Ù„Ø­Ø°ÙÙ‡." : "Please select at least one supplier to delete.");
                     return;
                 }
                 string confirmMsg = LocalizationManager.IsArabic 
-                    ? $"هل أنت متأكد من رغبتك في حذف {checkedIds.Count} من الموردين المحددين؟" 
+                    ? $"Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø±ØºØ¨ØªÙƒ ÙÙŠ Ø­Ø°Ù {checkedIds.Count} Ù…Ù† Ø§Ù„Ù…ÙˆØ±Ø¯ÙŠÙ† Ø§Ù„Ù…Ø­Ø¯Ø¯ÙŠÙ†ØŸ" 
                     : $"Are you sure you want to delete {checkedIds.Count} selected suppliers?";
                 if (MessageHelper.ConfirmAction(confirmMsg))
                 {
                     Services.SupplierService supplierService = new Services.SupplierService();
                     foreach(int i in checkedIds) supplierService.DeleteSupplier(i);
                     string successMsg = LocalizationManager.IsArabic 
-                        ? $"تم حذف {checkedIds.Count} من الموردين بنجاح." 
+                        ? $"ØªÙ… Ø­Ø°Ù {checkedIds.Count} Ù…Ù† Ø§Ù„Ù…ÙˆØ±Ø¯ÙŠÙ† Ø¨Ù†Ø¬Ø§Ø­." 
                         : $"{checkedIds.Count} suppliers deleted successfully.";
                     MessageHelper.ShowSuccess(successMsg);
                     LoadData();
@@ -375,7 +375,7 @@ namespace GenericInventorySystem.Forms
                     return;
                 }
 
-                string deleteConfirm = LocalizationManager.IsArabic ? "هل أنت متأكد من رغبتك في حذف هذا المورد؟" : "Are you sure you want to delete this supplier?";
+                string deleteConfirm = LocalizationManager.IsArabic ? "Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø±ØºØ¨ØªÙƒ ÙÙŠ Ø­Ø°Ù Ù‡Ø°Ø§ Ø§Ù„Ù…ÙˆØ±Ø¯ØŸ" : "Are you sure you want to delete this supplier?";
                 if (MessageHelper.ConfirmAction(deleteConfirm))
                 {
                     SupplierData.DeleteSupplier(id);
@@ -447,7 +447,7 @@ namespace GenericInventorySystem.Forms
             }
              catch(Exception ex) 
              { 
-                  MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في تحميل البيانات: " : "Error loading data: ") + ex.Message); 
+                  MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª: " : "Error loading data: ") + ex.Message); 
              }
         }
 
@@ -463,7 +463,7 @@ namespace GenericInventorySystem.Forms
 
         private void BtnDetails_Click(object sender, EventArgs e)
         {
-            if(dgvSuppliers.SelectedRows.Count == 0) { MessageHelper.ShowInfo(LocalizationManager.IsArabic ? "يرجى تحديد مورد." : "Select a supplier."); return; }
+            if(dgvSuppliers.SelectedRows.Count == 0) { MessageHelper.ShowInfo(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ ØªØ­Ø¯ÙŠØ¯ Ù…ÙˆØ±Ø¯." : "Select a supplier."); return; }
             int id = Convert.ToInt32(dgvSuppliers.SelectedRows[0].Cells["ID"].Value);
             string name = dgvSuppliers.SelectedRows[0].Cells["colCompany"].Value.ToString();
             var form = new SupplierDetailsForm(id, name);
@@ -497,7 +497,7 @@ namespace GenericInventorySystem.Forms
                     
                     if (dt == null || dt.Rows.Count == 0)
                     {
-                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات للتصدير." : "No data to export.");
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª Ù„Ù„ØªØµØ¯ÙŠØ±." : "No data to export.");
                         return;
                     }
 
@@ -530,19 +530,19 @@ namespace GenericInventorySystem.Forms
                     if (Helpers.ImportExportHelper.ExportToCsv(exportDt, saveDialog.FileName))
                     {
                         string successMsg = LocalizationManager.IsArabic 
-                            ? $"تم تصدير {exportDt.Rows.Count} من الموردين إلى ملف CSV بنجاح!" 
+                            ? $"ØªÙ… ØªØµØ¯ÙŠØ± {exportDt.Rows.Count} Ù…Ù† Ø§Ù„Ù…ÙˆØ±Ø¯ÙŠÙ† Ø¥Ù„Ù‰ Ù…Ù„Ù CSV Ø¨Ù†Ø¬Ø§Ø­!" 
                             : $"Exported {exportDt.Rows.Count} suppliers to CSV successfully!";
                         MessageHelper.ShowSuccess(successMsg);
                     }
                     else
                     {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "فشل تصدير البيانات." : "Failed to export data.");
+                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "ÙØ´Ù„ ØªØµØ¯ÙŠØ± Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª." : "Failed to export data.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في التصدير: " : "Export error: ") + ex.Message);
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ Ø§Ù„ØªØµØ¯ÙŠØ±: " : "Export error: ") + ex.Message);
             }
         }
 
@@ -562,7 +562,7 @@ namespace GenericInventorySystem.Forms
                     
                     if (dt == null || dt.Rows.Count == 0)
                     {
-                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات للتصدير." : "No data to export.");
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª Ù„Ù„ØªØµØ¯ÙŠØ±." : "No data to export.");
                         return;
                     }
 
@@ -595,19 +595,19 @@ namespace GenericInventorySystem.Forms
                     if (Helpers.ImportExportHelper.ExportToExcel(exportDt, saveDialog.FileName, "Suppliers"))
                     {
                         string successMsg = LocalizationManager.IsArabic 
-                            ? $"تم تصدير {exportDt.Rows.Count} من الموردين إلى ملف Excel بنجاح!" 
+                            ? $"ØªÙ… ØªØµØ¯ÙŠØ± {exportDt.Rows.Count} Ù…Ù† Ø§Ù„Ù…ÙˆØ±Ø¯ÙŠÙ† Ø¥Ù„Ù‰ Ù…Ù„Ù Excel Ø¨Ù†Ø¬Ø§Ø­!" 
                             : $"Exported {exportDt.Rows.Count} suppliers to Excel successfully!";
                         MessageHelper.ShowSuccess(successMsg);
                     }
                     else
                     {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "فشل تصدير البيانات." : "Failed to export data.");
+                        MessageHelper.ShowError(LocalizationManager.IsArabic ? "ÙØ´Ù„ ØªØµØ¯ÙŠØ± Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª." : "Failed to export data.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في التصدير: " : "Export error: ") + ex.Message);
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ Ø§Ù„ØªØµØ¯ÙŠØ±: " : "Export error: ") + ex.Message);
             }
         }
 
@@ -625,14 +625,14 @@ namespace GenericInventorySystem.Forms
                     
                      if (dt == null || dt.Rows.Count == 0)
                     {
-                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات في الملف." : "No data found in the file.");
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª ÙÙŠ Ø§Ù„Ù…Ù„Ù." : "No data found in the file.");
                         return;
                     }
 
                      if (!dt.Columns.Contains("SupplierName"))
                     {
                         MessageHelper.ShowError(LocalizationManager.IsArabic 
-                            ? "تنسيق ملف غير صالح. الأعمدة المطلوبة: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes" 
+                            ? "ØªÙ†Ø³ÙŠÙ‚ Ù…Ù„Ù ØºÙŠØ± ØµØ§Ù„Ø­. Ø§Ù„Ø£Ø¹Ù…Ø¯Ø© Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø©: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes" 
                             : "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes");
                         return;
                     }
@@ -680,14 +680,14 @@ namespace GenericInventorySystem.Forms
 
                     LoadData();
                     string completeMsg = LocalizationManager.IsArabic 
-                        ? $"اكتمل الاستيراد!\nتم استيراد: {imported}\nتم تخطي: {skipped}" 
+                        ? $"Ø§ÙƒØªÙ…Ù„ Ø§Ù„Ø§Ø³ØªÙŠØ±Ø§Ø¯!\nØªÙ… Ø§Ø³ØªÙŠØ±Ø§Ø¯: {imported}\nØªÙ… ØªØ®Ø·ÙŠ: {skipped}" 
                         : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
                     MessageHelper.ShowSuccess(completeMsg);
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في الاستيراد: " : "Import error: ") + ex.Message);
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ Ø§Ù„Ø§Ø³ØªÙŠØ±Ø§Ø¯: " : "Import error: ") + ex.Message);
             }
         }
 
@@ -705,14 +705,14 @@ namespace GenericInventorySystem.Forms
                     
                      if (dt == null || dt.Rows.Count == 0)
                     {
-                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "لا توجد بيانات في الملف." : "No data found in the file.");
+                        MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª ÙÙŠ Ø§Ù„Ù…Ù„Ù." : "No data found in the file.");
                         return;
                     }
 
                      if (!dt.Columns.Contains("SupplierName"))
                     {
                         MessageHelper.ShowError(LocalizationManager.IsArabic 
-                            ? "تنسيق ملف غير صالح. الأعمدة المطلوبة: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes" 
+                            ? "ØªÙ†Ø³ÙŠÙ‚ Ù…Ù„Ù ØºÙŠØ± ØµØ§Ù„Ø­. Ø§Ù„Ø£Ø¹Ù…Ø¯Ø© Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø©: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes" 
                             : "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes");
                         return;
                     }
@@ -760,7 +760,7 @@ namespace GenericInventorySystem.Forms
 
                     LoadData();
                     string completeMsg = LocalizationManager.IsArabic 
-                        ? $"اكتمل الاستيراد!\nتم استيراد: {imported}\nتم تخطي: {skipped}" 
+                        ? $"Ø§ÙƒØªÙ…Ù„ Ø§Ù„Ø§Ø³ØªÙŠØ±Ø§Ø¯!\nØªÙ… Ø§Ø³ØªÙŠØ±Ø§Ø¯: {imported}\nØªÙ… ØªØ®Ø·ÙŠ: {skipped}" 
                         : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
                     MessageHelper.ShowSuccess(completeMsg);
                 }

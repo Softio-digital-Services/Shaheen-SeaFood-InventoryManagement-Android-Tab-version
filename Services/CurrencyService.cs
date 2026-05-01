@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -13,7 +13,7 @@ namespace GenericInventorySystem.Services
     /// </summary>
     public static class CurrencyService
     {
-        // ─── State ────────────────────────────────────────────────────────
+        // â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private static string _activeCurrency = "USD";
 
         public static event EventHandler CurrencyChanged;
@@ -31,11 +31,11 @@ namespace GenericInventorySystem.Services
             }
         }
 
-        // ─── Supported currencies ─────────────────────────────────────────
+        // â”€â”€â”€ Supported currencies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private static List<CurrencyInfo> _supportedCurrencies = new List<CurrencyInfo>();
         public static List<CurrencyInfo> SupportedCurrencies => _supportedCurrencies;
 
-        // ─── Rate dictionary (base = USD) ─────────────────────────────────
+        // â”€â”€â”€ Rate dictionary (base = USD) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Default fallback rates (updated at runtime from DB or API)
         private static Dictionary<string, decimal> _rates = new Dictionary<string, decimal>
         {
@@ -44,7 +44,7 @@ namespace GenericInventorySystem.Services
             { "LBP", 89500m },
         };
 
-        // ─── DB bootstrap ─────────────────────────────────────────────────
+        // â”€â”€â”€ DB bootstrap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public static void EnsureTable()
         {
             // Create table if it doesn't exist
@@ -56,12 +56,12 @@ namespace GenericInventorySystem.Services
                         name        NVARCHAR(100),
                         symbol      NVARCHAR(10),
                         rate_vs_usd DECIMAL(18,6) DEFAULT 1,
-                        last_updated DATETIME DEFAULT GETDATE()
+                        last_updated DATETIME DEFAULT datetime('now')
                     );
                     INSERT INTO currency_rates (code, name, symbol, rate_vs_usd) VALUES
                         ('USD', 'US Dollar',      '$',   1),
-                        ('EUR', 'Euro',           '€',   0.92),
-                        ('LBP', 'Lebanese Lira',  N'ل.ل', 89500);
+                        ('EUR', 'Euro',           'â‚¬',   0.92),
+                        ('LBP', 'Lebanese Lira',  N'Ù„.Ù„', 89500);
                 END");
 
             // Ensure orders table has currency columns
@@ -74,7 +74,7 @@ namespace GenericInventorySystem.Services
             LoadRatesFromDb();
         }
 
-        // ─── DB rate persistence ──────────────────────────────────────────
+        // â”€â”€â”€ DB rate persistence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public static void LoadRatesFromDb()
         {
             try
@@ -101,7 +101,7 @@ namespace GenericInventorySystem.Services
             foreach (var kvp in newRates)
             {
                 DatabaseHelper.ExecuteNonQuery(
-                    $"UPDATE currency_rates SET rate_vs_usd = {kvp.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}, last_updated = GETDATE() WHERE code = '{kvp.Key}'");
+                    $"UPDATE currency_rates SET rate_vs_usd = {kvp.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}, last_updated = datetime('now') WHERE code = '{kvp.Key}'");
                 _rates[kvp.Key] = kvp.Value;
             }
         }
@@ -109,17 +109,17 @@ namespace GenericInventorySystem.Services
         public static void UpdateCurrency(string code, string name, string symbol, decimal rate)
         {
             DatabaseHelper.ExecuteNonQuery(
-                $"UPDATE currency_rates SET name = @name, symbol = @symbol, rate_vs_usd = @rate, last_updated = GETDATE() WHERE code = @code",
-                new System.Data.SqlClient.SqlParameter("@name", name),
-                new System.Data.SqlClient.SqlParameter("@symbol", symbol),
-                new System.Data.SqlClient.SqlParameter("@rate", rate),
-                new System.Data.SqlClient.SqlParameter("@code", code)
+                $"UPDATE currency_rates SET name = @name, symbol = @symbol, rate_vs_usd = @rate, last_updated = datetime('now') WHERE code = @code",
+                new Microsoft.Data.Sqlite.SqliteParameter("@name", name),
+                new Microsoft.Data.Sqlite.SqliteParameter("@symbol", symbol),
+                new Microsoft.Data.Sqlite.SqliteParameter("@rate", rate),
+                new Microsoft.Data.Sqlite.SqliteParameter("@code", code)
             );
             _rates[code] = rate;
             LoadRatesFromDb(); // Refresh internal list
         }
 
-        // ─── Live API fetch ───────────────────────────────────────────────
+        // â”€â”€â”€ Live API fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         /// <summary>
         /// Fetches live rates from exchangerate.host (free, no key needed).
         /// Returns updated rates or null on failure.
@@ -178,7 +178,7 @@ namespace GenericInventorySystem.Services
             }
         }
 
-        // ─── Conversion helpers ───────────────────────────────────────────
+        // â”€â”€â”€ Conversion helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public static decimal ConvertAmount(decimal usdAmount, string toCurrency = null)
         {
             toCurrency = toCurrency ?? _activeCurrency;
@@ -206,7 +206,7 @@ namespace GenericInventorySystem.Services
             decimal converted = ConvertAmount(usdAmount, currency);
             string symbol = GetSymbol(currency);
 
-            // LBP — no decimals, use thousands separator
+            // LBP â€” no decimals, use thousands separator
             if (currency == "LBP")
                 return $"{symbol} {converted:N0}";
 

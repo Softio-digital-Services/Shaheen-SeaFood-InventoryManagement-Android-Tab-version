@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 using GenericInventorySystem.Data;
 using GenericInventorySystem;
@@ -43,7 +43,7 @@ namespace GenericInventorySystem.Forms
         {
             if (string.IsNullOrWhiteSpace(txtPartName.Text))
             {
-                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يرجى إدخال اسم المنتج أولاً." : "Please enter product name first.");
+                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø§Ø³Ù… Ø§Ù„Ù…Ù†ØªØ¬ Ø£ÙˆÙ„Ø§Ù‹." : "Please enter product name first.");
                 return;
             }
 
@@ -166,7 +166,7 @@ namespace GenericInventorySystem.Forms
                 // Add "Add New" item
                 var addNew = new CategoryData { 
                     Id = -1, 
-                    CategoryName = LocalizationManager.IsArabic ? "+ إضافة فئة جديدة..." : "+ Add New Category..." 
+                    CategoryName = LocalizationManager.IsArabic ? "+ Ø¥Ø¶Ø§ÙØ© ÙØ¦Ø© Ø¬Ø¯ÙŠØ¯Ø©..." : "+ Add New Category..." 
                 };
                 categories.Add(addNew);
 
@@ -222,7 +222,7 @@ namespace GenericInventorySystem.Forms
                 if (service.BarcodeExists(barcode, EditPartId))
                 {
                     MessageHelper.ShowWarning(LocalizationManager.IsArabic 
-                        ? "هذا الباركود موجود بالفعل في النظام." 
+                        ? "Ù‡Ø°Ø§ Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯ Ù…ÙˆØ¬ÙˆØ¯ Ø¨Ø§Ù„ÙØ¹Ù„ ÙÙŠ Ø§Ù„Ù†Ø¸Ø§Ù…." 
                         : "This barcode already exists in the system.");
                     return;
                 }
@@ -252,14 +252,14 @@ namespace GenericInventorySystem.Forms
                     // ADD
                    service.AddPart(name, number, category, qty, price, _minStock, image, barcode, location, shelf, status);
                    _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{name}' added via WinForms");
-                   MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم إضافة الصنف بنجاح!" : "Part added successfully!");
+                   MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„ØµÙ†Ù Ø¨Ù†Ø¬Ø§Ø­!" : "Part added successfully!");
                 }
                 else
                 {
                     // UPDATE
                     service.UpdatePart(EditPartId.Value, name, number, category, price, qty, _minStock, image, barcode, location, shelf, status);
                     _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{name}' updated via WinForms");
-                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم تحديث الصنف بنجاح!" : "Part updated successfully!");
+                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„ØµÙ†Ù Ø¨Ù†Ø¬Ø§Ø­!" : "Part updated successfully!");
                 }
                 
                 this.DialogResult = DialogResult.OK;
@@ -321,7 +321,7 @@ namespace GenericInventorySystem.Forms
         {
             txtBarcode.Text = "";
             txtBarcode.Focus();
-            MessageHelper.ShowInfo(LocalizationManager.IsArabic ? "جاهز للمسح! يرجى استخدام ماسح الباركود الآن." : "Ready to scan! Please use your barcode scanner now.");
+            MessageHelper.ShowInfo(LocalizationManager.IsArabic ? "Ø¬Ø§Ù‡Ø² Ù„Ù„Ù…Ø³Ø­! ÙŠØ±Ø¬Ù‰ Ø§Ø³ØªØ®Ø¯Ø§Ù… Ù…Ø§Ø³Ø­ Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯ Ø§Ù„Ø¢Ù†." : "Ready to scan! Please use your barcode scanner now.");
         }
 
         private void ApplyLocalization()
@@ -338,7 +338,7 @@ namespace GenericInventorySystem.Forms
             txtPartNumber.LabelText = LocalizationManager.GetString("AddPart_SKU");
             txtLocation.LabelText = LocalizationManager.GetString("AddPart_Location");
             txtShelf.LabelText = LocalizationManager.GetString("AddPart_Shelf");
-            btnAutoSKU.Text = isArabic ? "✨ تلقائي" : "✨ Auto";
+            btnAutoSKU.Text = isArabic ? "âœ¨ ØªÙ„Ù‚Ø§Ø¦ÙŠ" : "âœ¨ Auto";
 
             // Modern Numeric Inputs
             string currSymbol = GenericInventorySystem.Services.CurrencyService.GetSymbol("USD");

@@ -1,4 +1,4 @@
-namespace GenericInventorySystem.Forms
+﻿namespace GenericInventorySystem.Forms
 {
     partial class AddPartForm
     {
@@ -62,7 +62,7 @@ namespace GenericInventorySystem.Forms
             pnlSKU.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             pnlSKU.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
             pnlSKU.Controls.Add(txtPartNumber, 0, 0);
-            this.btnAutoSKU = new GenericInventorySystem.Controls.ModernButton { Text = "✨ Auto", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
+            this.btnAutoSKU = new GenericInventorySystem.Controls.ModernButton { Text = "âœ¨ Auto", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
             pnlSKU.Controls.Add(btnAutoSKU, 1, 0);
             tlpFields.Controls.Add(pnlSKU, 0, 2);
 

@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem.Services
@@ -18,7 +18,7 @@ namespace GenericInventorySystem.Services
                 // We use a dummy record or just check if any record has this month as 'last_processed_month'
                 int processedCount = DatabaseHelper.ExecuteScalar<int>(
                     "SELECT COUNT(*) FROM expenses WHERE last_processed_month = @month",
-                    new SqlParameter("@month", currentMonth));
+                    new SqliteParameter("@month", currentMonth));
 
                 if (processedCount > 0) return; // Already processed
 
@@ -43,12 +43,12 @@ namespace GenericInventorySystem.Services
                             VALUES (@cat, @date, @amt, @desc, @usr, 0, 1, @month)";
 
                         DatabaseHelper.ExecuteNonQuery(sqlInsert,
-                            new SqlParameter("@cat", row["category"]),
-                            new SqlParameter("@date", DateTime.Now),
-                            new SqlParameter("@amt", row["amount"]),
-                            new SqlParameter("@desc", row["description"].ToString() + " (Auto-Generated)"),
-                            new SqlParameter("@usr", "System"),
-                            new SqlParameter("@month", currentMonth));
+                            new SqliteParameter("@cat", row["category"]),
+                            new SqliteParameter("@date", DateTime.Now),
+                            new SqliteParameter("@amt", row["amount"]),
+                            new SqliteParameter("@desc", row["description"].ToString() + " (Auto-Generated)"),
+                            new SqliteParameter("@usr", "System"),
+                            new SqliteParameter("@month", currentMonth));
                     }
                 }
                 else
@@ -57,8 +57,8 @@ namespace GenericInventorySystem.Services
                     // We can insert a hidden system record or just skip. 
                     // To be safe, we'll insert a zero-amount system marker if no templates exist.
                     DatabaseHelper.ExecuteNonQuery(
-                        "INSERT INTO expenses (category, expense_date, amount, description, recorded_by, is_paid, is_recurring, last_processed_month) VALUES ('System', GETDATE(), 0, 'Month Marker', 'System', 1, 0, @month)",
-                        new SqlParameter("@month", currentMonth));
+                        "INSERT INTO expenses (category, expense_date, amount, description, recorded_by, is_paid, is_recurring, last_processed_month) VALUES ('System', datetime('now'), 0, 'Month Marker', 'System', 1, 0, @month)",
+                        new SqliteParameter("@month", currentMonth));
                 }
             }
             catch (Exception ex)
@@ -76,15 +76,15 @@ namespace GenericInventorySystem.Services
         {
             string sql = "SELECT SUM(amount) FROM expenses WHERE MONTH(expense_date) = @m AND YEAR(expense_date) = @y AND date_deleted IS NULL";
             object result = DatabaseHelper.ExecuteScalar<object>(sql, 
-                new SqlParameter("@m", month),
-                new SqlParameter("@y", year));
+                new SqliteParameter("@m", month),
+                new SqliteParameter("@y", year));
             return result != null && result != DBNull.Value ? Convert.ToDecimal(result) : 0;
         }
 
         public bool MarkAsPaid(int expenseId)
         {
             return DatabaseHelper.ExecuteNonQuery("UPDATE expenses SET is_paid = 1 WHERE expense_id = @id",
-                new SqlParameter("@id", expenseId));
+                new SqliteParameter("@id", expenseId));
         }
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Helpers;
@@ -14,7 +14,7 @@ namespace GenericInventorySystem.Forms
         public AddCategoryForm()
         {
             InitializeComponent();
-            this.TitleText = LocalizationManager.IsArabic ? "إضافة فئة جديدة" : "Add New Category";
+            this.TitleText = LocalizationManager.IsArabic ? "Ø¥Ø¶Ø§ÙØ© ÙØ¦Ø© Ø¬Ø¯ÙŠØ¯Ø©" : "Add New Category";
             ApplyLocalization();
         }
 
@@ -23,12 +23,12 @@ namespace GenericInventorySystem.Forms
             bool ar = LocalizationManager.IsArabic;
             this.RightToLeft = ar ? RightToLeft.Yes : RightToLeft.No;
             
-            txtName.LabelText = ar ? "اسم الفئة" : "Category Name";
-            txtDesc.LabelText = ar ? "الوصف" : "Description";
+            txtName.LabelText = ar ? "Ø§Ø³Ù… Ø§Ù„ÙØ¦Ø©" : "Category Name";
+            txtDesc.LabelText = ar ? "Ø§Ù„ÙˆØµÙ" : "Description";
             
             SetFooterButtons(
-                ar ? "حفظ" : "Save",
-                ar ? "إلغاء" : "Cancel",
+                ar ? "Ø­ÙØ¸" : "Save",
+                ar ? "Ø¥Ù„ØºØ§Ø¡" : "Cancel",
                 btnSave_Click,
                 (s, e) => this.Close()
             );

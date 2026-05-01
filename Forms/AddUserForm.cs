@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Controls;
@@ -180,7 +180,7 @@ namespace GenericInventorySystem.Forms
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "Loading User Data");
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في تحميل المستخدم: " : "Error loading user: ") + ex.Message);
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…: " : "Error loading user: ") + ex.Message);
             }
         }
 
@@ -200,14 +200,14 @@ namespace GenericInventorySystem.Forms
                 // Password validation
                 if (!_userId.HasValue && string.IsNullOrEmpty(password))
                 {
-                    string msg = LocalizationManager.IsArabic ? "كلمة المرور مطلوبة للمستخدمين الجدد" : "Password is required for new users.";
+                    string msg = LocalizationManager.IsArabic ? "ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ù…Ø·Ù„ÙˆØ¨Ø© Ù„Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† Ø§Ù„Ø¬Ø¯Ø¯" : "Password is required for new users.";
                     MessageHelper.ShowWarning(msg);
                     return;
                 }
 
                 if (!string.IsNullOrEmpty(password) && password != confirm)
                 {
-                    string msg = LocalizationManager.IsArabic ? "كلمات المرور غير متطابقة" : "Passwords do not match.";
+                    string msg = LocalizationManager.IsArabic ? "ÙƒÙ„Ù…Ø§Øª Ø§Ù„Ù…Ø±ÙˆØ± ØºÙŠØ± Ù…ØªØ·Ø§Ø¨Ù‚Ø©" : "Passwords do not match.";
                     MessageHelper.ShowWarning(msg);
                     return;
                 }
@@ -221,44 +221,44 @@ namespace GenericInventorySystem.Forms
                         // Update without changing password
                         sql = "UPDATE users SET username = @user, full_name = @fullname, role = @role WHERE id = @id";
                         DatabaseHelper.ExecuteNonQuery(sql,
-                            new SqlParameter("@user", username),
-                            new SqlParameter("@fullname", string.IsNullOrEmpty(fullName) ? username : fullName),
-                            new SqlParameter("@role", role),
-                            new SqlParameter("@id", _userId.Value));
+                            new SqliteParameter("@user", username),
+                            new SqliteParameter("@fullname", string.IsNullOrEmpty(fullName) ? username : fullName),
+                            new SqliteParameter("@role", role),
+                            new SqliteParameter("@id", _userId.Value));
                     }
                     else
                     {
                         // Update with new password
                         sql = "UPDATE users SET username = @user, password = @pass, full_name = @fullname, role = @role WHERE id = @id";
                         DatabaseHelper.ExecuteNonQuery(sql,
-                            new SqlParameter("@user", username),
-                            new SqlParameter("@pass", password),
-                            new SqlParameter("@fullname", string.IsNullOrEmpty(fullName) ? username : fullName),
-                            new SqlParameter("@role", role),
-                            new SqlParameter("@id", _userId.Value));
+                            new SqliteParameter("@user", username),
+                            new SqliteParameter("@pass", password),
+                            new SqliteParameter("@fullname", string.IsNullOrEmpty(fullName) ? username : fullName),
+                            new SqliteParameter("@role", role),
+                            new SqliteParameter("@id", _userId.Value));
                     }
 
-                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم تحديث المستخدم بنجاح!" : "User updated successfully!");
+                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø¨Ù†Ø¬Ø§Ø­!" : "User updated successfully!");
                 }
                 else
                 {
                     // Add mode - INSERT
                     if (DatabaseHelper.RecordExists("users", "username", username))
                     {
-                        string msg = LocalizationManager.IsArabic ? "اسم المستخدم موجود بالفعل" : "Username already exists.";
+                        string msg = LocalizationManager.IsArabic ? "Ø§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ù…ÙˆØ¬ÙˆØ¯ Ø¨Ø§Ù„ÙØ¹Ù„" : "Username already exists.";
                         MessageHelper.ShowWarning(msg);
                         return;
                     }
 
-                    string sql = "INSERT INTO users (username, password, full_name, role, date_created) VALUES (@user, @pass, @fullname, @role, GETDATE())";
+                    string sql = "INSERT INTO users (username, password, full_name, role, date_created) VALUES (@user, @pass, @fullname, @role, datetime('now'))";
                     DatabaseHelper.ExecuteNonQuery(sql,
-                        new SqlParameter("@user", username),
-                        new SqlParameter("@pass", password),
-                        new SqlParameter("@fullname", string.IsNullOrEmpty(fullName) ? username : fullName),
-                        new SqlParameter("@role", role));
+                        new SqliteParameter("@user", username),
+                        new SqliteParameter("@pass", password),
+                        new SqliteParameter("@fullname", string.IsNullOrEmpty(fullName) ? username : fullName),
+                        new SqliteParameter("@role", role));
 
                     string successMsg = LocalizationManager.IsArabic 
-                        ? $"تم إضافة المستخدم بنجاح!\nاسم المستخدم: '{username}'" 
+                        ? $"ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø¨Ù†Ø¬Ø§Ø­!\nØ§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…: '{username}'" 
                         : $"User added successfully!\nUsername: '{username}'";
                     MessageHelper.ShowSuccess(successMsg);
                 }
@@ -269,7 +269,7 @@ namespace GenericInventorySystem.Forms
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, _userId.HasValue ? "Updating User" : "Adding User");
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في حفظ المستخدم: " : "Error saving user: ") + ex.Message);
+                MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ Ø­ÙØ¸ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…: " : "Error saving user: ") + ex.Message);
             }
         }
     }

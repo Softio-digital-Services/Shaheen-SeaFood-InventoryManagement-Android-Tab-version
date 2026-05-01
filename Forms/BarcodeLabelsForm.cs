@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -52,17 +52,17 @@ namespace GenericInventorySystem.Forms
             LocalizationManager.ApplyRTL(this);
             bool isAr = LocalizationManager.IsArabic;
             
-            lblTitle.Text = isAr ? "طباعة ملصقات الباركود" : "Barcode Labels Generation";
-            txtSearch.PlaceholderText = isAr ? "ابحث عن المنتجات..." : "Search items...";
-            btnGenerate.Text = isAr ? "✨ معاينة وطباعة" : "✨ Preview and Print";
+            lblTitle.Text = isAr ? "Ø·Ø¨Ø§Ø¹Ø© Ù…Ù„ØµÙ‚Ø§Øª Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯" : "Barcode Labels Generation";
+            txtSearch.PlaceholderText = isAr ? "Ø§Ø¨Ø­Ø« Ø¹Ù† Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª..." : "Search items...";
+            btnGenerate.Text = isAr ? "âœ¨ Ù…Ø¹Ø§ÙŠÙ†Ø© ÙˆØ·Ø¨Ø§Ø¹Ø©" : "âœ¨ Preview and Print";
 
             if (dgvItems.Columns.Count > 0)
             {
                 dgvItems.Columns["colSelect"].HeaderText = ""; // Empty because we have a checkbox
-                dgvItems.Columns["colName"].HeaderText = isAr ? "الاسم" : "Product Name";
-                dgvItems.Columns["colSku"].HeaderText = isAr ? "الرمز (SKU)" : "SKU";
-                dgvItems.Columns["colBarcode"].HeaderText = isAr ? "الباركود" : "Barcode";
-                dgvItems.Columns["colQty"].HeaderText = isAr ? "الكمية" : "Qty";
+                dgvItems.Columns["colName"].HeaderText = isAr ? "Ø§Ù„Ø§Ø³Ù…" : "Product Name";
+                dgvItems.Columns["colSku"].HeaderText = isAr ? "Ø§Ù„Ø±Ù…Ø² (SKU)" : "SKU";
+                dgvItems.Columns["colBarcode"].HeaderText = isAr ? "Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯" : "Barcode";
+                dgvItems.Columns["colQty"].HeaderText = isAr ? "Ø§Ù„ÙƒÙ…ÙŠØ©" : "Qty";
                 dgvItems.Columns["colMinus"].HeaderText = "";
                 dgvItems.Columns["colPlus"].HeaderText = "";
             }
@@ -251,7 +251,7 @@ namespace GenericInventorySystem.Forms
 
             if (selectedItems.Count == 0)
             {
-                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يرجى اختيار صنف واحد على الأقل." : "Please select at least one item.");
+                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ Ø§Ø®ØªÙŠØ§Ø± ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„." : "Please select at least one item.");
                 return;
             }
 

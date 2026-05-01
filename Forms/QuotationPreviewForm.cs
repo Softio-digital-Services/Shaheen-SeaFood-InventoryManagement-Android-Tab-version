@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
@@ -148,7 +148,7 @@ namespace GenericInventorySystem.Forms
             y += 25;
 
             string customerName = DatabaseHelper.ExecuteScalar<string>($@"
-                SELECT ISNULL(c.full_name, 'Walk-in Customer') 
+                SELECT COALESCE(c.full_name, 'Walk-in Customer') 
                 FROM orders o LEFT JOIN customers c ON o.customer_id = c.customer_id 
                 WHERE o.order_id = {_orderId}");
 
@@ -215,7 +215,7 @@ namespace GenericInventorySystem.Forms
             pnlSummaryWrap.Controls.Add(lblTermsHead);
             
             Label lblTerms = new Label {
-                Text = "• Validity: 15 days from issue.\n• Payment due prior to delivery.\n• Acceptance indicates billing confirmation.\n\nAccepted By: __________________________",
+                Text = "â€¢ Validity: 15 days from issue.\nâ€¢ Payment due prior to delivery.\nâ€¢ Acceptance indicates billing confirmation.\n\nAccepted By: __________________________",
                 Font = new Font("Segoe UI", 8.5F),
                 Location = new Point(0, 25),
                 Size = new Size(400, 140),

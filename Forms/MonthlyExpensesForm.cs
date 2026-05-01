@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -88,7 +88,7 @@ namespace GenericInventorySystem.Forms
             cmbCategory = new ModernComboBox { 
                 Width = 135,
                 Location = new Point(0, 0),
-                LabelText = LocalizationManager.IsArabic ? "الفئة" : "Expense Category"
+                LabelText = LocalizationManager.IsArabic ? "Ø§Ù„ÙØ¦Ø©" : "Expense Category"
             };
             cmbCategory.Items.AddRange(new object[] { "Rent", "Utilities", "Wages", "Supplies", "Maintenance", "Other" });
             
@@ -112,13 +112,13 @@ namespace GenericInventorySystem.Forms
             pnlCatContainer.Controls.Add(btnQuickAddCat);
             
             Panel pnlDate = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
-            Label lblDateRef = new Label { Text = LocalizationManager.IsArabic ? "التاريخ" : "Expense Date", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };
+            Label lblDateRef = new Label { Text = LocalizationManager.IsArabic ? "Ø§Ù„ØªØ§Ø±ÙŠØ®" : "Expense Date", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };
             dtpDate = new FlatDateTimePicker { Width = 170, Height = 42, Location = new Point(0, 25) };
             pnlDate.Controls.Add(dtpDate); 
             pnlDate.Controls.Add(lblDateRef);
             
             numAmount = new ModernNumericUpDown { 
-                LabelText = LocalizationManager.IsArabic ? "المبلغ" : "Amount",
+                LabelText = LocalizationManager.IsArabic ? "Ø§Ù„Ù…Ø¨Ù„Øº" : "Amount",
                 DecimalPlaces = 2, 
                 Maximum = 1000000, 
                 Width = 120 
@@ -127,7 +127,7 @@ namespace GenericInventorySystem.Forms
             
             txtDescription = new ModernTextBox { 
                 Dock = DockStyle.Fill, 
-                LabelText = LocalizationManager.IsArabic ? "الوصف" : "Description",
+                LabelText = LocalizationManager.IsArabic ? "Ø§Ù„ÙˆØµÙ" : "Description",
                 PlaceholderText = "Expense details...",
                 Margin = new Padding(5, 5, 5, 10),
                 Multiline = true
@@ -153,7 +153,7 @@ namespace GenericInventorySystem.Forms
             btnDelete.Click += BtnDelete_Click;
 
             chkRecurring = new CheckBox { 
-                Text = LocalizationManager.IsArabic ? "تكرار" : "Recurring", 
+                Text = LocalizationManager.IsArabic ? "ØªÙƒØ±Ø§Ø±" : "Recurring", 
                 Font = ThemeConfig.StandardFont, 
                 AutoSize = true, 
                 Margin = new Padding(5, 5, 0, 0),
@@ -268,12 +268,12 @@ namespace GenericInventorySystem.Forms
             }
 
             DatabaseHelper.ExecuteNonQuery("INSERT INTO expenses (category, expense_date, amount, description, recorded_by, is_recurring, is_paid) VALUES (@cat, @date, @amt, @desc, @usr, @rec, 1)",
-                new SqlParameter("@cat", cmbCategory.SelectedItem.ToString()),
-                new SqlParameter("@date", dtpDate.Value),
-                new SqlParameter("@amt", amount),
-                new SqlParameter("@desc", txtDescription.Text),
-                new SqlParameter("@usr", UserSession.Username),
-                new SqlParameter("@rec", chkRecurring.Checked));
+                new SqliteParameter("@cat", cmbCategory.SelectedItem.ToString()),
+                new SqliteParameter("@date", dtpDate.Value),
+                new SqliteParameter("@amt", amount),
+                new SqliteParameter("@desc", txtDescription.Text),
+                new SqliteParameter("@usr", UserSession.Username),
+                new SqliteParameter("@rec", chkRecurring.Checked));
             
             ClearForm();
             LoadData();
@@ -303,7 +303,7 @@ namespace GenericInventorySystem.Forms
             if (MessageHelper.ShowConfirmation(LocalizationManager.GetString("Exp_ConfirmDelete")))
             {
                 int id = Convert.ToInt32(dgvExpenses.SelectedRows[0].Cells["Id"].Value);
-                DatabaseHelper.ExecuteNonQuery("DELETE FROM expenses WHERE expense_id = @id", new SqlParameter("@id", id));
+                DatabaseHelper.ExecuteNonQuery("DELETE FROM expenses WHERE expense_id = @id", new SqliteParameter("@id", id));
                 LoadData();
             }
         }

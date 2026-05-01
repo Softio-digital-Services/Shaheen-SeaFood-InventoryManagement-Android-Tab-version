@@ -83,6 +83,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
+    // SEARCH HANDLER
+    safeListen('searchInput', 'input', () => {
+        renderProducts();
+    });
+
     setupNotificationSystem();
     setupSignalR(); 
 
@@ -159,9 +164,16 @@ function renderProducts() {
     if (!grid) return;
     grid.innerHTML = '';
 
-    const filtered = currentCategory === 'All' 
-        ? allProducts 
-        : allProducts.filter(p => p.category === currentCategory);
+    const query = document.getElementById('searchInput')?.value.toLowerCase() || '';
+
+    const filtered = allProducts.filter(p => {
+        const matchesCategory = currentCategory === 'All' || p.category === currentCategory;
+        const matchesSearch = !query || 
+            (p.name && p.name.toLowerCase().includes(query)) || 
+            (p.sku && p.sku.toLowerCase().includes(query)) || 
+            (p.barcode && p.barcode.toLowerCase().includes(query));
+        return matchesCategory && matchesSearch;
+    });
 
     filtered.forEach(p => {
         const card = document.createElement('div');
@@ -345,6 +357,7 @@ async function handleLogin() {
             localStorage.setItem('pos_user', data.fullName);
             document.getElementById('loginScreen').classList.add('hidden');
             showToast(`Logged in as ${data.fullName}`, "success");
+            globalBarcodeScanner.init(); // Activate scanner immediately on login
             initApp();
         } else {
             showToast("Invalid credentials", "error");
@@ -359,6 +372,67 @@ function handleLogout() {
     document.getElementById('loginScreen').classList.remove('hidden');
     showToast("Logged out", "info");
 }
+
+// ── GLOBAL HID BARCODE SCANNER ──────────────────────────────────────────────
+// USB/Bluetooth scanners act as keyboards: they type chars very fast then Enter.
+// We detect this by checking the time between keystrokes (< 50ms = scanner).
+const globalBarcodeScanner = {
+    buffer: '',
+    lastKeyTime: 0,
+    THRESHOLD_MS: 50,   // Max ms between scanner keystrokes
+    MIN_LENGTH: 3,      // Minimum barcode length to process
+
+    init() {
+        document.addEventListener('keydown', (e) => this.onKey(e));
+        console.log('Global barcode scanner ready.');
+    },
+
+    onKey(e) {
+        // Ignore if user is focused on an input/textarea/select
+        const tag = document.activeElement?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+        // Ignore if login screen is visible
+        const loginScreen = document.getElementById('loginScreen');
+        if (loginScreen && !loginScreen.classList.contains('hidden')) return;
+
+        // Ignore if a modal is open
+        const modal = document.getElementById('addItemModal');
+        if (modal && !modal.classList.contains('hidden')) return;
+
+        const now = Date.now();
+        const timeSinceLast = now - this.lastKeyTime;
+        this.lastKeyTime = now;
+
+        if (e.key === 'Enter') {
+            const code = this.buffer.trim();
+            this.buffer = '';
+            if (code.length >= this.MIN_LENGTH) {
+                this.processBarcode(code);
+            }
+            return;
+        }
+
+        // If too much time has passed, this is a new sequence — reset buffer
+        if (timeSinceLast > 500) this.buffer = '';
+
+        // Only accumulate printable single characters
+        if (e.key.length === 1) this.buffer += e.key;
+    },
+
+    processBarcode(code) {
+        // Search by barcode first, then by SKU
+        const product = allProducts.find(p => p.barcode === code) 
+                     || allProducts.find(p => p.sku === code);
+
+        if (product) {
+            addToCart(product);
+            showToast(`✅ Added: ${product.name}`, 'success');
+        } else {
+            showToast(`⚠️ Barcode not found: ${code}`, 'error');
+        }
+    }
+};
 
 function checkLowStockAlerts() {
     const lowItems = allProducts.filter(p => p.stock <= (p.minStock || 5));

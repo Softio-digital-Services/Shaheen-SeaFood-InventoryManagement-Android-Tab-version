@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using GenericInventorySystem.Helpers;
 
@@ -35,7 +35,7 @@ namespace GenericInventorySystem.Services
         public DataTable GetOrderHistory()
         {
              string sql = @"
-                SELECT o.order_id as 'Order ID', o.order_date as 'Date', ISNULL(c.full_name, 'Walk-in') as 'Customer', o.total_amount as 'Total', o.status as 'Status', 
+                SELECT o.order_id as 'Order ID', o.order_date as 'Date', COALESCE(c.full_name, 'Walk-in') as 'Customer', o.total_amount as 'Total', o.status as 'Status', 
                        (SELECT COUNT(*) FROM order_items i WHERE i.order_id = o.order_id) as 'Items'
                 FROM orders o
                 LEFT JOIN customers c ON o.customer_id = c.customer_id
@@ -47,7 +47,7 @@ namespace GenericInventorySystem.Services
         public DataTable GetQuotationHistory()
         {
              string sql = @"
-                SELECT o.order_id as 'ID', o.order_date as 'Date', ISNULL(c.full_name, 'Walk-in') as 'Customer', o.total_amount as 'Total', 
+                SELECT o.order_id as 'ID', o.order_date as 'Date', COALESCE(c.full_name, 'Walk-in') as 'Customer', o.total_amount as 'Total', 
                        (SELECT COUNT(*) FROM order_items i WHERE i.order_id = o.order_id) as 'Items'
                 FROM orders o
                 LEFT JOIN customers c ON o.customer_id = c.customer_id
@@ -85,9 +85,9 @@ namespace GenericInventorySystem.Services
 
         public (int actions, int orders, int payments) GetTodayStats()
         {
-            int actions = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM transactions WHERE CAST(timestamp as DATE) = CAST(GETDATE() as DATE)");
-            int orders = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM orders WHERE CAST(order_date as DATE) = CAST(GETDATE() as DATE)");
-            int payments = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM payments WHERE CAST(payment_date as DATE) = CAST(GETDATE() as DATE)");
+            int actions = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM transactions WHERE CAST(timestamp as DATE) = CAST(datetime('now') as DATE)");
+            int orders = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM orders WHERE CAST(order_date as DATE) = CAST(datetime('now') as DATE)");
+            int payments = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM payments WHERE CAST(payment_date as DATE) = CAST(datetime('now') as DATE)");
             return (actions, orders, payments);
         }
     }

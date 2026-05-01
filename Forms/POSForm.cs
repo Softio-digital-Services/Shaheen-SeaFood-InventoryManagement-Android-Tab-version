@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -43,7 +43,7 @@ namespace GenericInventorySystem.Forms
             if(btnAddItem != null) btnAddItem.Text = L("POS_AddItem");
             if(btnCheckout != null) btnCheckout.Text = L("POS_Checkout");
             if(btnPayLater != null) btnPayLater.Text = L("POS_PayLater");
-            if(btnReturnItems != null) btnReturnItems.Text = L("Return_Action") ?? (LocalizationManager.IsArabic ? "إرجاع أصناف" : "Return Items");
+            if(btnReturnItems != null) btnReturnItems.Text = L("Return_Action") ?? (LocalizationManager.IsArabic ? "Ø¥Ø±Ø¬Ø§Ø¹ Ø£ØµÙ†Ø§Ù" : "Return Items");
             setText("lblTotal_Subtotal", "POS_Subtotal"); setText("lblTotal_VAT (11%)", "POS_Tax"); setText("lblTotal_Shipping", "POS_Shipping"); setText("lblTotal_Grand Total", "POS_GrandTotal");
             if(btnManageDrafts != null) btnManageDrafts.Text = L("POS_ManageDrafts"); if(btnClearCart != null) btnClearCart.Text = L("POS_ClearCart");
             if(cardTodayOrders != null) cardTodayOrders.Title = L("POS_Orders"); if(cardTodaySales != null) cardTodaySales.Title = L("POS_Sales"); if(cardPending != null) cardPending.Title = L("POS_Pending");
@@ -337,7 +337,7 @@ namespace GenericInventorySystem.Forms
         {
             if (cartTable.Rows.Count == 0)
             {
-                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "السلة فارغة!" : "Cart is empty!"));
+                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©!" : "Cart is empty!"));
                 return;
             }
             
@@ -361,14 +361,14 @@ namespace GenericInventorySystem.Forms
         {
             if (cartTable.Rows.Count == 0)
             {
-                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "السلة فارغة!" : "Cart is empty!"));
+                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©!" : "Cart is empty!"));
                 return;
             }
             
             int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
             if (customerId == -1)
             {
-                string msg = LocalizationManager.IsArabic ? "يجب اختيار عميل للبيع بالآجل." : "Must select a customer for Pay Later.";
+                string msg = LocalizationManager.IsArabic ? "ÙŠØ¬Ø¨ Ø§Ø®ØªÙŠØ§Ø± Ø¹Ù…ÙŠÙ„ Ù„Ù„Ø¨ÙŠØ¹ Ø¨Ø§Ù„Ø¢Ø¬Ù„." : "Must select a customer for Pay Later.";
                 MessageHelper.ShowWarning(msg);
                 return;
             }
@@ -562,14 +562,14 @@ namespace GenericInventorySystem.Forms
         {
              if (cartTable.Rows.Count == 0)
              {
-                 MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "السلة فارغة!" : "Cart is empty!"));
+                 MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©!" : "Cart is empty!"));
                  return;
              }
              try {
                  List<OrderItem> items = new List<OrderItem>(); decimal total = 0;
                  foreach(DataRow r in cartTable.Rows) { total += (decimal)r["Total"]; items.Add(new OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] }); }
                  new OrderService().PlaceOrder(Convert.ToInt32(cmbCustomers.SelectedValue), items, total, false, "Draft"); 
-                 MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم حفظ المسودة!" : "Draft Saved!"); cartTable.Rows.Clear(); UpdateTotal();
+                 MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… Ø­ÙØ¸ Ø§Ù„Ù…Ø³ÙˆØ¯Ø©!" : "Draft Saved!"); cartTable.Rows.Clear(); UpdateTotal();
              } catch(Exception ex) { MessageHelper.ShowError("Failed: " + ex.Message); }
         }
 
@@ -577,14 +577,14 @@ namespace GenericInventorySystem.Forms
         {
             if (cartTable.Rows.Count == 0)
             {
-                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "السلة فارغة!" : "Cart is empty!"));
+                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©!" : "Cart is empty!"));
                 return;
             }
             try {
                 List<OrderItem> items = new List<OrderItem>(); decimal total = 0;
                 foreach(DataRow r in cartTable.Rows) { total += (decimal)r["Total"]; items.Add(new OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] }); }
                 new OrderService().PlaceOrder(Convert.ToInt32(cmbCustomers.SelectedValue), items, total, false, "Quotation"); 
-                MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تم الحفظ!" : "Saved!"); cartTable.Rows.Clear(); UpdateTotal(); GlobalEvents.RaiseOrdersUpdated();
+                MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… Ø§Ù„Ø­ÙØ¸!" : "Saved!"); cartTable.Rows.Clear(); UpdateTotal(); GlobalEvents.RaiseOrdersUpdated();
             } catch(Exception ex) { MessageHelper.ShowError("Failed: " + ex.Message); }
         }
 
@@ -641,13 +641,13 @@ namespace GenericInventorySystem.Forms
                  {
                      var status = DatabaseHelper.ExecuteScalar<object>($"SELECT status FROM orders WHERE order_id = {orderId}")?.ToString();
                      if (status == "Quotation" || status == "Draft") {
-                         MessageHelper.ShowWarning(ar ? "لا يمكن إرجاع طلبات الاقتباس أو المسودة." : "Cannot return Quotation or Draft orders.");
+                         MessageHelper.ShowWarning(ar ? "Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø±Ø¬Ø§Ø¹ Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø§Ù‚ØªØ¨Ø§Ø³ Ø£Ùˆ Ø§Ù„Ù…Ø³ÙˆØ¯Ø©." : "Cannot return Quotation or Draft orders.");
                          return;
                      }
                      ReturnEntryForm form = new ReturnEntryForm(orderId);
                      form.ShowDialog();
                  }
-                 else MessageHelper.ShowWarning(ar ? "رقم الطلب غير موجود." : "Order ID not found.");
+                 else MessageHelper.ShowWarning(ar ? "Ø±Ù‚Ù… Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯." : "Order ID not found.");
              } catch (Exception ex) { MessageHelper.ShowError(ex.Message); }
         }
     }

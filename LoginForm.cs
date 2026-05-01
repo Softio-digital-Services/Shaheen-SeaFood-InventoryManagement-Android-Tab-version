@@ -1,5 +1,5 @@
-using System;
-using System.Data.SqlClient;
+﻿using System;
+using Microsoft.Data.Sqlite;
 using System.Windows.Forms;
 using System.Drawing;
 using GenericInventorySystem.Helpers;
@@ -210,10 +210,10 @@ namespace GenericInventorySystem
                 }
 
                 string sql = "SELECT username, full_name, role FROM users WHERE username = @username AND password = @password";
-                var parameters = new SqlParameter[]
+                var parameters = new SqliteParameter[]
                 {
-                    new SqlParameter("@username", txtUsername.Text.Trim()),
-                    new SqlParameter("@password", txtPassword.Text.Trim())
+                    new SqliteParameter("@username", txtUsername.Text.Trim()),
+                    new SqliteParameter("@password", txtPassword.Text.Trim())
                 };
 
                 using (var dt = DatabaseHelper.ExecuteDataTable(sql, parameters))

@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem.Services
@@ -66,7 +66,7 @@ namespace GenericInventorySystem.Services
         public bool SKUExists(string sku)
         {
             string sql = "SELECT COUNT(*) FROM parts WHERE part_number = @sku AND date_deleted IS NULL";
-            int count = DatabaseHelper.ExecuteScalar<int>(sql, new SqlParameter("@sku", sku));
+            int count = DatabaseHelper.ExecuteScalar<int>(sql, new SqliteParameter("@sku", sku));
             return count > 0;
         }
 

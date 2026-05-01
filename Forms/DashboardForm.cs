@@ -111,11 +111,54 @@ namespace GenericInventorySystem.Forms
             
             this.Controls.Add(_mainLayout);
 
-            // 0. Title
+            // 0. Title row — holds the header label + Scan-to-Connect button
+            Panel titleRow = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.Transparent
+            };
+
             lblDashboardTitle = ThemeConfig.CreateStandardHeader("Performance Dashboard");
             lblDashboardTitle.Name = "lblDashboardTitle";
-            lblDashboardTitle.Margin = new Padding(0); 
-            _mainLayout.Controls.Add(lblDashboardTitle, 0, 0);
+            lblDashboardTitle.Margin = new Padding(0);
+            lblDashboardTitle.Dock = DockStyle.Left;
+            lblDashboardTitle.AutoSize = true;
+
+            // Live server URL label
+            string serverUrl = ScanToConnectForm.GetServerUrl();
+            var lblServerUrl = new Label
+            {
+                Text = "🌐 " + serverUrl,
+                Font = new Font("Segoe UI", 9f),
+                ForeColor = ThemeConfig.MutedTextColor,
+                Dock = DockStyle.Right,
+                AutoSize = true,
+                TextAlign = ContentAlignment.MiddleRight,
+                Padding = new Padding(0, 12, 8, 0),
+                Cursor = Cursors.Hand
+            };
+            lblServerUrl.Click += (s, e) => new ScanToConnectForm().ShowDialog();
+
+            // Scan-to-Connect button
+            var btnScan = new Button
+            {
+                Text = "📱  Scan to Connect",
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+                ForeColor = Color.White,
+                BackColor = ThemeConfig.PrimaryColor,
+                FlatStyle = FlatStyle.Flat,
+                Dock = DockStyle.Right,
+                Width = 145,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(0, 8, 0, 8)
+            };
+            btnScan.FlatAppearance.BorderSize = 0;
+            btnScan.Click += (s, e) => new ScanToConnectForm().ShowDialog();
+
+            titleRow.Controls.Add(lblDashboardTitle);
+            titleRow.Controls.Add(lblServerUrl);
+            titleRow.Controls.Add(btnScan);
+            _mainLayout.Controls.Add(titleRow, 0, 0);
 
             // 1. Cards Layout (Top)
             _cardsLayout = new TableLayoutPanel

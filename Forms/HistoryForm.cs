@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -270,7 +270,7 @@ namespace GenericInventorySystem.Forms
                 
                 if (status == "Quotation" || status == "Draft")
                 {
-                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "يمكن إرجاع الطلبات المكتملة فقط." : "Only completed orders can be returned.");
+                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠÙ…ÙƒÙ† Ø¥Ø±Ø¬Ø§Ø¹ Ø§Ù„Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ù…ÙƒØªÙ…Ù„Ø© ÙÙ‚Ø·." : "Only completed orders can be returned.");
                     return;
                 }
 
@@ -426,7 +426,7 @@ namespace GenericInventorySystem.Forms
              }
              catch (Exception ex)
              {
-                 MessageHelper.ShowError((LocalizationManager.IsArabic ? "خطأ في تحميل السجل: " : "Error loading history: ") + ex.Message);
+                 MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø³Ø¬Ù„: " : "Error loading history: ") + ex.Message);
              }
         }
 

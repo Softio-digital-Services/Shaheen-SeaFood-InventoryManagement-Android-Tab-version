@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -28,7 +28,7 @@ namespace GenericInventorySystem.Forms
             _inventoryService = new InventoryService();
             _returnService = new ReturnService();
             
-            this.TitleText = LocalizationManager.IsArabic ? "إرجاع صنف (بدون فاتورة)" : "Item Return (No Receipt)";
+            this.TitleText = LocalizationManager.IsArabic ? "Ø¥Ø±Ø¬Ø§Ø¹ ØµÙ†Ù (Ø¨Ø¯ÙˆÙ† ÙØ§ØªÙˆØ±Ø©)" : "Item Return (No Receipt)";
 
             InitializeForm();
         }
@@ -50,7 +50,7 @@ namespace GenericInventorySystem.Forms
 
             // Label indicating scanner is active
             Panel pnlSearch = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
-            Label lblScannerReady = new Label { Text = LocalizationManager.IsArabic ? "جاهز لمسح الباركود..." : "Ready to scan barcode...", Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Location = new Point(0, 15) };
+            Label lblScannerReady = new Label { Text = LocalizationManager.IsArabic ? "Ø¬Ø§Ù‡Ø² Ù„Ù…Ø³Ø­ Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯..." : "Ready to scan barcode...", Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Location = new Point(0, 15) };
             pnlSearch.Controls.Add(lblScannerReady);
             tlpMain.Controls.Add(pnlSearch, 0, 0);
 
@@ -63,10 +63,10 @@ namespace GenericInventorySystem.Forms
             ThemeConfig.ApplyGridTheme(dgvItems);
             
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartID", DataPropertyName = "part_id", Visible = false });
-            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", DataPropertyName = "part_name", HeaderText = LocalizationManager.IsArabic ? "اسم الصنف" : "Product", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
-            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitPrice", DataPropertyName = "price", HeaderText = LocalizationManager.IsArabic ? "السعر" : "Price", Width = 100, ReadOnly = true });
+            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", DataPropertyName = "part_name", HeaderText = LocalizationManager.IsArabic ? "Ø§Ø³Ù… Ø§Ù„ØµÙ†Ù" : "Product", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
+            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitPrice", DataPropertyName = "price", HeaderText = LocalizationManager.IsArabic ? "Ø§Ù„Ø³Ø¹Ø±" : "Price", Width = 100, ReadOnly = true });
             
-            DataGridViewTextBoxColumn colReturn = new DataGridViewTextBoxColumn { Name = "QtyToReturn", DataPropertyName = "quantity", HeaderText = LocalizationManager.IsArabic ? "الكمية المرتجعة" : "Return Qty", Width = 120 };
+            DataGridViewTextBoxColumn colReturn = new DataGridViewTextBoxColumn { Name = "QtyToReturn", DataPropertyName = "quantity", HeaderText = LocalizationManager.IsArabic ? "Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„Ù…Ø±ØªØ¬Ø¹Ø©" : "Return Qty", Width = 120 };
             colReturn.DefaultCellStyle.BackColor = Color.FromArgb(240, 248, 255);
             dgvItems.Columns.Add(colReturn);
             
@@ -105,7 +105,7 @@ namespace GenericInventorySystem.Forms
             
             // Customer Section
             Panel pnlCust = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0, 0, 0, 10) };
-            Label lblCustomer = new Label { Text = (LocalizationManager.IsArabic ? "العميل (اختياري، للخصم من الرصيد)" : "Customer (Optional, to credit balance)") + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Margin = new Padding(0, 0, 0, 5) };
+            Label lblCustomer = new Label { Text = (LocalizationManager.IsArabic ? "Ø§Ù„Ø¹Ù…ÙŠÙ„ (Ø§Ø®ØªÙŠØ§Ø±ÙŠØŒ Ù„Ù„Ø®ØµÙ… Ù…Ù† Ø§Ù„Ø±ØµÙŠØ¯)" : "Customer (Optional, to credit balance)") + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Margin = new Padding(0, 0, 0, 5) };
             cmbCustomer = new ComboBox { Font = ThemeConfig.StandardFont, DropDownStyle = ComboBoxStyle.DropDownList };
             ThemeConfig.ApplyComboBoxStyle(cmbCustomer);
             Panel pnlCmbWrapper = ThemeConfig.WrapInStyledInput(cmbCustomer, 42); 
@@ -115,7 +115,7 @@ namespace GenericInventorySystem.Forms
             
             // Reason Section
             Panel pnlReason = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 10, 10, 0) };
-            Label lblReason = new Label { Text = (LocalizationManager.IsArabic ? "سبب الإرجاع" : "Return Reason") + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Margin = new Padding(0, 0, 0, 5) };
+            Label lblReason = new Label { Text = (LocalizationManager.IsArabic ? "Ø³Ø¨Ø¨ Ø§Ù„Ø¥Ø±Ø¬Ø§Ø¹" : "Return Reason") + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Margin = new Padding(0, 0, 0, 5) };
             txtReason = new TextBox { Multiline = true, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, BorderStyle = BorderStyle.None };
             Panel pnlTxtWrapper = ThemeConfig.WrapInStyledInput(txtReason, 80, true); 
             pnlTxtWrapper.Dock = DockStyle.Fill;
@@ -130,15 +130,15 @@ namespace GenericInventorySystem.Forms
             LoadCustomers();
 
             // Summary Section (Right)
-            lblTotalRefund = new Label { Text = LocalizationManager.IsArabic ? "إجمالي المبلغ: $0.00" : "Total Refund: $0.00", Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.TopRight };
+            lblTotalRefund = new Label { Text = LocalizationManager.IsArabic ? "Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø¨Ù„Øº: $0.00" : "Total Refund: $0.00", Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.TopRight };
             tlpBottom.Controls.Add(lblTotalRefund, 1, 0);
 
             tlpMain.Controls.Add(tlpBottom, 0, 2);
             this.ContentPanel.Controls.Add(tlpMain);
 
             SetFooterButtons(
-                LocalizationManager.IsArabic ? "إتمام الإرجاع" : "Process Return",
-                LocalizationManager.IsArabic ? "إلغاء" : "Cancel",
+                LocalizationManager.IsArabic ? "Ø¥ØªÙ…Ø§Ù… Ø§Ù„Ø¥Ø±Ø¬Ø§Ø¹" : "Process Return",
+                LocalizationManager.IsArabic ? "Ø¥Ù„ØºØ§Ø¡" : "Cancel",
                 BtnSubmit_Click,
                 (s, e) => this.Close()
             );
@@ -154,7 +154,7 @@ namespace GenericInventorySystem.Forms
                 DataTable dt = DatabaseHelper.ExecuteDataTable("SELECT id, name FROM customers WHERE date_deleted IS NULL");
                 dt.Rows.InsertAt(dt.NewRow(), 0);
                 dt.Rows[0]["id"] = -1;
-                dt.Rows[0]["name"] = LocalizationManager.IsArabic ? "-- لا يوجد / إرجاع نقدي --" : "-- None / Cash Return --";
+                dt.Rows[0]["name"] = LocalizationManager.IsArabic ? "-- Ù„Ø§ ÙŠÙˆØ¬Ø¯ / Ø¥Ø±Ø¬Ø§Ø¹ Ù†Ù‚Ø¯ÙŠ --" : "-- None / Cash Return --";
                 
                 cmbCustomer.DisplayMember = "name";
                 cmbCustomer.ValueMember = "id";
@@ -217,7 +217,7 @@ namespace GenericInventorySystem.Forms
                     else
                     {
                         string warnMsg = LocalizationManager.IsArabic 
-                            ? $"لم يتم العثور على الصنف في المخزون (الباركود: {barcode}). لا يمكن إرجاع هذا الصنف." 
+                            ? $"Ù„Ù… ÙŠØªÙ… Ø§Ù„Ø¹Ø«ÙˆØ± Ø¹Ù„Ù‰ Ø§Ù„ØµÙ†Ù ÙÙŠ Ø§Ù„Ù…Ø®Ø²ÙˆÙ† (Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯: {barcode}). Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø±Ø¬Ø§Ø¹ Ù‡Ø°Ø§ Ø§Ù„ØµÙ†Ù." 
                             : $"Item not found in inventory (Barcode: {barcode}). Cannot return this item.";
                         MessageHelper.ShowWarning(warnMsg);
                     }
@@ -256,7 +256,7 @@ namespace GenericInventorySystem.Forms
                     total += qty * price;
                 }
             }
-            lblTotalRefund.Text = (LocalizationManager.IsArabic ? "إجمالي المبلغ: " : "Total Refund: ") + CurrencyService.Format(total);
+            lblTotalRefund.Text = (LocalizationManager.IsArabic ? "Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø¨Ù„Øº: " : "Total Refund: ") + CurrencyService.Format(total);
         }
 
         private void BtnSubmit_Click(object sender, EventArgs e)
@@ -277,7 +277,7 @@ namespace GenericInventorySystem.Forms
 
             if (returnItems.Count == 0)
             {
-                string msg = LocalizationManager.IsArabic ? "يرجى إدخال صنف واحد على الأقل لإرجاعه." : "Please enter at least one item to return.";
+                string msg = LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„ Ù„Ø¥Ø±Ø¬Ø§Ø¹Ù‡." : "Please enter at least one item to return.";
                 MessageHelper.ShowWarning(msg);
                 return;
             }
@@ -291,13 +291,13 @@ namespace GenericInventorySystem.Forms
                 customerId = cid;
             }
 
-            string confirmMsg = LocalizationManager.IsArabic ? "هل أنت متأكد من رغبتك في معالجة هذا المرتجع؟" : "Are you sure you want to process this return?";
+            string confirmMsg = LocalizationManager.IsArabic ? "Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø±ØºØ¨ØªÙƒ ÙÙŠ Ù…Ø¹Ø§Ù„Ø¬Ø© Ù‡Ø°Ø§ Ø§Ù„Ù…Ø±ØªØ¬Ø¹ØŸ" : "Are you sure you want to process this return?";
             if (MessageHelper.ConfirmAction(confirmMsg))
             {
                 try
                 {
                     _returnService.ProcessBlindReturn(returnItems, txtReason.Text, customerId);
-                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "تمت معالجة المرتجع بنجاح!" : "Return processed successfully!");
+                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ…Øª Ù…Ø¹Ø§Ù„Ø¬Ø© Ø§Ù„Ù…Ø±ØªØ¬Ø¹ Ø¨Ù†Ø¬Ø§Ø­!" : "Return processed successfully!");
                     this.DialogResult = DialogResult.OK;
                     this.Close();
                 }

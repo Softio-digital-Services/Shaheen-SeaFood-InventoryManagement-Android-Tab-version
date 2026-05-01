@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem.Services
@@ -41,20 +41,20 @@ namespace GenericInventorySystem.Services
             if (isWalkIn)
             {
                 sqlOrder = "INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, status) " +
-                           "VALUES (GETDATE(), @total, @status, @paid, @ostatus); SELECT SCOPE_IDENTITY();";
+                           "VALUES (datetime('now'), @total, @status, @paid, @ostatus); SELECT SCOPE_IDENTITY();";
             }
             else
             {
                 sqlOrder = "INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, customer_id, status) " +
-                           "VALUES (GETDATE(), @total, @status, @paid, @cid, @ostatus); SELECT SCOPE_IDENTITY();";
+                           "VALUES (datetime('now'), @total, @status, @paid, @cid, @ostatus); SELECT SCOPE_IDENTITY();";
             }
 
             decimal orderIdDec = DatabaseHelper.ExecuteScalar<decimal>(sqlOrder,
-                new SqlParameter("@total", totalAmount),
-                new SqlParameter("@status", paymentStatus),
-                new SqlParameter("@paid", amountPaid),
-                new SqlParameter("@cid", customerId),
-                new SqlParameter("@ostatus", orderStatus)
+                new SqliteParameter("@total", totalAmount),
+                new SqliteParameter("@status", paymentStatus),
+                new SqliteParameter("@paid", amountPaid),
+                new SqliteParameter("@cid", customerId),
+                new SqliteParameter("@ostatus", orderStatus)
             );
             int orderId = Convert.ToInt32(orderIdDec);
 
@@ -66,10 +66,10 @@ namespace GenericInventorySystem.Services
                  {
                     string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)";
                     DatabaseHelper.ExecuteNonQuery(sqlItem,
-                        new SqlParameter("@oid", orderId),
-                        new SqlParameter("@pid", item.PartId),
-                        new SqlParameter("@qty", item.Quantity),
-                        new SqlParameter("@price", item.UnitPrice)
+                        new SqliteParameter("@oid", orderId),
+                        new SqliteParameter("@pid", item.PartId),
+                        new SqliteParameter("@qty", item.Quantity),
+                        new SqliteParameter("@price", item.UnitPrice)
                     );
                  }
                  return orderId;
@@ -81,17 +81,17 @@ namespace GenericInventorySystem.Services
                 // Insert Order Item
                 string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)";
                 DatabaseHelper.ExecuteNonQuery(sqlItem,
-                    new SqlParameter("@oid", orderId),
-                    new SqlParameter("@pid", item.PartId),
-                    new SqlParameter("@qty", item.Quantity),
-                    new SqlParameter("@price", item.UnitPrice)
+                    new SqliteParameter("@oid", orderId),
+                    new SqliteParameter("@pid", item.PartId),
+                    new SqliteParameter("@qty", item.Quantity),
+                    new SqliteParameter("@price", item.UnitPrice)
                 );
 
                 // Update Stock
                 string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid";
                 DatabaseHelper.ExecuteNonQuery(sqlStock,
-                    new SqlParameter("@qty", item.Quantity),
-                    new SqlParameter("@pid", item.PartId)
+                    new SqliteParameter("@qty", item.Quantity),
+                    new SqliteParameter("@pid", item.PartId)
                 );
             }
 
@@ -99,15 +99,15 @@ namespace GenericInventorySystem.Services
             if (!isPaid && !isWalkIn)
             {
                 string sqlBalance = "UPDATE customers SET current_balance = current_balance + @total";
-                List<SqlParameter> parameters = new List<SqlParameter> {
-                    new SqlParameter("@total", totalAmount),
-                    new SqlParameter("@cid", customerId)
+                List<SqliteParameter> parameters = new List<SqliteParameter> {
+                    new SqliteParameter("@total", totalAmount),
+                    new SqliteParameter("@cid", customerId)
                 };
 
                 if (dueDate.HasValue)
                 {
                     sqlBalance += ", payment_due_date = @dueDate";
-                    parameters.Add(new SqlParameter("@dueDate", dueDate.Value));
+                    parameters.Add(new SqliteParameter("@dueDate", dueDate.Value));
                 }
 
                 sqlBalance += " WHERE customer_id = @cid";
@@ -118,22 +118,22 @@ namespace GenericInventorySystem.Services
             if (!isWalkIn)
             {
                 // Record the Sale (Payment Due)
-                string sqlSaleRecord = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes, due_date) VALUES ('Customer', @cid, @amount, GETDATE(), @notes, @ddate)";
+                string sqlSaleRecord = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes, due_date) VALUES ('Customer', @cid, @amount, datetime('now'), @notes, @ddate)";
                 DatabaseHelper.ExecuteNonQuery(sqlSaleRecord,
-                    new SqlParameter("@cid", customerId),
-                    new SqlParameter("@amount", totalAmount),
-                    new SqlParameter("@notes", "[Sale] Order #" + orderId),
-                    new SqlParameter("@ddate", (object)dueDate ?? DBNull.Value)
+                    new SqliteParameter("@cid", customerId),
+                    new SqliteParameter("@amount", totalAmount),
+                    new SqliteParameter("@notes", "[Sale] Order #" + orderId),
+                    new SqliteParameter("@ddate", (object)dueDate ?? DBNull.Value)
                 );
 
                 if (isPaid)
                 {
                     // Record the Payment (Payment Received) - POS auto-payment
-                    string sqlPayRecord = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Customer', @cid, @amount, GETDATE(), @notes)";
+                    string sqlPayRecord = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Customer', @cid, @amount, datetime('now'), @notes)";
                     DatabaseHelper.ExecuteNonQuery(sqlPayRecord,
-                        new SqlParameter("@cid", customerId),
-                        new SqlParameter("@amount", totalAmount),
-                        new SqlParameter("@notes", "[Payment] Order #" + orderId)
+                        new SqliteParameter("@cid", customerId),
+                        new SqliteParameter("@amount", totalAmount),
+                        new SqliteParameter("@notes", "[Payment] Order #" + orderId)
                     );
                 }
             }
@@ -153,7 +153,7 @@ namespace GenericInventorySystem.Services
         {
              // Get orders with status 'Draft'
              string sql = @"
-                SELECT o.order_id, o.order_date, ISNULL(c.full_name, 'Walk-in') as CustomerName, o.total_amount, o.customer_id
+                SELECT o.order_id, o.order_date, COALESCE(c.full_name, 'Walk-in') as CustomerName, o.total_amount, o.customer_id
                 FROM orders o
                 LEFT JOIN customers c ON o.customer_id = c.customer_id
                 WHERE o.status = 'Draft'
@@ -165,7 +165,7 @@ namespace GenericInventorySystem.Services
         {
              // Get orders with status 'Quotation'
              string sql = @"
-                SELECT o.order_id, o.order_date, ISNULL(c.full_name, 'Walk-in') as CustomerName, o.total_amount, o.customer_id
+                SELECT o.order_id, o.order_date, COALESCE(c.full_name, 'Walk-in') as CustomerName, o.total_amount, o.customer_id
                 FROM orders o
                 LEFT JOIN customers c ON o.customer_id = c.customer_id
                 WHERE o.status = 'Quotation'
@@ -192,15 +192,15 @@ namespace GenericInventorySystem.Services
                 }
 
                 // 3. Update Status to Completed
-                DatabaseHelper.ExecuteNonQuery("UPDATE orders SET status = 'Completed', order_date = GETDATE() WHERE order_id = @oid", 
-                    new SqlParameter("@oid", orderId));
+                DatabaseHelper.ExecuteNonQuery("UPDATE orders SET status = 'Completed', order_date = datetime('now') WHERE order_id = @oid", 
+                    new SqliteParameter("@oid", orderId));
 
                 // 4. Update Stock
                 foreach (var item in items)
                 {
                     DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid", 
-                        new SqlParameter("@qty", item.Quantity), 
-                        new SqlParameter("@pid", item.PartId));
+                        new SqliteParameter("@qty", item.Quantity), 
+                        new SqliteParameter("@pid", item.PartId));
                 }
 
                 // 5. Log & Notify
@@ -232,7 +232,7 @@ namespace GenericInventorySystem.Services
                  UnitPrice = reader.GetDecimal(3),
                  Description = reader.IsDBNull(4) ? "" : reader.GetString(4),
                  PartImage = reader.IsDBNull(5) ? "" : reader.GetString(5)
-             }, new SqlParameter("@oid", orderId));
+             }, new SqliteParameter("@oid", orderId));
         }
 
         public void DeleteOrder(int orderId)

@@ -6,66 +6,41 @@ using System.Text.Json;
 namespace GenericInventorySystem
 {
     /// <summary>
-    /// Centralized database and file path configuration
+    /// Centralized database and file path configuration (SQLite)
     /// </summary>
     public static class DatabaseConfig
     {
         /// <summary>
-        /// Gets the dynamic connection string based on application location
-        /// Database is stored locally in the application's Data directory
+        /// The SQLite database file is stored next to the .exe in a /Data subfolder.
+        /// This works on any Windows PC without any SQL Server installation.
         /// </summary>
-        private static string GetDatabaseFileName()
-        {
-            try
-            {
-                string configPath = "appsettings.json";
-                if (File.Exists(configPath))
-                {
-                    string jsonString = File.ReadAllText(configPath);
-                    using (JsonDocument doc = JsonDocument.Parse(jsonString))
-                    {
-                        if (doc.RootElement.TryGetProperty("DatabaseSettings", out JsonElement dbSettings))
-                        {
-                            if (dbSettings.TryGetProperty("DatabaseFileName", out JsonElement dbFile))
-                                return dbFile.GetString() ?? "inventory_generic.mdf";
-                        }
-                    }
-                }
-            }
-            catch { }
-            return "inventory_generic.mdf";
-        }
-
         public static string ConnectionString
         {
             get
             {
-                // Store database locally in the application's directory
-                string appPath = Application.StartupPath;
-                string dbName = GetDatabaseFileName();
-                string dbPath = Path.Combine(appPath, "Data", dbName);
-                
+                string dbPath = DatabasePath;
                 // Ensure directory exists
-                string dbDirectory = Path.GetDirectoryName(dbPath);
-                if (!Directory.Exists(dbDirectory))
-                {
-                    Directory.CreateDirectory(dbDirectory);
-                }
+                string dir = Path.GetDirectoryName(dbPath);
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
 
-                string dbIdentifier = GetDatabaseFileName().Replace(".mdf", "DB");
-                return $@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename={dbPath};Integrated Security=True;Connect Timeout=30;Database={dbIdentifier};Pooling=False";
+                return $"Data Source={dbPath};";
             }
         }
 
         /// <summary>
-        /// Gets the database file path
+        /// Full path to the SQLite .db file.
+        /// Stored in the application's Data folder, portable with the exe.
         /// </summary>
         public static string DatabasePath
         {
             get
             {
                 string appPath = Application.StartupPath;
-                return Path.Combine(appPath, "Data", GetDatabaseFileName());
+                string dir = Path.Combine(appPath, "Data");
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+                return Path.Combine(dir, "inventory.db");
             }
         }
 
@@ -76,14 +51,9 @@ namespace GenericInventorySystem
         {
             get
             {
-                string appPath = Application.StartupPath;
-                string imagesPath = Path.Combine(appPath, "Parts_Images");
-                
+                string imagesPath = Path.Combine(Application.StartupPath, "Parts_Images");
                 if (!Directory.Exists(imagesPath))
-                {
                     Directory.CreateDirectory(imagesPath);
-                }
-                
                 return imagesPath;
             }
         }

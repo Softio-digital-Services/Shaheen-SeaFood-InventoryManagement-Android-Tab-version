@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -28,7 +28,7 @@ namespace GenericInventorySystem.Forms
         private void InitializeComponent()
         {
             // Adaptive sizing handled by BaseModalForm.OnLoad
-            this.TitleText = LocalizationManager.IsArabic ? "اختر منتج" : "Select Product";
+            this.TitleText = LocalizationManager.IsArabic ? "Ø§Ø®ØªØ± Ù…Ù†ØªØ¬" : "Select Product";
 
             TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(15) };
             tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
@@ -47,8 +47,8 @@ namespace GenericInventorySystem.Forms
             this.ContentPanel.Controls.Add(tlp);
 
             SetFooterButtons(
-                LocalizationManager.IsArabic ? "إضافة المحدد" : "Add Selected",
-                LocalizationManager.IsArabic ? "إلغاء" : "Cancel",
+                LocalizationManager.IsArabic ? "Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù…Ø­Ø¯Ø¯" : "Add Selected",
+                LocalizationManager.IsArabic ? "Ø¥Ù„ØºØ§Ø¡" : "Cancel",
                 (s, e) => SelectAndClose(),
                 (s, e) => { DialogResult = DialogResult.Cancel; Close(); }
             );
@@ -75,11 +75,11 @@ namespace GenericInventorySystem.Forms
 
                 if (LocalizationManager.IsArabic)
                 {
-                    if (dgvProducts.Columns["Name"] != null) dgvProducts.Columns["Name"].HeaderText = "الاسم";
-                    if (dgvProducts.Columns["SKU"] != null) dgvProducts.Columns["SKU"].HeaderText = "رقم القطعة";
-                    if (dgvProducts.Columns["Barcode"] != null) dgvProducts.Columns["Barcode"].HeaderText = "الباركود";
-                    if (dgvProducts.Columns["Price"] != null) dgvProducts.Columns["Price"].HeaderText = "السعر";
-                    if (dgvProducts.Columns["Stock"] != null) dgvProducts.Columns["Stock"].HeaderText = "المخزون";
+                    if (dgvProducts.Columns["Name"] != null) dgvProducts.Columns["Name"].HeaderText = "Ø§Ù„Ø§Ø³Ù…";
+                    if (dgvProducts.Columns["SKU"] != null) dgvProducts.Columns["SKU"].HeaderText = "Ø±Ù‚Ù… Ø§Ù„Ù‚Ø·Ø¹Ø©";
+                    if (dgvProducts.Columns["Barcode"] != null) dgvProducts.Columns["Barcode"].HeaderText = "Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯";
+                    if (dgvProducts.Columns["Price"] != null) dgvProducts.Columns["Price"].HeaderText = "Ø§Ù„Ø³Ø¹Ø±";
+                    if (dgvProducts.Columns["Stock"] != null) dgvProducts.Columns["Stock"].HeaderText = "Ø§Ù„Ù…Ø®Ø²ÙˆÙ†";
                 }
             }
             catch (Exception ex)
