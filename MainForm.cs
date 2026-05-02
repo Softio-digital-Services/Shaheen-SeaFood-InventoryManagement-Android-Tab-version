@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Linq;
@@ -363,7 +363,7 @@ namespace GenericInventorySystem
             pnlFooter.BringToFront(); // Ensure it stays on top of the fill panel
 
             Label lblVersion = new Label {
-                Text = "Generic Inventory System | Version 1.0.2 | © 2026 Softio Services",
+                Text = "Generic Inventory System | Version 1.0.2 | (c) 2026 Softio Services",
                 AutoSize = true,
                 Font = new Font("Segoe UI", 8.5f),
                 ForeColor = ThemeConfig.TextColorDark,

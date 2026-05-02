@@ -1,4 +1,4 @@
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 
 namespace GenericInventorySystem.Helpers.Plugins
 {
@@ -32,7 +32,7 @@ namespace GenericInventorySystem.Helpers.Plugins
         /// </summary>
         void Initialize(PluginContext context);
 
-        /// <summary>Called when the app shuts down — release resources.</summary>
+        /// <summary>Called when the app shuts down -- release resources.</summary>
         void Shutdown();
     }
 }

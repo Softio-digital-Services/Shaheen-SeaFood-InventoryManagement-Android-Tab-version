@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Controls;
@@ -70,7 +70,7 @@ namespace GenericInventorySystem.Forms
             lnkCopyHardwareId = new LinkLabel { Text = "Copy to Clipboard", Font = ThemeConfig.StandardFont, AutoSize = true, Margin = new Padding(0, 5, 0, 0) };
             lnkCopyHardwareId.LinkClicked += (s, e) => { 
                 Clipboard.SetText(lblHardwareId.Text); 
-                MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… Ù†Ø³Ø® Ù…Ø¹Ø±Ù Ø§Ù„Ø¬Ù‡Ø§Ø² Ø¥Ù„Ù‰ Ø§Ù„Ø­Ø§ÙØ¸Ø©!" : "Machine ID copied to clipboard!"); 
+                MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_MachineIdCopied")); 
             };
             
             tlpMachineId.Controls.Add(lblHwIdTitle, 0, 0);
@@ -102,19 +102,19 @@ namespace GenericInventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            this.TitleText = isArabic ? "ØªÙØ¹ÙŠÙ„ Ø§Ù„ØªØ±Ø®ÙŠØµ" : "License Activation";
-            lblSubtitle.Text = isArabic ? "Ø£Ø¯Ø®Ù„ Ù…ÙØªØ§Ø­ Ø§Ù„ØªØ±Ø®ÙŠØµ Ù„ØªÙØ¹ÙŠÙ„ Ø§Ù„Ø¨Ø±Ù†Ø§Ù…Ø¬" : "Enter your license key to activate the software";
+            this.TitleText = LocalizationManager.GetString("Msg_LicenseActivation");
+            lblSubtitle.Text = "Enter your license key to activate the software";
             
-            txtLicenseKey.LabelText = isArabic ? "Ù…ÙØªØ§Ø­ Ø§Ù„ØªØ±Ø®ÙŠØµ" : "License Key";
-            lblHwIdTitle.Text = isArabic ? "Ù…Ø¹Ø±Ù Ø§Ù„Ø¬Ù‡Ø§Ø² (Ù„Ù„Ø¯Ø¹Ù… Ø§Ù„ÙÙ†ÙŠ):" : "Machine ID (for support):";
-            lnkCopyHardwareId.Text = isArabic ? "Ù†Ø³Ø® Ø¥Ù„Ù‰ Ø§Ù„Ø­Ø§ÙØ¸Ø©" : "Copy to Clipboard";
+            txtLicenseKey.LabelText = LocalizationManager.GetString("Msg_LicenseKey");
+            lblHwIdTitle.Text = "Machine ID (for support):";
+            lnkCopyHardwareId.Text = LocalizationManager.GetString("Msg_CopyClipboard");
             
             SetFooterButtons(
-                isArabic ? "ØªÙØ¹ÙŠÙ„" : "Activate",
-                isArabic ? "Ø®Ø±ÙˆØ¬" : "Exit",
+                "Activate",
+                "Exit",
                 BtnActivate_Click,
                 (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); },
-                isArabic ? "Ø¨Ø¯Ø¡ ÙØªØ±Ø© ØªØ¬Ø±ÙŠØ¨ÙŠØ© Ù…Ø¬Ø§Ù†ÙŠØ© 30 ÙŠÙˆÙ…Ø§Ù‹" : "Start 30-Day Trial",
+                "Start 30-Day Trial",
                 BtnStartTrial_Click
             );
         }
@@ -131,7 +131,7 @@ namespace GenericInventorySystem.Forms
         {
             string licenseKey = txtLicenseKey.Text.Trim();
 
-            if (!ValidationHelper.ValidateRequiredFields(this, new Control[] { txtLicenseKey }, new string[] { LocalizationManager.IsArabic ? "Ù…ÙØªØ§Ø­ Ø§Ù„ØªØ±Ø®ÙŠØµ" : "License Key" }))
+            if (!ValidationHelper.ValidateRequiredFields(this, new Control[] { txtLicenseKey }, new string[] { LocalizationManager.GetString("Msg_LicenseKey") }))
             {
                 return;
             }
@@ -143,7 +143,7 @@ namespace GenericInventorySystem.Forms
 
             if (license == null)
             {
-                lblStatus.Text = LocalizationManager.IsArabic ? "Ù…ÙØªØ§Ø­ Ø§Ù„ØªØ±Ø®ÙŠØµ ØºÙŠØ± ØµØ§Ù„Ø­. ÙŠØ±Ø¬Ù‰ Ø§Ù„ØªØ­Ù‚Ù‚ ÙˆØ§Ù„Ù…Ø­Ø§ÙˆÙ„Ø© Ù…Ø±Ø© Ø£Ø®Ø±Ù‰." : "Invalid license key. Please check and try again.";
+                lblStatus.Text = LocalizationManager.GetString("Msg_LicenseInvalid");
                 lblStatus.ForeColor = Color.Red;
                 return;
             }
@@ -151,7 +151,7 @@ namespace GenericInventorySystem.Forms
             // Success
             LicenseActivated = true;
             string successMsg = LocalizationManager.IsArabic 
-                ? $"ØªÙ… ØªÙØ¹ÙŠÙ„ Ø§Ù„ØªØ±Ø®ÙŠØµ Ø¨Ù†Ø¬Ø§Ø­!\n\nÙŠÙ†ØªÙ‡ÙŠ ÙÙŠ: {license.ExpirationDate:MMMM dd, yyyy}"
+                ? $"تم تفعيل الترخيص بنجاح!\n\nتنتهي الصلاحية في: {license.ExpirationDate:MMMM dd, yyyy}"
                 : $"License activated successfully!\n\nExpires: {license.ExpirationDate:MMMM dd, yyyy}";
             MessageHelper.ShowSuccess(successMsg);
             
@@ -165,18 +165,18 @@ namespace GenericInventorySystem.Forms
             LicenseKey existingLicense = LicenseManager.GetCurrentLicense();
             if (existingLicense != null && existingLicense.IsTrial())
             {
-                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "Ù„Ù‚Ø¯ ØªÙ… Ø§Ø³ØªØ®Ø¯Ø§Ù… Ø§Ù„ÙØªØ±Ø© Ø§Ù„ØªØ¬Ø±ÙŠØ¨ÙŠØ© Ø¨Ø§Ù„ÙØ¹Ù„ Ø¹Ù„Ù‰ Ù‡Ø°Ø§ Ø§Ù„Ø¬Ù‡Ø§Ø²." : "Trial period has already been used on this machine.");
+                MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_TrialUsed"));
                 return;
             }
 
-            if (MessageHelper.ConfirmAction(LocalizationManager.IsArabic ? "Ø¨Ø¯Ø¡ Ø§Ù„ØªÙØ¹ÙŠÙ„ Ø§Ù„ØªØ¬Ø±ÙŠØ¨ÙŠ Ø§Ù„Ù…Ø¬Ø§Ù†ÙŠ Ù„Ù…Ø¯Ø© 30 ÙŠÙˆÙ…Ø§Ù‹ØŸ" : "Start a 30-day free trial?"))
+            if (MessageHelper.ConfirmAction(LocalizationManager.GetString("Msg_StartTrial")))
             {
                 LicenseKey trial = LicenseManager.StartTrial();
                 if (trial != null)
                 {
                     LicenseActivated = true;
                     string msg = LocalizationManager.IsArabic 
-                        ? $"ØªÙ… Ø§Ù„ØªÙØ¹ÙŠÙ„ Ø§Ù„ØªØ¬Ø±ÙŠØ¨ÙŠ! Ù„Ø¯ÙŠÙƒ {trial.DaysRemaining()} ÙŠÙˆÙ… Ù…ØªØ¨Ù‚ÙŠ."
+                        ? $"تم تفعيل الفترة التجريبية! لديك {trial.DaysRemaining()} يومًا متبقية."
                         : $"Trial activated! You have {trial.DaysRemaining()} days remaining.";
                     MessageHelper.ShowSuccess(msg);
                     this.DialogResult = DialogResult.OK;
@@ -184,7 +184,7 @@ namespace GenericInventorySystem.Forms
                 }
                 else
                 {
-                    MessageHelper.ShowError(LocalizationManager.IsArabic ? "ÙØ´Ù„ Ø¨Ø¯Ø¡ Ø§Ù„ØªÙØ¹ÙŠÙ„ Ø§Ù„ØªØ¬Ø±ÙŠØ¨ÙŠ. ÙŠØ±Ø¬Ù‰ Ø§Ù„ØªÙˆØ§ØµÙ„ Ù…Ø¹ Ø§Ù„Ø¯Ø¹Ù… Ø§Ù„ÙÙ†ÙŠ." : "Failed to start trial. Please contact support.");
+                    MessageHelper.ShowError(LocalizationManager.GetString("Msg_TrialFailed"));
                 }
             }
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using System.Drawing;
@@ -180,7 +180,7 @@ namespace GenericInventorySystem.Forms
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "Loading User Data");
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…: " : "Error loading user: ") + ex.Message);
+                MessageHelper.ShowError(("Error loading user: ") + ex.Message);
             }
         }
 
@@ -200,14 +200,14 @@ namespace GenericInventorySystem.Forms
                 // Password validation
                 if (!_userId.HasValue && string.IsNullOrEmpty(password))
                 {
-                    string msg = LocalizationManager.IsArabic ? "ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ù…Ø·Ù„ÙˆØ¨Ø© Ù„Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† Ø§Ù„Ø¬Ø¯Ø¯" : "Password is required for new users.";
+                    string msg = "Password is required for new users.";
                     MessageHelper.ShowWarning(msg);
                     return;
                 }
 
                 if (!string.IsNullOrEmpty(password) && password != confirm)
                 {
-                    string msg = LocalizationManager.IsArabic ? "ÙƒÙ„Ù…Ø§Øª Ø§Ù„Ù…Ø±ÙˆØ± ØºÙŠØ± Ù…ØªØ·Ø§Ø¨Ù‚Ø©" : "Passwords do not match.";
+                    string msg = "Passwords do not match.";
                     MessageHelper.ShowWarning(msg);
                     return;
                 }
@@ -238,14 +238,14 @@ namespace GenericInventorySystem.Forms
                             new SqliteParameter("@id", _userId.Value));
                     }
 
-                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø¨Ù†Ø¬Ø§Ø­!" : "User updated successfully!");
+                    MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_UserUpdated"));
                 }
                 else
                 {
                     // Add mode - INSERT
                     if (DatabaseHelper.RecordExists("users", "username", username))
                     {
-                        string msg = LocalizationManager.IsArabic ? "Ø§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ù…ÙˆØ¬ÙˆØ¯ Ø¨Ø§Ù„ÙØ¹Ù„" : "Username already exists.";
+                        string msg = "Username already exists.";
                         MessageHelper.ShowWarning(msg);
                         return;
                     }
@@ -258,7 +258,7 @@ namespace GenericInventorySystem.Forms
                         new SqliteParameter("@role", role));
 
                     string successMsg = LocalizationManager.IsArabic 
-                        ? $"ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø¨Ù†Ø¬Ø§Ø­!\nØ§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…: '{username}'" 
+                        ? $"تمت إضافة المستخدم بنجاح!\nاسم المستخدم: '{username}'"
                         : $"User added successfully!\nUsername: '{username}'";
                     MessageHelper.ShowSuccess(successMsg);
                 }
@@ -269,7 +269,7 @@ namespace GenericInventorySystem.Forms
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, _userId.HasValue ? "Updating User" : "Adding User");
-                MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ Ø­ÙØ¸ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…: " : "Error saving user: ") + ex.Message);
+                MessageHelper.ShowError((LocalizationManager.GetString("Msg_UserSaveError")) + ex.Message);
             }
         }
     }

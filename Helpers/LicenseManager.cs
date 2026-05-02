@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Text;
 
@@ -131,21 +131,21 @@ namespace GenericInventorySystem.Helpers
         /// Checks if a specific feature/plugin is enabled by the current license.
         /// 
         /// Currently the license types work as follows:
-        ///   TRIAL  → all RequiresLicense plugins are HIDDEN
-        ///   YEARLY → all RequiresLicense plugins are VISIBLE
+        ///   TRIAL  -> all RequiresLicense plugins are HIDDEN
+        ///   YEARLY -> all RequiresLicense plugins are VISIBLE
         /// 
         /// In future you can embed a comma-separated feature list in the license key
         /// and parse featureKey out of it for per-feature gating.
         /// </summary>
         public static bool IsFeatureEnabled(string featureKey)
         {
-            if (string.IsNullOrWhiteSpace(featureKey)) return true; // no key needed → always on
+            if (string.IsNullOrWhiteSpace(featureKey)) return true; // no key needed -> always on
 
             LicenseKey license = GetCurrentLicense();
             if (license == null || !license.IsValid()) return false;
-            if (license.IsTrial()) return false; // trial → no premium plugins
+            if (license.IsTrial()) return false; // trial -> no premium plugins
 
-            // Full paid license → all currently-defined features enabled
+            // Full paid license -> all currently-defined features enabled
             // (Extend this to parse license.FeatureFlags in future)
             return ValidateLicenseKey(license.Key, license.CustomerName);
         }

@@ -331,6 +331,9 @@ Click NO to put on Account.</value>
   <data name="Login_Error" xml:space="preserve"><value>Incorrect username/password</value></data>
   <data name="Nav_Currencies" xml:space="preserve"><value>Currencies</value></data>
   <data name="Nav_Quotations" xml:space="preserve"><value>Quotations</value></data>
+  <data name="Msg_CustomerQuotations" xml:space="preserve"><value>Customer Quotations</value></data>
+  <data name="Nav_Users" xml:space="preserve"><value>Users Management</value></data>
+  <data name="Msg_UserManagement" xml:space="preserve"><value>Users Management</value></data>
   <data name="POS_SaveQuotation" xml:space="preserve"><value>Save as Quotation</value></data>
   <data name="POS_PrintReceipt" xml:space="preserve"><value>Print Receipt</value></data>
   <data name="POS_ManageDrafts" xml:space="preserve"><value>Manage Drafts</value></data>
@@ -467,9 +470,6 @@ Username: '{0}'</value></data>
   <data name="Msg_ConfirmLogout" xml:space="preserve"><value>Logout?</value></data>
   <data name="Main_NoNotifications" xml:space="preserve">
     <value>No new notifications</value>
-  </data>
-  <data name="Nav_Users" xml:space="preserve">
-    <value>Users Management</value>
   </data>
   <data name="POS_PayLater" xml:space="preserve"><value>Pay Later</value></data>
   <data name="POS_ConfirmAddBill" xml:space="preserve"><value>Confirm adding ${0} to customer balance?</value></data>

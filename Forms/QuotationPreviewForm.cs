@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
@@ -34,11 +34,11 @@ namespace GenericInventorySystem.Forms
             // Adaptive sizing handled by BaseModalForm.OnLoad
             
             SetFooterButtons(
-                "Print",
-                "Export",
+                LocalizationManager.GetString("Tran_Print") ?? "Print",
+                LocalizationManager.GetString("Tran_Export") ?? "Export",
                 (s, e) => HandlePrint(),
                 (s, e) => HandleExport(),
-                "Close",
+                LocalizationManager.GetString("Popup_Cancel") ?? "Close",
                 (s, e) => this.Close()
             );
 

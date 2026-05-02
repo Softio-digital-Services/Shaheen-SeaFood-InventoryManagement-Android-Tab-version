@@ -108,7 +108,7 @@ namespace GenericInventorySystem.Forms
             {
                 if (val <= 0)
                 {
-                    string msg = LocalizationManager.IsArabic ? "ÙŠØ¬Ø¨ Ø£Ù† ÙŠÙƒÙˆÙ† Ø§Ù„Ù…Ø¨Ù„Øº Ø£ÙƒØ¨Ø± Ù…Ù† ØµÙØ±" : "Amount must be greater than zero.";
+                    string msg = LocalizationManager.GetString("Msg_AmountZero");
                     MessageHelper.ShowWarning(msg);
                     return;
                 }

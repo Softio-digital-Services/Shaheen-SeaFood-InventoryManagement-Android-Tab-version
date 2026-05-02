@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using GenericInventorySystem.Helpers;
@@ -201,7 +201,7 @@ namespace GenericInventorySystem.Services
         }
     }
 
-    // ── Customer Service ───────────────────────────────────────────────────────
+    // - Customer Service -
 
     public class CustomerService
     {
@@ -331,7 +331,7 @@ namespace GenericInventorySystem.Services
         public int ActiveCustomers { get; set; }
     }
 
-    // ── Supplier Service ───────────────────────────────────────────────────────
+    // - Supplier Service -
 
     public class SupplierService
     {

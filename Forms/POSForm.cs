@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -43,7 +43,7 @@ namespace GenericInventorySystem.Forms
             if(btnAddItem != null) btnAddItem.Text = L("POS_AddItem");
             if(btnCheckout != null) btnCheckout.Text = L("POS_Checkout");
             if(btnPayLater != null) btnPayLater.Text = L("POS_PayLater");
-            if(btnReturnItems != null) btnReturnItems.Text = L("Return_Action") ?? (LocalizationManager.IsArabic ? "Ø¥Ø±Ø¬Ø§Ø¹ Ø£ØµÙ†Ø§Ù" : "Return Items");
+            if(btnReturnItems != null) btnReturnItems.Text = L("Return_Action") ?? ("Return Items");
             setText("lblTotal_Subtotal", "POS_Subtotal"); setText("lblTotal_VAT (11%)", "POS_Tax"); setText("lblTotal_Shipping", "POS_Shipping"); setText("lblTotal_Grand Total", "POS_GrandTotal");
             if(btnManageDrafts != null) btnManageDrafts.Text = L("POS_ManageDrafts"); if(btnClearCart != null) btnClearCart.Text = L("POS_ClearCart");
             if(cardTodayOrders != null) cardTodayOrders.Title = L("POS_Orders"); if(cardTodaySales != null) cardTodaySales.Title = L("POS_Sales"); if(cardPending != null) cardPending.Title = L("POS_Pending");
@@ -107,20 +107,29 @@ namespace GenericInventorySystem.Forms
             pnlCol1.Controls.Add(pnlCustWrapper); pnlCol1.Controls.Add(btnAddCust); pnlCol1.Resize += (s, e) => { btnAddCust.Left = pnlCustWrapper.Right + 5; };
             tblInfo.Controls.Add(pnlCol1, 0, 0);
 
-            Panel pnlDate1 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0,0,10,0) };
+            Panel pnlDate1 = new Panel { Dock = DockStyle.Top, Height = 75, Margin = new Padding(0,0,10,5) };
             pnlDate1.Controls.Add(new Label { Text = "Order Date", Name = "lblDateTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
-            dtOrderDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont };
-            pnlDate1.Controls.Add(dtOrderDate); dtOrderDate.BringToFront(); tblInfo.Controls.Add(pnlDate1, 0, 1);
+            dtOrderDate = new FlatDateTimePicker { Width = 150 };
+            Panel pnlDate1Input = ThemeConfig.WrapInStyledInput(dtOrderDate, 42);
+            pnlDate1Input.Dock = DockStyle.Top;
+            pnlDate1.Controls.Add(pnlDate1Input); pnlDate1Input.BringToFront(); 
+            tblInfo.Controls.Add(pnlDate1, 0, 1);
 
-            Panel pnlDate2 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0,0,10,0) };
+            Panel pnlDate2 = new Panel { Dock = DockStyle.Top, Height = 75, Margin = new Padding(0,0,10,0) };
             pnlDate2.Controls.Add(new Label { Text = "Delivery", Name = "lblDelTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
-            dtDeliveryDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Value = null, MinDate = DateTime.Today };
-            pnlDate2.Controls.Add(dtDeliveryDate); dtDeliveryDate.BringToFront(); tblInfo.Controls.Add(pnlDate2, 0, 2);
+            dtDeliveryDate = new FlatDateTimePicker { Width = 150, Value = null, MinDate = DateTime.Today };
+            Panel pnlDate2Input = ThemeConfig.WrapInStyledInput(dtDeliveryDate, 42);
+            pnlDate2Input.Dock = DockStyle.Top;
+            pnlDate2.Controls.Add(pnlDate2Input); pnlDate2Input.BringToFront(); 
+            tblInfo.Controls.Add(pnlDate2, 0, 2);
 
-            Panel pnlDate3 = new Panel { Dock = DockStyle.Top, Height = 70, Margin = new Padding(0, 0, 10, 0) };
+            Panel pnlDate3 = new Panel { Dock = DockStyle.Top, Height = 75, Margin = new Padding(0, 0, 10, 0) };
             pnlDate3.Controls.Add(new Label { Text = "Due Date", Name = "lblDueTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
-            dtDueDate = new FlatDateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Value = DateTime.Today.AddDays(30) };
-            pnlDate3.Controls.Add(dtDueDate); dtDueDate.BringToFront(); tblInfo.Controls.Add(pnlDate3, 1, 2);
+            dtDueDate = new FlatDateTimePicker { Width = 150, Value = DateTime.Today.AddDays(30) };
+            Panel pnlDate3Input = ThemeConfig.WrapInStyledInput(dtDueDate, 42);
+            pnlDate3Input.Dock = DockStyle.Top;
+            pnlDate3.Controls.Add(pnlDate3Input); pnlDate3Input.BringToFront(); 
+            tblInfo.Controls.Add(pnlDate3, 1, 2);
 
             Panel pnlCol3 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
             pnlCol3.Controls.Add(new Label { Text = "Shipping To", Name = "lblAddrTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
@@ -337,7 +346,7 @@ namespace GenericInventorySystem.Forms
         {
             if (cartTable.Rows.Count == 0)
             {
-                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©!" : "Cart is empty!"));
+                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.GetString("CartEmpty")));
                 return;
             }
             
@@ -361,14 +370,14 @@ namespace GenericInventorySystem.Forms
         {
             if (cartTable.Rows.Count == 0)
             {
-                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©!" : "Cart is empty!"));
+                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.GetString("CartEmpty")));
                 return;
             }
             
             int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
             if (customerId == -1)
             {
-                string msg = LocalizationManager.IsArabic ? "ÙŠØ¬Ø¨ Ø§Ø®ØªÙŠØ§Ø± Ø¹Ù…ÙŠÙ„ Ù„Ù„Ø¨ÙŠØ¹ Ø¨Ø§Ù„Ø¢Ø¬Ù„." : "Must select a customer for Pay Later.";
+                string msg = LocalizationManager.GetString("Msg_SelectCustomer");
                 MessageHelper.ShowWarning(msg);
                 return;
             }
@@ -562,14 +571,14 @@ namespace GenericInventorySystem.Forms
         {
              if (cartTable.Rows.Count == 0)
              {
-                 MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©!" : "Cart is empty!"));
+                 MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.GetString("CartEmpty")));
                  return;
              }
              try {
                  List<OrderItem> items = new List<OrderItem>(); decimal total = 0;
                  foreach(DataRow r in cartTable.Rows) { total += (decimal)r["Total"]; items.Add(new OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] }); }
                  new OrderService().PlaceOrder(Convert.ToInt32(cmbCustomers.SelectedValue), items, total, false, "Draft"); 
-                 MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… Ø­ÙØ¸ Ø§Ù„Ù…Ø³ÙˆØ¯Ø©!" : "Draft Saved!"); cartTable.Rows.Clear(); UpdateTotal();
+                 MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_DraftSaved")); cartTable.Rows.Clear(); UpdateTotal();
              } catch(Exception ex) { MessageHelper.ShowError("Failed: " + ex.Message); }
         }
 
@@ -577,14 +586,14 @@ namespace GenericInventorySystem.Forms
         {
             if (cartTable.Rows.Count == 0)
             {
-                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.IsArabic ? "Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©!" : "Cart is empty!"));
+                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.GetString("CartEmpty")));
                 return;
             }
             try {
                 List<OrderItem> items = new List<OrderItem>(); decimal total = 0;
                 foreach(DataRow r in cartTable.Rows) { total += (decimal)r["Total"]; items.Add(new OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] }); }
                 new OrderService().PlaceOrder(Convert.ToInt32(cmbCustomers.SelectedValue), items, total, false, "Quotation"); 
-                MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… Ø§Ù„Ø­ÙØ¸!" : "Saved!"); cartTable.Rows.Clear(); UpdateTotal(); GlobalEvents.RaiseOrdersUpdated();
+                MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_Saved")); cartTable.Rows.Clear(); UpdateTotal(); GlobalEvents.RaiseOrdersUpdated();
             } catch(Exception ex) { MessageHelper.ShowError("Failed: " + ex.Message); }
         }
 
@@ -641,13 +650,13 @@ namespace GenericInventorySystem.Forms
                  {
                      var status = DatabaseHelper.ExecuteScalar<object>($"SELECT status FROM orders WHERE order_id = {orderId}")?.ToString();
                      if (status == "Quotation" || status == "Draft") {
-                         MessageHelper.ShowWarning(ar ? "Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø±Ø¬Ø§Ø¹ Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø§Ù‚ØªØ¨Ø§Ø³ Ø£Ùˆ Ø§Ù„Ù…Ø³ÙˆØ¯Ø©." : "Cannot return Quotation or Draft orders.");
+                         MessageHelper.ShowWarning(ar ? "لا يمكن إرجاع طلبات الاقتباس أو المسودات." : "Cannot return Quotation or Draft orders.");
                          return;
                      }
                      ReturnEntryForm form = new ReturnEntryForm(orderId);
                      form.ShowDialog();
                  }
-                 else MessageHelper.ShowWarning(ar ? "Ø±Ù‚Ù… Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯." : "Order ID not found.");
+                 else MessageHelper.ShowWarning(ar ? "رقم الطلب غير موجود." : "Order ID not found.");
              } catch (Exception ex) { MessageHelper.ShowError(ex.Message); }
         }
     }

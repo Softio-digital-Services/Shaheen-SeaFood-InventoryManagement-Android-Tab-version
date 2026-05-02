@@ -1,4 +1,4 @@
-
+﻿
 namespace GenericInventorySystem
 {
     partial class MainForm
@@ -96,7 +96,7 @@ namespace GenericInventorySystem
             this.itemAddUser.Text = "Add New User";
             
             // itemLicenseInfo
-            this.itemLicenseInfo.Text = "📄 License Info";
+            this.itemLicenseInfo.Text = "License Info";
             
             // itemLogout
             this.itemLogout.Text = "Logout";

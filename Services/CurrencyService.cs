@@ -13,7 +13,7 @@ namespace GenericInventorySystem.Services
     /// </summary>
     public static class CurrencyService
     {
-        // â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // --- State -------------------------------------------------------
         private static string _activeCurrency = "USD";
 
         public static event EventHandler CurrencyChanged;
@@ -31,11 +31,11 @@ namespace GenericInventorySystem.Services
             }
         }
 
-        // â”€â”€â”€ Supported currencies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // --- Supported currencies ----------------------------------------
         private static List<CurrencyInfo> _supportedCurrencies = new List<CurrencyInfo>();
         public static List<CurrencyInfo> SupportedCurrencies => _supportedCurrencies;
 
-        // â”€â”€â”€ Rate dictionary (base = USD) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // --- Rate dictionary (base = USD) --------------------------------
         // Default fallback rates (updated at runtime from DB or API)
         private static Dictionary<string, decimal> _rates = new Dictionary<string, decimal>
         {
@@ -44,7 +44,7 @@ namespace GenericInventorySystem.Services
             { "LBP", 89500m },
         };
 
-        // ————————————————————————————————— DB bootstrap —————————————————————————————————
+        // ------------------------------------------------------------------ DB bootstrap ------------------------------------------------------------------
         public static void EnsureTable()
         {
             // Create table if it doesn't exist (SQLite style)
@@ -97,7 +97,7 @@ namespace GenericInventorySystem.Services
             catch { }
         }
 
-        // ————————————————————————————————— DB rate persistence ———————————————————————————
+        // ------------------------------------------------------------------ DB rate persistence ------------------------------------------------------
         public static void LoadRatesFromDb()
         {
             try
@@ -142,7 +142,7 @@ namespace GenericInventorySystem.Services
             LoadRatesFromDb(); // Refresh internal list
         }
 
-        // â”€â”€â”€ Live API fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // --- Live API fetch -----------------------------------------------
         /// <summary>
         /// Fetches live rates from exchangerate.host (free, no key needed).
         /// Returns updated rates or null on failure.
@@ -201,7 +201,7 @@ namespace GenericInventorySystem.Services
             }
         }
 
-        // â”€â”€â”€ Conversion helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // --- Conversion helpers -------------------------------------------
         public static decimal ConvertAmount(decimal usdAmount, string toCurrency = null)
         {
             toCurrency = toCurrency ?? _activeCurrency;
@@ -229,7 +229,7 @@ namespace GenericInventorySystem.Services
             decimal converted = ConvertAmount(usdAmount, currency);
             string symbol = GetSymbol(currency);
 
-            // LBP â€” no decimals, use thousands separator
+            // LBP -" no decimals, use thousands separator
             if (currency == "LBP")
                 return $"{symbol} {converted:N0}";
 

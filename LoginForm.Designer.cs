@@ -1,4 +1,4 @@
-
+﻿
 namespace GenericInventorySystem
 {
     partial class LoginForm
@@ -92,7 +92,7 @@ namespace GenericInventorySystem
             this.btnClose.Text = "X";
             this.btnClose.Click += new System.EventHandler(this.label1_Click);
             // 
-            // btnMinimize (—)
+            // btnMinimize (--)
             // 
             this.btnMinimize.AutoSize = true;
             this.btnMinimize.Cursor = System.Windows.Forms.Cursors.Hand;
@@ -100,7 +100,7 @@ namespace GenericInventorySystem
             this.btnMinimize.Location = new System.Drawing.Point(295, 10);
             this.btnMinimize.Name = "btnMinimize";
             this.btnMinimize.Size = new System.Drawing.Size(20, 20);
-            this.btnMinimize.Text = "—";
+            this.btnMinimize.Text = "--";
             this.btnMinimize.Click += (s, e) => this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
 
 

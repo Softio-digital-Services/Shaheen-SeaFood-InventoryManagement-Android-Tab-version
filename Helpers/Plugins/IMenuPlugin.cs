@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace GenericInventorySystem.Helpers.Plugins
@@ -23,7 +23,7 @@ namespace GenericInventorySystem.Helpers.Plugins
     {
         public string Label { get; set; }
         public string Icon { get; set; }        // Nuricon name (optional)
-        public bool IsSeparator { get; set; }   // true → draws a separator line
+        public bool IsSeparator { get; set; }   // true -> draws a separator line
         public Action OnClick { get; set; }
     }
 }

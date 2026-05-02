@@ -1,4 +1,4 @@
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 
 namespace GenericInventorySystem.Helpers.Plugins
 {
@@ -14,12 +14,12 @@ namespace GenericInventorySystem.Helpers.Plugins
         string TabIcon { get; }
 
         /// <summary>
-        /// Lower numbers appear first. Built-in tabs use 0–99; plugins should use 100+.
+        /// Lower numbers appear first. Built-in tabs use 0-99; plugins should use 100+.
         /// </summary>
         int TabOrder { get; }
 
         /// <summary>
-        /// Factory — called the FIRST time the user clicks this tab.
+        /// Factory -- called the FIRST time the user clicks this tab.
         /// Return the UserControl that will fill panel3.
         /// </summary>
         UserControl CreateTabContent();

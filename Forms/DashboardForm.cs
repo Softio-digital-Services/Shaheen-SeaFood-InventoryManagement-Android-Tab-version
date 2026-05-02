@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting; // Standard Charting
@@ -116,7 +116,7 @@ namespace GenericInventorySystem.Forms
             
             this.Controls.Add(_mainLayout);
 
-            // 0. Title row — holds the header label + Scan-to-Connect button
+            // 0. Title row -- holds the header label + Scan-to-Connect button
             Panel titleRow = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -133,7 +133,7 @@ namespace GenericInventorySystem.Forms
             string serverUrl = ScanToConnectForm.GetServerUrl();
             var lblServerUrl = new Label
             {
-                Text = "🌐 " + serverUrl,
+                Text = "?? " + serverUrl,
                 Font = new Font("Segoe UI", 9f),
                 ForeColor = ThemeConfig.MutedTextColor,
                 Dock = DockStyle.Right,
@@ -147,7 +147,7 @@ namespace GenericInventorySystem.Forms
             // Scan-to-Connect button
             var btnScan = new Button
             {
-                Text = LocalizationManager.IsArabic ? "📱  Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ø§Ù„Ù‡Ø§ØªÙ " : "📱  Scan to Connect",
+                Text = "Scan to Connect",
                 Dock = DockStyle.Right,
                 Width = 145,
                 Margin = new Padding(10, 6, 10, 6)

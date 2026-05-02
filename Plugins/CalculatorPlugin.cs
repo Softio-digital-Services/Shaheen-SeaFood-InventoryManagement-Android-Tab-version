@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -8,8 +8,8 @@ using GenericInventorySystem.Helpers.Plugins;
 namespace GenericInventorySystem.Plugins
 {
     /// <summary>
-    /// Free built-in plugin — adds a full-featured calculator to the sidebar.
-    /// RequiresLicense = false → always visible for all license types.
+    /// Free built-in plugin -- adds a full-featured calculator to the sidebar.
+    /// RequiresLicense = false -> always visible for all license types.
     /// </summary>
     public class CalculatorPlugin : ITabPlugin
     {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -48,7 +48,7 @@ namespace GenericInventorySystem.Forms
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Grid
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F)); // Info
 
-            // ————————————————— Header ——————————————————————————————————————
+            // ---------------------------------- Header ----------------------------------------------------------------------------
             TableLayoutPanel tlpHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1 };
             tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160F));
@@ -82,7 +82,7 @@ namespace GenericInventorySystem.Forms
 
             tlpMain.Controls.Add(tlpHeader, 0, 0);
 
-            // ————————————————— Status label —————————————————————————————————
+            // ---------------------------------- Status label ------------------------------------------------------------------
             lblStatus = new Label
             {
                 Dock = DockStyle.Fill,
@@ -93,7 +93,7 @@ namespace GenericInventorySystem.Forms
             };
             tlpMain.Controls.Add(lblStatus, 0, 1);
 
-            // ————————————————— Grid ————————————————————————————————————————
+            // ---------------------------------- Grid --------------------------------------------------------------------------------
             dgvRates = new DataGridView
             {
                 Dock = DockStyle.Fill,
@@ -136,7 +136,7 @@ namespace GenericInventorySystem.Forms
 
             tlpMain.Controls.Add(dgvRates, 0, 2);
 
-            // ————————————————— Info box —————————————————————————————————————
+            // ---------------------------------- Info box --------------------------------------------------------------------------
             Label lblInfo = new Label
             {
                 Text = LocalizationManager.GetString("Curr_InfoBox"),
@@ -180,7 +180,7 @@ namespace GenericInventorySystem.Forms
                 dgvRates.DataSource = dt;
 
                 // Find latest update
-                string lastUpdate = "—";
+                string lastUpdate = "--";
                 foreach (System.Data.DataRow row in dt.Rows)
                 {
                     if (row["last_updated"] != DBNull.Value)

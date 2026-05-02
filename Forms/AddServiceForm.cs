@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 using GenericInventorySystem.Helpers;
 using GenericInventorySystem.Services;
@@ -43,7 +43,7 @@ namespace GenericInventorySystem.Forms
         {
             if (string.IsNullOrWhiteSpace(txtName.Text))
             {
-                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø§Ø³Ù… Ø§Ù„Ø®Ø¯Ù…Ø© Ø£ÙˆÙ„Ø§Ù‹." : "Please enter service name first.");
+                MessageHelper.ShowWarning("Please enter service name first.");
                 return;
             }
 
@@ -55,7 +55,7 @@ namespace GenericInventorySystem.Forms
         public void LoadServiceData(string id, string name, string sku, decimal price, string status, string image)
         {
             _editingPartId = id;
-            this.TitleText = LocalizationManager.IsArabic ? "ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ø®Ø¯Ù…Ø©" : "Edit Service";
+            this.TitleText = "Edit Service";
             
             txtName.Text = name;
             txtCode.Text = sku;
@@ -70,7 +70,7 @@ namespace GenericInventorySystem.Forms
             else cmbStatus.SelectedIndex = 1;
 
             SetFooterButtons(
-                isArabic ? "ØªØ­Ø¯ÙŠØ«" : "Update Service",
+                "Update Service",
                 LocalizationManager.GetString("AddPart_Cancel"),
                 btnSave_Click,
                 btnCancel_Click
@@ -126,17 +126,17 @@ namespace GenericInventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            this.TitleText = _editingPartId == null ? LocalizationManager.GetString("Parts_AddService") : (isArabic ? "ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ø®Ø¯Ù…Ø©" : "Edit Service");
-            txtName.LabelText = LocalizationManager.GetString("AddPart_Product") + " / " + (isArabic ? "Ø§Ù„Ø®Ø¯Ù…Ø©" : "Service Name");
+            this.TitleText = _editingPartId == null ? LocalizationManager.GetString("Parts_AddService") : ("Edit Service");
+            txtName.LabelText = LocalizationManager.GetString("AddPart_Product") + " / " + (LocalizationManager.GetString("Msg_ServiceName"));
             txtCode.LabelText = LocalizationManager.GetString("AddPart_SKU");
             btnAutoSKU.Text = isArabic ? "\u2728 \u062A\u0644\u0642\u0627\u0626\u064A" : "\u2728 Auto";
-            btnUpload.Text = isArabic ? "ØªØ­Ù…ÙŠÙ„ ØµÙˆØ±Ø©" : "Upload Image";
+            btnUpload.Text = LocalizationManager.GetString("AddPart_Upload");
 
             string currSymbol = GenericInventorySystem.Services.CurrencyService.GetSymbol("USD");
             numPrice.LabelText = string.Format(LocalizationManager.GetString("AddPart_Price"), "USD", currSymbol);
             lblStatus.Text = LocalizationManager.GetString("AddPart_Status");
 
-            string saveText = _editingPartId == null ? LocalizationManager.GetString("AddPart_Save") : (isArabic ? "ØªØ­Ø¯ÙŠØ«" : "Update Service");
+            string saveText = _editingPartId == null ? LocalizationManager.GetString("AddPart_Save") : ("Update Service");
 
             SetFooterButtons(
                 saveText,
@@ -213,7 +213,7 @@ namespace GenericInventorySystem.Forms
                     // Services always have 999 stock and belong to 'Services' category
                     _inventoryService.AddPart(name, code, "Services", 999, price, 0, _currentImagePath, "", "Service Area", "N/A", status);
                     _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Service '{name}' added via WinForms");
-                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… Ø¥Ø¶Ø§Ù Ø© Ø§Ù„Ø®Ø¯Ù…Ø© Ø¨Ù†Ø¬Ø§Ø­!" : "Service added successfully!");
+                    MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_ServiceAdded"));
                 }
                 else
                 {

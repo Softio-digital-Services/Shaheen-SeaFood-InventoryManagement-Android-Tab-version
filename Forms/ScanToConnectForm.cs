@@ -11,7 +11,7 @@ namespace GenericInventorySystem.Forms
 {
     /// <summary>
     /// Displays a QR code the tablet user can scan to open the Web POS instantly.
-    /// Auto-detects the PC's current LAN IP — no manual configuration needed.
+    /// Auto-detects the PC's current LAN IP -- no manual configuration needed.
     /// </summary>
     public class ScanToConnectForm : BaseModalForm
     {
@@ -22,7 +22,7 @@ namespace GenericInventorySystem.Forms
         public ScanToConnectForm()
         {
             InitializeComponent();
-            this.TitleText = LocalizationManager.IsArabic ? "Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ù†Ù‚Ø·Ø© Ø§Ù„Ø¨ÙŠØ¹" : "Scan to Connect — Web POS";
+            this.TitleText = "Scan to Connect -- Web POS";
             LoadData();
         }
 
@@ -72,7 +72,7 @@ namespace GenericInventorySystem.Forms
                 string url = GetServerUrl();
                 Clipboard.SetText(url);
                 string original = lblUrl.Text;
-                lblUrl.Text = LocalizationManager.IsArabic ? "ØªÙ… Ø§Ù„Ù†Ø³Ø®!" : "OK! Copied!";
+                lblUrl.Text = LocalizationManager.GetString("Msg_Copied");
                 var t = new System.Windows.Forms.Timer { Interval = 1500 };
                 t.Tick += (_, __) => { lblUrl.Text = original; t.Stop(); };
                 t.Start();
@@ -82,7 +82,7 @@ namespace GenericInventorySystem.Forms
             lblHint = new Label
             {
                 Text = LocalizationManager.IsArabic 
-                    ? "Ø§Ù ØªØ­ Ø§Ù„ÙƒØ§Ù…ÙŠØ±Ø§ Ø¹Ù„Ù‰ Ø§Ù„Ø¬Ù‡Ø§Ø² Ø§Ù„Ù„ÙˆØ­ÙŠ -> ÙˆØ¬Ù‡Ù‡Ø§ Ù†Ø­Ùˆ Ø±Ù…Ø² QR -> Ø§Ø¶ØºØ· Ø¹Ù„Ù‰ Ø§Ù„Ø±Ø§Ø¨Ø·\nØ£Ùˆ Ø§Ù†Ù‚Ø± Ù ÙˆÙ‚ Ø§Ù„Ø±Ø§Ø¨Ø· Ø£Ø¹Ù„Ø§Ù‡ Ù„Ù†Ø³Ø®Ù‡"
+                    ? "افتح الكاميرا على الجهاز -> وجهها نحو رمز QR -> اضغط على الرابط\nأو اضغط على الرابط أعلاه لنسخه" 
                     : "Open camera on tablet -> point at QR code -> tap the link\nOr click the URL above to copy it",
                 Font = ThemeConfig.StandardFont,
                 ForeColor = ThemeConfig.SecondaryColor,
@@ -100,7 +100,7 @@ namespace GenericInventorySystem.Forms
             // Use secondary button styling for "Close" to match app standards
             SetFooterButtons(
                 null,
-                LocalizationManager.IsArabic ? "Ø¥ØºÙ„Ø§Ù‚" : "Close",
+                LocalizationManager.GetString("Popup_Cancel"),
                 null,
                 (s, e) => this.Close()
             );

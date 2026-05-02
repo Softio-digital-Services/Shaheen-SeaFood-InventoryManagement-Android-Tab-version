@@ -621,6 +621,7 @@ const barcodeScannerManager = {
         else {
             const p = allProducts.find(x => x.barcode === decodedText);
             if (p) { addToCart(p); showToast(`Added: ${p.name}`, "success"); }
+        }
     }
 };
 

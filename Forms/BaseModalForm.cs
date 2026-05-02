@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
@@ -282,7 +282,8 @@ namespace GenericInventorySystem.Forms
                 PrimaryButton = new Controls.ModernButton { 
                     Text = primaryText, 
                     Size = new Size(130, 40),
-                    Margin = new Padding(10, 0, 0, 0)
+                    Margin = new Padding(10, 0, 0, 0),
+                    Font = ThemeConfig.ButtonFont
                 };
                 PrimaryButton.Click += onPrimaryClick;
                 ThemeConfig.ApplyPrimaryButton(PrimaryButton);
@@ -295,7 +296,8 @@ namespace GenericInventorySystem.Forms
                 SecondaryButton = new Controls.ModernButton { 
                     Text = secondaryText, 
                     Size = new Size(130, 40),
-                    Margin = new Padding(10, 0, 0, 0)
+                    Margin = new Padding(10, 0, 0, 0),
+                    Font = ThemeConfig.ButtonFont
                 };
                 SecondaryButton.Click += onSecondaryClick;
                 ThemeConfig.ApplySecondaryButton(SecondaryButton);
@@ -308,12 +310,14 @@ namespace GenericInventorySystem.Forms
                 TertiaryButton = new Controls.ModernButton { 
                     Text = tertiaryText, 
                     Size = new Size(130, 40),
-                    Margin = new Padding(10, 0, 0, 0)
+                    Margin = new Padding(10, 0, 0, 0),
+                    Font = ThemeConfig.ButtonFont
                 };
                 TertiaryButton.Click += onTertiaryClick;
                 ThemeConfig.ApplySecondaryButton(TertiaryButton);
                 flpButtons.Controls.Add(TertiaryButton);
             }
+
         }
 
         protected override void OnPaint(PaintEventArgs e)

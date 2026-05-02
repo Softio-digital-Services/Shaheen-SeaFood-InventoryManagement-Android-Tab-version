@@ -105,6 +105,9 @@
   <data name="Nav_Reports" xml:space="preserve"><value>التقارير</value></data>
   <data name="Nav_History" xml:space="preserve"><value>السجل</value></data>
   <data name="Nav_Quotations" xml:space="preserve"><value>عروض الأسعار</value></data>
+  <data name="Msg_CustomerQuotations" xml:space="preserve"><value>عروض أسعار العملاء</value></data>
+  <data name="Nav_Users" xml:space="preserve"><value>إدارة المستخدمين</value></data>
+  <data name="Msg_UserManagement" xml:space="preserve"><value>إدارة المستخدمين</value></data>
   <data name="Nav_Currencies" xml:space="preserve"><value>العملات</value></data>
   <data name="Nav_UserProfile" xml:space="preserve"><value>الملف الشخصي</value></data>
   <data name="Nav_Logout" xml:space="preserve"><value>تسجيل الخروج</value></data>
@@ -378,5 +381,242 @@
   <data name="Curr_PromptName" xml:space="preserve"><value>أدخل اسم العملة:</value></data>
   <data name="Curr_PromptSymbol" xml:space="preserve"><value>أدخل رمز العملة:</value></data>
   <data name="Curr_MsgExists" xml:space="preserve"><value>هذه العملة موجودة بالفعل</value></data>
+  <data name="Msg_RequiredFields" xml:space="preserve">
+    <value>يرجى ملء جميع الحقول المطلوبة</value>
+  </data>
+  <data name="Msg_PhoneInvalid" xml:space="preserve">
+    <value>رقم الهاتف غير صالح</value>
+  </data>
+  <data name="Msg_LabelPreview" xml:space="preserve">
+    <value>معاينة البطاقة</value>
+  </data>
+  <data name="Msg_UserManagement" xml:space="preserve">
+    <value>إدارة المستخدمين</value>
+  </data>
+  <data name="Msg_SelectOneSupplier" xml:space="preserve">
+    <value>يرجى تحديد مورد واحد على الأقل للحذف</value>
+  </data>
+  <data name="Msg_NoDataExport" xml:space="preserve">
+    <value>لا توجد بيانات للتصدير</value>
+  </data>
+  <data name="Msg_ExportFailed" xml:space="preserve">
+    <value>فشل تصدير البيانات</value>
+  </data>
+  <data name="Msg_ExportError" xml:space="preserve">
+    <value>خطأ في التصدير: </value>
+  </data>
+  <data name="Msg_ImportError" xml:space="preserve">
+    <value>خطأ في الاستيراد: </value>
+  </data>
+  <data name="Msg_NoDataFile" xml:space="preserve">
+    <value>لا توجد بيانات في الملف</value>
+  </data>
+  <data name="Msg_LoadError" xml:space="preserve">
+    <value>خطأ في تحميل البيانات: </value>
+  </data>
+  <data name="Msg_ConfirmReturn" xml:space="preserve">
+    <value>هل تريد معالجة هذا المرتجع؟</value>
+  </data>
+  <data name="Msg_ReturnOneItem" xml:space="preserve">
+    <value>يرجى إدخال عنصر واحد على الأقل للإرجاع</value>
+  </data>
+  <data name="Msg_ReturnSuccess" xml:space="preserve">
+    <value>تمت معالجة المرتجع بنجاح!</value>
+  </data>
+  <data name="Msg_AmountZero" xml:space="preserve">
+    <value>يجب أن يكون المبلغ أكثر من صفر</value>
+  </data>
+  <data name="Msg_OnlyCompleted" xml:space="preserve">
+    <value>لا يمكن إرجاع إلا الطلبات المكتملة</value>
+  </data>
+  <data name="Msg_AddItemsFirst" xml:space="preserve">
+    <value>يرجى إضافة عناصر إلى الطلب</value>
+  </data>
+  <data name="Msg_SelectCustomer" xml:space="preserve">
+    <value>يجب تحديد عميل للدفع لاحقاً</value>
+  </data>
+  <data name="Msg_DraftSaved" xml:space="preserve">
+    <value>تم حفظ المسودة!</value>
+  </data>
+  <data name="Msg_AdjZero" xml:space="preserve">
+    <value>لا يمكن أن يكون التعديل صفراً</value>
+  </data>
+  <data name="Msg_AdjSuccess" xml:space="preserve">
+    <value>تم تعديل المخزون بنجاح</value>
+  </data>
+  <data name="Msg_UpdateSuccess" xml:space="preserve">
+    <value>تم تحديث العنصر بنجاح</value>
+  </data>
+  <data name="Msg_ServiceUpdated" xml:space="preserve">
+    <value>تم تحديث الخدمة بنجاح</value>
+  </data>
+  <data name="Msg_PartAdded" xml:space="preserve">
+    <value>تمت إضافة القطعة بنجاح!</value>
+  </data>
+  <data name="Msg_PartUpdated" xml:space="preserve">
+    <value>تم تحديث القطعة بنجاح!</value>
+  </data>
+  <data name="Msg_ServiceAdded" xml:space="preserve">
+    <value>تمت إضافة الخدمة بنجاح!</value>
+  </data>
+  <data name="Msg_PasswordRequired" xml:space="preserve">
+    <value>كلمة المرور مطلوبة للمستخدمين الجدد</value>
+  </data>
+  <data name="Msg_PasswordMismatch" xml:space="preserve">
+    <value>كلمات المرور غير متطابقة</value>
+  </data>
+  <data name="Msg_UserUpdated" xml:space="preserve">
+    <value>تم تحديث المستخدم بنجاح!</value>
+  </data>
+  <data name="Msg_UserExists" xml:space="preserve">
+    <value>اسم المستخدم موجود بالفعل</value>
+  </data>
+  <data name="Msg_UserLoadError" xml:space="preserve">
+    <value>خطأ في تحميل بيانات المستخدم: </value>
+  </data>
+  <data name="Msg_UserSaveError" xml:space="preserve">
+    <value>خطأ في حفظ المستخدم: </value>
+  </data>
+  <data name="Msg_ReadyScan" xml:space="preserve">
+    <value>جاهز للمسح الضوئي...</value>
+  </data>
+  <data name="Msg_TotalRefund" xml:space="preserve">
+    <value>إجمالي المسترد: </value>
+  </data>
+  <data name="Msg_CashReturn" xml:space="preserve">
+    <value>-- لا شيء / استرداد نقدي --</value>
+  </data>
+  <data name="Msg_ProcessReturn" xml:space="preserve">
+    <value>معالجة المرتجع</value>
+  </data>
+  <data name="Msg_MachineIdCopied" xml:space="preserve">
+    <value>تم نسخ رقم الجهاز إلى الحافظة!</value>
+  </data>
+  <data name="Msg_LicenseActivation" xml:space="preserve">
+    <value>تفعيل الترخيص</value>
+  </data>
+  <data name="Msg_LicenseKey" xml:space="preserve">
+    <value>مفتاح الترخيص</value>
+  </data>
+  <data name="Msg_MachineId" xml:space="preserve">
+    <value>رقم الجهاز</value>
+  </data>
+  <data name="Msg_CopyClipboard" xml:space="preserve">
+    <value>نسخ إلى الحافظة</value>
+  </data>
+  <data name="Msg_LicenseInvalid" xml:space="preserve">
+    <value>مفتاح الترخيص غير صالح</value>
+  </data>
+  <data name="Msg_TrialUsed" xml:space="preserve">
+    <value>تم استخدام فترة التجربة على هذا الجهاز</value>
+  </data>
+  <data name="Msg_StartTrial" xml:space="preserve">
+    <value>بدء تجربة مجانية لمدة 30 يوماً؟</value>
+  </data>
+  <data name="Msg_TrialFailed" xml:space="preserve">
+    <value>فشل بدء التجربة</value>
+  </data>
+  <data name="Msg_LicenseInfo" xml:space="preserve">
+    <value>معلومات الترخيص</value>
+  </data>
+  <data name="Msg_NoLicense" xml:space="preserve">
+    <value>لم يتم العثور على ترخيص</value>
+  </data>
+  <data name="Msg_Status" xml:space="preserve">
+    <value>الحالة:</value>
+  </data>
+  <data name="Msg_LicenseType" xml:space="preserve">
+    <value>نوع الترخيص:</value>
+  </data>
+  <data name="Msg_CustomerName" xml:space="preserve">
+    <value>اسم العميل:</value>
+  </data>
+  <data name="Msg_LicenseKeyLabel" xml:space="preserve">
+    <value>مفتاح الترخيص:</value>
+  </data>
+  <data name="Msg_ActivatedOn" xml:space="preserve">
+    <value>تاريخ التفعيل:</value>
+  </data>
+  <data name="Msg_ExpiresOn" xml:space="preserve">
+    <value>تاريخ انتهاء الترخيص:</value>
+  </data>
+  <data name="Msg_DaysRemaining" xml:space="preserve">
+    <value>الأيام المتبقية:</value>
+  </data>
+  <data name="Msg_SearchPO" xml:space="preserve">
+    <value>البحث في أوامر الشراء...</value>
+  </data>
+  <data name="Msg_PredictivePO" xml:space="preserve">
+    <value>إنشاء أمر شراء تنبؤي</value>
+  </data>
+  <data name="Msg_FinalizePO" xml:space="preserve">
+    <value>إتمام أمر الشراء</value>
+  </data>
+  <data name="Msg_HistoryError" xml:space="preserve">
+    <value>خطأ في تحميل السجل: </value>
+  </data>
+  <data name="Msg_ScanConnect" xml:space="preserve">
+    <value>مسح للاتصال</value>
+  </data>
+  <data name="Msg_Copied" xml:space="preserve">
+    <value>تم النسخ!</value>
+  </data>
+  <data name="Msg_CustomerQuotations" xml:space="preserve">
+    <value>عروض أسعار العملاء</value>
+  </data>
+  <data name="Msg_Total" xml:space="preserve">
+    <value>الإجمالي</value>
+  </data>
+  <data name="Msg_AddSelected" xml:space="preserve">
+    <value>إضافة المحدد</value>
+  </data>
+  <data name="Msg_AdjustStock" xml:space="preserve">
+    <value>تعديل المخزون: </value>
+  </data>
+  <data name="Msg_AdjustInstr" xml:space="preserve">
+    <value>أدخل الكمية للإضافة (+) أو الخصم (-):</value>
+  </data>
+  <data name="Msg_Reason" xml:space="preserve">
+    <value>السبب:</value>
+  </data>
+  <data name="Msg_Adjust" xml:space="preserve">
+    <value>تعديل</value>
+  </data>
+  <data name="Msg_ReturnQty" xml:space="preserve">
+    <value>كمية الإرجاع</value>
+  </data>
+  <data name="Msg_CustomerOptional" xml:space="preserve">
+    <value>العميل (اختياري)</value>
+  </data>
+  <data name="Msg_ReturnReason" xml:space="preserve">
+    <value>سبب الإرجاع</value>
+  </data>
+  <data name="Parts_EditService" xml:space="preserve">
+    <value>تعديل الخدمة</value>
+  </data>
+  <data name="Msg_ServiceNameFirst" xml:space="preserve">
+    <value>يرجى إدخال اسم الخدمة أولاً</value>
+  </data>
+  <data name="Msg_ServiceName" xml:space="preserve">
+    <value>اسم الخدمة</value>
+  </data>
+  <data name="Msg_EnterOrderId" xml:space="preserve">
+    <value>أدخل رقم الطلب للإرجاع:</value>
+  </data>
+  <data name="Msg_OrderId" xml:space="preserve">
+    <value>رقم الطلب:</value>
+  </data>
+  <data name="Msg_InvalidOrderId" xml:space="preserve">
+    <value>يرجى إدخال رقم طلب صحيح</value>
+  </data>
+  <data name="Msg_Saved" xml:space="preserve">
+    <value>تم الحفظ!</value>
+  </data>
+  <data name="Msg_RateFetchFailed" xml:space="preserve">
+    <value>تعذّر جلب السعر</value>
+  </data>
+  <data name="Msg_CurrCodeFirst" xml:space="preserve">
+    <value>يرجى إدخال رمز العملة أولاً</value>
+  </data>
 </root>
 

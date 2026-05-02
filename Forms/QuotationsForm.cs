@@ -36,13 +36,13 @@ namespace GenericInventorySystem.Forms
 
             if (dgvQuotes != null && dgvQuotes.Columns.Count > 0)
             {
-                if (dgvQuotes.Columns.Contains("order_id"))    dgvQuotes.Columns["order_id"].HeaderText    = LocalizationManager.IsArabic ? "Ø±Ù‚Ù…" : "ID";
-                if (dgvQuotes.Columns.Contains("order_date"))  dgvQuotes.Columns["order_date"].HeaderText  = LocalizationManager.IsArabic ? "Ø§Ù„ØªØ§Ø±ÙŠØ®" : "Date";
-                if (dgvQuotes.Columns.Contains("CustomerName")) dgvQuotes.Columns["CustomerName"].HeaderText = LocalizationManager.IsArabic ? "Ø§Ù„Ø¹Ù…ÙŠÙ„" : "Customer";
-                if (dgvQuotes.Columns.Contains("total_amount")) dgvQuotes.Columns["total_amount"].HeaderText = LocalizationManager.IsArabic ? "Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ" : "Total";
-                if (dgvQuotes.Columns.Contains("colActions"))   dgvQuotes.Columns["colActions"].HeaderText  = LocalizationManager.IsArabic ? "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª" : "Actions";
+                if (dgvQuotes.Columns.Contains("order_id"))    dgvQuotes.Columns["order_id"].HeaderText    = "ID";
+                if (dgvQuotes.Columns.Contains("order_date"))  dgvQuotes.Columns["order_date"].HeaderText  = LocalizationManager.GetString("Hist_ColDate");
+                if (dgvQuotes.Columns.Contains("CustomerName")) dgvQuotes.Columns["CustomerName"].HeaderText = LocalizationManager.GetString("Cust_Title");
+                if (dgvQuotes.Columns.Contains("total_amount")) dgvQuotes.Columns["total_amount"].HeaderText = LocalizationManager.GetString("Msg_Total");
+                if (dgvQuotes.Columns.Contains("colActions"))   dgvQuotes.Columns["colActions"].HeaderText  = LocalizationManager.GetString("Parts_GridActions");
             }
-            if (lblQuotationsTitle != null) lblQuotationsTitle.Text = LocalizationManager.IsArabic ? "Ø¹Ø±ÙˆØ¶ Ø§Ù„Ø£Ø³Ø¹Ø§Ø± Ù„Ù„Ø¹Ù…Ù„Ø§Ø¡" : "Customer Quotations";
+            if (lblQuotationsTitle != null) lblQuotationsTitle.Text = LocalizationManager.GetString("Msg_CustomerQuotations");
         }
 
         private void InitializeComponent()
@@ -62,7 +62,7 @@ namespace GenericInventorySystem.Forms
 
             // 0. Title
             lblQuotationsTitle = ThemeConfig.CreateStandardHeader(
-                LocalizationManager.IsArabic ? "Ø¹Ø±ÙˆØ¶ Ø§Ù„Ø£Ø³Ø¹Ø§Ø± Ù„Ù„Ø¹Ù…Ù„Ø§Ø¡" : "Customer Quotations");
+                LocalizationManager.GetString("Msg_CustomerQuotations"));
             lblQuotationsTitle.Name = "lblQuotationsTitle";
             lblQuotationsTitle.Margin = new Padding(0);
             tlp.Controls.Add(lblQuotationsTitle, 0, 0);
@@ -73,51 +73,13 @@ namespace GenericInventorySystem.Forms
             txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
-            txtSearch.PlaceholderText = "Search quotations...";
-            txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(0, 5);
-            txtSearch.TextChanged += (s, e) => LoadQuotations(txtSearch.Text);
-            pnlActions.Controls.Add(txtSearch);
-
-            // Currency selector (aligned right)
-            ModernComboBox cboCurrency = new ModernComboBox();
-            cboCurrency.ShowLabel = false;
-            cboCurrency.Size = new Size(120, 40);
-            cboCurrency.Dock = DockStyle.Right;
+            txtSearch.PlaceholderText = LocalizationManager.GetString("Msg_SearchQuotations") ?? "Search quotations...";
             
-            foreach (var c in CurrencyService.SupportedCurrencies)
-                cboCurrency.Items.Add(c);
-
-            // Pre-select active currency
-            foreach (var item in cboCurrency.Items)
-                if (item is CurrencyInfo ci && ci.Code == CurrencyService.ActiveCurrency)
-                { cboCurrency.SelectedItem = item; break; }
-            
-            cboCurrency.InnerComboBox.SelectedIndexChanged += (s, e) =>
-            {
-                if (cboCurrency.SelectedItem is CurrencyInfo sel)
-                    CurrencyService.ActiveCurrency = sel.Code;
-            };
-            pnlActions.Controls.Add(cboCurrency);
-            tlp.Controls.Add(pnlActions, 0, 1);
-
-
-            // â”€â”€â”€ Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            dgvQuotes = new DataGridView();
-            dgvQuotes.Dock              = DockStyle.Fill;
-            dgvQuotes.AllowUserToAddRows = false;
-            dgvQuotes.ReadOnly          = true;
-            dgvQuotes.RowHeadersVisible = false;
-            dgvQuotes.SelectionMode     = DataGridViewSelectionMode.FullRowSelect;
-            dgvQuotes.BackgroundColor   = Color.White;
-            dgvQuotes.BorderStyle       = BorderStyle.None;
-            dgvQuotes.AutoGenerateColumns = false;
-            dgvQuotes.MultiSelect       = false;
-            dgvQuotes.DataError += (s, e) => { e.ThrowException = false; };
-
+            // Grid
+            dgvQuotes = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AutoGenerateColumns = false, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, RowHeadersVisible = false };
             ThemeConfig.ApplyGridTheme(dgvQuotes);
 
-            // â”€â”€â”€ Columns (manual so we fully control them) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // Columns (manual so we fully control them)
             dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "order_id", HeaderText = "ID", DataPropertyName = "order_id",
@@ -152,18 +114,11 @@ namespace GenericInventorySystem.Forms
             // Hidden columns for IDs that come from DataSource
             dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "customer_id", DataPropertyName = "customer_id", Visible = false
+                Name = "customer_id", DataPropertyName = "customer_id", Visible = false 
             });
+            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = "Actions", Width = 200, ReadOnly = true });
 
-            // Actions column â€“ painted manually
-            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colActions", HeaderText = "Actions", Width = 210,
-                ReadOnly = true, SortMode = DataGridViewColumnSortMode.NotSortable
-            });
-
-            // â”€â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            dgvQuotes.CellPainting     += DgvQuotes_CellPainting;
+            // Events
             dgvQuotes.CellClick        += DgvQuotes_CellClick;
             dgvQuotes.CellMouseMove    += (s, e) =>
             {
@@ -221,15 +176,15 @@ namespace GenericInventorySystem.Forms
                 Image imgView = ThemeConfig.GetNuricon("preview_doc");
                 Image imgOk = ThemeConfig.GetNuricon("check");
                 Image imgDel = ThemeConfig.GetNuricon("delete");
-
-                if (imgView != null) e.Graphics.DrawImage(imgView, new Rectangle(startX, startY, btnW, btnH));
-                if (imgOk != null) e.Graphics.DrawImage(imgOk, new Rectangle(startX + btnW + gap, startY, btnW, btnH));
-                if (imgDel != null) e.Graphics.DrawImage(imgDel, new Rectangle(startX + (btnW + gap) * 2, startY, btnW, btnH));
+                int startX2 = e.CellBounds.X + (e.CellBounds.Width - (32 * 3 + 15 * 2)) / 2;
+                int midY = e.CellBounds.Y + (e.CellBounds.Height - 32) / 2;
+                if (imgView != null) e.Graphics.DrawImage(imgView, new Rectangle(startX2, midY, 32, 32));
+                if (imgOk != null) e.Graphics.DrawImage(imgOk, new Rectangle(startX2 + 47, midY, 32, 32));
+                if (imgDel != null) e.Graphics.DrawImage(imgDel, new Rectangle(startX2 + 94, midY, 32, 32));
             }
         }
 
-
-        // â”€â”€â”€ Click handling for the three painted buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Click handling for three painted buttons
         private void DgvQuotes_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
@@ -280,7 +235,7 @@ namespace GenericInventorySystem.Forms
             }
         }
 
-        // â”€â”€â”€ Data loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Data loading
         public void LoadQuotations(string search = "")
         {
             DataTable dt = _orderService.GetQuotations();

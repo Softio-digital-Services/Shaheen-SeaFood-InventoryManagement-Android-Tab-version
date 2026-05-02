@@ -278,7 +278,7 @@ namespace GenericInventorySystem.Forms
                 
                 if (status == "Quotation" || status == "Draft")
                 {
-                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠÙ…ÙƒÙ† Ø¥Ø±Ø¬Ø§Ø¹ Ø§Ù„Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ù…ÙƒØªÙ…Ù„Ø© ÙÙ‚Ø·." : "Only completed orders can be returned.");
+                    MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_OnlyCompleted"));
                     return;
                 }
 
@@ -441,7 +441,7 @@ namespace GenericInventorySystem.Forms
              }
              catch (Exception ex)
              {
-                 MessageHelper.ShowError((LocalizationManager.IsArabic ? "Ø®Ø·Ø£ ÙÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø³Ø¬Ù„: " : "Error loading history: ") + ex.Message);
+                 MessageHelper.ShowError(LocalizationManager.GetString("Msg_HistoryLoadError") ?? ("Error loading history: " + ex.Message));
              }
         }
 

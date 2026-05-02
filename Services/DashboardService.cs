@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using GenericInventorySystem.Helpers;
@@ -18,7 +18,7 @@ namespace GenericInventorySystem.Services
 
     public class DashboardService
     {
-        // ── Simple scalar queries ─────────────────────────────────────────────
+        // - Simple scalar queries -
 
         public decimal GetTotalInventoryValue()
         {
@@ -56,7 +56,7 @@ namespace GenericInventorySystem.Services
                 "SELECT COALESCE(AVG(total_amount), 0) FROM orders");
         }
 
-        // ── Payment reminders — SQLite: julianday() for date arithmetic ────────
+        // - Payment reminders -- SQLite: julianday() for date arithmetic -
 
         public int GetPaymentRemindersCount()
         {
@@ -77,7 +77,7 @@ namespace GenericInventorySystem.Services
             return c + s;
         }
 
-        // ── Orders count — SQLite: date() strips time portion ─────────────────
+        // - Orders count -- SQLite: date() strips time portion -
 
         public int GetOrdersCount(string scope = "Today")
         {
@@ -87,7 +87,7 @@ namespace GenericInventorySystem.Services
             return 0;
         }
 
-        // ── Revenue — SQLite: date() for today comparison ─────────────────────
+        // - Revenue -- SQLite: date() for today comparison -
 
         public decimal GetSales(string scope = "Today")
         {
@@ -102,7 +102,7 @@ namespace GenericInventorySystem.Services
             return 0;
         }
 
-        // ── YTD — SQLite: strftime('%Y') ─────────────────────────────────────
+        // - YTD -- SQLite: strftime('%Y') -
 
         public decimal GetTotalSalesYTD()
         {
@@ -110,7 +110,7 @@ namespace GenericInventorySystem.Services
                 "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE strftime('%Y', order_date) = strftime('%Y', 'now')");
         }
 
-        // ── Top selling items — SQLite: LIMIT instead of TOP ─────────────────
+        // - Top selling items -- SQLite: LIMIT instead of TOP -
 
         public DataTable GetTopSellingItems(int limit = 5)
         {
@@ -124,7 +124,7 @@ namespace GenericInventorySystem.Services
             return DatabaseHelper.ExecuteDataTable(sql);
         }
 
-        // ── Recent activity — SQLite: LIMIT ───────────────────────────────────
+        // - Recent activity -- SQLite: LIMIT -
 
         public DataTable GetRecentActivity(int limit = 10)
         {
@@ -132,7 +132,7 @@ namespace GenericInventorySystem.Services
                 $"SELECT action_type, description, timestamp FROM transactions ORDER BY timestamp DESC LIMIT {limit}");
         }
 
-        // ── Stock distribution ────────────────────────────────────────────────
+        // - Stock distribution -
 
         public Dictionary<string, int> GetStockDistribution()
         {
@@ -155,7 +155,7 @@ namespace GenericInventorySystem.Services
             return data;
         }
 
-        // ── Weekly revenue — SQLite: date() and date('now','-7 days') ─────────
+        // - Weekly revenue -- SQLite: date() and date('now','-7 days') -
 
         public Dictionary<string, decimal> GetWeeklyRevenue()
         {
@@ -189,7 +189,7 @@ namespace GenericInventorySystem.Services
             return data;
         }
 
-        // ── Monthly sales trend — SQLite date arithmetic ───────────────────────
+        // - Monthly sales trend -- SQLite date arithmetic -
 
         public Dictionary<string, int> GetMonthlySalesTrend()
         {
@@ -214,7 +214,7 @@ namespace GenericInventorySystem.Services
             return data;
         }
 
-        // ── Sales by category ─────────────────────────────────────────────────
+        // - Sales by category -
 
         public DataTable GetSalesByCategory()
         {
@@ -228,7 +228,7 @@ namespace GenericInventorySystem.Services
             return DatabaseHelper.ExecuteDataTable(sql);
         }
 
-        // ── Monthly revenue (last 6 months) — SQLite: strftime ────────────────
+        // - Monthly revenue (last 6 months) -- SQLite: strftime -
 
         public Dictionary<string, decimal> GetMonthlyRevenue()
         {
@@ -261,7 +261,7 @@ namespace GenericInventorySystem.Services
             return data;
         }
 
-        // ── Notifications ─────────────────────────────────────────────────────
+        // - Notifications -
 
         public List<Notification> GetNotifications()
         {

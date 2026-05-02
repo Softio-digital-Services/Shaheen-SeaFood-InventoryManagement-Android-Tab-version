@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -30,7 +30,7 @@ namespace GenericInventorySystem.Helpers.Plugins
             if (!Directory.Exists(pluginsDir))
             {
                 try { Directory.CreateDirectory(pluginsDir); } catch { }
-                return; // No plugins yet — that's perfectly fine
+                return; // No plugins yet -- that's perfectly fine
             }
 
             // Also load internal (in-tree) plugins shipped with the core app
@@ -84,14 +84,14 @@ namespace GenericInventorySystem.Helpers.Plugins
             _loaded.Clear();
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // -
         // Internal helpers
-        // ─────────────────────────────────────────────────────────────────────
+        // -
 
         /// <summary>Register plugins that ship inside the core assembly.</summary>
         private static void LoadInternalPlugins()
         {
-            // Free built-in plugins — always visible
+            // Free built-in plugins -- always visible
             TryRegister(new GenericInventorySystem.Plugins.CalculatorPlugin());
             TryRegister(new GenericInventorySystem.Plugins.BackupPlugin());
         }
@@ -112,7 +112,7 @@ namespace GenericInventorySystem.Helpers.Plugins
             }
             catch (Exception ex)
             {
-                // Bad DLL — log and skip, never crash the app
+                // Bad DLL -- log and skip, never crash the app
                 Console.WriteLine($"[PluginManager] Failed to load {Path.GetFileName(path)}: {ex.Message}");
             }
         }
@@ -121,10 +121,10 @@ namespace GenericInventorySystem.Helpers.Plugins
         {
             try
             {
-                // License gate — skip (hide) unlicensed plugins entirely
+                // License gate -- skip (hide) unlicensed plugins entirely
                 if (plugin.RequiresLicense && !_context.CheckLicense(plugin.LicenseFeatureKey))
                 {
-                    Console.WriteLine($"[PluginManager] Plugin '{plugin.Name}' hidden — license key '{plugin.LicenseFeatureKey}' not enabled.");
+                    Console.WriteLine($"[PluginManager] Plugin '{plugin.Name}' hidden -- license key '{plugin.LicenseFeatureKey}' not enabled.");
                     return;
                 }
 

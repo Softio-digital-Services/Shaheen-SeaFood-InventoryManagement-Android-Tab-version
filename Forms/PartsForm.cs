@@ -290,9 +290,7 @@ namespace GenericInventorySystem.Forms
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "minimum_stock_level", HeaderText = "Min Stock", DataPropertyName = "minimum_stock_level", FillWeight = 8, ReadOnly = true });
             
             var colPrice = new DataGridViewTextBoxColumn { Name = "colPrice", HeaderText = "Price", DataPropertyName = "selling_price", FillWeight = 10, ReadOnly = true };
-            // No C2 format here Ã¢â‚¬â€ we handle it in CellFormatting using CurrencyService
             dgvParts.Columns.Add(colPrice);
-            
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus", HeaderText = "Status", DataPropertyName = "status", FillWeight = 9, ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewButtonColumn { Name = "colActions", HeaderText = "Actions", FillWeight = 10, ReadOnly = true });
             
@@ -584,7 +582,7 @@ namespace GenericInventorySystem.Forms
 
                     if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
                     {
-                        MessageHelper.ShowWarning(GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? "Ã™â€žÃ™Å Ã˜Â³ Ã™â€žÃ˜Â¯Ã™Å Ã™Æ’ Ã˜ÂµÃ™â€žÃ˜Â§Ã˜Â­Ã™Å Ã˜Â© Ã™â€žÃ˜Â­Ã˜Â°Ã™Â Ã˜Â§Ã™â€žÃ˜Â£Ã˜ÂµÃ™â€ Ã˜Â§Ã™Â." : "You do not have permission to delete items.");
+                        MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionDelete") ?? "You do not have permission to delete items.");
                         return;
                     }
 
@@ -600,7 +598,7 @@ namespace GenericInventorySystem.Forms
                     // Edit Clicked
                     if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
                     {
-                        MessageHelper.ShowWarning(GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? "Ã™â€žÃ™Å Ã˜Â³ Ã™â€žÃ˜Â¯Ã™Å Ã™Æ’ Ã˜ÂµÃ™â€žÃ˜Â§Ã˜Â­Ã™Å Ã˜Â© Ã™â€žÃ˜ÂªÃ˜Â¹Ã˜Â¯Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â£Ã˜ÂµÃ™â€ Ã˜Â§Ã™Â." : "You do not have permission to edit items.");
+                        MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionEdit") ?? "You do not have permission to edit items.");
                         return;
                     }
 
@@ -636,7 +634,7 @@ namespace GenericInventorySystem.Forms
                             {
                                 string currentSearch = txtSearch.Text == "Search..." ? "" : txtSearch.Text;
                                 LoadData(currentSearch);
-                                MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø®Ø¯Ù…Ø© Ø¨Ù†Ø¬Ø§Ø­." : "Service updated successfully.");
+                                MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_ServiceUpdated"));
                             }
                         }
                     }
@@ -649,7 +647,7 @@ namespace GenericInventorySystem.Forms
                             {
                                 string currentSearch = txtSearch.Text == "Search..." ? "" : txtSearch.Text;
                                 LoadData(currentSearch);
-                                MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„ØµÙ†Ù  Ø¨Ù†Ø¬Ø§Ø­." : "Item updated successfully.");
+                                MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_UpdateSuccess"));
                             }
                         }
                     }
@@ -668,7 +666,7 @@ namespace GenericInventorySystem.Forms
 
         private void ShowAdjustmentDialog(int partId, string partName)
         {
-            string title = (LocalizationManager.IsArabic ? "ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ù…Ø®Ø²ÙˆÙ†: " : "Adjust Stock: ") + partName;
+            string title = (LocalizationManager.GetString("Msg_AdjustStock")) + partName;
             BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(450, 280) };
             
             TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 1, RowCount = 5, AutoSize = true, Padding = new Padding(10) };
@@ -678,25 +676,25 @@ namespace GenericInventorySystem.Forms
             tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
 
-            string instrText = LocalizationManager.IsArabic ? "Ø£Ø¯Ø®Ù„ Ø§Ù„ÙƒÙ…ÙŠØ© Ù„Ù„Ø¥Ø¶Ø§ÙØ© (+) Ø£Ùˆ Ø§Ù„Ø·Ø±Ø­ (-):" : "Enter quantity to add (+) or subtract (-):";
+            string instrText = LocalizationManager.GetString("Msg_AdjustInstr") ?? "Enter quantity to add (+) or subtract (-):";
             ModernNumericUpDown numQty = new ModernNumericUpDown { LabelText = instrText, Width = 380, Minimum = -99999, Maximum = 99999, Margin = new Padding(0, 0, 0, 20) };
             
-            string reasonLabelText = LocalizationManager.IsArabic ? "Ø§Ù„Ø³Ø¨Ø¨:" : "Reason:";
+            string reasonLabelText = LocalizationManager.GetString("Msg_Reason");
             Label lblReason = new Label { Text = reasonLabelText, AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 5) };
             TextBox txtReasonAdjust = new TextBox { Width = 380, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 20), Multiline = true, Height = 80 };
             
-            Button btnSaveAdj = new ModernButton { Text = LocalizationManager.IsArabic ? "ØªØ¹Ø¯ÙŠÙ„" : "Adjust", Size = new Size(120, 40), Anchor = AnchorStyles.Right };
+            Button btnSaveAdj = new ModernButton { Text = LocalizationManager.GetString("Msg_Adjust"), Size = new Size(120, 40), Anchor = AnchorStyles.Right };
             ThemeConfig.ApplyPrimaryButton(btnSaveAdj);
             
             btnSaveAdj.Click += (s, e) => {
                 if (numQty.Value == 0) 
                 { 
-                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø£Ù† ÙŠÙƒÙˆÙ† Ø§Ù„ØªØ¹Ø¯ÙŠÙ„ ØµÙØ±Ø§Ù‹." : "Adjustment cannot be zero."); 
+                    MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_AdjZero")); 
                     return; 
                 }
                 if (string.IsNullOrWhiteSpace(txtReasonAdjust.Text)) 
                 { 
-                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ ØªÙ‚Ø¯ÙŠÙ… Ø³Ø¨Ø¨." : "Please provide a reason."); 
+                    MessageHelper.ShowWarning("Please provide a reason."); 
                     return; 
                 }
                 
@@ -704,7 +702,7 @@ namespace GenericInventorySystem.Forms
                     _inventoryService.AdjustStock(partId, (int)numQty.Value, txtReasonAdjust.Text);
                     // Notify all connected web POS tablets in real-time
                     InventoryBroadcaster.BroadcastStockChange("desktop-adjustment");
-                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ… ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ù…Ø®Ø²ÙˆÙ† Ø¨Ù†Ø¬Ø§Ø­!" : "Stock adjusted successfully.");
+                    MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_AdjSuccess"));
                     f.DialogResult = DialogResult.OK;
                     f.Close();
                     LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);

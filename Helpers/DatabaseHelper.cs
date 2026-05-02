@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.Sqlite;
@@ -7,12 +7,12 @@ using GenericInventorySystem.Helpers;
 namespace GenericInventorySystem
 {
     /// <summary>
-    /// Centralized database operations helper — SQLite backend.
+    /// Centralized database operations helper -- SQLite backend.
     /// Drop-in replacement for the previous SQL Server version.
     /// </summary>
     public static class DatabaseHelper
     {
-        // ── helpers ────────────────────────────────────────────────────────────
+        // - helpers -
 
         private static SqliteConnection OpenConnection()
         {
@@ -27,7 +27,7 @@ namespace GenericInventorySystem
                 cmd.Parameters.AddRange(parameters);
         }
 
-        // ── public API ─────────────────────────────────────────────────────────
+        // - public API -
 
         public static List<T> ExecuteQuery<T>(string sql, Func<SqliteDataReader, T> map, params SqliteParameter[] parameters)
         {
@@ -101,7 +101,7 @@ namespace GenericInventorySystem
         }
 
         /// <summary>
-        /// Fills a DataTable from a query — replaces SqlDataAdapter for SQLite.
+        /// Fills a DataTable from a query -- replaces SqlDataAdapter for SQLite.
         /// </summary>
         public static DataTable ExecuteDataTable(string sql, params SqliteParameter[] parameters)
         {
@@ -146,7 +146,7 @@ namespace GenericInventorySystem
         {
             try
             {
-                // Tables — SQLite CREATE IF NOT EXISTS is idempotent
+                // Tables -- SQLite CREATE IF NOT EXISTS is idempotent
                 string sqlTables = @"
                     CREATE TABLE IF NOT EXISTS categories (
                         id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -307,7 +307,7 @@ namespace GenericInventorySystem
                     );
                 ";
 
-                // SQLite doesn't support multiple statements in one call — split them
+                // SQLite doesn't support multiple statements in one call -- split them
                 foreach (var stmt in sqlTables.Split(new[] { ";\r\n", ";\n" }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     string trimmed = stmt.Trim();

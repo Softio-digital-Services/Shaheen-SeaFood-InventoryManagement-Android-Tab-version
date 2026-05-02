@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -167,7 +167,7 @@ namespace GenericInventorySystem.Forms
                     if (qty > ordered)
                     {
                         string msg = LocalizationManager.IsArabic 
-                            ? $"Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø£Ù† ØªØªØ¬Ø§ÙˆØ² ÙƒÙ…ÙŠØ© Ø§Ù„Ø¥Ø±Ø¬Ø§Ø¹ Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø© Ù„Ù„ØµÙ†Ù: {row.Cells["PartName"].Value}"
+                            ? $"لا يمكن أن تتجاوز الكمية المرتجعة الكمية المطلوبة للصنف: {row.Cells["PartName"].Value}"
                             : $"Return quantity cannot exceed ordered quantity for item: {row.Cells["PartName"].Value}";
                         MessageHelper.ShowWarning(msg);
                         return;
@@ -184,7 +184,7 @@ namespace GenericInventorySystem.Forms
 
             if (returnItems.Count == 0)
             {
-                string msg = LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„ Ù„Ø¥Ø±Ø¬Ø§Ø¹Ù‡." : "Please enter at least one item to return.";
+                string msg = LocalizationManager.GetString("Msg_ReturnOneItem");
                 MessageHelper.ShowWarning(msg);
                 return;
             }
@@ -192,13 +192,13 @@ namespace GenericInventorySystem.Forms
             // Reason is now optional
 
 
-            string confirmMsg = LocalizationManager.IsArabic ? "Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø±ØºØ¨ØªÙƒ ÙÙŠ Ù…Ø¹Ø§Ù„Ø¬Ø© Ù‡Ø°Ø§ Ø§Ù„Ù…Ø±ØªØ¬Ø¹ØŸ" : "Are you sure you want to process this return?";
+            string confirmMsg = LocalizationManager.GetString("Msg_ConfirmReturn");
             if (MessageHelper.ConfirmAction(confirmMsg))
             {
                 try
                 {
                     _returnService.ProcessReturn(_orderId, returnItems, txtReason.Text);
-                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic ? "ØªÙ…Øª Ù…Ø¹Ø§Ù„Ø¬Ø© Ø§Ù„Ù…Ø±ØªØ¬Ø¹ Ø¨Ù†Ø¬Ø§Ø­!" : "Return processed successfully!");
+                    MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_ReturnSuccess"));
                     this.DialogResult = DialogResult.OK;
                     this.Close();
                 }

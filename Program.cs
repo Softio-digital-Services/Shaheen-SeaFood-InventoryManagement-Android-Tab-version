@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -108,7 +108,7 @@ namespace GenericInventorySystem
                 builder.Services.AddCors(c => c.AddDefaultPolicy(p =>
                     p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
-                // ── SignalR for real-time sync ──────────────────────────────
+                // - SignalR for real-time sync -
                 builder.Services.AddSignalR();
 
                 var app = builder.Build();
@@ -121,13 +121,13 @@ namespace GenericInventorySystem
                 app.UseDefaultFiles(); // Add this line
                 app.UseStaticFiles();
 
-                // ── SignalR Hub endpoint ─────────────────────────────────────
+                // - SignalR Hub endpoint -
                 app.MapHub<InventoryHub>("/hubs/inventory");
 
-                // ── Status ───────────────────────────────────────────────────
+                // - Status -
                 app.MapGet("/api/status", () => Microsoft.AspNetCore.Http.Results.Ok(new { status = "API Running", version = "2.0", realtime = "SignalR Active" }));
 
-                // ── Products (live from DB) ───────────────────────────────────
+                // - Products (live from DB) -
                 app.MapGet("/api/products", () =>
                 {
                     try
@@ -168,7 +168,7 @@ namespace GenericInventorySystem
                     }
                 });
 
-                // ── Categories ────────────────────────────────────────────────
+                // - Categories -
                 app.MapGet("/api/categories", () =>
                 {
                     try
@@ -188,7 +188,7 @@ namespace GenericInventorySystem
                     }
                 });
 
-                // ── Login (POST) ─────────────────────────────────────────────
+                // - Login (POST) -
                 app.MapPost("/api/login", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
                     try
@@ -225,7 +225,7 @@ namespace GenericInventorySystem
                     }
                 });
 
-                // ── Add Item (POST) ───────────────────────────────────────────
+                // - Add Item (POST) -
                 app.MapPost("/api/add-item", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
                     try
@@ -266,7 +266,7 @@ namespace GenericInventorySystem
 
                         DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via WebPOS (Qty: {body.Stock})");
 
-                        // ── Broadcast real-time update to all connected clients ──
+                        // - Broadcast real-time update to all connected clients -
                         _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' added via Web POS");
 
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
@@ -277,7 +277,7 @@ namespace GenericInventorySystem
                     }
                 });
 
-                // ── Checkout (POST) ───────────────────────────────────────────
+                // - Checkout (POST) -
                 app.MapPost("/api/checkout", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
                     try
@@ -319,10 +319,10 @@ namespace GenericInventorySystem
 
                         DatabaseHelper.ExecuteNonQuery(
                             "INSERT INTO transactions (action_type, part_name, description, username) VALUES ('SALE', 'POS Sale', @desc, 'WebPOS')",
-                            new Microsoft.Data.Sqlite.SqliteParameter("@desc", $"Order #{orderId} — Total: {total:C}"));
+                            new Microsoft.Data.Sqlite.SqliteParameter("@desc", $"Order #{orderId} -- Total: {total:C}"));
 
-                        // ── Broadcast real-time update to ALL connected clients ──
-                        _ = InventoryBroadcaster.Broadcast("SaleCompleted", $"Order #{orderId} | Total: {total:F2}");
+                        // - Broadcast real-time update to ALL connected clients -
+                        _ = InventoryBroadcaster.Broadcast("SaleCompleted", $"Order #{orderId} - Total: {total:F2}");
 
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, orderId, total });
                     }
@@ -332,7 +332,7 @@ namespace GenericInventorySystem
                     }
                 });
                 
-                // ── Currencies (GET) ───────────────────────────────────────────
+                // - Currencies (GET) -
                 app.MapGet("/api/currencies", () =>
                 {
                     try
@@ -353,7 +353,7 @@ namespace GenericInventorySystem
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
 
-                // ── Recent Sales (GET) ─────────────────────────────────────────
+                // - Recent Sales (GET) -
                 app.MapGet("/api/recent-sales", () =>
                 {
                     try
@@ -381,7 +381,7 @@ namespace GenericInventorySystem
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
 
-                // ── Order Details (GET) ────────────────────────────────────────
+                // - Order Details (GET) -
                 app.MapGet("/api/order-details/{id}", (int id) =>
                 {
                     try
@@ -408,7 +408,7 @@ namespace GenericInventorySystem
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
 
-                // ── Return Item (POST) ─────────────────────────────────────────
+                // - Return Item (POST) -
                 app.MapPost("/api/return-item", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
                     try
@@ -498,7 +498,7 @@ namespace GenericInventorySystem
 }
 
 // ============================================================
-//  SignalR Hub — manages real-time WebSocket connections
+//  SignalR Hub -- manages real-time WebSocket connections
 // ============================================================
 namespace GenericInventorySystem
 {

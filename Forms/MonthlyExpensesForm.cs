@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using System.Drawing;
@@ -88,7 +88,7 @@ namespace GenericInventorySystem.Forms
             cmbCategory = new ModernComboBox { 
                 Width = 135,
                 Location = new Point(0, 0),
-                LabelText = LocalizationManager.IsArabic ? "Ø§Ù„ÙØ¦Ø©" : "Expense Category"
+                LabelText = "Expense Category"
             };
             cmbCategory.Items.AddRange(new object[] { "Rent", "Utilities", "Wages", "Supplies", "Maintenance", "Other" });
             
@@ -112,13 +112,23 @@ namespace GenericInventorySystem.Forms
             pnlCatContainer.Controls.Add(btnQuickAddCat);
             
             Panel pnlDate = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
-            Label lblDateRef = new Label { Text = LocalizationManager.IsArabic ? "Ø§Ù„ØªØ§Ø±ÙŠØ®" : "Expense Date", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 0), AutoSize = true };
-            dtpDate = new FlatDateTimePicker { Width = 170, Height = 42, Location = new Point(0, 25) };
-            pnlDate.Controls.Add(dtpDate); 
+            Label lblDateRef = new Label { 
+                Text = LocalizationManager.GetString("Hist_ColDate") ?? "Date", 
+                Font = ThemeConfig.SmallBoldFont, 
+                ForeColor = ThemeConfig.TextColorDark, 
+                Location = new Point(0, 0), 
+                AutoSize = true 
+            };
+            dtpDate = new FlatDateTimePicker { Width = 150 };
+            Panel pnlDateInput = ThemeConfig.WrapInStyledInput(dtpDate, 42);
+            pnlDateInput.Location = new Point(0, 25);
+            pnlDateInput.Width = 170;
+            pnlDate.Controls.Add(pnlDateInput); 
             pnlDate.Controls.Add(lblDateRef);
+
             
             numAmount = new ModernNumericUpDown { 
-                LabelText = LocalizationManager.IsArabic ? "Ø§Ù„Ù…Ø¨Ù„Øº" : "Amount",
+                LabelText = "Amount",
                 DecimalPlaces = 2, 
                 Maximum = 1000000, 
                 Width = 120 
@@ -127,7 +137,7 @@ namespace GenericInventorySystem.Forms
             
             txtDescription = new ModernTextBox { 
                 Dock = DockStyle.Fill, 
-                LabelText = LocalizationManager.IsArabic ? "Ø§Ù„ÙˆØµÙ" : "Description",
+                LabelText = "Description",
                 PlaceholderText = "Expense details...",
                 Margin = new Padding(5, 5, 5, 10),
                 Multiline = true
@@ -153,7 +163,7 @@ namespace GenericInventorySystem.Forms
             btnDelete.Click += BtnDelete_Click;
 
             chkRecurring = new CheckBox { 
-                Text = LocalizationManager.IsArabic ? "ØªÙƒØ±Ø§Ø±" : "Recurring", 
+                Text = "Recurring", 
                 Font = ThemeConfig.StandardFont, 
                 AutoSize = true, 
                 Margin = new Padding(5, 5, 0, 0),

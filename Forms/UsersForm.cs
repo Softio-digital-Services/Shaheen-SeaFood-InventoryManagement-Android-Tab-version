@@ -38,7 +38,7 @@ namespace GenericInventorySystem.Forms
 
             // 1. Header
             Panel pnlHeader = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.BackgroundColor, Margin = new Padding(0) };
-            lblUsersTitle = ThemeConfig.CreateStandardHeader("User Management");
+            lblUsersTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Msg_UserManagement"));
             pnlHeader.Controls.Add(lblUsersTitle);
 
             txtSearch = new ModernTextBox { IsSearch = true, ShowLabel = false, PlaceholderText = "Search users...", Size = new Size(320, 40), Location = new Point(0, 55) };
@@ -92,11 +92,11 @@ namespace GenericInventorySystem.Forms
         {
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
-            lblUsersTitle.Text = isArabic ? "Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†" : "User Management";
+            lblUsersTitle.Text = LocalizationManager.GetString("Msg_UserManagement");
             btnAddUser.Invalidate(); // Refresh the painted icon and text
-            if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = isArabic ? "Ø§Ù„Ù…Ø¹Ø±Ù" : "ID";
-            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = isArabic ? "Ø§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…" : "Username";
-            if (dgvUsers.Columns["actions"] != null) dgvUsers.Columns["actions"].HeaderText = isArabic ? "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª" : "Actions";
+            if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = "ID";
+            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = "Username";
+            if (dgvUsers.Columns["actions"] != null) dgvUsers.Columns["actions"].HeaderText = LocalizationManager.GetString("Parts_GridActions");
         }
 
         public void LoadData(string search = "")

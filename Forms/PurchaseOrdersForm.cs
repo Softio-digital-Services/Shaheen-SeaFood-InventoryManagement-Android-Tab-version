@@ -59,7 +59,7 @@ namespace GenericInventorySystem.Forms
             txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
-            txtSearch.PlaceholderText = LocalizationManager.IsArabic ? "Ø§Ù„Ø¨Ø­Ø« ÙÙŠ Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø´Ø±Ø§Ø¡..." : "Search purchase orders...";
+            txtSearch.PlaceholderText = LocalizationManager.GetString("Msg_SearchPO");
             txtSearch.Size = new Size(320, 40);
             txtSearch.Location = new Point(0, 5); // Align with buttons vertically
             txtSearch.TextChanged += (s, e) => LoadPurchaseOrders(txtSearch.Text);
@@ -244,7 +244,7 @@ namespace GenericInventorySystem.Forms
 
         private void ShowNewPODialog(bool autoPopulateLowStock = false)
         {
-            string title = autoPopulateLowStock ? (LocalizationManager.IsArabic ? "ØªÙˆÙ„ÙŠØ¯ Ø·Ù„Ø¨ Ø´Ø±Ø§Ø¡ Ù…Ù‚ØªØ±Ø­" : "Predictive Purchase Order Generation") : LocalizationManager.GetString("PO_New");
+            string title = autoPopulateLowStock ? (LocalizationManager.GetString("Msg_PredictivePO")) : LocalizationManager.GetString("PO_New");
             BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(1100, 700) }; // Decreased height to remove whitespace
             
             // Root Container
@@ -287,7 +287,7 @@ namespace GenericInventorySystem.Forms
             ModernComboBox cmbParts = new ModernComboBox { 
                 Height = 75, // Increased to ensure no clipping
                 Dock = DockStyle.Bottom, 
-                LabelText = (LocalizationManager.IsArabic ? "Ø¥Ø¶Ø§ÙØ© Ø³Ø±ÙŠØ¹Ø© (Ø¨Ø­Ø«):" : "Quick Add Part (Search):"),
+                LabelText = ("Quick Add Part (Search):"),
                 Margin = new Padding(0, 0, 10, 5) // Bottom margin to prevent clipping
             };
             DataTable dtParts = DatabaseHelper.ExecuteDataTable("SELECT id, part_name, purchase_price FROM parts WHERE date_deleted IS NULL");
@@ -337,7 +337,7 @@ namespace GenericInventorySystem.Forms
             pnlFooter.Controls.Add(lblGrandTotal);
 
             Button btnSave = new ModernButton { 
-                Text = (LocalizationManager.IsArabic ? "Ø¥ØªÙ…Ø§Ù… Ø·Ù„Ø¨ Ø§Ù„Ø´Ø±Ø§Ø¡" : "Finalize Purchase Order"), 
+                Text = (LocalizationManager.GetString("Msg_FinalizePO")), 
                 Size = new Size(280, 45), // Increased width to prevent text clipping
             };
             ThemeConfig.ApplyPrimaryButton(btnSave);
@@ -405,7 +405,7 @@ namespace GenericInventorySystem.Forms
 
             btnSave.Click += (s, e) => {
                 if (cmbSup.SelectedValue == null) {
-                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ Ø§Ø®ØªÙŠØ§Ø± Ù…ÙˆØ±Ø¯." : "Please select a supplier.");
+                    MessageHelper.ShowWarning("Please select a supplier.");
                     return;
                 }
                 List<PurchaseItemInfo> items = new List<PurchaseItemInfo>();
@@ -418,7 +418,7 @@ namespace GenericInventorySystem.Forms
                         });
                 }
                 if (items.Count == 0) {
-                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ Ø¥Ø¶Ø§ÙØ© Ø£ØµÙ†Ø§Ù Ù„Ù„Ø·Ù„Ø¨." : "Please add items to the order.");
+                    MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_AddItemsFirst"));
                     return;
                 }
                 _purchaseService.CreatePurchaseOrder(Convert.ToInt32(cmbSup.SelectedValue), items, "Manual PO Creation");

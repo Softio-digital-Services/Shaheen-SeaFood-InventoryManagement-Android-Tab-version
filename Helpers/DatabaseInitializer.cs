@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Windows.Forms;
 using Microsoft.Data.Sqlite;
@@ -9,7 +9,7 @@ namespace GenericInventorySystem.Helpers
     {
         public static void Initialize()
         {
-            // SQLite creates the file automatically — no CreateDatabase() needed
+            // SQLite creates the file automatically -- no CreateDatabase() needed
             DatabaseHelper.EnsureSchema();
             UpdateSchema();
             SeedIfEmpty();
@@ -17,7 +17,7 @@ namespace GenericInventorySystem.Helpers
 
         /// <summary>
         /// Idempotent patches applied on every startup.
-        /// Safe to re-run — all guards use IF NOT EXISTS / INSERT OR IGNORE.
+        /// Safe to re-run -- all guards use IF NOT EXISTS / INSERT OR IGNORE.
         /// </summary>
         private static void UpdateSchema()
         {

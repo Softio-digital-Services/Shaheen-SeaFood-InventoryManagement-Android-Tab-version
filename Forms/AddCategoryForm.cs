@@ -15,7 +15,7 @@ namespace GenericInventorySystem.Forms
         public AddCategoryForm()
         {
             InitializeComponent();
-            this.TitleText = LocalizationManager.IsArabic ? "Ø¥Ø¶Ø§ÙØ© ÙØ¦Ø© Ø¬Ø¯ÙŠØ¯Ø©" : "Add New Category";
+            this.TitleText = "Add New Category";
             btnUpload.Click += BtnUpload_Click;
             ApplyLocalization();
         }
@@ -60,13 +60,14 @@ namespace GenericInventorySystem.Forms
             bool ar = LocalizationManager.IsArabic;
             this.RightToLeft = ar ? RightToLeft.Yes : RightToLeft.No;
             
-            txtName.LabelText = ar ? "Ø§Ø³Ù… Ø§Ù„Ù Ø¦Ø©" : "Category Name";
-            txtDesc.LabelText = ar ? "Ø§Ù„ÙˆØµÙ " : "Description";
-            btnUpload.Text = ar ? "ØªØ­Ù…ÙŠÙ„ ØµÙˆØ±Ø©" : "Upload Image";
+            this.TitleText = LocalizationManager.GetString("AddCat_Title");
+            txtName.LabelText = LocalizationManager.GetString("AddCat_Name");
+            txtDesc.LabelText = LocalizationManager.GetString("AddCat_Desc");
+            btnUpload.Text = LocalizationManager.GetString("AddPart_Upload");
             
             SetFooterButtons(
-                ar ? "Ø­Ù Ø¸" : "Save",
-                ar ? "Ø¥Ù„ØºØ§Ø¡" : "Cancel",
+                LocalizationManager.GetString("AddCat_Save"),
+                LocalizationManager.GetString("Tran_Cancel"),
                 btnSave_Click,
                 (s, e) => this.Close()
             );

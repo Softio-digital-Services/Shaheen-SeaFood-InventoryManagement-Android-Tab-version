@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Controls;
@@ -54,10 +54,10 @@ namespace GenericInventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            this.TitleText = isArabic ? "Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„ØªØ±Ø®ÙŠØµ" : "License Information";
+            this.TitleText = LocalizationManager.GetString("Msg_LicenseInfo");
             
             SetFooterButtons(
-                isArabic ? "Ø¥ØºÙ„Ø§Ù‚" : "Close",
+                LocalizationManager.GetString("Popup_Cancel"),
                 "",
                 (s, e) => this.Close(),
                 null
@@ -75,49 +75,49 @@ namespace GenericInventorySystem.Forms
 
             if (_license == null)
             {
-                AddInfoRow(isArabic ? "Ø§Ù„Ø­Ø§Ù„Ø©:" : "Status:", isArabic ? "Ù„Ù… ÙŠØªÙ… Ø§Ù„Ø¹Ø«ÙˆØ± Ø¹Ù„Ù‰ ØªØ±Ø®ÙŠØµ" : "No License Found", ThemeConfig.DangerColor);
+                AddInfoRow(LocalizationManager.GetString("Msg_Status"), LocalizationManager.GetString("Msg_NoLicense"), ThemeConfig.DangerColor);
                 return;
             }
 
             // License Type
             string typeDisplay = _license.IsTrial() 
-                ? (isArabic ? "Ù†Ø³Ø®Ø© ØªØ¬Ø±ÙŠØ¨ÙŠØ©" : "Trial Version") 
-                : (isArabic ? "Ù†Ø³Ø®Ø© Ù…Ø±Ø®ØµØ©" : "Licensed Version");
-            AddInfoRow(isArabic ? "Ù†ÙˆØ¹ Ø§Ù„ØªØ±Ø®ÙŠØµ:" : "License Type:", typeDisplay, ThemeConfig.TextColorDark);
+                ? ("Trial Version") 
+                : ("Licensed Version");
+            AddInfoRow(LocalizationManager.GetString("Msg_LicenseType"), typeDisplay, ThemeConfig.TextColorDark);
 
             // Customer Name
             if (!string.IsNullOrEmpty(_license.CustomerName))
             {
-                AddInfoRow(isArabic ? "Ø§Ø³Ù… Ø§Ù„Ø¹Ù…ÙŠÙ„:" : "Customer Name:", _license.CustomerName, ThemeConfig.TextColorDark);
+                AddInfoRow(LocalizationManager.GetString("Msg_CustomerName"), _license.CustomerName, ThemeConfig.TextColorDark);
             }
 
             // License Key
             if (!_license.IsTrial())
             {
-                AddInfoRow(isArabic ? "Ù…ÙØªØ§Ø­ Ø§Ù„ØªØ±Ø®ÙŠØµ:" : "License Key:", _license.Key, ThemeConfig.SecondaryColor);
+                AddInfoRow(LocalizationManager.GetString("Msg_LicenseKeyLabel"), _license.Key, ThemeConfig.SecondaryColor);
             }
 
             // Activation Date
-            AddInfoRow(isArabic ? "ØªØ§Ø±ÙŠØ® Ø§Ù„ØªÙØ¹ÙŠÙ„:" : "Activated On:", _license.ActivationDate.ToString("MMMM dd, yyyy"), ThemeConfig.TextColorDark);
+            AddInfoRow(LocalizationManager.GetString("Msg_ActivatedOn"), _license.ActivationDate.ToString("MMMM dd, yyyy"), ThemeConfig.TextColorDark);
 
             // Expiration Date
             Color expiryColor = _license.IsExpiringSoon() ? Color.Orange : ThemeConfig.TextColorDark;
-            AddInfoRow(isArabic ? "ØªØ§Ø±ÙŠØ® Ø§Ù„Ø§Ù†ØªÙ‡Ø§Ø¡:" : "Expires On:", _license.ExpirationDate.ToString("MMMM dd, yyyy"), expiryColor);
+            AddInfoRow(LocalizationManager.GetString("Msg_ExpiresOn"), _license.ExpirationDate.ToString("MMMM dd, yyyy"), expiryColor);
 
             // Days Remaining
             int daysLeft = _license.DaysRemaining();
             Color daysColor = daysLeft <= 30 ? ThemeConfig.DangerColor : ThemeConfig.SuccessColor;
-            string daysText = isArabic ? $"{daysLeft} ÙŠÙˆÙ…" : $"{daysLeft} days";
-            AddInfoRow(isArabic ? "Ø§Ù„Ø£ÙŠØ§Ù… Ø§Ù„Ù…ØªØ¨Ù‚ÙŠØ©:" : "Days Remaining:", daysText, daysColor);
+            string daysText = isArabic ? $"{daysLeft} يوماً" : $"{daysLeft} days";
+            AddInfoRow(LocalizationManager.GetString("Msg_DaysRemaining"), daysText, daysColor);
 
             // Status
             bool isValid = _license.IsValid();
-            string statusText = isValid ? (isArabic ? "Ù†Ø´Ø·" : "Active") : (isArabic ? "Ù…Ù†ØªÙ‡ÙŠ" : "Expired");
+            string statusText = isValid ? ("Active") : ("Expired");
             Color statusColor = isValid ? ThemeConfig.SuccessColor : ThemeConfig.DangerColor;
-            AddInfoRow(isArabic ? "Ø§Ù„Ø­Ø§Ù„Ø©:" : "Status:", statusText, statusColor);
+            AddInfoRow(LocalizationManager.GetString("Msg_Status"), statusText, statusColor);
 
             // Machine Name
-            AddInfoRow(isArabic ? "Ø§Ù„Ø¬Ù‡Ø§Ø²:" : "Machine:", _license.MachineName, ThemeConfig.SecondaryColor);
+            AddInfoRow("Machine:", _license.MachineName, ThemeConfig.SecondaryColor);
 
             // Renewal Notice
             if (_license.IsExpiringSoon() && !_license.IsTrial())
@@ -127,8 +127,8 @@ namespace GenericInventorySystem.Forms
                 lblRenewal = new Label
                 {
                     Text = isArabic 
-                        ? "âš  ØªØ±Ø®ÙŠØµÙƒ Ø¹Ù„Ù‰ ÙˆØ´Ùƒ Ø§Ù„Ø§Ù†ØªÙ‡Ø§Ø¡. ÙŠØ±Ø¬Ù‰ Ø§Ù„ØªØ¬Ø¯ÙŠØ¯ Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ø§Ø³ØªØ®Ø¯Ø§Ù… Ø§Ù„Ø¨Ø±Ù†Ø§Ù…Ø¬." 
-                        : "âš  Your license is expiring soon. Please renew to continue using the software.",
+                        ? "يرجى تجديد اشتراكك قبل انتهاء الترخيص." 
+                        : "Your license is expiring soon. Please renew.",
                     Font = ThemeConfig.StandardFont,
                     ForeColor = ThemeConfig.WarningColor,
                     AutoSize = true,

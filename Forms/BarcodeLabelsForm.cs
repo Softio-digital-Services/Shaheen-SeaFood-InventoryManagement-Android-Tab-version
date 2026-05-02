@@ -52,17 +52,17 @@ namespace GenericInventorySystem.Forms
             LocalizationManager.ApplyRTL(this);
             bool isAr = LocalizationManager.IsArabic;
             
-            lblTitle.Text = isAr ? "Ø·Ø¨Ø§Ø¹Ø© Ù…Ù„ØµÙ‚Ø§Øª Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯" : "Barcode Labels Generation";
-            txtSearch.PlaceholderText = isAr ? "Ø§Ø¨Ø­Ø« Ø¹Ù† Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª..." : "Search items...";
-            btnGenerate.Text = isAr ? "\u2728 \u0645\u0639\u0627\u064A\u0646\u0623 \u0648\u0637\u0628\u0627\u0639\u0629" : "\u2728 Preview and Print";
+            lblTitle.Text = "Barcode Labels Generation"; // Title not in resources - use English
+            txtSearch.PlaceholderText = LocalizationManager.GetString("Parts_Search");
+            btnGenerate.Text = isAr ? "معاينة وطباعة" : "Preview and Print";
 
             if (dgvItems.Columns.Count > 0)
             {
                 dgvItems.Columns["colSelect"].HeaderText = ""; // Empty because we have a checkbox
-                dgvItems.Columns["colName"].HeaderText = isAr ? "Ø§Ù„Ø§Ø³Ù…" : "Product Name";
-                dgvItems.Columns["colSku"].HeaderText = isAr ? "Ø§Ù„Ø±Ù…Ø² (SKU)" : "SKU";
-                dgvItems.Columns["colBarcode"].HeaderText = isAr ? "Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯" : "Barcode";
-                dgvItems.Columns["colQty"].HeaderText = isAr ? "Ø§Ù„ÙƒÙ…ÙŠØ©" : "Qty";
+                dgvItems.Columns["colName"].HeaderText = LocalizationManager.GetString("Parts_GridProduct");
+                dgvItems.Columns["colSku"].HeaderText = LocalizationManager.GetString("AddPart_SKU");
+                dgvItems.Columns["colBarcode"].HeaderText = LocalizationManager.GetString("Parts_GridBarcode");
+                dgvItems.Columns["colQty"].HeaderText = LocalizationManager.GetString("POS_GridQty");
                 dgvItems.Columns["colMinus"].HeaderText = "";
                 dgvItems.Columns["colPlus"].HeaderText = "";
             }
@@ -251,7 +251,7 @@ namespace GenericInventorySystem.Forms
 
             if (selectedItems.Count == 0)
             {
-                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ Ø§Ø®ØªÙŠØ§Ø± ØµÙ†Ù ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„." : "Please select at least one item.");
+                MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_SelectOne"));
                 return;
             }
 

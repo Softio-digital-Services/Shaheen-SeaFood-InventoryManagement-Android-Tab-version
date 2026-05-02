@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Helpers;
@@ -13,14 +13,14 @@ namespace GenericInventorySystem.Forms
 
         public OrderIdPromptForm()
         {
-            this.TitleText = LocalizationManager.IsArabic ? "Ø¥Ø±Ø¬Ø§Ø¹ Ø·Ù„Ø¨" : "Return Order";
+            this.TitleText = "Return Order";
             this.Size = new Size(400, 280);
 
             Panel pnl = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20) };
             
             Label lblDesc = new Label
             {
-                Text = LocalizationManager.IsArabic ? "Ø£Ø¯Ø®Ù„ Ø±Ù‚Ù… Ø§Ù„Ø·Ù„Ø¨ Ù„Ù…Ø¹Ø§Ù„Ø¬Ø© Ø§Ù„Ù…Ø±ØªØ¬Ø¹:" : "Enter the Order ID to process the return:",
+                Text = LocalizationManager.GetString("Msg_EnterOrderId"),
                 AutoSize = true,
                 Font = ThemeConfig.StandardFont,
                 Location = new Point(20, 10),
@@ -29,9 +29,10 @@ namespace GenericInventorySystem.Forms
             
             txtOrderId = new ModernTextBox
             {
-                LabelText = LocalizationManager.IsArabic ? "Ø±Ù‚Ù… Ø§Ù„Ø·Ù„Ø¨:" : "Order ID:",
+                LabelText = LocalizationManager.GetString("Msg_OrderId") ?? "Order ID:",
                 Location = new Point(20, 40),
-                Width = 360
+                Width = 360,
+                Height = 67 // 25 label + 42 input
             };
             txtOrderId.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) Submit(); };
             
@@ -41,17 +42,17 @@ namespace GenericInventorySystem.Forms
             this.ContentPanel.Controls.Add(pnl);
 
             SetFooterButtons(
-                LocalizationManager.IsArabic ? "Ø§Ø³ØªÙ…Ø±Ø§Ø±" : "Continue",
-                LocalizationManager.IsArabic ? "Ø¥Ù„ØºØ§Ø¡" : "Cancel",
+                LocalizationManager.GetString("Tran_Continue") ?? "Continue",
+                LocalizationManager.GetString("Popup_Cancel"),
                 (s, e) => Submit(),
                 (s, e) => { DialogResult = DialogResult.Cancel; Close(); }
             );
             
             this.Shown += (s, e) => {
                 txtOrderId.Focus();
-                this.ActiveControl = txtOrderId;
             };
         }
+
 
         private void Submit()
         {
@@ -63,7 +64,7 @@ namespace GenericInventorySystem.Forms
             }
             else
             {
-                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø±Ù‚Ù… Ø·Ù„Ø¨ ØµØ­ÙŠØ­." : "Please enter a valid numeric Order ID.");
+                MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_InvalidOrderId"));
                 txtOrderId.Focus();
             }
         }

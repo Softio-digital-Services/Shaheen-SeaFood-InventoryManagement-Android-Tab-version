@@ -29,7 +29,7 @@ namespace GenericInventorySystem.Forms
             string code = txtCode.Text.Trim().ToUpper();
             if (string.IsNullOrEmpty(code))
             {
-                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø±Ù…Ø² Ø§Ù„Ø¹Ù…Ù„Ø© Ø£ÙˆÙ„Ø§Ù‹" : "Please enter currency code first");
+                MessageHelper.ShowWarning("Please enter currency code first");
                 return;
             }
 
@@ -45,13 +45,13 @@ namespace GenericInventorySystem.Forms
                 }
                 else
                 {
-                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "ØªØ¹Ø°Ø± Ø¬Ù„Ø¨ Ø§Ù„Ø³Ø¹Ø±. ÙŠØ±Ø¬Ù‰ Ø§Ù„Ø¥Ø¯Ø®Ø§Ù„ ÙŠØ¯ÙˆÙŠØ§Ù‹." : "Could not fetch rate. Please enter manually.");
+                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "\u062a\u0639\u0630\u0651\u0631 \u062c\u0644\u0628 \u0627\u0644\u0633\u0639\u0631. \u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644\u0647 \u064a\u062f\u0648\u064a\u0627\u064b." : "Could not fetch rate. Please enter manually.");
                 }
             }
             finally
             {
                 btnFetch.Enabled = true;
-                btnFetch.Text = LocalizationManager.IsArabic ? "Ø¬Ù„Ø¨" : "Fetch";
+                btnFetch.Text = LocalizationManager.IsArabic ? "\u062c\u0644\u0628" : "Fetch";
             }
         }
 
@@ -60,11 +60,15 @@ namespace GenericInventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            txtCode.LabelText = (isArabic ? "Ø±Ù…Ø² Ø§Ù„Ø¹Ù…Ù„Ø©" : "Currency Code") + " (e.g. EUR)";
-            txtName.LabelText = (isArabic ? "Ø§Ø³Ù… Ø§Ù„Ø¹Ù…Ù„Ø©" : "Currency Name") + " (e.g. Euro)";
-            txtSymbol.LabelText = (isArabic ? "Ø§Ù„Ø±Ù…Ø²" : "Symbol") + " (e.g. \u20ac)";
-            numRate.LabelText = (isArabic ? "Ø³Ø¹Ø± Ø§Ù„ØµØ±Ù " : "Exchange Rate") + " (1 USD = ?)";
-            btnFetch.Text = isArabic ? "Ø¬Ù„Ø¨" : "Fetch";
+            txtCode.LabelText = (isArabic ? LocalizationManager.GetString("Curr_ColCode") : "Currency Code") + " (e.g. EUR)";
+            txtName.LabelText = (isArabic ? LocalizationManager.GetString("Curr_ColName") : "Currency Name") + " (e.g. Euro)";
+            txtSymbol.LabelText = ("Symbol") + " (e.g. \u20ac)";
+            numRate.LabelText = (isArabic ? LocalizationManager.GetString("Curr_ColRate") : "Exchange Rate") + " (1 USD = ?)";
+            btnFetch.Text = LocalizationManager.IsArabic ? "\u062c\u0644\u062b" : "Fetch";
+            btnFetch.Image = ThemeConfig.GetNuricon("sync");
+            btnFetch.TextImageRelation = TextImageRelation.ImageBeforeText;
+            btnFetch.ImageAlign = ContentAlignment.MiddleLeft;
+            btnFetch.Padding = new Padding(10, 0, 0, 0);
             
             numRate.Value = 1.0000m;
         }

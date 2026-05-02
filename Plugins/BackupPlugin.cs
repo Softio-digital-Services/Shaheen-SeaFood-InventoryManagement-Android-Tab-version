@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -8,8 +8,8 @@ using GenericInventorySystem.Helpers.Plugins;
 namespace GenericInventorySystem.Plugins
 {
     /// <summary>
-    /// Free built-in plugin — adds Database Backup &amp; Restore via the sidebar.
-    /// RequiresLicense = false → available on all license types including TRIAL.
+    /// Free built-in plugin -- adds Database Backup &amp; Restore via the sidebar.
+    /// RequiresLicense = false -> available on all license types including TRIAL.
     /// </summary>
     public class BackupPlugin : ITabPlugin
     {

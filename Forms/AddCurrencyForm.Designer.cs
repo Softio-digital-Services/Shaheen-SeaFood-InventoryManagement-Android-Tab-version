@@ -12,8 +12,8 @@ namespace GenericInventorySystem.Forms
             this.txtName = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
             this.txtSymbol = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
             this.numRate = new GenericInventorySystem.Controls.ModernNumericUpDown { DecimalPlaces = 4, Maximum = 1000000, Dock = DockStyle.Fill, Margin = new Padding(0) };
-            this.btnFetch = new GenericInventorySystem.Controls.ModernButton { Text = "🌐 Fetch", Width = 100, Height = 42, Dock = DockStyle.Right };
-            ThemeConfig.ApplySecondaryButton(btnFetch);
+            this.btnFetch = new GenericInventorySystem.Controls.ModernButton { Text = "Fetch", Width = 110, Height = 42, Anchor = AnchorStyles.Bottom | AnchorStyles.Right, Margin = new Padding(0, 0, 0, 0) };
+            ThemeConfig.ApplyPrimaryButton(btnFetch);
             
             this.SuspendLayout();
 
@@ -24,9 +24,9 @@ namespace GenericInventorySystem.Forms
             tlp.Controls.Add(txtName, 0, 1);
             tlp.Controls.Add(txtSymbol, 0, 2);
             
-            TableLayoutPanel tlpRate = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 2, RowCount = 1, Height = 65, Margin = new Padding(0, 0, 0, 15) };
+            TableLayoutPanel tlpRate = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 2, RowCount = 1, Height = 75, Margin = new Padding(0, 0, 0, 15) };
             tlpRate.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpRate.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110F));
+            tlpRate.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
             tlpRate.Controls.Add(numRate, 0, 0);
             tlpRate.Controls.Add(btnFetch, 1, 0);
             tlp.Controls.Add(tlpRate, 0, 3);

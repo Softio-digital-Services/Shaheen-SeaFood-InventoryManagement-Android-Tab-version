@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using System.Drawing;
 using GenericInventorySystem.Data;
@@ -74,7 +74,7 @@ namespace GenericInventorySystem.Forms
             GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
 
-            bool isEdit = this.TitleText != null && (this.TitleText.Contains("Edit") || this.TitleText.Contains("ØªØ¹Ø¯ÙŠÙ„"));
+            bool isEdit = this.TitleText != null && (this.TitleText.Contains("Edit") || this.TitleText.Contains(L("AddSup_TitleEdit")));
             this.TitleText = isEdit ? L("AddSup_TitleEdit") : L("AddSup_TitleNew");
             
             var lblSection = this.Controls.Find("lblSection", true);
