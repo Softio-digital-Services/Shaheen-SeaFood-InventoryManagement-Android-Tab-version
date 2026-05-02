@@ -238,17 +238,20 @@ function renderProducts() {
         card.className = 'product-card';
         card.onclick = () => addToCart(p);
         
-        // Priority: Item Image -> Category Icon/Emoji -> Default Box
-        let displayContent = p.image;
-        
-        // If image is a path but looks broken or is empty, use Category Icon
-        if (!displayContent || (displayContent.length > 5 && displayContent.includes('/'))) {
-            displayContent = p.categoryImage || '📦';
-        }
-        
-        // Final safety: if we still have a long path string, use the box
-        if (displayContent.length > 5 && displayContent.includes('/')) {
-            displayContent = '📦';
+        // Priority: Item Image -> Category Icon -> Default Box
+        let displayContent = '';
+        const itemImage = p.image;
+        const catImage = p.categoryImage;
+
+        if (itemImage && itemImage.length > 5 && itemImage.includes('/')) {
+            // It's a path to a product image
+            displayContent = `<img src="${itemImage}" class="cat-icon-img" alt="${p.name}">`;
+        } else if (catImage && catImage.length > 5 && catImage.includes('/')) {
+            // It's a path to a category icon
+            displayContent = `<img src="${catImage}" class="cat-icon-img" alt="${p.category}">`;
+        } else {
+            // Fallback to emoji or default box
+            displayContent = `<span class="emoji-icon">${itemImage || '📦'}</span>`;
         }
 
         card.innerHTML = `
@@ -411,7 +414,8 @@ function checkLoginState() {
     localStorage.removeItem('pos_loggedIn');
     document.getElementById('loginScreen').classList.remove('hidden');
     // Hide header on login page
-    document.querySelector('.top-nav')?.classList.add('hidden');
+    const topNav = document.querySelector('.top-nav');
+    if (topNav) topNav.style.display = 'none';
 }
 
 async function handleLogin() {
@@ -432,7 +436,8 @@ async function handleLogin() {
             localStorage.setItem('pos_user', data.fullName);
             document.getElementById('loginScreen').classList.add('hidden');
             // Show header after successful login
-            document.querySelector('.top-nav')?.classList.remove('hidden');
+            const topNav = document.querySelector('.top-nav');
+            if (topNav) topNav.style.display = 'flex';
             showToast(`Logged in as ${data.fullName}`, "success");
             globalBarcodeScanner.init(); // Activate scanner immediately on login
             initApp();
@@ -645,11 +650,38 @@ const barcodeScannerManager = {
     currentFacingMode: "environment",
     async start(target = 'search') {
         this.target = target;
+        
+        // Explicitly request permissions first to provide better UX
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream.getTracks().forEach(track => track.stop()); // Stop immediately, just checking permission
+        } catch (err) {
+            console.error("Camera permission denied", err);
+            showToast("Camera access denied. Please enable it in browser settings.", "error");
+            return;
+        }
+
         document.getElementById('cameraScannerModal').classList.remove('hidden');
         if (!this.scanner) this.scanner = new Html5Qrcode("reader");
+        
         try {
-            await this.scanner.start({ facingMode: this.currentFacingMode }, { fps: 24, qrbox: (w, h) => { const s = Math.min(w, h) * 0.65; return { width: s, height: s }; } }, (t) => this.onScanSuccess(t), () => {});
-        } catch (err) { showToast("Camera error", "error"); }
+            await this.scanner.start(
+                { facingMode: this.currentFacingMode }, 
+                { 
+                    fps: 24, 
+                    qrbox: (w, h) => { 
+                        const s = Math.min(w, h) * 0.65; 
+                        return { width: s, height: s }; 
+                    } 
+                }, 
+                (t) => this.onScanSuccess(t), 
+                () => {}
+            );
+        } catch (err) { 
+            console.error("Scanner start error", err);
+            showToast("Failed to start camera. It might be in use.", "error"); 
+            document.getElementById('cameraScannerModal').classList.add('hidden');
+        }
     },
     async stop() { 
         if (this.scanner && this.scanner.isScanning) { 

@@ -277,8 +277,8 @@ namespace GenericInventorySystem.Forms
             // Define Columns
             dgvParts.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colCheck", HeaderText = "", Width = 30, FillWeight = 1, ReadOnly = false }); // Active Checkbox
             
-            var colImage = new DataGridViewImageColumn { Name = "colImage", HeaderText = "Image", Width = 50, ImageLayout = DataGridViewImageCellLayout.Zoom, FillWeight = 6, ReadOnly = true };
-            colImage.DefaultCellStyle.Padding = new Padding(8); // Add padding for "Zoom" layout
+            var colImage = new DataGridViewImageColumn { Name = "colImage", HeaderText = "Image", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom, FillWeight = 6, ReadOnly = true };
+            colImage.DefaultCellStyle.Padding = new Padding(12); // Add padding for "Zoom" layout
             dgvParts.Columns.Add(colImage);
             
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSKU", HeaderText = "SKU", DataPropertyName = "part_number", FillWeight = 10, ReadOnly = true });

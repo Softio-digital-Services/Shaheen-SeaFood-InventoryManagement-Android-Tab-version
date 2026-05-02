@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using GenericInventorySystem.Services;
 using GenericInventorySystem.Helpers;
 
@@ -112,14 +113,38 @@ namespace GenericInventorySystem
                 builder.Services.AddSignalR();
 
                 var app = builder.Build();
+                
+                // --- Discovery Logic ---
+                string localIp = "localhost";
+                try {
+                    var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+                    localIp = host.AddressList.FirstOrDefault(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString() ?? "localhost";
+                } catch { }
 
                 // Register HubContext so WinForms can broadcast events
                 InventoryBroadcaster.HubContext = app.Services
                     .GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<InventoryHub>>();
 
                 app.UseCors();
-                app.UseDefaultFiles(); // Add this line
+                
+                // Camera requires HTTPS OR the Chrome Flag (chrome://flags/#unsafely-treat-insecure-origin-as-secure)
+                // We'll allow both HTTP and HTTPS to co-exist for easier access
+                // if (!builder.Environment.IsDevelopment()) { app.UseHsts(); }
+                // app.UseHttpsRedirection();
+
+                app.UseDefaultFiles();
                 app.UseStaticFiles();
+                
+                // Serve desktop assets to the web portal
+                string assetsPath = System.IO.Path.Combine(builder.Environment.ContentRootPath, "Assets");
+                if (System.IO.Directory.Exists(assetsPath))
+                {
+                    app.UseStaticFiles(new Microsoft.AspNetCore.Builder.StaticFileOptions
+                    {
+                        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(assetsPath),
+                        RequestPath = "/Assets"
+                    });
+                }
 
                 // - SignalR Hub endpoint -
                 app.MapHub<InventoryHub>("/hubs/inventory");
@@ -145,6 +170,58 @@ namespace GenericInventorySystem
                         var products = new System.Collections.Generic.List<object>();
                         foreach (System.Data.DataRow row in dt.Rows)
                         {
+                            string partImage = row["part_image"].ToString();
+                            string catImage = row["category_image"].ToString();
+                            string category = row["category"].ToString();
+
+                            // Fully dynamic category icon resolution
+                            if (string.IsNullOrEmpty(catImage))
+                            {
+                                string cleanCat = category.ToLower().Trim();
+                                
+                                // Try finding a matching icon (SVG preferred, then PNG)
+                                string[] extensions = { ".svg", ".png" };
+                                bool found = false;
+                                
+                                foreach(var ext in extensions)
+                                {
+                                    string iconFile = $"nuricon_{cleanCat}{ext}";
+                                    if (System.IO.File.Exists(System.IO.Path.Combine(assetsPath, iconFile)))
+                                    {
+                                        catImage = "/Assets/" + iconFile;
+                                        found = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!found)
+                                {
+                                    // Fallback to specific keywords based on actual file existence
+                                    if (cleanCat.Contains("service")) catImage = "/Assets/nuricon_pos.png";
+                                    else if (cleanCat.Contains("accessory")) catImage = "/Assets/nuricon_inventory.svg";
+                                    else if (cleanCat.Contains("engine")) catImage = "/Assets/nuricon_inventory.svg";
+                                    else if (cleanCat.Contains("brake")) catImage = "/Assets/nuricon_inventory.svg";
+                                    else catImage = "/Assets/nuricon_inventory.svg"; // Final default
+                                }
+                            }
+                            else
+                            {
+                                // Clean up catImage: prevent /Assets/Assets/ double prefix
+                                if (catImage.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
+                                    catImage = "/" + catImage;
+                                else if (!catImage.StartsWith("/") && !catImage.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                                    catImage = "/Assets/" + catImage;
+                            }
+
+                            // Clean up partImage: prevent /Assets/Assets/ double prefix
+                            if (!string.IsNullOrEmpty(partImage))
+                            {
+                                if (partImage.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
+                                    partImage = "/" + partImage;
+                                else if (!partImage.StartsWith("/") && !partImage.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                                    partImage = "/Assets/" + partImage;
+                            }
+
                             products.Add(new {
                                 id       = Convert.ToInt32(row["id"]),
                                 name     = row["part_name"].ToString(),
@@ -153,10 +230,10 @@ namespace GenericInventorySystem
                                 minStock = Convert.ToInt32(row["minimum_stock_level"]),
                                 barcode  = row["barcode"].ToString(),
                                 sku      = row["part_number"].ToString(),
-                                category = row["category"].ToString(),
-                                image    = row["part_image"].ToString(),
-                                categoryImage = row["category_image"].ToString(),
-                                isService = false
+                                category = category,
+                                image    = partImage,
+                                categoryImage = catImage,
+                                isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase)
                             });
                         }
 
