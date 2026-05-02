@@ -12,12 +12,39 @@ namespace GenericInventorySystem.Forms
         public string NewCategoryName { get; private set; }
         private string _currentImagePath = "";
 
+        private int _editingId = -1;
+        private bool _isEditMode = false;
+
         public AddCategoryForm()
         {
             InitializeComponent();
             this.TitleText = "Add New Category";
             btnUpload.Click += BtnUpload_Click;
             ApplyLocalization();
+        }
+
+        public void LoadCategoryData(int id, string name, string desc, string image)
+        {
+            _editingId = id;
+            _isEditMode = true;
+            txtName.Text = name;
+            txtDesc.Text = desc;
+            _currentImagePath = image;
+            this.TitleText = "Edit Category: " + name;
+
+            if (!string.IsNullOrEmpty(image))
+            {
+                try {
+                    string fullPath = System.IO.Path.Combine(Application.StartupPath, image);
+                    if (System.IO.File.Exists(fullPath)) {
+                        using (var stream = new System.IO.FileStream(fullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                        {
+                            if (pbImage.Image != null) pbImage.Image.Dispose();
+                            pbImage.Image = Image.FromStream(stream);
+                        }
+                    }
+                } catch {}
+            }
         }
 
         private void BtnUpload_Click(object sender, EventArgs e)
@@ -79,7 +106,11 @@ namespace GenericInventorySystem.Forms
 
             try
             {
-                CategoryData.AddCategory(txtName.Text.Trim(), txtDesc.Text.Trim(), _currentImagePath);
+                if (_isEditMode) {
+                    CategoryData.UpdateCategory(_editingId, txtName.Text.Trim(), txtDesc.Text.Trim(), _currentImagePath);
+                } else {
+                    CategoryData.AddCategory(txtName.Text.Trim(), txtDesc.Text.Trim(), _currentImagePath);
+                }
                 NewCategoryName = txtName.Text.Trim();
                 
                 // Real-time Sync: Tell all Web POS clients to refresh categories

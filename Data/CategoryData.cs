@@ -48,5 +48,15 @@ namespace GenericInventorySystem.Data
                 new SqliteParameter("@desc", description),
                 new SqliteParameter("@img",  image));
         }
+
+        public static void UpdateCategory(int id, string name, string description, string image)
+        {
+            string sql = "UPDATE categories SET category_name=@name, description=@desc, category_image=@img WHERE id=@id";
+            DatabaseHelper.ExecuteNonQuery(sql,
+                new SqliteParameter("@name", name),
+                new SqliteParameter("@desc", description),
+                new SqliteParameter("@img",  image),
+                new SqliteParameter("@id",   id));
+        }
     }
 }

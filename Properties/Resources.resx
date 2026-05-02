@@ -618,9 +618,15 @@ Expires: {0:MMMM dd, yyyy}</value></data>
   <data name="Curr_ColUpdate" xml:space="preserve"><value>Last Updated</value></data>
   <data name="Curr_MsgBaseDelete" xml:space="preserve"><value>Cannot delete base currency (USD)</value></data>
   <data name="Curr_MsgDeleteConfirm" xml:space="preserve"><value>Are you sure you want to delete {0}?</value></data>
-  <data name="Curr_InfoBox" xml:space="preserve"><value>Rates are relative to USD. You can edit cells and press Enter. Right-click to delete.</value></data>
+  <data name="Curr_InfoBox" xml:space="preserve"><value>Rates are relative to USD. You can edit cells and press Enter. Use the trash icon to delete.</value></data>
   <data name="Curr_PromptCode" xml:space="preserve"><value>Enter Currency Code (e.g., SAR):</value></data>
   <data name="Curr_PromptName" xml:space="preserve"><value>Enter Currency Name:</value></data>
   <data name="Curr_PromptSymbol" xml:space="preserve"><value>Enter Currency Symbol:</value></data>
+  <data name="Msg_AdjustStock" xml:space="preserve"><value>Adjust Stock for: </value></data>
+  <data name="Msg_AdjustInstr" xml:space="preserve"><value>Enter quantity to add (+) or subtract (-):</value></data>
+  <data name="Msg_Reason" xml:space="preserve"><value>Reason for Adjustment:</value></data>
+  <data name="Msg_Adjust" xml:space="preserve"><value>Adjust</value></data>
+  <data name="Msg_PartUpdated" xml:space="preserve"><value>Item updated successfully!</value></data>
+  <data name="Msg_UpdateSuccess" xml:space="preserve"><value>Record updated successfully!</value></data>
   <data name="Curr_MsgExists" xml:space="preserve"><value>This currency already exists</value></data>
 </root>

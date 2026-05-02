@@ -988,7 +988,7 @@ namespace GenericInventorySystem
              btn.FlatStyle = FlatStyle.Flat;
              btn.FlatAppearance.BorderSize = 0;
              btn.BackColor = isActive ? ActiveBackColor : Color.Transparent; 
-             btn.ForeColor = isActive ? PrimaryColor : Color.FromArgb(31, 41, 55); 
+             btn.ForeColor = isActive ? PrimaryColor : Color.FromArgb(160, 174, 192); // Gray when inactive
              btn.Font = new Font("Segoe UI", 10F, isActive ? FontStyle.Bold : FontStyle.Regular);
              btn.Cursor = Cursors.Hand;
              btn.TextAlign = ContentAlignment.MiddleLeft;
@@ -1000,42 +1000,65 @@ namespace GenericInventorySystem
         public static void ApplySidebarButtonIcon(Button btn, Image icon, bool isActive)
         {
             ApplySidebarButton(btn, isActive);
-            btn.Image = icon;
+            
+            // Tint the icon to match the text color (Blue if active, Gray if inactive)
+            Color tintColor = isActive ? PrimaryColor : Color.FromArgb(31, 41, 55); 
+            btn.Image = TintImage(icon, tintColor);
+            
             btn.ImageAlign = ContentAlignment.MiddleLeft;
             btn.TextImageRelation = TextImageRelation.ImageBeforeText;
-            btn.Padding = new Padding(12, 0, 0, 0);
+            btn.Padding = new Padding(15, 0, 0, 0);
         }
 
         public static Image GetNuricon(string name)
         {
             try
             {
-                string filename = $"nuricon_{name}.png";
-                string path = System.IO.Path.Combine(Application.StartupPath, "Assets", filename);
+                string[] exts = { ".svg", ".png" };
                 Image img = null;
-                if (System.IO.File.Exists(path)) img = Image.FromFile(path);
+                bool isSvg = false;
 
-                if (img == null)
+                foreach (var ext in exts)
                 {
-                    string currentDir = Application.StartupPath;
-                    for (int i = 0; i < 4; i++)
-                    {
-                        string checkPath = System.IO.Path.Combine(currentDir, "Assets", filename);
-                        if (System.IO.File.Exists(checkPath)) { img = Image.FromFile(checkPath); break; }
-                        var parent = System.IO.Directory.GetParent(currentDir);
-                        if (parent == null) break;
-                        currentDir = parent.FullName;
+                    string filename = $"nuricon_{name}{ext}";
+                    string path = Path.Combine(Application.StartupPath, "Assets", filename);
+                    
+                    if (!File.Exists(path)) {
+                        string currentDir = Application.StartupPath;
+                        for (int i = 0; i < 4; i++) {
+                            string checkPath = Path.Combine(currentDir, "Assets", filename);
+                            if (File.Exists(checkPath)) { path = checkPath; break; }
+                            var parent = Directory.GetParent(currentDir);
+                            if (parent == null) break;
+                            currentDir = parent.FullName;
+                        }
                     }
+
+                    if (File.Exists(path)) {
+                        if (ext == ".svg") {
+                            try {
+                                // Use the Svg library if available
+                                var svgDoc = Svg.SvgDocument.Open(path);
+                                img = svgDoc.Draw(64, 64);
+                                isSvg = true;
+                            } catch { /* Fallback to next extension if SVG fails */ }
+                        } else {
+                            img = Image.FromFile(path);
+                        }
+                    }
+                    if (img != null) break;
                 }
 
                 if (img != null)
                 {
-                    using (img) // CRITICAL: Dispose the original file-locked image
-                    {
-                        Bitmap bmp = new Bitmap(img);
-                        bmp.MakeTransparent(Color.White);
-                        return bmp;
+                    Bitmap bmp = new Bitmap(img.Width, img.Height);
+                    using (Graphics g = Graphics.FromImage(bmp)) {
+                        g.Clear(Color.Transparent);
+                        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                        g.DrawImage(img, 0, 0, img.Width, img.Height);
                     }
+                    if (!isSvg) img.Dispose();
+                    return bmp;
                 }
                 return GenerateNuriconFallback(name);
             }
@@ -1077,6 +1100,9 @@ namespace GenericInventorySystem
                     else if (name == "currencies") { c1 = Color.FromArgb(245, 158, 11); c2 = Color.FromArgb(217, 119, 6); }
                     else if (name == "user") { c1 = Color.FromArgb(79, 70, 229); c2 = Color.FromArgb(67, 56, 202); }
                     else if (name == "barcode") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(139, 92, 246); }
+                    else if (name == "engine") { c1 = Color.FromArgb(239, 68, 68); c2 = Color.FromArgb(185, 28, 28); }
+                    else if (name == "brakes") { c1 = Color.FromArgb(249, 115, 22); c2 = Color.FromArgb(194, 65, 12); }
+                    else if (name == "accessories") { c1 = Color.FromArgb(16, 185, 129); c2 = Color.FromArgb(5, 150, 105); }
 
                     using (var brush = new LinearGradientBrush(new Rectangle(8, 8, 48, 48), c1, c2, 45f))
                     {
@@ -1101,74 +1127,85 @@ namespace GenericInventorySystem
                         }
                         else if (name == "orders")
                         {
-                            Rectangle r = new Rectangle(0, 0, 64, 64);
-                            using (var bgBrush = new LinearGradientBrush(r, c1, c2, 45f))
-                                g.FillEllipse(bgBrush, new Rectangle(2, 2, 60, 60));
-                            using (var whiteBrush = new SolidBrush(Color.White))
-                            using (var whitePen = new Pen(Color.White, 4) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                            using (var pen = new Pen(brush, 6) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                            using (var sBrush = new SolidBrush(c1))
                             {
-                                g.DrawLine(whitePen, 16, 20, 24, 20);
-                                g.DrawLine(whitePen, 24, 20, 30, 42);
-                                g.DrawLine(whitePen, 30, 42, 48, 42);
-                                g.DrawLine(whitePen, 48, 42, 52, 28);
-                                g.DrawLine(whitePen, 26, 28, 52, 28);
-                                g.FillEllipse(whiteBrush, 32, 46, 6, 6);
-                                g.FillEllipse(whiteBrush, 44, 46, 6, 6);
+                                g.DrawLine(pen, 16, 20, 24, 20);
+                                g.DrawLine(pen, 24, 20, 30, 42);
+                                g.DrawLine(pen, 30, 42, 48, 42);
+                                g.DrawLine(pen, 48, 42, 52, 28);
+                                g.DrawLine(pen, 26, 28, 52, 28);
+                                g.FillEllipse(sBrush, 32, 46, 6, 6);
+                                g.FillEllipse(sBrush, 44, 46, 6, 6);
                             }
                         }
                         else if (name == "barcode")
                         {
-                            g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whiteBrush = new SolidBrush(Color.White))
-                            {
-                                g.FillRectangle(whiteBrush, 14, 20, 4, 24); 
-                                g.FillRectangle(whiteBrush, 22, 20, 2, 24); 
-                                g.FillRectangle(whiteBrush, 28, 20, 6, 24); 
-                                g.FillRectangle(whiteBrush, 38, 20, 2, 24); 
-                                g.FillRectangle(whiteBrush, 44, 20, 4, 24); 
-                            }
+                            g.FillRectangle(brush, 14, 20, 4, 24); 
+                            g.FillRectangle(brush, 22, 20, 2, 24); 
+                            g.FillRectangle(brush, 28, 20, 6, 24); 
+                            g.FillRectangle(brush, 38, 20, 2, 24); 
+                            g.FillRectangle(brush, 44, 20, 4, 24); 
                         }
                         else if (name == "inventory")
                         {
-                            g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whitePen = new Pen(Color.White, 3) { LineJoin = LineJoin.Round })
-                            {
-                                Point[] p = { new Point(32, 18), new Point(48, 26), new Point(48, 42), new Point(32, 50), new Point(16, 42), new Point(16, 26) };
-                                g.DrawPolygon(whitePen, p);
-                                g.DrawLine(whitePen, 32, 18, 32, 34);
-                                g.DrawLine(whitePen, 32, 34, 48, 26);
-                                g.DrawLine(whitePen, 32, 34, 16, 26);
-                                g.DrawLine(whitePen, 32, 34, 32, 50);
-                            }
+                            // Draw a simple box symbol
+                            g.DrawRectangle(new Pen(brush, 6), 12, 20, 40, 32);
+                            g.DrawLine(new Pen(brush, 4), 12, 30, 52, 30);
                         }
-                        else if (name == "customers" || name == "user")
+                        else if (name == "customers" || name == "user" || name == "users")
                         {
-                            g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whiteBrush = new SolidBrush(Color.White))
+                            using (var pen = new Pen(brush, 4))
                             {
-                                g.FillEllipse(whiteBrush, 24, 18, 16, 16); 
-                                g.FillPie(whiteBrush, 16, 34, 32, 32, 180, 180); 
+                                g.DrawEllipse(pen, 24, 18, 16, 16); 
+                                g.DrawArc(pen, 16, 34, 32, 32, 180, 180); 
                             }
                         }
                         else if (name == "suppliers")
                         {
-                            g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whiteBrush = new SolidBrush(Color.White))
+                            using (var pen = new Pen(brush, 4))
                             {
-                                g.FillRectangle(whiteBrush, 16, 26, 24, 16); 
-                                g.FillRectangle(whiteBrush, 40, 32, 8, 10);  
-                                g.FillEllipse(whiteBrush, 20, 42, 6, 6);     
-                                g.FillEllipse(whiteBrush, 36, 42, 6, 6);     
+                                g.DrawRectangle(pen, 16, 26, 24, 16); 
+                                g.DrawRectangle(pen, 40, 32, 8, 10);  
+                                g.DrawEllipse(pen, 20, 42, 6, 6);     
+                                g.DrawEllipse(pen, 36, 42, 6, 6);     
                             }
                         }
                         else if (name == "expenses" || name == "history")
                         {
-                            g.FillEllipse(brush, 8, 8, 48, 48);
-                            using (var whitePen = new Pen(Color.White, 4) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                            using (var pen = new Pen(brush, 4) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                             {
-                                g.DrawArc(whitePen, 18, 18, 28, 28, 45, 270);
-                                g.DrawLine(whitePen, 32, 22, 32, 32);
-                                g.DrawLine(whitePen, 32, 32, 40, 32);
+                                g.DrawArc(pen, 18, 18, 28, 28, 45, 270);
+                                g.DrawLine(pen, 32, 22, 32, 32);
+                                g.DrawLine(pen, 32, 32, 40, 32);
+                            }
+                        }
+                        else if (name == "engine")
+                        {
+                            using (var pen = new Pen(brush, 5))
+                            {
+                                g.DrawRectangle(pen, 16, 24, 32, 20);
+                                g.DrawLine(pen, 12, 30, 16, 30);
+                                g.DrawLine(pen, 48, 30, 52, 30);
+                                g.DrawEllipse(pen, 22, 28, 20, 12);
+                            }
+                        }
+                        else if (name == "brakes")
+                        {
+                            using (var pen = new Pen(brush, 5))
+                            {
+                                g.DrawEllipse(pen, 16, 16, 32, 32);
+                                g.DrawArc(new Pen(brush, 8), 12, 12, 40, 40, 135, 90);
+                                g.DrawArc(new Pen(brush, 8), 12, 12, 40, 40, 315, 90);
+                            }
+                        }
+                        else if (name == "accessories")
+                        {
+                            using (var pen = new Pen(brush, 5))
+                            {
+                                g.DrawEllipse(pen, 14, 14, 36, 36);
+                                g.DrawLine(pen, 32, 14, 32, 50);
+                                g.DrawLine(pen, 14, 32, 50, 32);
                             }
                         }
                         else if (name == "add" || name == "plus")

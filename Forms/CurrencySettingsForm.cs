@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -113,26 +113,12 @@ namespace GenericInventorySystem.Forms
             dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "symbol", HeaderText = LocalizationManager.GetString("Curr_ColSymbol"), DataPropertyName = "symbol", Width = 70, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
             dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate_vs_usd", HeaderText = LocalizationManager.GetString("Curr_ColRate"), DataPropertyName = "rate_vs_usd", Width = 130, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
             dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "last_updated", HeaderText = LocalizationManager.GetString("Curr_ColUpdate"), DataPropertyName = "last_updated", Width = 150, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "g" } });
+            dgvRates.Columns.Add(new DataGridViewImageColumn { Name = "colAction", HeaderText = "Action", Width = 60 });
 
-            // Context Menu for Deletion
-            ContextMenuStrip cms = new ContextMenuStrip();
-            var tsmiDelete = new ToolStripMenuItem(LocalizationManager.GetString("Parts_Delete"));
-            tsmiDelete.Click += (s, e) => {
-                if (dgvRates.CurrentRow != null) {
-                    string code = dgvRates.CurrentRow.Cells["code"].Value.ToString();
-                    if (code == "USD") {
-                        MessageHelper.ShowWarning(LocalizationManager.GetString("Curr_MsgBaseDelete"));
-                        return;
-                    }
-                    if (MessageHelper.ShowConfirm(string.Format(LocalizationManager.GetString("Curr_MsgDeleteConfirm"), code))) {
-                        DatabaseHelper.ExecuteNonQuery($"DELETE FROM currency_rates WHERE code = '{code}'");
-                        CurrencyService.LoadRatesFromDb();
-                        LoadRates();
-                    }
-                }
-            };
-            cms.Items.Add(tsmiDelete);
-            dgvRates.ContextMenuStrip = cms;
+            dgvRates.CellPainting += DgvRates_CellPainting;
+            dgvRates.CellMouseClick += DgvRates_CellMouseClick;
+
+            // Context Menu removed in favor of Action column
 
             tlpMain.Controls.Add(dgvRates, 0, 2);
 
@@ -221,6 +207,48 @@ namespace GenericInventorySystem.Forms
 
             btnRefresh.Enabled = true;
             btnRefresh.Text    = LocalizationManager.GetString("Curr_RefreshBtn");
+        }
+
+        private void DgvRates_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
+        {
+            if (e.RowIndex >= 0 && dgvRates.Columns[e.ColumnIndex].Name == "colAction")
+            {
+                e.Handled = true;
+                e.PaintBackground(e.CellBounds, true);
+                
+                Image imgDelete = ThemeConfig.GetNuricon("delete");
+                if (imgDelete != null)
+                {
+                    int iconSize = 24;
+                    Rectangle rect = new Rectangle(
+                        e.CellBounds.X + (e.CellBounds.Width - iconSize) / 2,
+                        e.CellBounds.Y + (e.CellBounds.Height - iconSize) / 2,
+                        iconSize, iconSize);
+                    e.Graphics.DrawImage(imgDelete, rect);
+                }
+            }
+        }
+
+        private void DgvRates_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.RowIndex >= 0 && dgvRates.Columns[e.ColumnIndex].Name == "colAction")
+            {
+                string code = dgvRates.Rows[e.RowIndex].Cells["code"].Value?.ToString();
+                if (string.IsNullOrEmpty(code)) return;
+
+                if (code == "USD")
+                {
+                    MessageHelper.ShowWarning(LocalizationManager.GetString("Curr_MsgBaseDelete"));
+                    return;
+                }
+
+                if (MessageHelper.ShowConfirm(string.Format(LocalizationManager.GetString("Curr_MsgDeleteConfirm"), code)))
+                {
+                    DatabaseHelper.ExecuteNonQuery($"DELETE FROM currency_rates WHERE code = '{code}'");
+                    CurrencyService.LoadRatesFromDb();
+                    LoadRates();
+                }
+            }
         }
 
         private void BtnSave_Click(object sender, EventArgs e)

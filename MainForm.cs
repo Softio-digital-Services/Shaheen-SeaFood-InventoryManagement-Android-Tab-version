@@ -238,7 +238,7 @@ namespace GenericInventorySystem
             };
             
             Image dashIcon = ThemeConfig.GetNuricon("dashboard");
-            ThemeConfig.ApplySidebarButtonIcon(Dashboard_btn, dashIcon != null ? ResizeImage(dashIcon, 22, 22) : null, false);
+            ThemeConfig.ApplySidebarButtonIcon(Dashboard_btn, dashIcon != null ? ResizeImage(dashIcon, 18, 18) : null, false);
             Dashboard_btn.Text = "  " + LocalizationManager.GetString("Nav_Dashboard");
 
             // Forms Setup
@@ -260,7 +260,7 @@ namespace GenericInventorySystem
             Dashboard_btn.Margin = new Padding(0);
             Dashboard_btn.Dock = DockStyle.Top;
             Dashboard_btn.Text = "  Dashboard";
-            Dashboard_btn.Image = ResizeImage(ThemeConfig.GetNuricon("dashboard"), 22, 22);
+            Dashboard_btn.Image = ResizeImage(ThemeConfig.GetNuricon("dashboard"), 18, 18);
             ThemeConfig.ApplySidebarButtonIcon(Dashboard_btn, Dashboard_btn.Image, false);
             Dashboard_btn.BringToFront(); // Place below logo
             pnlNav.Controls.Add(Dashboard_btn);
@@ -280,7 +280,7 @@ namespace GenericInventorySystem
             if (isAdmin || isAccountant)
             {
                 AddNavButton(pnlNav, "Suppliers", "suppliers", "btnSuppliers", () => ShowForm(suppliersForm));
-                AddNavButton(pnlNav, "Purchase Orders", "inventory", "btnPO", () => ShowForm(purchaseOrdersForm));
+                AddNavButton(pnlNav, "Purchase Orders", "purchase_orders", "btnPO", () => ShowForm(purchaseOrdersForm));
                 AddNavButton(pnlNav, "Monthly Expenses", "expenses", "btnExpenses", () => { monthlyExpensesForm.LoadData(); ShowForm(monthlyExpensesForm); });
                 AddNavButton(pnlNav, "Reports", "reports", "btnReports", () => { reportsForm.RefreshData(); ShowForm(reportsForm); });
                 AddNavButton(pnlNav, "History", "history", "btnHistory", () => { historyForm.LoadHistory(); ShowForm(historyForm); });
@@ -290,7 +290,7 @@ namespace GenericInventorySystem
             if (isAdmin)
             {
                 AddNavButton(pnlNav, "Quotations", "quotations", "btnQuotations", () => { quotationsForm.LoadQuotations(); ShowForm(quotationsForm); });
-                AddNavButton(pnlNav, "Users Management", "user", "btnUsers", () => ShowForm(usersForm));
+                AddNavButton(pnlNav, "Users Management", "users", "btnUsers", () => ShowForm(usersForm));
             }
 
             ShowForm(dashboardForm);
@@ -438,18 +438,8 @@ namespace GenericInventorySystem
             pbCurrencies.Click += (s, e) => { using (var f = new Forms.CurrencySettingsForm()) f.ShowDialog(this); };
             rightPanel.Controls.Add(pbCurrencies);
 
-            // Contact Us
-            PictureBox pbContact = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 485, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("contact_us"), Color.White) };
-            ThemeConfig.ApplyHeaderIconStyle(pbContact);
-            ToolTip tt = new ToolTip(); tt.SetToolTip(pbContact, "Contact Us: softioservices@gmail.com");
-            pbContact.Click += (s, e) => {
-                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mailto:softioservices@gmail.com") { UseShellExecute = true }); }
-                catch { MessageHelper.ShowInfo("Contact us at: softioservices@gmail.com"); }
-            };
-            rightPanel.Controls.Add(pbContact);
-
             // About Us
-            PictureBox pbAbout = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 535, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("info"), Color.White) };
+            PictureBox pbAbout = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 485, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("info"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbAbout);
             ToolTip ttAbout = new ToolTip(); ttAbout.SetToolTip(pbAbout, LocalizationManager.IsArabic ? "عن البرنامج" : "About Us");
             pbAbout.Click += (s, e) => { using (var f = new Forms.AboutUsForm()) f.ShowDialog(this); };
@@ -599,7 +589,7 @@ namespace GenericInventorySystem
         private Button CreateNavigationButton(string text, string iconName, EventHandler clickHandler) {
             SidebarButton btn = new SidebarButton { Height = 50, Dock = DockStyle.Top, Text = "  " + text, FlatStyle = FlatStyle.Flat };
             Image icon = ThemeConfig.GetNuricon(iconName);
-            if (icon != null) btn.Image = ResizeImage(icon, 22, 22);
+            if (icon != null) btn.Image = ResizeImage(icon, 18, 18);
             ThemeConfig.ApplySidebarButtonIcon(btn, btn.Image, false);
             btn.Click += clickHandler; btn.Click += (s, e) => HighlightSelectedButton(btn);
             return btn;
@@ -609,17 +599,17 @@ namespace GenericInventorySystem
         private void HighlightSelectedButton(Button btn) {
             if (selectedButton == btn) return;
             if (selectedButton != null) { 
-                ThemeConfig.ApplySidebarButton(selectedButton, false); 
+                ThemeConfig.ApplySidebarButtonIcon(selectedButton, selectedButton.Image, false); 
                 selectedButton.Tag = false; 
                 selectedButton.Paint -= DrawSelectionBorder; 
-                selectedButton.Invalidate(); // Immediately clear old highlight
+                selectedButton.Invalidate(); 
             }
             selectedButton = btn; 
-            ThemeConfig.ApplySidebarButton(selectedButton, true); 
+            ThemeConfig.ApplySidebarButtonIcon(selectedButton, selectedButton.Image, true); 
             selectedButton.Tag = true;
             selectedButton.Paint += DrawSelectionBorder; 
-            selectedButton.Invalidate(); // Show new highlight
-            selectedButton.Update(); // Force immediate repaint for responsiveness
+            selectedButton.Invalidate(); 
+            selectedButton.Update(); 
         }
 
         private void DrawSelectionBorder(object sender, PaintEventArgs e) {

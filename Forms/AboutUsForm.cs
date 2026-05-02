@@ -87,15 +87,19 @@ namespace GenericInventorySystem.Forms
 
             // Links/Contact
             Button btnContact = new Button {
-                Text = LocalizationManager.IsArabic ? "تواصل معنا" : "Contact Support",
-                Size = new Size(180, 40),
-                Location = new Point(130, 385),
-                Cursor = Cursors.Hand
+                Text = "  " + (LocalizationManager.IsArabic ? "تواصل معنا" : "Contact Support"),
+                Size = new Size(200, 45),
+                Location = new Point(150, 385),
+                Cursor = Cursors.Hand,
+                Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("contact_us"), Color.White),
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                Padding = new Padding(10, 0, 0, 0)
             };
             ThemeConfig.ApplyPrimaryButton(btnContact);
             btnContact.Click += (s, e) => {
                 try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mailto:softioservices@gmail.com") { UseShellExecute = true }); }
-                catch { }
+                catch { MessageHelper.ShowInfo("Contact us at: softioservices@gmail.com"); }
             };
             container.Controls.Add(btnContact);
 

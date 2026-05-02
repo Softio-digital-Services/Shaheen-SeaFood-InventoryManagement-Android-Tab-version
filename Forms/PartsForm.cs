@@ -326,7 +326,8 @@ namespace GenericInventorySystem.Forms
                 foreach (DataGridViewRow row in dgvParts.Rows)
                 {
                     string imagePath = row.Cells["part_image"].Value?.ToString();
-                    row.Cells["colImage"].Value = CreateProductImage(imagePath);
+                    string categoryName = row.Cells["colCategory"].Value?.ToString();
+                    row.Cells["colImage"].Value = CreateProductImage(imagePath, categoryName);
                 }
             }
             catch (Exception ex)
@@ -335,50 +336,51 @@ namespace GenericInventorySystem.Forms
             }
         }
 
-        private Bitmap CreateProductImage(string imagePath = null)
+        private Bitmap CreateProductImage(string imagePath = null, string category = null)
         {
             // Try loading from file first if path provided
             if (!string.IsNullOrEmpty(imagePath))
             {
                 try
                 {
-                    // Image path from DB is relative "Assets/Products/filename.ext"
-                    // Or possibly just filename if legacy. We check both.
                     string fullPath = System.IO.Path.Combine(Application.StartupPath, imagePath);
-                    
                     if (!System.IO.File.Exists(fullPath))
-                    {
-                        // Try fallback to Assets/Products if relative path lacks it
                         fullPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "Products", System.IO.Path.GetFileName(imagePath));
-                    }
 
                     if (System.IO.File.Exists(fullPath))
                     {
-                        // Use MemoryStream to avoid file locking
                         byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
                         using (var ms = new System.IO.MemoryStream(bytes))
                         using (var original = Image.FromStream(ms))
-                        {
                             return new Bitmap(original, new Size(40, 40));
-                        }
                     }
                 }
-                catch { /* Fallback to placeholder */ }
+                catch { }
             }
 
-            // Procedural Nuricon Placeholder - Beautiful gradient based box
+            // Procedural Placeholder based on Category
             Bitmap img = new Bitmap(40, 40);
             using (Graphics g = Graphics.FromImage(img))
             {
-                g.Clear(ThemeConfig.BackgroundColor); // Standard Light bg
+                g.Clear(ThemeConfig.BackgroundColor);
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 
-                // Get the new procedural 'part' icon
-                Image icon = ThemeConfig.GetNuricon("part");
+                string iconName = "inventory"; // Default
+                if (category != null)
+                {
+                    string cat = category.ToLower();
+                    if (cat.Contains("engine")) iconName = "engine";
+                    else if (cat.Contains("brake")) iconName = "brakes";
+                    else if (cat.Contains("service")) iconName = "services";
+                    else if (cat.Contains("accessory") || cat.Contains("accessories")) iconName = "accessories";
+                    else if (cat.Contains("oil") || cat.Contains("fuel")) iconName = "oil";
+                }
+
+                Image icon = ThemeConfig.GetNuricon(iconName);
                 if (icon != null)
                 {
-                    // Draw it centered with a bit of padding
-                    g.DrawImage(icon, new Rectangle(6, 6, 28, 28));
+                    // Draw smaller icon (24x24) with 8px padding inside the 40x40 box
+                    g.DrawImage(icon, new Rectangle(8, 8, 24, 24));
                 }
             }
             return img;
@@ -512,27 +514,18 @@ namespace GenericInventorySystem.Forms
                 Image imgEdit = ThemeConfig.GetNuricon("edit");
                 Image imgDelete = ThemeConfig.GetNuricon("delete");
 
-                // Edit Button
-                Rectangle editRect = new Rectangle(e.CellBounds.X + 8, e.CellBounds.Y + 14, 32, 32);
-                if (imgEdit != null)
-                {
-                    e.Graphics.DrawImage(imgEdit, editRect);
-                }
+                // Edit Button (32x32)
+                Rectangle editRect = new Rectangle(e.CellBounds.X + 8, e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
+                if (imgEdit != null) e.Graphics.DrawImage(imgEdit, editRect);
 
-                // Delete Button
-                Rectangle delRect = new Rectangle(e.CellBounds.X + 48, e.CellBounds.Y + 14, 32, 32);
-                if (imgDelete != null)
-                {
-                    e.Graphics.DrawImage(imgDelete, delRect);
-                }
+                // Delete Button (32x32)
+                Rectangle delRect = new Rectangle(e.CellBounds.X + 48, e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
+                if (imgDelete != null) e.Graphics.DrawImage(imgDelete, delRect);
 
-                // Adjust Stock Button (Added)
-                Rectangle adjRect = new Rectangle(e.CellBounds.X + 88, e.CellBounds.Y + 14, 32, 32);
-                Image imgAdjust = ThemeConfig.GetNuricon("history"); // Using history icon for adjustment logs/action
-                if (imgAdjust != null)
-                {
-                    e.Graphics.DrawImage(imgAdjust, adjRect);
-                }
+                // Adjust Stock Button (Slightly smaller 28x28 to fit perfectly)
+                Rectangle adjRect = new Rectangle(e.CellBounds.X + 88 + 2, e.CellBounds.Y + (e.CellBounds.Height - 28) / 2, 28, 28);
+                Image imgAdjust = ThemeConfig.GetNuricon("history");
+                if (imgAdjust != null) e.Graphics.DrawImage(imgAdjust, adjRect);
             }
         }
 
@@ -574,28 +567,11 @@ namespace GenericInventorySystem.Forms
                 // Hit Test based on e.X, e.Y (relative to cell)
                 // Edit Rect (X=10, W=30), Delete Rect (X=50, W=30)
                 
-                // Check Delete
-                if (e.X >= 50 && e.X <= 80 && e.Y >= 10 && e.Y <= 40)
+                // Reverted Hit Test for 32x32 icons
+                
+                // Check Edit (X=10-40)
+                if (e.X >= 10 && e.X <= 40)
                 {
-                    string id = dgvParts.Rows[e.RowIndex].Cells["part_id"].Value?.ToString();
-                    if (string.IsNullOrEmpty(id)) return;
-
-                    if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
-                    {
-                        MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionDelete") ?? "You do not have permission to delete items.");
-                        return;
-                    }
-
-                    if (MessageHelper.ConfirmAction("Delete this item?"))
-                    {
-                        _inventoryService.DeletePart(int.Parse(id));
-                        LoadData();
-                    }
-                }
-                // Check Edit
-                else if (e.X >= 10 && e.X <= 40 && e.Y >= 10 && e.Y <= 40)
-                {
-                    // Edit Clicked
                     if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
                     {
                         MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionEdit") ?? "You do not have permission to edit items.");
@@ -632,8 +608,7 @@ namespace GenericInventorySystem.Forms
                             form.LoadServiceData(id, name, sku, price, status, image);
                             if (form.ShowDialog() == DialogResult.OK)
                             {
-                                string currentSearch = txtSearch.Text == "Search..." ? "" : txtSearch.Text;
-                                LoadData(currentSearch);
+                                LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
                                 MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_ServiceUpdated"));
                             }
                         }
@@ -645,15 +620,32 @@ namespace GenericInventorySystem.Forms
                             form.LoadPartData(id, name, sku, qty, price, minStock, status, barcode, location, shelf, image, category);
                             if (form.ShowDialog() == DialogResult.OK)
                             {
-                                string currentSearch = txtSearch.Text == "Search..." ? "" : txtSearch.Text;
-                                LoadData(currentSearch);
+                                LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
                                 MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_UpdateSuccess"));
                             }
                         }
                     }
                 }
-                // Check Stock Adjustment
-                else if (e.X >= 90 && e.X <= 120 && e.Y >= 10 && e.Y <= 40)
+                // Check Delete (X=50-80)
+                else if (e.X >= 50 && e.X <= 80)
+                {
+                    string id = dgvParts.Rows[e.RowIndex].Cells["part_id"].Value?.ToString();
+                    if (string.IsNullOrEmpty(id)) return;
+
+                    if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
+                    {
+                        MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionDelete") ?? "You do not have permission to delete items.");
+                        return;
+                    }
+
+                    if (MessageHelper.ConfirmAction("Delete this item?"))
+                    {
+                        _inventoryService.DeletePart(int.Parse(id));
+                        LoadData();
+                    }
+                }
+                // Check Stock Adjustment (X=90-120)
+                else if (e.X >= 90 && e.X <= 120)
                 {
                     var row = dgvParts.Rows[e.RowIndex];
                     int partId = int.Parse(row.Cells["part_id"].Value?.ToString() ?? "0");
@@ -777,12 +769,22 @@ namespace GenericInventorySystem.Forms
             
             try
             {
-                 DataTable cats = _inventoryService.GetCategories(); // Returns id, category_name
-                 foreach(DataRow row in cats.Rows)
-                 {
-                     string catName = row["category_name"].ToString();
-                     menu.Items.Add(catName, null, (s, args) => LoadData("", category: catName));
-                 }
+                var catList = GenericInventorySystem.Data.CategoryData.GetAllCategories();
+                foreach (var cat in catList)
+                {
+                    ToolStripMenuItem catItem = new ToolStripMenuItem(cat.CategoryName);
+                    catItem.Click += (s, args) => LoadData("", category: cat.CategoryName);
+                    
+                    ToolStripMenuItem editItem = new ToolStripMenuItem("Edit Category", ThemeConfig.GetNuricon("edit"));
+                    editItem.Click += (s, args) => {
+                        using (AddCategoryForm f = new AddCategoryForm()) {
+                            f.LoadCategoryData(cat.Id, cat.CategoryName, cat.Description, cat.CategoryImage);
+                            if (f.ShowDialog() == DialogResult.OK) LoadData();
+                        }
+                    };
+                    catItem.DropDownItems.Add(editItem);
+                    menu.Items.Add(catItem);
+                }
             }
             catch {}
             
