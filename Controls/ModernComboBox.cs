@@ -143,11 +143,21 @@ namespace GenericInventorySystem.Controls
                 // Prevent auto-selection of text
                 if (cmbInput.IsHandleCreated) cmbInput.BeginInvoke(new Action(() => { cmbInput.Select(0, 0); cmbInput.SelectionLength = 0; }));
             };
-            cmbInput.GotFocus += (s, e) => { _isFocused = true; pnlContainer.Invalidate(); };
+            cmbInput.GotFocus += (s, e) => { 
+                _isFocused = true; 
+                pnlContainer.Invalidate(); 
+                // Ensure selection is cleared on focus
+                if (cmbInput.IsHandleCreated) cmbInput.BeginInvoke(new Action(() => { cmbInput.Select(0, 0); cmbInput.SelectionLength = 0; }));
+            };
             cmbInput.LostFocus += (s, e) => { _isFocused = false; pnlContainer.Invalidate(); };
 
             // Clear selection after a choice is made to prevent blue highlight
             cmbInput.SelectedIndexChanged += (s, e) => {
+                if (cmbInput.IsHandleCreated) cmbInput.BeginInvoke(new Action(() => { cmbInput.Select(0, 0); cmbInput.SelectionLength = 0; }));
+            };
+            
+            // Handle DropDown events to clear selection after closing
+            cmbInput.DropDownClosed += (s, e) => {
                 if (cmbInput.IsHandleCreated) cmbInput.BeginInvoke(new Action(() => { cmbInput.Select(0, 0); cmbInput.SelectionLength = 0; }));
             };
 

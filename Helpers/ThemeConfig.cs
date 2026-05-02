@@ -659,14 +659,14 @@ namespace GenericInventorySystem
              DrawRoundedButton(sender as Button, e.Graphics);
         }
 
-        public static GraphicsPath GetRoundedPathPublic(Rectangle rect, int radius)
+        public static GraphicsPath GetRoundedPathPublic(Rectangle rect, float radius)
         {
             var path = new GraphicsPath();
-            int d = radius * 2;
-            Rectangle r = new Rectangle(rect.X, rect.Y, rect.Width, rect.Height); 
+            float d = radius * 2;
+            RectangleF r = new RectangleF(rect.X, rect.Y, rect.Width, rect.Height); 
             if (d > r.Width) d = r.Width;
             if (d > r.Height) d = r.Height;
-            if (d <= 0) d = 1;
+            if (d <= 0.1f) d = 1f;
 
             path.AddArc(r.X, r.Y, d, d, 180, 90);
             path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
@@ -676,7 +676,7 @@ namespace GenericInventorySystem
             return path;
         }
 
-        private static GraphicsPath GetRoundedPath(Rectangle rect, int radius)
+        private static GraphicsPath GetRoundedPath(Rectangle rect, float radius)
         {
             return GetRoundedPathPublic(rect, radius);
         }
@@ -875,12 +875,12 @@ namespace GenericInventorySystem
             grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None; 
             grid.ColumnHeadersHeight = 45; 
             grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
             grid.DefaultCellStyle.BackColor = SurfaceColor;
             grid.DefaultCellStyle.ForeColor = TextColorDark;
             grid.DefaultCellStyle.Font = StandardFont; 
-            grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             
             grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(237, 242, 247);
             grid.DefaultCellStyle.SelectionForeColor = TextColorDark;

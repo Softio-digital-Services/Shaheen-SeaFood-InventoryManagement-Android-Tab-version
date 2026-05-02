@@ -153,7 +153,7 @@ namespace GenericInventorySystem.Forms
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     LoadRates();
-                    MessageHelper.ShowSuccess(LocalizationManager.GetString("AddUser_MsgAddSuccess"));
+                    MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_Saved"));
                 }
             }
         }
@@ -270,7 +270,7 @@ namespace GenericInventorySystem.Forms
             }
             
             lblStatus.ForeColor = ThemeConfig.SuccessColor;
-            lblStatus.Text = LocalizationManager.GetString("AddUser_MsgUpdateSuccess");
+            lblStatus.Text = LocalizationManager.GetString("Msg_Saved");
             LoadRates();
         }
     }

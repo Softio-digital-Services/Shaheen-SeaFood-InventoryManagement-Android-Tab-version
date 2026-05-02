@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -119,6 +119,7 @@ namespace GenericInventorySystem.Forms
             dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = "Actions", Width = 200, ReadOnly = true });
 
             // Events
+            dgvQuotes.CellPainting     += DgvQuotes_CellPainting;
             dgvQuotes.CellClick        += DgvQuotes_CellClick;
             dgvQuotes.CellMouseMove    += (s, e) =>
             {

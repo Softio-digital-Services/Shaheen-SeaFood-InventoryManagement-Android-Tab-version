@@ -20,7 +20,7 @@ namespace GenericInventorySystem.Forms
             _orderId = orderId;
             _orderService = new OrderService();
             
-            this.TitleText = "Quotation Preview - #" + orderId;
+            this.TitleText = (LocalizationManager.IsArabic ? "\u0645\u0639\u0627\u064a\u0646\u0629 \u0639\u0631\u0636 \u0627\u0644\u0633\u0639\u0631" : "Quotation Preview") + " - #" + orderId;
             this.Size = new Size(950, 950); // Increased width to ensure A4 fits
             this.BackColor = ThemeConfig.BackgroundColor;
             this.ContentPanel.Padding = new Padding(20, 20, 20, 20); // Add safety margin
@@ -106,12 +106,12 @@ namespace GenericInventorySystem.Forms
             pnlContent.Controls.Add(lblCompany);
 
             Label lblQuoteTitle = new Label {
-                Text = "QUOTATION",
+                Text = LocalizationManager.IsArabic ? "\u0639\u0631\u0636 \u0633\u0639\u0631" : "QUOTATION",
                 Font = new Font("Segoe UI", 20, FontStyle.Bold),
                 ForeColor = Color.DimGray,
                 Location = new Point(pnlContent.Width - 350, y + 5),
                 Size = new Size(310, 40),
-                TextAlign = ContentAlignment.TopRight
+                TextAlign = LocalizationManager.IsArabic ? ContentAlignment.TopLeft : ContentAlignment.TopRight
             };
             pnlContent.Controls.Add(lblQuoteTitle);
 

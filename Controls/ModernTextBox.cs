@@ -253,6 +253,7 @@ namespace GenericInventorySystem.Controls
             var pnl = sender as Panel;
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
 
             // 1. Clear corners with PARENT color to solve "white corners bug"
             Color parentColor = ThemeConfig.GetParentColor(this);
@@ -263,19 +264,35 @@ namespace GenericInventorySystem.Controls
 
             // 2. Draw Rounded Surface (White)
             Rectangle rect = new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1);
-            using (var path = GetRoundedPath(rect, 12))
+            float radius = 12f;
+
+            using (var path = GetRoundedPath(rect, radius))
             {
                 using (var brush = new SolidBrush(Color.White))
                 {
                     e.Graphics.FillPath(brush, path);
                 }
 
-                // 3. Draw Border (Primary if focused, else BorderColor)
+                // 3. Draw Border & Neon Glow
                 Color borderColor = _isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor;
-                float borderSize = _isFocused ? 2f : 1.5f;
-                using (var pen = new Pen(borderColor, borderSize))
+                
+                if (_isFocused)
                 {
-                    e.Graphics.DrawPath(pen, path);
+                    // Add subtle neon glow when focused
+                    using (var glow1 = new Pen(Color.FromArgb(30, borderColor), 4f)) e.Graphics.DrawPath(glow1, path);
+                    using (var glow2 = new Pen(Color.FromArgb(60, borderColor), 2f)) e.Graphics.DrawPath(glow2, path);
+                    
+                    using (var pen = new Pen(borderColor, 2f))
+                    {
+                        e.Graphics.DrawPath(pen, path);
+                    }
+                }
+                else
+                {
+                    using (var pen = new Pen(borderColor, 1.5f))
+                    {
+                        e.Graphics.DrawPath(pen, path);
+                    }
                 }
             }
 
@@ -305,14 +322,15 @@ namespace GenericInventorySystem.Controls
 
         }
 
-        private GraphicsPath GetRoundedPath(Rectangle rect, int radius)
+        private GraphicsPath GetRoundedPath(Rectangle rect, float radius)
         {
             GraphicsPath path = new GraphicsPath();
-            int d = radius * 2;
-            path.AddArc(rect.X, rect.Y, d, d, 180, 90);
-            path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
-            path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
-            path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
+            float d = radius * 2;
+            RectangleF r = new RectangleF(rect.X, rect.Y, rect.Width, rect.Height);
+            path.AddArc(r.X, r.Y, d, d, 180, 90);
+            path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+            path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+            path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
             path.CloseFigure();
             return path;
         }

@@ -64,6 +64,17 @@ namespace GenericInventorySystem.Controls
             }
         }
 
+        private int _iconPadding = 8;
+        public int IconPadding
+        {
+            get => _iconPadding;
+            set
+            {
+                _iconPadding = value;
+                if (_iconPanel != null) _iconPanel.Invalidate();
+            }
+        }
+
         public StatCard()
         {
             InitializeControls();
@@ -214,7 +225,7 @@ namespace GenericInventorySystem.Controls
             // Draw Icon Image
             if (this.IconImage != null)
             {
-                Rectangle imgRect = new Rectangle(8, 8, _iconPanel.Width - 16, _iconPanel.Height - 16);
+                Rectangle imgRect = new Rectangle(IconPadding, IconPadding, _iconPanel.Width - (IconPadding * 2), _iconPanel.Height - (IconPadding * 2));
                 e.Graphics.DrawImage(this.IconImage, imgRect);
             }
             // Fallback to text icon (emoji)

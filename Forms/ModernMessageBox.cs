@@ -117,15 +117,15 @@ namespace GenericInventorySystem.Forms
                     break;
 
                 case MessageBoxButtons.YesNo:
-                    SetFooterButtons(yes, no, 
-                        (s, e) => { this.DialogResult = DialogResult.Yes; this.Close(); }, 
-                        (s, e) => { this.DialogResult = DialogResult.No; this.Close(); });
+                    SetFooterButtons(no, yes, 
+                        (s, e) => { this.DialogResult = DialogResult.No; this.Close(); }, 
+                        (s, e) => { this.DialogResult = DialogResult.Yes; this.Close(); });
                     break;
 
                 case MessageBoxButtons.YesNoCancel:
-                    SetFooterButtons(yes, no, 
-                        (s, e) => { this.DialogResult = DialogResult.Yes; this.Close(); }, 
-                        (s, e) => { this.DialogResult = DialogResult.No; this.Close(); },
+                    SetFooterButtons(no, yes, 
+                        (s, e) => { this.DialogResult = DialogResult.No; this.Close(); }, 
+                        (s, e) => { this.DialogResult = DialogResult.Yes; this.Close(); },
                         cancel, (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); });
                     break;
             }

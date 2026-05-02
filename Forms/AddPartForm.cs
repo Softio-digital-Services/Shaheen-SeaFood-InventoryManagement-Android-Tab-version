@@ -147,6 +147,13 @@ namespace GenericInventorySystem.Forms
 
             if (cmbCategory.SelectedItem is CategoryData cat)
             {
+                // Toggle visibility based on category
+                bool isService = cat.CategoryName.Equals("Services", StringComparison.OrdinalIgnoreCase) || 
+                                 cat.CategoryName.Equals("Service", StringComparison.OrdinalIgnoreCase);
+                
+                numQuantity.Visible = !isService;
+                numMinStock.Visible = !isService;
+
                 if (cat.Id == -1)
                 {
                     using (var f = new AddCategoryForm())
@@ -380,6 +387,14 @@ namespace GenericInventorySystem.Forms
                 if (currentStatus == LocalizationManager.GetString("Status_Active") || currentStatus == "Active") cmbStatus.SelectedIndex = 0;
                 else if (currentStatus == LocalizationManager.GetString("Status_Inactive") || currentStatus == "Inactive") cmbStatus.SelectedIndex = 1;
                 else cmbStatus.SelectedIndex = 0;
+            }
+
+            // Ensure visibility is correct for current selection
+            if (cmbCategory.SelectedItem is CategoryData selectedCat)
+            {
+                bool isService = selectedCat.CategoryName.Equals("Services", StringComparison.OrdinalIgnoreCase);
+                numQuantity.Visible = !isService;
+                numMinStock.Visible = !isService;
             }
         }
     }

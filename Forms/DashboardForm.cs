@@ -187,10 +187,10 @@ namespace GenericInventorySystem.Forms
             for (int i = 0; i < 4; i++) _cardsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
             
             // Create Cards
-            _cardInventory = CreateStatCard("Total Inventory", "inventory", ThemeConfig.PrimaryColor); 
+            _cardInventory = CreateStatCard("Total Inventory", "inventory_dashboard", ThemeConfig.PrimaryColor); 
             _cardRevenue = CreateStatCard("Total Revenue", "revenue", ThemeConfig.SuccessColor); 
             _cardOrders = CreateStatCard("Total Orders", "orders", ThemeConfig.WarningColor); 
-            _cardLowStock = CreateStatCard("Low Stock", "bell", ThemeConfig.DangerColor); 
+            _cardLowStock = CreateStatCard("Low Stock", "bell_dashboard", ThemeConfig.DangerColor); 
 
 
             _cardsLayout.Controls.Add(_cardInventory, 0, 0);

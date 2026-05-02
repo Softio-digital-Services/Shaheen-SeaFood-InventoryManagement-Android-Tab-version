@@ -278,6 +278,7 @@ namespace GenericInventorySystem.Forms
             dgvParts.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colCheck", HeaderText = "", Width = 30, FillWeight = 1, ReadOnly = false }); // Active Checkbox
             
             var colImage = new DataGridViewImageColumn { Name = "colImage", HeaderText = "Image", Width = 50, ImageLayout = DataGridViewImageCellLayout.Zoom, FillWeight = 6, ReadOnly = true };
+            colImage.DefaultCellStyle.Padding = new Padding(8); // Add padding for "Zoom" layout
             dgvParts.Columns.Add(colImage);
             
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSKU", HeaderText = "SKU", DataPropertyName = "part_number", FillWeight = 10, ReadOnly = true });
@@ -359,7 +360,8 @@ namespace GenericInventorySystem.Forms
             }
 
             // Procedural Placeholder based on Category
-            Bitmap img = new Bitmap(40, 40);
+            // Increased size to 60x60 to allow for more padding and a premium look
+            Bitmap img = new Bitmap(60, 60);
             using (Graphics g = Graphics.FromImage(img))
             {
                 g.Clear(ThemeConfig.BackgroundColor);
@@ -379,8 +381,11 @@ namespace GenericInventorySystem.Forms
                 Image icon = ThemeConfig.GetNuricon(iconName);
                 if (icon != null)
                 {
-                    // Draw smaller icon (24x24) with 8px padding inside the 40x40 box
-                    g.DrawImage(icon, new Rectangle(8, 8, 24, 24));
+                    // Draw centered icon with significant padding (18px) for a "minimalist" premium look
+                    // Icon size: 24x24 inside 60x60 canvas
+                    int iconSize = 24;
+                    int padding = (60 - iconSize) / 2;
+                    g.DrawImage(icon, new Rectangle(padding, padding, iconSize, iconSize));
                 }
             }
             return img;
@@ -390,10 +395,30 @@ namespace GenericInventorySystem.Forms
         private void DgvParts_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex < 0) return;
-
             var row = dgvParts.Rows[e.RowIndex];
+            
+            // Identify if this is a Service
+            string category = row.Cells["colCategory"].Value?.ToString() ?? "";
+            bool isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase) || 
+                             category.Equals("Service", StringComparison.OrdinalIgnoreCase);
+
             var stockCell = row.Cells["colStock"];
             var minStockCell = row.Cells["minimum_stock_level"];
+
+            // Hide Stock/MinStock for Services
+            if (isService)
+            {
+                if (dgvParts.Columns[e.ColumnIndex].Name == "colStock")
+                {
+                    e.Value = "-"; // or "N/A"
+                    e.FormattingApplied = true;
+                }
+                if (dgvParts.Columns[e.ColumnIndex].Name == "minimum_stock_level")
+                {
+                    e.Value = "-";
+                    e.FormattingApplied = true;
+                }
+            }
 
             // Price: format using active currency
             if (dgvParts.Columns[e.ColumnIndex].Name == "colPrice" && e.Value != null)
@@ -405,8 +430,8 @@ namespace GenericInventorySystem.Forms
                 }
             }
 
-            // Low Stock Logic: Whole Row Pink
-            if (stockCell.Value != null && minStockCell.Value != null)
+            // Low Stock Logic: Whole Row Pink (Only for non-services)
+            if (!isService && stockCell.Value != null && minStockCell.Value != null)
             {
                 if (int.TryParse(stockCell.Value.ToString(), out int stock) && int.TryParse(minStockCell.Value.ToString(), out int minStock))
                 {
@@ -432,11 +457,16 @@ namespace GenericInventorySystem.Forms
             if (e.RowIndex < 0) return;
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-            // 1. Stock Level Pill (Only if low stock)
+            // 1. Stock Level Pill (Only if low stock and NOT a service)
             if (dgvParts.Columns[e.ColumnIndex].Name == "colStock")
             {
-                // Check value logic again to decide whether to paint pill
                 var row = dgvParts.Rows[e.RowIndex];
+                string category = row.Cells["colCategory"].Value?.ToString() ?? "";
+                bool isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase) || 
+                                 category.Equals("Service", StringComparison.OrdinalIgnoreCase);
+
+                if (isService) return; // Formatting handled by CellFormatting
+
                 var minStockCell = row.Cells["minimum_stock_level"];
                 if (e.Value != null && minStockCell.Value != null)
                 {
@@ -451,10 +481,8 @@ namespace GenericInventorySystem.Forms
                         e.PaintBackground(e.CellBounds, true);
                         
                         // Draw Red Pill around the number
-                        // Measure text
                         SizeF textSize = e.Graphics.MeasureString(e.Value.ToString(), e.CellStyle.Font);
                         float pillWidth = Math.Max(textSize.Width + 16, 40);
-                        // Draw Red Pill around the number - CENTERED
                         float pillX = e.CellBounds.X + (e.CellBounds.Width - pillWidth) / 2;
                         RectangleF pillRect = new RectangleF(
                             pillX,
@@ -464,12 +492,11 @@ namespace GenericInventorySystem.Forms
                         );
                         
                         using (GraphicsPath path = GetRoundedRect(Rectangle.Round(pillRect), 8))
-                        using (SolidBrush brush = new SolidBrush(ThemeConfig.DangerLight)) // Darker pink pill
+                        using (SolidBrush brush = new SolidBrush(ThemeConfig.DangerLight))
                         {
                             e.Graphics.FillPath(brush, path);
                         }
                         
-                        // Draw Text
                         TextRenderer.DrawText(e.Graphics, e.Value.ToString(), ThemeConfig.SmallBoldFont, Rectangle.Round(pillRect), ThemeConfig.DangerBadgeText, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                         return;
                     }
@@ -524,7 +551,7 @@ namespace GenericInventorySystem.Forms
 
                 // Adjust Stock Button (Slightly smaller 28x28 to fit perfectly)
                 Rectangle adjRect = new Rectangle(e.CellBounds.X + 88 + 2, e.CellBounds.Y + (e.CellBounds.Height - 28) / 2, 28, 28);
-                Image imgAdjust = ThemeConfig.GetNuricon("history");
+                Image imgAdjust = ThemeConfig.GetNuricon("item_adjustment");
                 if (imgAdjust != null) e.Graphics.DrawImage(imgAdjust, adjRect);
             }
         }

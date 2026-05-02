@@ -629,4 +629,19 @@ Expires: {0:MMMM dd, yyyy}</value></data>
   <data name="Msg_PartUpdated" xml:space="preserve"><value>Item updated successfully!</value></data>
   <data name="Msg_UpdateSuccess" xml:space="preserve"><value>Record updated successfully!</value></data>
   <data name="Curr_MsgExists" xml:space="preserve"><value>This currency already exists</value></data>
+  <data name="Msg_AddSelected" xml:space="preserve">
+    <value>Add Selected Item</value>
+  </data>
+  <data name="Msg_Saved" xml:space="preserve">
+    <value>Saved successfully!</value>
+  </data>
+  <data name="Msg_FinalizePO" xml:space="preserve">
+    <value>Finalize Purchase Order</value>
+  </data>
+  <data name="Msg_DraftSaved" xml:space="preserve">
+    <value>Draft saved successfully!</value>
+  </data>
+  <data name="Msg_HistoryLoadError" xml:space="preserve">
+    <value>Error loading history data. Please try again.</value>
+  </data>
 </root>

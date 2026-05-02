@@ -120,6 +120,12 @@ namespace GenericInventorySystem.Controls
                 Dock = DockStyle.Fill
             };
             txtInput.KeyPress += TxtInput_KeyPress;
+            txtInput.Enter += (s, e) => {
+                if (txtInput.IsHandleCreated) txtInput.BeginInvoke(new Action(() => { txtInput.Select(0, 0); txtInput.SelectionLength = 0; }));
+            };
+            txtInput.GotFocus += (s, e) => {
+                if (txtInput.IsHandleCreated) txtInput.BeginInvoke(new Action(() => { txtInput.Select(0, 0); txtInput.SelectionLength = 0; }));
+            };
             txtInput.LostFocus += (s, e) => {
                 if (decimal.TryParse(txtInput.Text, out decimal val)) Value = val;
                 else UpdateText();

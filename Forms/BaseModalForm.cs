@@ -327,7 +327,10 @@ namespace GenericInventorySystem.Forms
             // Region handles the sharp corner clipping, so we just clear and draw
             e.Graphics.Clear(this.BackColor);
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            int radius = 16;
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality; // Ensure smooth edges
+            e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+
+            float radius = 16f;
             Rectangle rect = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
             
             // 1. Draw the Solid Background (The Form itself)
@@ -341,16 +344,16 @@ namespace GenericInventorySystem.Forms
                 // 2. Neon Border with Glow (Color depends on BorderColor)
                 Color neonColor = BorderColor;
                 
-                // Outer glow layer (Subtle 4px width)
-                using (Pen glow1 = new Pen(Color.FromArgb(40, neonColor), 4f))
+                // Outer glow layer (Subtle spread)
+                using (Pen glow1 = new Pen(Color.FromArgb(25, neonColor), 5f))
                     e.Graphics.DrawPath(glow1, path);
                 
-                // Inner glow layer (Subtle 2px width)
-                using (Pen glow2 = new Pen(Color.FromArgb(70, neonColor), 2f))
+                // Mid glow layer (Condensed)
+                using (Pen glow2 = new Pen(Color.FromArgb(55, neonColor), 3f))
                     e.Graphics.DrawPath(glow2, path);
                     
-                // Main Sharp Neon Border (Refined 1.8px)
-                using (Pen mainPen = new Pen(neonColor, 1.8f))
+                // Main Sharp Neon Border (Refined 1.5px for crispness)
+                using (Pen mainPen = new Pen(neonColor, 1.5f))
                 {
                     e.Graphics.DrawPath(mainPen, path);
                 }
@@ -391,15 +394,16 @@ namespace GenericInventorySystem.Forms
            CenterOnScreen();
         }
 
-        private GraphicsPath GetRoundedPath(Rectangle rect, int radius)
+        private GraphicsPath GetRoundedPath(Rectangle rect, float radius)
         {
             GraphicsPath path = new GraphicsPath();
-            int d = radius * 2;
+            float d = radius * 2;
+            RectangleF r = new RectangleF(rect.X, rect.Y, rect.Width, rect.Height);
             
-            path.AddArc(rect.X, rect.Y, d, d, 180, 90);
-            path.AddArc(rect.Right - d - 1, rect.Y, d, d, 270, 90);
-            path.AddArc(rect.Right - d - 1, rect.Bottom - d - 1, d, d, 0, 90);
-            path.AddArc(rect.X, rect.Bottom - d - 1, d, d, 90, 90);
+            path.AddArc(r.X, r.Y, d, d, 180, 90);
+            path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+            path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+            path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
             path.CloseFigure();
             return path;
         }

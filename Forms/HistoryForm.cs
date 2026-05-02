@@ -42,6 +42,11 @@ namespace GenericInventorySystem.Forms
         private StatCard cardOrders;
         private StatCard cardPayments;
         
+        // Animation
+        private System.Windows.Forms.Timer _refreshTimer;
+        private float _refreshAngle = 0;
+        private bool _isRefreshing = false;
+        
         private HistoryService _historyService;
 
         public HistoryForm()
@@ -117,7 +122,7 @@ namespace GenericInventorySystem.Forms
                 if (col.Name == "Date") col.HeaderText = L("Hist_ColDate");
                 if (col.Name == "Customer") col.HeaderText = L("Hist_ColCustomer");
                 if (col.Name == "Total") col.HeaderText = L("Hist_ColTotal");
-                if (col.Name == "Status") col.HeaderText = L("Hist_ColStatus") == "Hist_ColStatus" && GenericInventorySystem.Helpers.LocalizationManager.IsArabic ? "\u0627\u0644\u062D\u0627\u0644\u0629" : L("Hist_ColStatus") != "Hist_ColStatus" ? L("Hist_ColStatus") : "Status";
+                if (col.Name == "Status") col.HeaderText = L("Hist_ColStatus");
                 if (col.Name == "Items") col.HeaderText = L("Hist_ColItems");
                 if (col.Name == "colReturn") col.HeaderText = "";
             }
@@ -170,8 +175,32 @@ namespace GenericInventorySystem.Forms
             btnRefresh.Text = "Refresh";
             btnRefresh.Dock = DockStyle.Fill;
             ThemeConfig.ApplySecondaryButton(btnRefresh);
-            btnRefresh.Paint += (s, e) => ThemeConfig.DrawIconButton(btnRefresh, e.Graphics, "refresh", "Hist_Refresh", ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, true);
-            btnRefresh.Click += (s, e) => LoadHistory();
+            
+            // Animation Timer
+            _refreshTimer = new System.Windows.Forms.Timer { Interval = 30 }; // ~33 FPS
+            _refreshTimer.Tick += (s, e) => {
+                _refreshAngle = (_refreshAngle + 15) % 360;
+                btnRefresh.Invalidate();
+            };
+
+            btnRefresh.Paint += (s, e) => {
+                // Clear background
+                using (var pb = new SolidBrush(ThemeConfig.GetParentColor(btnRefresh)))
+                    e.Graphics.FillRectangle(pb, -1, -1, btnRefresh.Width + 2, btnRefresh.Height + 2);
+                
+                // Draw rotating icon or static icon
+                if (_isRefreshing)
+                    DrawRotatingRefreshIcon(btnRefresh, e.Graphics);
+                else
+                    ThemeConfig.DrawIconButton(btnRefresh, e.Graphics, "refresh", "Hist_Refresh", ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, true);
+            };
+
+            btnRefresh.Click += async (s, e) => {
+                if (_isRefreshing) return;
+                StartRefreshAnimation();
+                await System.Threading.Tasks.Task.Run(() => LoadHistory());
+                StopRefreshAnimation();
+            };
             pnlRefreshWrapper.Controls.Add(btnRefresh);
             pnlActions.Controls.Add(pnlRefreshWrapper);
 
@@ -187,7 +216,7 @@ namespace GenericInventorySystem.Forms
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
             tlpStats.Margin = new Padding(0, 0, 0, 10);
             
-            cardActions = new StatCard { Title = "Activity Today", Value = "0", IconImage = ThemeConfig.GetNuricon("dashboard"), ThemeColor = ThemeConfig.PrimaryColor, Dock = DockStyle.Fill };
+            cardActions = new StatCard { Title = "Activity Today", Value = "0", IconImage = ThemeConfig.GetNuricon("history_activity"), ThemeColor = ThemeConfig.PrimaryColor, Dock = DockStyle.Fill };
             cardOrders = new StatCard { Title = "Orders Today", Value = "0", IconImage = ThemeConfig.GetNuricon("orders"), ThemeColor = ThemeConfig.SuccessColor, Dock = DockStyle.Fill };
             cardPayments = new StatCard { Title = "Payments Today", Value = "0", IconImage = ThemeConfig.GetNuricon("revenue"), ThemeColor = ThemeConfig.WarningColor, Dock = DockStyle.Fill };
             
@@ -409,6 +438,12 @@ namespace GenericInventorySystem.Forms
 
         public void LoadHistory()
         {
+             if (this.InvokeRequired)
+             {
+                 this.Invoke(new Action(LoadHistory));
+                 return;
+             }
+
              try
              {
                  // Load Grids
@@ -416,6 +451,7 @@ namespace GenericInventorySystem.Forms
                  dgvCustomers.DataSource = _historyService.GetCustomerHistory();
                  dgvSuppliers.DataSource = _historyService.GetSupplierHistory();
                  dgvOrders.DataSource = _historyService.GetOrderHistory(); 
+                 
                  if (!dgvOrders.Columns.Contains("colReturn"))
                  {
                      DataGridViewButtonColumn btnReturn = new DataGridViewButtonColumn
@@ -428,7 +464,7 @@ namespace GenericInventorySystem.Forms
                      dgvOrders.Columns.Add(btnReturn);
                  }
                  
-                 dgvQuotations.DataSource = _historyService.GetQuotationHistory(); // NEW
+                 dgvQuotations.DataSource = _historyService.GetQuotationHistory(); 
                  
                  // Load Stats
                  var stats = _historyService.GetTodayStats();
@@ -499,6 +535,70 @@ namespace GenericInventorySystem.Forms
                  dt.DefaultView.RowFilter = filterBuilder.ToString();
              }
              catch { /* Ignore invalid filter strings */ }
+        }
+
+        private void StartRefreshAnimation()
+        {
+            _isRefreshing = true;
+            _refreshAngle = 0;
+            _refreshTimer.Start();
+        }
+
+        private void StopRefreshAnimation()
+        {
+            // Give it a tiny moment to feel "real" if it was too fast
+            System.Threading.Tasks.Task.Delay(500).ContinueWith(_ => {
+                if (this.IsHandleCreated)
+                {
+                    this.BeginInvoke(new Action(() => {
+                        _refreshTimer.Stop();
+                        _isRefreshing = false;
+                        _refreshAngle = 0;
+                        var refreshBtns = this.Controls.Find("btnRefresh", true);
+                        if (refreshBtns.Length > 0) refreshBtns[0].Invalidate();
+                    }));
+                }
+            });
+        }
+
+        private void DrawRotatingRefreshIcon(Button btn, Graphics g)
+        {
+            bool isArabic = LocalizationManager.IsArabic;
+            string text = LocalizationManager.GetString("Hist_Refresh");
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            
+            Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+            using (var path = ThemeConfig.GetRoundedPathPublic(r, 12))
+            {
+                using (Pen pen = new Pen(ThemeConfig.SuccessColor, 1.5f))
+                    g.DrawPath(pen, path);
+            }
+
+            Image img = ThemeConfig.GetNuricon("refresh");
+            int iconSize = 24;
+            int margin = 8;
+            int iconX = isArabic ? (btn.Width - iconSize - margin) : margin;
+            int iconY = (btn.Height - iconSize) / 2;
+
+            if (img != null)
+            {
+                using (var tinted = ThemeConfig.TintImage(img, ThemeConfig.SuccessColor))
+                {
+                    // Rotate specifically the icon
+                    GraphicsState state = g.Save();
+                    g.TranslateTransform(iconX + iconSize / 2, iconY + iconSize / 2);
+                    g.RotateTransform(_refreshAngle);
+                    g.DrawImage(tinted, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
+                    g.Restore(state);
+                }
+            }
+
+            int textX = isArabic ? margin : (iconX + iconSize + 4);
+            int textW = btn.Width - iconSize - (margin * 2) - 4;
+            Rectangle textRect = new Rectangle(textX, 0, textW, btn.Height);
+            TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding;
+            if (isArabic) flags |= TextFormatFlags.RightToLeft;
+            TextRenderer.DrawText(g, text, btn.Font, textRect, ThemeConfig.SuccessColor, flags);
         }
         
     }

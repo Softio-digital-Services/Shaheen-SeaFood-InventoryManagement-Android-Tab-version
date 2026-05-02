@@ -410,6 +410,8 @@ function checkLoginState() {
     // ALWAYS clear session on refresh as per user requirement for tablet POS security
     localStorage.removeItem('pos_loggedIn');
     document.getElementById('loginScreen').classList.remove('hidden');
+    // Hide header on login page
+    document.querySelector('.top-nav')?.classList.add('hidden');
 }
 
 async function handleLogin() {
@@ -429,6 +431,8 @@ async function handleLogin() {
             localStorage.setItem('pos_username', data.username);
             localStorage.setItem('pos_user', data.fullName);
             document.getElementById('loginScreen').classList.add('hidden');
+            // Show header after successful login
+            document.querySelector('.top-nav')?.classList.remove('hidden');
             showToast(`Logged in as ${data.fullName}`, "success");
             globalBarcodeScanner.init(); // Activate scanner immediately on login
             initApp();
@@ -647,13 +651,24 @@ const barcodeScannerManager = {
             await this.scanner.start({ facingMode: this.currentFacingMode }, { fps: 24, qrbox: (w, h) => { const s = Math.min(w, h) * 0.65; return { width: s, height: s }; } }, (t) => this.onScanSuccess(t), () => {});
         } catch (err) { showToast("Camera error", "error"); }
     },
-    async stop() { if (this.scanner) { await this.scanner.stop(); document.getElementById('cameraScannerModal').classList.add('hidden'); } },
+    async stop() { 
+        if (this.scanner && this.scanner.isScanning) { 
+            try { await this.scanner.stop(); } catch(e) { console.warn("Scanner stop failed", e); }
+        } 
+        document.getElementById('cameraScannerModal').classList.add('hidden'); 
+    },
     async toggleCamera() { this.currentFacingMode = (this.currentFacingMode === "environment") ? "user" : "environment"; await this.stop(); await this.start(this.target); },
     onScanSuccess(decodedText) {
-        if (this.target === 'modal') document.getElementById('newItemBarcode').value = decodedText;
-        else {
+        if (this.target === 'modal') {
+            document.getElementById('newItemBarcode').value = decodedText;
+            this.stop(); // Close after scan
+        } else {
             const p = allProducts.find(x => x.barcode === decodedText);
-            if (p) { addToCart(p); showToast(`Added: ${p.name}`, "success"); }
+            if (p) { 
+                addToCart(p); 
+                showToast(`Added: ${p.name}`, "success"); 
+                this.stop(); // Close after scan
+            }
         }
     }
 };

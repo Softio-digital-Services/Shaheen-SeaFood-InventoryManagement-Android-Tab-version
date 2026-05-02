@@ -79,7 +79,7 @@ namespace GenericInventorySystem.Forms
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
             cardTodayOrders = new StatCard { Title = "Orders", Value = "0", IconImage = ThemeConfig.GetNuricon("orders"), ThemeColor = ThemeConfig.PrimaryColor, Dock = DockStyle.Fill };
             cardTodaySales = new StatCard { Title = "Sales", Value = "$0", IconImage = ThemeConfig.GetNuricon("revenue"), ThemeColor = ThemeConfig.SuccessColor, Dock = DockStyle.Fill };
-            cardPending = new StatCard { Title = "Pending", Value = "0", IconImage = ThemeConfig.GetNuricon("history"), ThemeColor = ThemeConfig.WarningColor, Dock = DockStyle.Fill };
+            cardPending = new StatCard { Title = "Pending", Value = "0", IconImage = ThemeConfig.GetNuricon("pending"), IconPadding = 12, ThemeColor = ThemeConfig.WarningColor, Dock = DockStyle.Fill };
             tlpStats.Controls.Add(cardTodayOrders, 0, 0); tlpStats.Controls.Add(cardTodaySales, 1, 0); tlpStats.Controls.Add(cardPending, 2, 0);
             tlpRoot.Controls.Add(tlpStats, 0, 1);
 
