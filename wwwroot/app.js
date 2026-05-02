@@ -190,11 +190,18 @@ async function fetchCategories() {
     }
 }
 
-function renderCategories(apiCategories = []) {
+let masterCategories = ['Engine', 'Services'];
+
+function renderCategories(apiCategories = null) {
     const container = document.getElementById('categoryList');
     if (!container) return;
     
-    const categories = ['All', ...new Set(['Engine', 'Services', ...apiCategories])];
+    // If we received new categories from API, update our master list
+    if (apiCategories) {
+        masterCategories = apiCategories;
+    }
+
+    const categories = ['All', ...new Set(['Engine', 'Services', ...masterCategories])];
     container.innerHTML = '';
     
     categories.forEach(cat => {
@@ -203,7 +210,7 @@ function renderCategories(apiCategories = []) {
         btn.innerText = cat === 'All' ? 'All Parts' : cat;
         btn.onclick = () => {
             currentCategory = cat;
-            renderCategories();
+            renderCategories(); // This will now use the preserved masterCategories
             renderProducts();
         };
         container.appendChild(btn);
@@ -555,6 +562,19 @@ function checkLowStockAlerts() {
 function setupNotificationSystem() {
     const taxToggle = document.getElementById('applyTax');
     if (taxToggle) taxToggle.onchange = updateCartUI;
+
+    // Periodic check for low stock (every 30 seconds, like desktop)
+    checkLowStockAlerts();
+    setInterval(checkLowStockAlerts, 30000);
+
+    // Ensure the panel can be closed by clicking outside
+    document.addEventListener('click', (e) => {
+        const panel = document.getElementById('notificationPanel');
+        const bell = document.getElementById('btnNotifications');
+        if (panel && !panel.contains(e.target) && !bell.contains(e.target)) {
+            panel.classList.add('hidden');
+        }
+    });
 }
 
 function showToast(msg, type = 'info') {

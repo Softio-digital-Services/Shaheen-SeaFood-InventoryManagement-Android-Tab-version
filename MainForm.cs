@@ -395,7 +395,7 @@ namespace GenericInventorySystem
 
         private void SetupHeaderIcons()
         {
-            Panel rightPanel = new Panel { Name = "rightPanel", Size = new Size(500, 50), BackColor = Color.Transparent, Dock = DockStyle.Right };
+            Panel rightPanel = new Panel { Name = "rightPanel", Size = new Size(650, 50), BackColor = Color.Transparent, Dock = DockStyle.Right };
             int w = rightPanel.Width;
             AddHeaderButton(rightPanel, w - 45, "Close", "btnWinClose", () => Application.Exit());
             AddHeaderButton(rightPanel, w - 90, "Maximize", "btnWinMax", () => { this.WindowState = this.WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized; });

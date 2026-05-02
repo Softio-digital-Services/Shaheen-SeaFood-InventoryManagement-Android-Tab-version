@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -337,7 +337,7 @@ namespace GenericInventorySystem
                 {
                     try
                     {
-                        var dt = DatabaseHelper.ExecuteDataTable("SELECT code, name, symbol, rate FROM currencies ORDER BY code");
+                        var dt = DatabaseHelper.ExecuteDataTable("SELECT code, name, symbol, rate_vs_usd FROM currency_rates ORDER BY code");
                         var currencies = new System.Collections.Generic.List<object>();
                         foreach (System.Data.DataRow row in dt.Rows)
                         {
@@ -345,7 +345,7 @@ namespace GenericInventorySystem
                                 code = row["code"].ToString(),
                                 name = row["name"].ToString(),
                                 symbol = row["symbol"].ToString(),
-                                rate = Convert.ToDecimal(row["rate"])
+                                rate = Convert.ToDecimal(row["rate_vs_usd"])
                             });
                         }
                         return Microsoft.AspNetCore.Http.Results.Ok(currencies);

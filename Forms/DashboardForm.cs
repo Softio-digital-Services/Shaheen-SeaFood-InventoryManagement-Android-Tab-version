@@ -147,9 +147,9 @@ namespace GenericInventorySystem.Forms
                 Clipboard.SetText(serverUrl);
                 string originalText = lblServerUrl.Text;
                 lblServerUrl.Text = "✅ " + LocalizationManager.GetString("Msg_Copied");
-                lblServerUrl.ForeColor = ThemeConfig.AccentColor;
+                lblServerUrl.ForeColor = ThemeConfig.PrimaryColor;
                 
-                Timer t = new Timer { Interval = 1500 };
+                System.Windows.Forms.Timer t = new System.Windows.Forms.Timer { Interval = 1500 };
                 t.Tick += (ts, te) => {
                     lblServerUrl.Text = originalText;
                     lblServerUrl.ForeColor = ThemeConfig.MutedTextColor;
