@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting; // Standard Charting
@@ -133,16 +133,31 @@ namespace GenericInventorySystem.Forms
             string serverUrl = ScanToConnectForm.GetServerUrl();
             var lblServerUrl = new Label
             {
-                Text = "?? " + serverUrl,
-                Font = new Font("Segoe UI", 9f),
+                Text = "📶 " + serverUrl,
+                Font = new Font("Segoe UI", 10f),
                 ForeColor = ThemeConfig.MutedTextColor,
                 Dock = DockStyle.Right,
                 AutoSize = true,
                 TextAlign = ContentAlignment.MiddleRight,
-                Padding = new Padding(0, 12, 8, 0),
+                Padding = new Padding(0, 10, 8, 0),
                 Cursor = Cursors.Hand
             };
-            lblServerUrl.Click += (s, e) => new ScanToConnectForm().ShowDialog();
+            
+            lblServerUrl.Click += (s, e) => {
+                Clipboard.SetText(serverUrl);
+                string originalText = lblServerUrl.Text;
+                lblServerUrl.Text = "✅ " + LocalizationManager.GetString("Msg_Copied");
+                lblServerUrl.ForeColor = ThemeConfig.AccentColor;
+                
+                Timer t = new Timer { Interval = 1500 };
+                t.Tick += (ts, te) => {
+                    lblServerUrl.Text = originalText;
+                    lblServerUrl.ForeColor = ThemeConfig.MutedTextColor;
+                    t.Stop();
+                    t.Dispose();
+                };
+                t.Start();
+            };
 
             // Scan-to-Connect button
             var btnScan = new Button

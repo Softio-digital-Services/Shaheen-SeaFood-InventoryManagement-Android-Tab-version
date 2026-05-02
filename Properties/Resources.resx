@@ -167,7 +167,10 @@ Click NO to put on Account.</value>
   <data name="POS_GridStock" xml:space="preserve"><value>Stock</value></data>
   <data name="POS_GridPrice" xml:space="preserve"><value>Price</value></data>
   <data name="POS_GridTotal" xml:space="preserve"><value>Total</value></data>
+  <data name="Msg_Total" xml:space="preserve"><value>Total Amount</value></data>
   <data name="Dash_Title" xml:space="preserve"><value>Performance Dashboard</value></data>
+  <data name="Msg_Copied" xml:space="preserve"><value>Link Copied!</value></data>
+  <data name="Dash_Sold" xml:space="preserve"><value>Sold</value></data>
   <data name="Dash_TotalInventory" xml:space="preserve"><value>Total Inventory</value></data>
   <data name="Dash_TotalRevenue" xml:space="preserve"><value>Total Revenue</value></data>
   <data name="Dash_TotalOrders" xml:space="preserve"><value>Total Orders</value></data>

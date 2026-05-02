@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Linq;
@@ -447,6 +447,13 @@ namespace GenericInventorySystem
                 catch { MessageHelper.ShowInfo("Contact us at: softioservices@gmail.com"); }
             };
             rightPanel.Controls.Add(pbContact);
+
+            // About Us
+            PictureBox pbAbout = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 535, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("info"), Color.White) };
+            ThemeConfig.ApplyHeaderIconStyle(pbAbout);
+            ToolTip ttAbout = new ToolTip(); ttAbout.SetToolTip(pbAbout, LocalizationManager.IsArabic ? "عن البرنامج" : "About Us");
+            pbAbout.Click += (s, e) => { using (var f = new Forms.AboutUsForm()) f.ShowDialog(this); };
+            rightPanel.Controls.Add(pbAbout);
 
             panel1.Controls.Add(rightPanel);
         }

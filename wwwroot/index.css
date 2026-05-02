@@ -49,12 +49,14 @@ body {
     backdrop-filter: blur(15px);
     border-bottom: 1px solid var(--border-color);
     z-index: 100;
+    height: var(--header-height); /* Explicit height */
 }
 
 .top-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px; /* Increased gap for premium feel */
+    height: 100%; /* Fill header height for centering */
 }
 
 .brand .logo { 
@@ -479,18 +481,19 @@ body {
 
 /* NEW COMPONENTS */
 .currency-select {
-    background: var(--surface-glass);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border-color);
     color: white;
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 0.85rem;
     font-weight: 700;
     outline: none;
     cursor: pointer;
     transition: all 0.2s;
 }
-.currency-select:focus { border-color: var(--accent); }
+.currency-select:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); }
+.currency-select:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
 
 .returns-list {
     display: flex;
