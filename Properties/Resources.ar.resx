@@ -464,5 +464,51 @@
   <data name="Msg_Saved" xml:space="preserve"><value>تم الحفظ بنجاح!</value></data>
   <data name="Msg_FinalizePO" xml:space="preserve"><value>إتمام طلب الشراء</value></data>
   <data name="Msg_DraftSaved" xml:space="preserve"><value>تم حفظ المسودة بنجاح!</value></data>
-  <data name="Msg_HistoryLoadError" xml:space="preserve"><value>خطأ في تحميل بيانات السجل. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="POS_ReturnItems" xml:space="preserve"><value>مرتجع طلبات</value></data>
+  <data name="Msg_PredictivePO" xml:space="preserve"><value>طلب شراء توقعي</value></data>
+  <data name="Exp_Paid" xml:space="preserve"><value>مدفوع</value></data>
+  <data name="Exp_Unpaid" xml:space="preserve"><value>غير مدفوع</value></data>
+  <data name="Exp_PayNow" xml:space="preserve"><value>ادفع الآن</value></data>
+  <data name="Exp_Search" xml:space="preserve"><value>تفاصيل المصروف...</value></data>
+  <data name="Exp_Recurring" xml:space="preserve"><value>متكرر</value></data>
+  <data name="Exp_Auto" xml:space="preserve"><value>تلقائي</value></data>
+  <data name="User_SearchPlaceholder" xml:space="preserve"><value>البحث عن المستخدمين...</value></data>
+  <data name="Dash_ScanToConnect" xml:space="preserve"><value>امسح للاتصال</value></data>
+  <data name="Nav_Barcode" xml:space="preserve"><value>ملصقات الباركود</value></data>
+  <data name="Bar_Title" xml:space="preserve"><value>توليد ملصقات الباركود</value></data>
+  <data name="Bar_Print" xml:space="preserve"><value>معاينة وطباعة</value></data>
+  <data name="PO_QuickAdd" xml:space="preserve"><value>إضافة سريعة</value></data>
+  <data name="PO_GrandTotal" xml:space="preserve"><value>المجموع الكلي</value></data>
+  <data name="PO_ID" xml:space="preserve"><value>رقم الطلب</value></data>
+  <data name="Tran_Print" xml:space="preserve"><value>طباعة</value></data>
+  <data name="Tran_Export" xml:space="preserve"><value>تصدير</value></data>
+  <data name="Msg_ServiceName" xml:space="preserve"><value>اسم الخدمة</value></data>
+  <data name="Msg_UpdateService" xml:space="preserve"><value>تحديث الخدمة</value></data>
+  <data name="Msg_UpdateCustomer" xml:space="preserve"><value>تحديث بيانات العميل</value></data>
+  <data name="Msg_Scan" xml:space="preserve"><value>مسح</value></data>
+  <data name="AddCust_FirstName" xml:space="preserve"><value>الاسم الأول *</value></data>
+  <data name="AddCust_LastName" xml:space="preserve"><value>اسم العائلة *</value></data>
+  <data name="AddSup_Reminder" xml:space="preserve"><value>التذكير (أيام قبل)</value></data>
+  <data name="Msg_LicenseInfo" xml:space="preserve"><value>معلومات الترخيص</value></data>
+  <data name="Msg_LicenseType" xml:space="preserve"><value>نوع الترخيص</value></data>
+  <data name="Msg_ActivatedOn" xml:space="preserve"><value>تاريخ التفعيل</value></data>
+  <data name="Msg_ExpiresOn" xml:space="preserve"><value>تاريخ الانتهاء</value></data>
+  <data name="Msg_DaysRemaining" xml:space="preserve"><value>الأيام المتبقية</value></data>
+  <data name="Msg_Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Msg_Machine" xml:space="preserve"><value>اسم الجهاز</value></data>
+  <data name="Msg_Trial" xml:space="preserve"><value>نسخة تجريبية</value></data>
+  <data name="Msg_Licensed" xml:space="preserve"><value>نسخة مرخصة</value></data>
+  <data name="Msg_Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Msg_Expired" xml:space="preserve"><value>منتهي</value></data>
+  <data name="Msg_CustomerName" xml:space="preserve"><value>اسم العميل</value></data>
+  <data name="Msg_LicenseKeyLabel" xml:space="preserve"><value>مفتاح الترخيص</value></data>
+  <data name="Return_TitleNoReceipt" xml:space="preserve"><value>مرتجع أصناف (بدون إيصال)</value></data>
+  <data name="Return_ReadyToScan" xml:space="preserve"><value>جاهز لمسح الباركود...</value></data>
+  <data name="Msg_TotalRefund" xml:space="preserve"><value>إجمالي المبلغ المسترد</value></data>
+  <data name="Msg_ReturnReason" xml:space="preserve"><value>سبب الارتجاع</value></data>
+  <data name="Msg_ProcessReturn" xml:space="preserve"><value>إتمام الارتجاع</value></data>
+  <data name="Msg_CashReturn" xml:space="preserve"><value>ارتجاع نقدي (بدون عميل)</value></data>
+  <data name="Msg_ReturnOneItem" xml:space="preserve"><value>يرجى إضافة صنف واحد على الأقل للارتجاع.</value></data>
+  <data name="Msg_ConfirmReturn" xml:space="preserve"><value>تأكيد إتمام عملية الارتجاع وتحديث المخزون؟</value></data>
+  <data name="Msg_ReturnSuccess" xml:space="preserve"><value>تمت عملية الارتجاع بنجاح وتحديث المخزون.</value></data>
 </root>
