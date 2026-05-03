@@ -160,14 +160,6 @@ namespace GenericInventorySystem
                     pnlHeaderIcons.Dock = DockStyle.Right;
                 }
             }
-            var pbLogo = panel1.Controls.Find("pbLogo", true).FirstOrDefault() as PictureBox;
-            if (pbLogo != null)
-            {
-                pbLogo.Dock = DockStyle.None;
-                pbLogo.Padding = Padding.Empty;
-                pbLogo.Location = isAr ? new Point(panel1.Width - pbLogo.Width + 35, (panel1.Height - pbLogo.Height) / 2) : new Point(-35, (panel1.Height - pbLogo.Height) / 2);
-                pbLogo.BringToFront();
-            }
             label2.Visible = false; // Forced hide to prevent clipping
             label2.Location = isAr ? new Point(panel1.Width - label2.Width - 10, (panel1.Height - label2.Height) / 2) : new Point(10, (panel1.Height - label2.Height) / 2);
         }
@@ -322,7 +314,7 @@ namespace GenericInventorySystem
             Panel pnlBranding = new Panel { 
                 Name = "pnlBranding",
                 Dock = DockStyle.Bottom, 
-                Height = 60, 
+                Height = 110, 
                 BackColor = Color.Transparent,
                 Padding = new Padding(0)
             };
@@ -345,6 +337,22 @@ namespace GenericInventorySystem
             if (logoutIcon != null) { button3.Image = ResizeImage(logoutIcon, 22, 22); button3.ImageAlign = ContentAlignment.MiddleLeft; button3.TextImageRelation = TextImageRelation.ImageBeforeText; }
             button3.TextAlign = ContentAlignment.MiddleLeft; button3.Padding = new Padding(15, 0, 0, 0); button3.Font = ThemeConfig.ButtonFont;
             button3.FlatAppearance.MouseOverBackColor = ThemeConfig.DangerLight;
+
+            // Softio Logo in Sidebar
+            PictureBox pbSoftioSidebarLogo = new PictureBox {
+                Name = "pbSoftioSidebarLogo",
+                Size = new Size(180, 45),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Dock = DockStyle.Bottom,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0, 5, 0, 0)
+            };
+            try {
+                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png");
+                if (System.IO.File.Exists(logoPath)) pbSoftioSidebarLogo.Image = Image.FromFile(logoPath);
+            } catch { }
+            pnlBranding.Controls.Add(pbSoftioSidebarLogo);
+            // Logout button is already Dock=Top, so they will be separated naturally.
 
             SetupHeaderIcons();
             SetupFooter();
@@ -541,33 +549,6 @@ namespace GenericInventorySystem
             panel1.Padding = Padding.Empty;
             panel1.Margin = Padding.Empty;
             panel1.BorderStyle = BorderStyle.None; // Remove border that adds padding
-            // Header Logo
-            if (panel1.Controls.Find("pbLogo", true).Length == 0)
-            {
-                PictureBox pbLogo = new PictureBox {
-                    Name = "pbLogo",
-                    Size = new Size(220, 60), 
-                    SizeMode = PictureBoxSizeMode.Zoom,
-                    BackColor = Color.Transparent
-                };
-                try { 
-                    string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png");
-                    if(System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath); 
-                } catch { }
-                panel1.Controls.Add(pbLogo); // Added back!
-                pbLogo.BringToFront();
-                pbLogo.Location = new Point(-35, 0); // Start at the absolute edge, Y=0 to center in 60px height
-                pbLogo.MouseDown += Header_MouseDown;
-            }
-
-            var existingLogo = panel1.Controls.Find("pbLogo", true).FirstOrDefault() as PictureBox;
-            if (existingLogo != null) {
-                existingLogo.Dock = DockStyle.None;
-                existingLogo.Padding = Padding.Empty;
-                existingLogo.Location = new Point(-35, 0); // Y=0 to center in 60px height
-                existingLogo.BringToFront();
-            }
-
             label1.Text = "Welcome, " + UserSession.FullName;
             label1.Font = ThemeConfig.SmallBoldFont;
             label1.ForeColor = Color.FromArgb(180, 255, 255, 255); // Subtle white

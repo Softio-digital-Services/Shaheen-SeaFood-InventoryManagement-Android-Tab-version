@@ -155,7 +155,7 @@ namespace GenericInventorySystem.Forms
                 BackColor = ThemeConfig.SurfaceColor // Fix corners
             };
 
-            btnAddItem = new ModernButton { Size = new Size(110, 36), Text = "Add Item", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0), Margin = new Padding(5, 7, 0, 0) };
+            btnAddItem = new ModernButton { Size = new Size(135, 36), Text = "Add Item", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0), Margin = new Padding(5, 7, 0, 0) };
             btnAddItem.Click += BtnAddItem_Click; ThemeConfig.ApplyPrimaryButton(btnAddItem); 
 
             ModernButton btnBlindReturn = new ModernButton { Text = "Item Return", Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
