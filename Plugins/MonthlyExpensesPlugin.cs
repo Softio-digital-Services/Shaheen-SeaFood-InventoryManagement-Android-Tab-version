@@ -19,7 +19,7 @@ namespace GenericInventorySystem.Plugins
         public string LicenseFeatureKey => "Plugin_MonthlyExpenses";
 
         public string TabId => "btnExpenses";
-        public string TabTitle => LocalizationManager.IsArabic ? "????????? ???????" : "Monthly Expenses";
+        public string TabTitle => LocalizationManager.GetString("Nav_Expenses");
         public string TabIcon => "expenses";
         public int TabOrder => 90;
 

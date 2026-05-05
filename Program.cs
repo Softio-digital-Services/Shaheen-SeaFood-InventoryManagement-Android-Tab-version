@@ -23,12 +23,8 @@ namespace GenericInventorySystem
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             
-            // Set initial language based on build configuration
-#if ARABIC_VERSION
+            // Set initial language to Arabic for verification
             GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("ar-SA");
-#else
-            GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("en-US");
-#endif
             
             // Expose background task for server hosting without blocking UI thread
             _ = Task.Run(() => StartApiServer());

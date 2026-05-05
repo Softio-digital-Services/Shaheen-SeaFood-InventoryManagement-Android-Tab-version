@@ -19,7 +19,7 @@ namespace GenericInventorySystem.Plugins
         public string LicenseFeatureKey => "Plugin_PurchaseOrders";
 
         public string TabId => "btnPO";
-        public string TabTitle => LocalizationManager.IsArabic ? "????? ??????" : "Purchase Orders";
+        public string TabTitle => LocalizationManager.GetString("Nav_PurchaseOrders");
         public string TabIcon => "purchase_orders";
         public int TabOrder => 80;
 

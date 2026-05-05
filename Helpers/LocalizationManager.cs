@@ -7,6 +7,8 @@ using System.Reflection;
 using System.Resources;
 using System.Threading;
 using System.Windows.Forms;
+using System.Drawing;
+using System.Runtime.CompilerServices;
 
 namespace GenericInventorySystem.Helpers
 {
@@ -18,6 +20,9 @@ namespace GenericInventorySystem.Helpers
         private static ResourceSet _arabicResources;
         private static Dictionary<string, string> _arabicDictionary;
         private static bool _arabicResourcesLoaded = false;
+        
+        // Track RTL state without stomping on Control.Tag
+        private static ConditionalWeakTable<Control, string> _rtlStates = new ConditionalWeakTable<Control, string>();
 
         public static bool IsArabicBuild
         {
@@ -66,27 +71,36 @@ namespace GenericInventorySystem.Helpers
                     }
                 }
 
-                // Fallback: Try loading from file path (for development)
+                // Fallback: Try loading from file path
                 string exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 string resxPath = Path.Combine(exeDir, "Properties", "Resources.ar.resx");
                 if (!File.Exists(resxPath))
                 {
-                    // Try project source path
                     resxPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "Properties", "Resources.ar.resx");
                 }
+                
                 if (File.Exists(resxPath))
                 {
-                    using (var reader = new ResXResourceReader(resxPath))
+                    _arabicDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    try
                     {
-                        _arabicResources = new ResourceSet(reader);
-                        _arabicDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                        foreach (System.Collections.DictionaryEntry entry in _arabicResources)
+                        // Use XDocument to avoid ResXResourceReader encoding issues
+                        var doc = System.Xml.Linq.XDocument.Load(resxPath);
+                        foreach (var data in doc.Root.Elements("data"))
                         {
-                            if (entry.Value is string s)
-                                _arabicDictionary[entry.Key.ToString()] = s;
+                            string name = data.Attribute("name")?.Value;
+                            string val = data.Element("value")?.Value;
+                            if (!string.IsNullOrEmpty(name) && val != null)
+                            {
+                                _arabicDictionary[name] = val;
+                            }
                         }
+                        _arabicResourcesLoaded = true;
                     }
-                    _arabicResourcesLoaded = true;
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine("XDocument load failed: " + ex.Message);
+                    }
                 }
             }
             catch (Exception ex)
@@ -171,61 +185,73 @@ namespace GenericInventorySystem.Helpers
             // Handle Docking Mirroring
             if (control is Panel p && (p.Dock == DockStyle.Left || p.Dock == DockStyle.Right))
             {
-                if (isAr && p.Tag?.ToString() != "rtl_dock_swapped")
+                _rtlStates.TryGetValue(p, out string state);
+                if (isAr && state != "rtl_dock_swapped")
                 {
                     p.Dock = (p.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
-                    p.Tag = "rtl_dock_swapped";
+                    _rtlStates.Remove(p);
+                    _rtlStates.Add(p, "rtl_dock_swapped");
                 }
-                else if (!isAr && p.Tag?.ToString() == "rtl_dock_swapped")
+                else if (!isAr && state == "rtl_dock_swapped")
                 {
                     p.Dock = (p.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
-                    p.Tag = null;
+                    _rtlStates.Remove(p);
                 }
             }
 
             // Handle FlowLayoutPanel Mirroring
             if (control is FlowLayoutPanel flow)
             {
-                if (isAr && flow.Tag?.ToString() != "rtl_flow_swapped")
+                _rtlStates.TryGetValue(flow, out string state);
+                if (isAr && state != "rtl_flow_swapped")
                 {
                     flow.FlowDirection = (flow.FlowDirection == FlowDirection.LeftToRight) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-                    flow.Tag = "rtl_flow_swapped";
+                    _rtlStates.Remove(flow);
+                    _rtlStates.Add(flow, "rtl_flow_swapped");
                 }
-                else if (!isAr && flow.Tag?.ToString() == "rtl_flow_swapped")
+                else if (!isAr && state == "rtl_flow_swapped")
                 {
                     flow.FlowDirection = (flow.FlowDirection == FlowDirection.LeftToRight) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-                    flow.Tag = null;
+                    _rtlStates.Remove(flow);
                 }
             }
 
             // Handle TableLayoutPanel Column Mirroring
             if (control is TableLayoutPanel tlp && tlp.ColumnCount > 1)
             {
-                if (isAr && tlp.Tag?.ToString() != "rtl_tlp_swapped")
+                _rtlStates.TryGetValue(tlp, out string state);
+                if (isAr && state != "rtl_tlp_swapped")
                 {
                     MirrorTableLayout(tlp);
-                    tlp.Tag = "rtl_tlp_swapped";
+                    _rtlStates.Remove(tlp);
+                    _rtlStates.Add(tlp, "rtl_tlp_swapped");
                 }
-                else if (!isAr && tlp.Tag?.ToString() == "rtl_tlp_swapped")
+                else if (!isAr && state == "rtl_tlp_swapped")
                 {
                     MirrorTableLayout(tlp);
-                    tlp.Tag = null;
+                    _rtlStates.Remove(tlp);
                 }
             }
 
             // Handle Absolute Location Mirroring for child controls (if parent is not a layout panel)
-            if (isAr && !(control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel))
+            if (isAr && control.Parent != null && !(control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel))
             {
-                if (control.Tag?.ToString() != "rtl_loc_swapped")
+                _rtlStates.TryGetValue(control, out string state);
+                if (state != "rtl_loc_swapped")
                 {
                     control.Location = new Point(control.Parent.ClientSize.Width - control.Location.X - control.Width, control.Location.Y);
-                    control.Tag = "rtl_loc_swapped";
+                    _rtlStates.Remove(control);
+                    _rtlStates.Add(control, "rtl_loc_swapped");
                 }
             }
-            else if (!isAr && control.Tag?.ToString() == "rtl_loc_swapped")
+            else if (!isAr && control.Parent != null)
             {
-                control.Location = new Point(control.Parent.ClientSize.Width - control.Location.X - control.Width, control.Location.Y);
-                control.Tag = null;
+                _rtlStates.TryGetValue(control, out string state);
+                if (state == "rtl_loc_swapped")
+                {
+                    control.Location = new Point(control.Parent.ClientSize.Width - control.Location.X - control.Width, control.Location.Y);
+                    _rtlStates.Remove(control);
+                }
             }
 
             // Mirror Label/Button text alignment

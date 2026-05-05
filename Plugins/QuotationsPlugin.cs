@@ -19,7 +19,7 @@ namespace GenericInventorySystem.Plugins
         public string LicenseFeatureKey => "Plugin_Quotations";
 
         public string TabId => "btnQuotations";
-        public string TabTitle => LocalizationManager.IsArabic ? "???? ???????" : "Quotations";
+        public string TabTitle => LocalizationManager.GetString("Nav_Quotations");
         public string TabIcon => "quotations";
         public int TabOrder => 70;
 

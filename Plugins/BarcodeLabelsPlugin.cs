@@ -19,7 +19,7 @@ namespace GenericInventorySystem.Plugins
         public string LicenseFeatureKey => "Plugin_BarcodeLabels";
 
         public string TabId => "btnLabels";
-        public string TabTitle => LocalizationManager.IsArabic ? "?????? ????????" : "Barcode Labels";
+        public string TabTitle => LocalizationManager.GetString("Nav_Barcode");
         public string TabIcon => "barcode";
         public int TabOrder => 50;
 

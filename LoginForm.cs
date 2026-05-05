@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Data.Sqlite;
 using System.Windows.Forms;
 using System.Drawing;
@@ -90,8 +90,17 @@ namespace GenericInventorySystem
             // RTL support
             this.RightToLeft        = isAr ? RightToLeft.Yes : RightToLeft.No;
             panelLoginCard.RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No;
-            labelTitle.TextAlign   = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
-            labelSubtitle.TextAlign = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            
+            // Center Titles
+            labelTitle.AutoSize = false;
+            labelTitle.Width = panelLoginCard.Width;
+            labelTitle.TextAlign = ContentAlignment.MiddleCenter;
+            labelTitle.Left = 0;
+
+            labelSubtitle.AutoSize = false;
+            labelSubtitle.Width = panelLoginCard.Width;
+            labelSubtitle.TextAlign = ContentAlignment.MiddleCenter;
+            labelSubtitle.Left = 0;
         }
 
         private void ApplyTheme()

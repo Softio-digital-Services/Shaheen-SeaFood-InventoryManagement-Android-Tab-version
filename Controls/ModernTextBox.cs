@@ -62,6 +62,16 @@ namespace GenericInventorySystem.Controls
             if (_isRequired && !string.IsNullOrEmpty(text) && !text.EndsWith("*") && !text.EndsWith("* "))
                 text += " *";
             lblTitle.Text = text;
+            
+            // Adjust label position for RTL
+            if (LocalizationManager.IsArabic)
+            {
+                lblTitle.Location = new Point(this.Width - lblTitle.Width - 5, 0);
+            }
+            else
+            {
+                lblTitle.Location = new Point(5, 0);
+            }
         }
 
         [Category("Behavior")]
@@ -184,7 +194,10 @@ namespace GenericInventorySystem.Controls
                 if (IsPassword)
                 {
                     Point p = pnlContainer.PointToClient(Cursor.Position);
-                    if (p.X > pnlContainer.Width - 35)
+                    bool isAr = LocalizationManager.IsArabic;
+                    bool isClickOnIcon = isAr ? p.X < 40 : p.X > pnlContainer.Width - 40;
+                    
+                    if (isClickOnIcon)
                     {
                         txtInput.UseSystemPasswordChar = !txtInput.UseSystemPasswordChar;
                         pnlContainer.Invalidate();
@@ -316,13 +329,23 @@ namespace GenericInventorySystem.Controls
             if (IsPassword)
             {
                 Image eyeIcon = ThemeConfig.GetNuricon("view");
+                Color eyeColor = txtInput.UseSystemPasswordChar ? ThemeConfig.SecondaryColor : ThemeConfig.PrimaryColor;
+                int x = isAr ? 12 : pnl.Width - 32;
+                
                 if (eyeIcon != null)
                 {
-                    Color eyeColor = txtInput.UseSystemPasswordChar ? ThemeConfig.SecondaryColor : ThemeConfig.PrimaryColor;
                     using (Image tintedEye = ThemeConfig.TintImage(eyeIcon, eyeColor))
                     {
-                        int x = isAr ? 12 : pnl.Width - 32;
                         e.Graphics.DrawImage(tintedEye, new Rectangle(x, (pnl.Height - 20) / 2, 20, 20));
+                    }
+                }
+                else
+                {
+                    // Fallback drawing if icon is missing
+                    using (Pen pen = new Pen(eyeColor, 2f))
+                    {
+                        e.Graphics.DrawEllipse(pen, x, (pnl.Height - 12) / 2, 18, 10);
+                        e.Graphics.FillEllipse(new SolidBrush(eyeColor), x + 6, (pnl.Height - 6) / 2, 6, 6);
                     }
                 }
             }
