@@ -39,6 +39,7 @@ namespace GenericInventorySystem.Controls
             this.Size = new Size(200, 30); 
             this.Padding = new Padding(0);
             this.BackColor = Color.White;
+            if (Helpers.LocalizationManager.IsArabic) this.RightToLeft = RightToLeft.Yes;
             
             InitializeControls();
         }

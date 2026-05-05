@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem.Controls
 {
@@ -158,6 +159,7 @@ namespace GenericInventorySystem.Controls
             txtInput.ForeColor = ThemeConfig.TextColorDark;
             txtInput.Dock = DockStyle.Fill;
             txtInput.BackColor = Color.White;
+            if (LocalizationManager.IsArabic) txtInput.RightToLeft = RightToLeft.Yes;
             
             // Center vertically
             txtInput.Location = new Point(10, (pnlContainer.Height - txtInput.Height)/2);
@@ -232,8 +234,10 @@ namespace GenericInventorySystem.Controls
                 {
                      // Center Vertically manually if dock behaves weirdly with single line in large panel
                      txtInput.Dock = DockStyle.None;
-                     int leftPadding = IsSearch ? 40 : 10;
-                     int rightPadding = IsPassword ? 40 : 10;
+                     bool isAr = LocalizationManager.IsArabic;
+                     int leftPadding = (isAr ? (IsPassword ? 40 : 10) : (IsSearch ? 40 : 10));
+                     int rightPadding = (isAr ? (IsSearch ? 40 : 10) : (IsPassword ? 40 : 10));
+                     
                      txtInput.Width = pnlContainer.Width - leftPadding - rightPadding;
                      txtInput.Location = new Point(leftPadding, (pnlContainer.Height - txtInput.Height) / 2);
                      txtInput.Anchor = AnchorStyles.Left | AnchorStyles.Right;
@@ -297,12 +301,14 @@ namespace GenericInventorySystem.Controls
             }
 
             // Draw Search Icon
+            bool isAr = LocalizationManager.IsArabic;
             if (IsSearch)
             {
                 Image searchIcon = ThemeConfig.GetNuricon("search");
                 if (searchIcon != null)
                 {
-                    e.Graphics.DrawImage(searchIcon, new Rectangle(12, (pnl.Height - 20) / 2, 20, 20));
+                    int x = isAr ? pnl.Width - 32 : 12;
+                    e.Graphics.DrawImage(searchIcon, new Rectangle(x, (pnl.Height - 20) / 2, 20, 20));
                 }
             }
 
@@ -315,7 +321,8 @@ namespace GenericInventorySystem.Controls
                     Color eyeColor = txtInput.UseSystemPasswordChar ? ThemeConfig.SecondaryColor : ThemeConfig.PrimaryColor;
                     using (Image tintedEye = ThemeConfig.TintImage(eyeIcon, eyeColor))
                     {
-                        e.Graphics.DrawImage(tintedEye, new Rectangle(pnl.Width - 32, (pnl.Height - 20) / 2, 20, 20));
+                        int x = isAr ? 12 : pnl.Width - 32;
+                        e.Graphics.DrawImage(tintedEye, new Rectangle(x, (pnl.Height - 20) / 2, 20, 20));
                     }
                 }
             }

@@ -17,7 +17,6 @@ namespace GenericInventorySystem.Forms
         private Label lblExpensesTitle;
         private Label lblCategory;
         private Label lblDate;
-        private Label lblDescription;
         private ModernNumericUpDown numAmount;
         private ModernTextBox txtDescription;
         private ModernComboBox cmbCategory;
@@ -59,8 +58,8 @@ namespace GenericInventorySystem.Forms
                 Font = new Font("Segoe UI", 22F, FontStyle.Bold), 
                 ForeColor = ThemeConfig.PrimaryColor, 
                 AutoSize = true, 
-                Dock = DockStyle.Right,
-                TextAlign = ContentAlignment.MiddleRight
+                Dock = LocalizationManager.IsArabic ? DockStyle.Left : DockStyle.Right,
+                TextAlign = LocalizationManager.IsArabic ? ContentAlignment.MiddleLeft : ContentAlignment.MiddleRight
             };
             pnlHeader.Controls.Add(lblTotal);
             mainLayout.Controls.Add(pnlHeader, 0, 0);
@@ -144,10 +143,10 @@ namespace GenericInventorySystem.Forms
                 Multiline = true
             };
 
-            // Actions Container (Right Aligned)
+            // Actions Container
             FlowLayoutPanel pnlActions = new FlowLayoutPanel { 
                 Dock = DockStyle.Fill, 
-                FlowDirection = FlowDirection.LeftToRight, 
+                FlowDirection = LocalizationManager.IsArabic ? FlowDirection.RightToLeft : FlowDirection.LeftToRight, 
                 Padding = new Padding(0, 30, 0, 0),
                 WrapContents = false
             };
@@ -244,6 +243,7 @@ namespace GenericInventorySystem.Forms
 
         private void ApplyLocalization()
         {
+            LocalizationManager.ApplyRTL(this);
             lblExpensesTitle.Text = LocalizationManager.GetString("Exp_Title");
             
             // Text removed to preserve DrawIconButton icons

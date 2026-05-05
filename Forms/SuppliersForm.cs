@@ -25,7 +25,7 @@ namespace GenericInventorySystem.Forms
         {
             InitializeComponent();
             ApplyTheme();
-            
+
             GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
             ApplyPermissions();
@@ -44,11 +44,11 @@ namespace GenericInventorySystem.Forms
                 txtSearch.PlaceholderText = L("Sup_Search");
             }
 
-            if (btnAdd != null) btnAdd.Invalidate(); 
+            if (btnAdd != null) btnAdd.Invalidate();
             if (btnDetails != null) btnDetails.Invalidate();
             if (btnImport != null) btnImport.Invalidate();
             if (btnExport != null) btnExport.Invalidate();
-            
+
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
             if (ctrlDel.Length > 0) ctrlDel[0].Invalidate();
 
@@ -65,7 +65,7 @@ namespace GenericInventorySystem.Forms
                 if (dgvSuppliers.Columns.Contains("colActions")) dgvSuppliers.Columns["colActions"].HeaderText = L("Sup_GridActions");
             }
         }
-        
+
         protected override void OnVisibleChanged(EventArgs e)
         {
             base.OnVisibleChanged(e);
@@ -97,67 +97,67 @@ namespace GenericInventorySystem.Forms
 
             tlpMain.Padding = new Padding(20);
 
-            // Header Panel
-            Panel panelTop = new Panel();
-            panelTop.Dock = DockStyle.Fill;
+            // Header Panel (TableLayoutPanel for robust RTL)
+            TableLayoutPanel tlpHeader = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                ColumnCount = 1,
+                RowCount = 2
+            };
+            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); // Title Row
+            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F)); // Actions Row
 
-            panelTop.Margin = new Padding(0);
-
-            // lblSuppliersTitle
-            this.lblSuppliersTitle = ThemeConfig.CreateStandardHeader("Supplier Management");
+            // Row 0: Title
+             this.lblSuppliersTitle = ThemeConfig.CreateStandardHeader("Supplier Management");
             this.lblSuppliersTitle.Name = "lblSuppliersTitle";
+            tlpHeader.Controls.Add(this.lblSuppliersTitle, 0, 0);
 
-            // Search Bar (Upgraded to ModernTextBox)
+            // Row 1: Actions (Search + Buttons)
+            TableLayoutPanel tlpActions = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                ColumnCount = 2,
+                RowCount = 1
+            };
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F));
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+            // Search Bar
             this.txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = "Search Suppliers...";
             txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(0, 55);
+            txtSearch.Anchor = AnchorStyles.Left;
             txtSearch.TextChanged += (s, e) => { 
                 string ph = GenericInventorySystem.Helpers.LocalizationManager.GetString("Sup_Search");
                 if (txtSearch.Text != ph && txtSearch.Text != "Search...") 
                     LoadData(txtSearch.Text); 
             };
-            panelTop.Controls.Add(txtSearch);
+            tlpActions.Controls.Add(txtSearch, 0, 0);
 
             // Actions Panel (FlowLayout for Buttons)
             FlowLayoutPanel panelButtons = new FlowLayoutPanel();
-            panelButtons.FlowDirection = FlowDirection.LeftToRight;
+            panelButtons.FlowDirection = FlowDirection.RightToLeft; // Pin to right
             panelButtons.AutoSize = true;
-            panelButtons.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            panelButtons.Location = new Point(360, 50); 
-            panelButtons.Height = 40;
+            panelButtons.Dock = DockStyle.Fill;
             panelButtons.WrapContents = false;
             panelButtons.Padding = new Padding(0);
             panelButtons.Margin = new Padding(0);
 
-            // Import Button (Green Outline)
-            this.btnImport.Size = new System.Drawing.Size(100, 40);
-            this.btnImport.Text = "";
-            this.btnImport.Name = "btnImportSup";
-            this.btnImport.FlatStyle = FlatStyle.Flat;
-            btnImport.FlatAppearance.BorderSize = 0;
-
-            btnImport.Cursor = Cursors.Hand;
-            this.btnImport.Margin = new Padding(0, 0, 10, 0);
-            this.btnImport.Click += BtnImport_Click;
-            this.btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Sup_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
-
-            // Export Button (Blue Outline)
-            this.btnExport.Size = new System.Drawing.Size(100, 40);
-            this.btnExport.Text = "";
-            this.btnExport.Name = "btnExportSup";
-            this.btnExport.FlatStyle = FlatStyle.Flat;
-            btnExport.FlatAppearance.BorderSize = 0;
-
-            btnExport.Cursor = Cursors.Hand;
-            this.btnExport.Margin = new Padding(0, 0, 10, 0);
-            this.btnExport.Click += BtnExport_Click;
-            this.btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Sup_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
+            // Add New Supplier Button - Added first (RTL pin)
+            this.btnAdd.Size = new System.Drawing.Size(160, 40);
+            this.btnAdd.Text = "";
+            this.btnAdd.Name = "btnAddSupplier";
+            this.btnAdd.FlatStyle = FlatStyle.Flat;
+            btnAdd.FlatAppearance.BorderSize = 0;
+            btnAdd.Cursor = Cursors.Hand;
+            this.btnAdd.Margin = new Padding(10, 0, 0, 0);
+            this.btnAdd.Click += BtnAdd_Click;
+            this.btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Sup_AddSupplier", ThemeConfig.TextColorLight, ThemeConfig.PrimaryColor, false);
+            panelButtons.Controls.Add(this.btnAdd);
 
             // Supplier Details Button
-            this.btnDetails = new Button();
             this.btnDetails.Size = new System.Drawing.Size(160, 40);
             this.btnDetails.Text = "";
             this.btnDetails.Name = "btnDetailsSup";
@@ -165,21 +165,10 @@ namespace GenericInventorySystem.Forms
             this.btnDetails.FlatAppearance.BorderSize = 0;
             this.btnDetails.BackColor = Color.Transparent;
             this.btnDetails.Cursor = Cursors.Hand;
-            this.btnDetails.Margin = new Padding(0, 0, 10, 0);
+            this.btnDetails.Margin = new Padding(10, 0, 0, 0);
             this.btnDetails.Click += BtnDetails_Click;
             this.btnDetails.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDetails, e.Graphics, "view", "Sup_Details", ThemeConfig.TextColorLight, ThemeConfig.WarningColor, false);
-
-            // Add New Supplier
-            this.btnAdd.Size = new System.Drawing.Size(160, 40);
-            this.btnAdd.Text = "";
-            this.btnAdd.Name = "btnAddSupplier";
-            this.btnAdd.FlatStyle = FlatStyle.Flat;
-            btnAdd.FlatAppearance.BorderSize = 0;
-
-            btnAdd.Cursor = Cursors.Hand;
-            this.btnAdd.Margin = new Padding(0);
-            this.btnAdd.Click += BtnAdd_Click;
-            this.btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Sup_AddSupplier", ThemeConfig.TextColorLight, ThemeConfig.PrimaryColor, false);
+            panelButtons.Controls.Add(this.btnDetails);
 
             // Delete Selected Button (Red Outline)
             Button btnDeleteSelected = new Button();
@@ -188,9 +177,8 @@ namespace GenericInventorySystem.Forms
             btnDeleteSelected.Name = "btnDeleteSelected";
             btnDeleteSelected.FlatStyle = FlatStyle.Flat;
             btnDeleteSelected.FlatAppearance.BorderSize = 0;
-
             btnDeleteSelected.Cursor = Cursors.Hand;
-            btnDeleteSelected.Margin = new Padding(0, 0, 10, 0);
+            btnDeleteSelected.Margin = new Padding(10, 0, 0, 0);
             btnDeleteSelected.Click += (s, e) =>
             {
                 var checkedIds = new System.Collections.Generic.List<int>();
@@ -215,43 +203,45 @@ namespace GenericInventorySystem.Forms
                 {
                     Services.SupplierService supplierService = new Services.SupplierService();
                     foreach(int i in checkedIds) supplierService.DeleteSupplier(i);
-                    string successMsg = LocalizationManager.IsArabic 
-                        ? $"تم حذف {checkedIds.Count} موردين بنجاح." 
-                        : $"{checkedIds.Count} suppliers deleted successfully.";
-                    MessageHelper.ShowSuccess(successMsg);
                     LoadData();
                 }
             };
             btnDeleteSelected.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDeleteSelected, e.Graphics, "delete", "Sup_Delete", ThemeConfig.DangerColor, ThemeConfig.DangerColor, true);
-
-            panelButtons.Controls.Add(this.btnImport);
-            panelButtons.Controls.Add(this.btnExport);
             panelButtons.Controls.Add(btnDeleteSelected);
-            panelButtons.Controls.Add(this.btnDetails);
-            panelButtons.Controls.Add(this.btnAdd);
 
-            panelTop.Controls.Add(this.lblSuppliersTitle);
-            panelTop.Controls.Add(txtSearch);
-            panelTop.Controls.Add(panelButtons);
+            // Export Button
+            this.btnExport.Size = new System.Drawing.Size(100, 40);
+            this.btnExport.Text = "";
+            this.btnExport.Name = "btnExportSup";
+            this.btnExport.FlatStyle = FlatStyle.Flat;
+            btnExport.FlatAppearance.BorderSize = 0;
+            btnExport.Cursor = Cursors.Hand;
+            this.btnExport.Margin = new Padding(10, 0, 0, 0);
+            this.btnExport.Click += BtnExport_Click;
+            this.btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Sup_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
+            panelButtons.Controls.Add(this.btnExport);
 
-            panelTop.Resize += (s, e) =>
-            {
-                if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
-                {
-                    txtSearch.Location = new Point(panelTop.Width - txtSearch.Width, 55);
-                    panelButtons.Location = new Point(0, 50);
-                }
-                else
-                {
-                    txtSearch.Location = new Point(0, 55);
-                    panelButtons.Location = new Point(panelTop.Width - panelButtons.Width, 50);
-                }
-            };
+            // Import Button
+            this.btnImport.Size = new System.Drawing.Size(100, 40);
+            this.btnImport.Text = "";
+            this.btnImport.Name = "btnImportSup";
+            this.btnImport.FlatStyle = FlatStyle.Flat;
+            btnImport.FlatAppearance.BorderSize = 0;
+            btnImport.Cursor = Cursors.Hand;
+            this.btnImport.Margin = new Padding(10, 0, 0, 0);
+            this.btnImport.Click += BtnImport_Click;
+            this.btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Sup_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
+            panelButtons.Controls.Add(this.btnImport);
+
+            tlpActions.Controls.Add(panelButtons, 1, 0);
+            tlpHeader.Controls.Add(tlpActions, 0, 1);
+
+            tlpMain.Controls.Add(tlpHeader, 0, 0);
 
             // Grid Config
             this.dgvSuppliers.Dock = DockStyle.Fill;
             this.dgvSuppliers.AllowUserToAddRows = false;
-            this.dgvSuppliers.ReadOnly = false; 
+            this.dgvSuppliers.ReadOnly = false;
             this.dgvSuppliers.RowHeadersVisible = false;
             this.dgvSuppliers.BackgroundColor = ThemeConfig.SurfaceColor;
             this.dgvSuppliers.BorderStyle = BorderStyle.None;
@@ -274,7 +264,8 @@ namespace GenericInventorySystem.Forms
             dgvSuppliers.CellMouseDown += DgvSuppliers_CellMouseDown;
             dgvSuppliers.CellMouseMove += DgvSuppliers_CellMouseMove;
             dgvSuppliers.CellMouseLeave += DgvSuppliers_CellMouseLeave;
-            dgvSuppliers.DataError += (s, e) => {
+            dgvSuppliers.DataError += (s, e) =>
+            {
                 Console.WriteLine("DataError: " + (e.Exception != null ? e.Exception.Message : "Unknown"));
                 e.ThrowException = false;
             };
@@ -298,11 +289,11 @@ namespace GenericInventorySystem.Forms
 
             // Card Panel (Rounded body)
             Panel pnlCard = ThemeConfig.CreateCardPanel(dgvSuppliers);
-            tlpMain.Controls.Add(panelTop, 0, 0);
+            tlpMain.Controls.Add(tlpHeader, 0, 0);
             tlpMain.Controls.Add(pnlCard, 0, 1);
 
             this.Controls.Add(tlpMain);
-            this.Size = new System.Drawing.Size(950, 600); 
+            this.Size = new System.Drawing.Size(950, 600);
 
             ((System.ComponentModel.ISupportInitialize)(this.dgvSuppliers)).EndInit();
             this.ResumeLayout(false);
@@ -332,8 +323,8 @@ namespace GenericInventorySystem.Forms
 
         private void DgvSuppliers_CellMouseDown(object sender, DataGridViewCellMouseEventArgs e)
         {
-             if (e.RowIndex < 0 || e.Button != MouseButtons.Left) return;
-            
+            if (e.RowIndex < 0 || e.Button != MouseButtons.Left) return;
+
             string colName = dgvSuppliers.Columns[e.ColumnIndex].Name;
             if (colName != "colActions") return;
 
@@ -355,7 +346,7 @@ namespace GenericInventorySystem.Forms
                 string address = dgvSuppliers.Rows[e.RowIndex].Cells["colAddress"].Value?.ToString() ?? "";
                 string type = dgvSuppliers.Rows[e.RowIndex].Cells["type"].Value?.ToString() ?? "Company";
                 DateTime? dueDate = dgvSuppliers.Rows[e.RowIndex].Cells["colDueDate"].Value as DateTime?;
-                
+
                 object remVal = dgvSuppliers.Rows[e.RowIndex].Cells["reminder_days"].Value;
                 int reminderDays = (remVal == null || remVal == DBNull.Value) ? 0 : Convert.ToInt32(remVal);
 
@@ -386,19 +377,19 @@ namespace GenericInventorySystem.Forms
 
         private void DgvSuppliers_CellMouseMove(object sender, DataGridViewCellMouseEventArgs e)
         {
-             if (e.RowIndex >= 0 && dgvSuppliers.Columns[e.ColumnIndex].Name == "colActions")
-             {
-                 dgvSuppliers.Cursor = Cursors.Hand;
-             }
-             else
-             {
-                 dgvSuppliers.Cursor = Cursors.Default;
-             }
+            if (e.RowIndex >= 0 && dgvSuppliers.Columns[e.ColumnIndex].Name == "colActions")
+            {
+                dgvSuppliers.Cursor = Cursors.Hand;
+            }
+            else
+            {
+                dgvSuppliers.Cursor = Cursors.Default;
+            }
         }
 
         private void DgvSuppliers_CellMouseLeave(object sender, DataGridViewCellEventArgs e)
         {
-             dgvSuppliers.Cursor = Cursors.Default;
+            dgvSuppliers.Cursor = Cursors.Default;
         }
 
         private void DrawRoundedButton(Graphics g, Rectangle rect, string text, Color bgColor, Color textColor)
@@ -434,27 +425,27 @@ namespace GenericInventorySystem.Forms
             try
             {
                 string sql = "SELECT id, supplier_name, contact_person, phone, email, address, type, 0 as active_orders, payment_due_date, reminder_days FROM suppliers WHERE date_deleted IS NULL";
-                
+
                 if (!string.IsNullOrEmpty(search))
                 {
                     sql += $" AND (supplier_name LIKE '%{search}%' OR phone LIKE '%{search}%' OR email LIKE '%{search}%' OR contact_person LIKE '%{search}%')";
                 }
-                
+
                 sql += " ORDER BY supplier_name";
-                
+
                 DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
                 dgvSuppliers.DataSource = dt;
             }
-             catch(Exception ex) 
-             { 
-                  MessageHelper.ShowError(("Error loading data: ") + ex.Message); 
-             }
+            catch (Exception ex)
+            {
+                MessageHelper.ShowError(("Error loading data: ") + ex.Message);
+            }
         }
 
         private void BtnAdd_Click(object sender, EventArgs e)
         {
             AddSupplierForm form = new AddSupplierForm();
-            if(form.ShowDialog() == DialogResult.OK)
+            if (form.ShowDialog() == DialogResult.OK)
             {
                 SupplierData.AddSupplier(form.SupplierName, form.Phone, form.Email, form.Address, form.SupplierType, form.ContactPerson, form.DueDate, form.ReminderDays);
                 LoadData();
@@ -463,7 +454,7 @@ namespace GenericInventorySystem.Forms
 
         private void BtnDetails_Click(object sender, EventArgs e)
         {
-            if(dgvSuppliers.SelectedRows.Count == 0) { MessageHelper.ShowInfo("Select a supplier."); return; }
+            if (dgvSuppliers.SelectedRows.Count == 0) { MessageHelper.ShowInfo("Select a supplier."); return; }
             int id = Convert.ToInt32(dgvSuppliers.SelectedRows[0].Cells["ID"].Value);
             string name = dgvSuppliers.SelectedRows[0].Cells["colCompany"].Value.ToString();
             var form = new SupplierDetailsForm(id, name);
@@ -494,7 +485,7 @@ namespace GenericInventorySystem.Forms
                 {
                     string sql = "SELECT supplier_name, 'Unknown' as contact_person, phone, email, address, '' as city, '' as postal_code, '' as website, '' as notes FROM suppliers WHERE date_deleted IS NULL ORDER BY supplier_name";
                     DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
-                    
+
                     if (dt == null || dt.Rows.Count == 0)
                     {
                         MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoDataExport"));
@@ -529,8 +520,8 @@ namespace GenericInventorySystem.Forms
 
                     if (Helpers.ImportExportHelper.ExportToCsv(exportDt, saveDialog.FileName))
                     {
-                        string successMsg = LocalizationManager.IsArabic 
-                            ? $"تم تصدير {exportDt.Rows.Count} موردين إلى CSV بنجاح!" 
+                        string successMsg = LocalizationManager.IsArabic
+                            ? $"تم تصدير {exportDt.Rows.Count} موردين إلى CSV بنجاح!"
                             : $"Exported {exportDt.Rows.Count} suppliers to CSV successfully!";
                         MessageHelper.ShowSuccess(successMsg);
                     }
@@ -559,7 +550,7 @@ namespace GenericInventorySystem.Forms
                 {
                     string sql = "SELECT supplier_name, 'Unknown' as contact_person, phone, email, address, '' as city, '' as postal_code, '' as website, '' as notes FROM suppliers WHERE date_deleted IS NULL ORDER BY supplier_name";
                     DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
-                    
+
                     if (dt == null || dt.Rows.Count == 0)
                     {
                         MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoDataExport"));
@@ -594,8 +585,8 @@ namespace GenericInventorySystem.Forms
 
                     if (Helpers.ImportExportHelper.ExportToExcel(exportDt, saveDialog.FileName, "Suppliers"))
                     {
-                        string successMsg = LocalizationManager.IsArabic 
-                            ? $"تم تصدير {exportDt.Rows.Count} موردين إلى Excel بنجاح!" 
+                        string successMsg = LocalizationManager.IsArabic
+                            ? $"تم تصدير {exportDt.Rows.Count} موردين إلى Excel بنجاح!"
                             : $"Exported {exportDt.Rows.Count} suppliers to Excel successfully!";
                         MessageHelper.ShowSuccess(successMsg);
                     }
@@ -622,16 +613,16 @@ namespace GenericInventorySystem.Forms
                 if (openDialog.ShowDialog() == DialogResult.OK)
                 {
                     DataTable dt = Helpers.ImportExportHelper.ImportFromCsv(openDialog.FileName);
-                    
-                     if (dt == null || dt.Rows.Count == 0)
+
+                    if (dt == null || dt.Rows.Count == 0)
                     {
                         MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoDataFile"));
                         return;
                     }
 
-                     if (!dt.Columns.Contains("SupplierName"))
+                    if (!dt.Columns.Contains("SupplierName"))
                     {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic 
+                        MessageHelper.ShowError(LocalizationManager.IsArabic
                             ? "تنسيق الملف غير صالح. الأعمدة المطلوبة: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes"
                             : "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes");
                         return;
@@ -646,7 +637,7 @@ namespace GenericInventorySystem.Forms
                         try
                         {
                             string supplierName = row["SupplierName"].ToString();
-                            
+
                             if (string.IsNullOrWhiteSpace(supplierName))
                             {
                                 skipped++;
@@ -679,7 +670,7 @@ namespace GenericInventorySystem.Forms
                     }
 
                     LoadData();
-                    string completeMsg = LocalizationManager.IsArabic 
+                    string completeMsg = LocalizationManager.IsArabic
                         ? $"اكتمل الاستيراد!\nتم الاستيراد: {imported}\nتم التخطي: {skipped}"
                         : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
                     MessageHelper.ShowSuccess(completeMsg);
@@ -702,16 +693,16 @@ namespace GenericInventorySystem.Forms
                 if (openDialog.ShowDialog() == DialogResult.OK)
                 {
                     DataTable dt = Helpers.ImportExportHelper.ImportFromExcel(openDialog.FileName);
-                    
-                     if (dt == null || dt.Rows.Count == 0)
+
+                    if (dt == null || dt.Rows.Count == 0)
                     {
                         MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoDataFile"));
                         return;
                     }
 
-                     if (!dt.Columns.Contains("SupplierName"))
+                    if (!dt.Columns.Contains("SupplierName"))
                     {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic 
+                        MessageHelper.ShowError(LocalizationManager.IsArabic
                             ? "تنسيق الملف غير صالح. الأعمدة المطلوبة: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes"
                             : "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes");
                         return;
@@ -726,7 +717,7 @@ namespace GenericInventorySystem.Forms
                         try
                         {
                             string supplierName = row["SupplierName"].ToString();
-                            
+
                             if (string.IsNullOrWhiteSpace(supplierName))
                             {
                                 skipped++;
@@ -759,7 +750,7 @@ namespace GenericInventorySystem.Forms
                     }
 
                     LoadData();
-                    string completeMsg = LocalizationManager.IsArabic 
+                    string completeMsg = LocalizationManager.IsArabic
                         ? $"اكتمل الاستيراد!\nتم الاستيراد: {imported}\nتم التخطي: {skipped}"
                         : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
                     MessageHelper.ShowSuccess(completeMsg);
@@ -777,7 +768,7 @@ namespace GenericInventorySystem.Forms
             {
                 var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
                 if (ctrlDel.Length > 0) ctrlDel[0].Visible = false;
-                
+
                 if (btnImport != null) btnImport.Visible = false;
             }
         }

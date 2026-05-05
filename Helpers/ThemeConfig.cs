@@ -13,6 +13,7 @@ namespace GenericInventorySystem
     /// Centralized configuration for UI Theming and Branding.
     /// Updated to "Horizon UI" inspired Light Theme.
     /// </summary>
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public static class ThemeConfig
     {
         // ==========================================
@@ -141,7 +142,7 @@ namespace GenericInventorySystem
                 AutoSize = false,
                 Dock = DockStyle.Top,
                 Height = 35,
-                TextAlign = ContentAlignment.MiddleLeft,
+                TextAlign = Helpers.LocalizationManager.IsArabic ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft,
                 Padding = new Padding(0)
             };
         }
@@ -233,6 +234,7 @@ namespace GenericInventorySystem
             cbo.BackColor = SurfaceColor;
             cbo.ForeColor = TextColorDark;
             cbo.Cursor = Cursors.Hand;
+            if (Helpers.LocalizationManager.IsArabic) cbo.RightToLeft = RightToLeft.Yes;
             
             // Prevent blue selection highlight on focus
             cbo.Enter += (s, e) => {
@@ -888,6 +890,8 @@ namespace GenericInventorySystem
             grid.EnableHeadersVisualStyles = false;
             grid.GridColor = Color.FromArgb(230, 230, 230);
             
+            if (Helpers.LocalizationManager.IsArabic) grid.RightToLeft = RightToLeft.Yes;
+            
             grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
             grid.ColumnHeadersDefaultCellStyle.ForeColor = TextColorDark; 
             grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = SelectionBackColor;
@@ -1371,6 +1375,7 @@ namespace GenericInventorySystem
             txt.ForeColor = TextColorDark;
             txt.Font = StandardFont;
             txt.BorderStyle = BorderStyle.None; // Usually wrapped in WrapInStyledInput
+            if (Helpers.LocalizationManager.IsArabic) txt.RightToLeft = RightToLeft.Yes;
         }
 
         public static void ApplySearchBoxStyle(TextBox txt)

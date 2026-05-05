@@ -4,6 +4,7 @@ using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.ComponentModel;
+using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem.Forms
 {
@@ -42,6 +43,7 @@ namespace GenericInventorySystem.Forms
             this.Size = new Size(550, 700); 
 
             ThemeConfig.ApplyFormIcon(this);
+            if (LocalizationManager.IsArabic) this.RightToLeft = RightToLeft.Yes;
             InitializeBaseComponents();
             UpdateRegion();
         }
@@ -52,8 +54,17 @@ namespace GenericInventorySystem.Forms
             UpdateRegion();
             if (pnlHeader != null)
             {
-                if (btnClose != null) btnClose.Location = new Point(pnlHeader.Width - 35, 12);
-                if (btnMaximize != null) btnMaximize.Location = new Point(pnlHeader.Width - 70, 12);
+                bool isAr = LocalizationManager.IsArabic;
+                if (isAr)
+                {
+                    if (btnClose != null) btnClose.Location = new Point(12, 12);
+                    if (btnMaximize != null) btnMaximize.Location = new Point(47, 12);
+                }
+                else
+                {
+                    if (btnClose != null) btnClose.Location = new Point(pnlHeader.Width - 35, 12);
+                    if (btnMaximize != null) btnMaximize.Location = new Point(pnlHeader.Width - 70, 12);
+                }
             }
             this.Invalidate(); 
         }
@@ -112,12 +123,13 @@ namespace GenericInventorySystem.Forms
             tlpRoot.Controls.Add(pnlHeader, 0, 0);
 
             // Title
+            bool isAr = LocalizationManager.IsArabic;
             lblTitle = new Label {
                 Text = "Modal Title",
                 Font = ThemeConfig.HeaderFont,
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize = true,
-                Location = new Point(25, 25) // Better centering in 70px header
+                Location = isAr ? new Point(pnlHeader.Width - 150, 25) : new Point(25, 25) // Approx positioning, refined in Resize if needed
             };
             pnlHeader.Controls.Add(lblTitle);
 
@@ -125,7 +137,7 @@ namespace GenericInventorySystem.Forms
             btnClose = new Button {
                 Size = new Size(32, 32),
                 Cursor = Cursors.Hand,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right
+                Anchor = isAr ? AnchorStyles.Top | AnchorStyles.Left : AnchorStyles.Top | AnchorStyles.Right
             };
             ThemeConfig.ApplyWindowControl(btnClose, "Close");
             btnClose.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
@@ -135,7 +147,7 @@ namespace GenericInventorySystem.Forms
             btnMaximize = new Button {
                 Size = new Size(32, 32),
                 Cursor = Cursors.Hand,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Anchor = isAr ? AnchorStyles.Top | AnchorStyles.Left : AnchorStyles.Top | AnchorStyles.Right,
                 Tag = "Maximize"
             };
             ThemeConfig.ApplyWindowControl(btnMaximize, "Maximize");
@@ -155,8 +167,17 @@ namespace GenericInventorySystem.Forms
             pnlHeader.Controls.Add(btnMaximize);
 
             // Initial positioning (will be refined in Resize)
-            btnClose.Location = new Point(pnlHeader.Width - 40, 15);
-            btnMaximize.Location = new Point(pnlHeader.Width - 75, 15);
+            if (isAr)
+            {
+                btnClose.Location = new Point(12, 15);
+                btnMaximize.Location = new Point(47, 15);
+                lblTitle.Location = new Point(pnlHeader.Width - lblTitle.Width - 25, 25);
+            }
+            else
+            {
+                btnClose.Location = new Point(pnlHeader.Width - 40, 15);
+                btnMaximize.Location = new Point(pnlHeader.Width - 75, 15);
+            }
 
             // 2. Content Panel
             ContentPanel = new Controls.ModernScrollPanel {
@@ -272,7 +293,7 @@ namespace GenericInventorySystem.Forms
             
             FlowLayoutPanel flpButtons = new FlowLayoutPanel {
                 Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.RightToLeft,
+                FlowDirection = LocalizationManager.IsArabic ? FlowDirection.LeftToRight : FlowDirection.RightToLeft,
                 Padding = new Padding(0),
                 BackColor = Color.Transparent
             };

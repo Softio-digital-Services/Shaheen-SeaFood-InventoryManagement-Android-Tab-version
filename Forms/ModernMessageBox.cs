@@ -60,7 +60,7 @@ namespace GenericInventorySystem.Forms
                 Font = new Font("Segoe UI", 10.5F, FontStyle.Regular), // Increased from StandardFont (9pt)
                 ForeColor = ThemeConfig.TextColorDark,
                 Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
+                TextAlign = LocalizationManager.IsArabic ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft,
                 AutoSize = false 
             };
 
@@ -99,10 +99,10 @@ namespace GenericInventorySystem.Forms
 
         private void SetButtons(MessageBoxButtons buttons, bool isArabic)
         {
-            string ok = "OK";
-            string cancel = LocalizationManager.GetString("Popup_Cancel");
-            string yes = "Yes";
-            string no = "No";
+            string ok = LocalizationManager.GetString("Popup_OK") ?? "OK";
+            string cancel = LocalizationManager.GetString("Popup_Cancel") ?? "Cancel";
+            string yes = LocalizationManager.GetString("Popup_Yes") ?? "Yes";
+            string no = LocalizationManager.GetString("Popup_No") ?? "No";
 
             switch (buttons)
             {

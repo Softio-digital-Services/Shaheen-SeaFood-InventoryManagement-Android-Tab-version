@@ -136,6 +136,7 @@ namespace GenericInventorySystem.Controls
             cmbInput.ForeColor = ThemeConfig.TextColorDark;
             cmbInput.Dock = DockStyle.Fill;
             cmbInput.BackColor = Color.White;
+            if (LocalizationManager.IsArabic) cmbInput.RightToLeft = RightToLeft.Yes;
 
             cmbInput.Enter += (s, e) => { 
                 _isFocused = true; 
@@ -168,9 +169,18 @@ namespace GenericInventorySystem.Controls
         private void UpdateLayout()
         {
             if (pnlContainer == null) return;
+            bool isAr = LocalizationManager.IsArabic;
             int labelHeight = _showLabel ? 25 : 0;
             pnlContainer.Location = new Point(0, labelHeight);
             pnlContainer.Size = new Size(this.Width, Math.Min(this.Height - labelHeight, 45));
+
+            if (lblTitle != null)
+            {
+                if (isAr)
+                    lblTitle.Location = new Point(this.Width - lblTitle.Width - 5, 0);
+                else
+                    lblTitle.Location = new Point(5, 0);
+            }
         }
 
 

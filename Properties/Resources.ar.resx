@@ -511,4 +511,22 @@
   <data name="Msg_ReturnOneItem" xml:space="preserve"><value>يرجى إضافة صنف واحد على الأقل للارتجاع.</value></data>
   <data name="Msg_ConfirmReturn" xml:space="preserve"><value>تأكيد إتمام عملية الارتجاع وتحديث المخزون؟</value></data>
   <data name="Msg_ReturnSuccess" xml:space="preserve"><value>تمت عملية الارتجاع بنجاح وتحديث المخزون.</value></data>
+  <data name="Add_FirstName" xml:space="preserve"><value>الاسم الأول</value></data>
+  <data name="Add_LastName" xml:space="preserve"><value>اسم العائلة</value></data>
+  <data name="Add_CompanyName" xml:space="preserve"><value>اسم الشركة</value></data>
+  <data name="Add_ContactFirstName" xml:space="preserve"><value>الاسم الأول للتواصل</value></data>
+  <data name="Add_ContactLastName" xml:space="preserve"><value>اسم عائلة التواصل</value></data>
+  <data name="Add_ReqFirstName" xml:space="preserve"><value>الاسم الأول مطلوب.</value></data>
+  <data name="Add_ReqLastName" xml:space="preserve"><value>اسم العائلة مطلوب.</value></data>
+  <data name="Popup_ReqPhone" xml:space="preserve"><value>رقم الهاتف مطلوب.</value></data>
+  <data name="btnSaveDraft" xml:space="preserve"><value>حفظ مسودة</value></data>
+  <data name="btnCheckout" xml:space="preserve"><value>الدفع</value></data>
+  <data name="btnClearCart" xml:space="preserve"><value>مسح السلة</value></data>
+  <data name="btnManageDrafts" xml:space="preserve"><value>إدارة المسودات</value></data>
+  <data name="btnSaveQuotation" xml:space="preserve"><value>حفظ كعرض سعر</value></data>
+  <data name="btnRefresh" xml:space="preserve"><value>تحديث</value></data>
+  <data name="Msg_HistoryLoadError" xml:space="preserve"><value>خطأ في تحميل السجلات</value></data>
+  <data name="Popup_OK" xml:space="preserve"><value>موافق</value></data>
+  <data name="Popup_Yes" xml:space="preserve"><value>نعم</value></data>
+  <data name="Popup_No" xml:space="preserve"><value>لا</value></data>
 </root>

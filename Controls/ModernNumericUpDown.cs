@@ -104,9 +104,10 @@ namespace GenericInventorySystem.Controls
             this.Controls.Add(lblTitle);
 
             // Container Panel
+            bool isAr = LocalizationManager.IsArabic;
             pnlContainer = new Panel { 
                 BackColor = Color.Transparent,
-                Padding = new Padding(10, 8, 35, 5)
+                Padding = isAr ? new Padding(35, 8, 10, 5) : new Padding(10, 8, 35, 5)
             };
             pnlContainer.Paint += PnlContainer_Paint;
             this.Controls.Add(pnlContainer);
@@ -117,7 +118,8 @@ namespace GenericInventorySystem.Controls
                 Font = new Font("Segoe UI", 10F), 
                 ForeColor = ThemeConfig.TextColorDark, 
                 BackColor = Color.White,
-                Dock = DockStyle.Fill
+                Dock = DockStyle.Fill,
+                RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No
             };
             txtInput.KeyPress += TxtInput_KeyPress;
             txtInput.Enter += (s, e) => {
@@ -168,8 +170,16 @@ namespace GenericInventorySystem.Controls
             pnlContainer.Location = new Point(0, labelHeight);
             pnlContainer.Size = new Size(this.Width, 42);
             
-            if (btnUp != null) btnUp.Location = new Point(pnlContainer.Width - 32, 0);
-            if (btnDown != null) btnDown.Location = new Point(pnlContainer.Width - 32, 21);
+            if (lblTitle != null)
+            {
+                if (LocalizationManager.IsArabic)
+                    lblTitle.Location = new Point(this.Width - lblTitle.Width - 5, 0);
+                else
+                    lblTitle.Location = new Point(5, 0);
+            }
+
+            if (btnUp != null) btnUp.Location = new Point(LocalizationManager.IsArabic ? 0 : pnlContainer.Width - 32, 0);
+            if (btnDown != null) btnDown.Location = new Point(LocalizationManager.IsArabic ? 0 : pnlContainer.Width - 32, 21);
             
             this.Height = labelHeight + 42;
         }
@@ -221,8 +231,17 @@ namespace GenericInventorySystem.Controls
             }
 
             // Separator for buttons
-            e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), pnlContainer.Width - 32, 5, pnlContainer.Width - 32, pnlContainer.Height - 5);
-            e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), pnlContainer.Width - 32, 21, pnlContainer.Width - 2, 21);
+            bool isAr = LocalizationManager.IsArabic;
+            if (isAr)
+            {
+                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), 32, 5, 32, pnlContainer.Height - 5);
+                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), 0, 21, 32, 21);
+            }
+            else
+            {
+                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), pnlContainer.Width - 32, 5, pnlContainer.Width - 32, pnlContainer.Height - 5);
+                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), pnlContainer.Width - 32, 21, pnlContainer.Width - 2, 21);
+            }
         }
 
         protected override void OnResize(EventArgs e)

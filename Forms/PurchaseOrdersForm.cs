@@ -53,7 +53,14 @@ namespace GenericInventorySystem.Forms
             tlpMain.Controls.Add(lblPOTitle, 0, 0);
 
             // 1. Actions Row (Search + Buttons)
-            Panel pnlActions = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
+            TableLayoutPanel tlpActions = new TableLayoutPanel { 
+                Dock = DockStyle.Fill, 
+                Margin = new Padding(0),
+                ColumnCount = 2,
+                RowCount = 1
+            };
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F)); // Search box area
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));  // Buttons area
             
             // Search Bar
             txtSearch = new ModernTextBox();
@@ -61,17 +68,18 @@ namespace GenericInventorySystem.Forms
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = LocalizationManager.GetString("Msg_SearchPO");
             txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(0, 5); // Align with buttons vertically
+            txtSearch.Anchor = AnchorStyles.Left;
             txtSearch.TextChanged += (s, e) => LoadPurchaseOrders(txtSearch.Text);
-            pnlActions.Controls.Add(txtSearch);
+            tlpActions.Controls.Add(txtSearch, 0, 0);
 
             // Buttons Panel
             FlowLayoutPanel panelButtons = new FlowLayoutPanel
             {
                 FlowDirection = FlowDirection.RightToLeft,
                 AutoSize = true,
-                Dock = DockStyle.Right,
-                WrapContents = false
+                Dock = DockStyle.Fill,
+                WrapContents = false,
+                Padding = new Padding(0, 0, 0, 0)
             };
 
             // New PO Button
@@ -79,9 +87,8 @@ namespace GenericInventorySystem.Forms
             {
                 Size = new Size(180, 40),
                 FlatStyle = FlatStyle.Flat,
-
                 Cursor = Cursors.Hand,
-                Margin = new Padding(10, 0, 0, 0)
+                Margin = new Padding(10, 5, 0, 0)
             };
             btnNewPO.FlatAppearance.BorderSize = 0;
             btnNewPO.Click += BtnNewPO_Click;
@@ -95,9 +102,8 @@ namespace GenericInventorySystem.Forms
                 {
                     Size = new Size(200, 40),
                     FlatStyle = FlatStyle.Flat,
-
                     Cursor = Cursors.Hand,
-                    Margin = new Padding(10, 0, 0, 0)
+                    Margin = new Padding(10, 5, 0, 0)
                 };
                 btnAutoPO.FlatAppearance.BorderSize = 0;
                 btnAutoPO.Click += BtnAutoPO_Click;
@@ -105,8 +111,8 @@ namespace GenericInventorySystem.Forms
                 panelButtons.Controls.Add(btnAutoPO);
             }
 
-            pnlActions.Controls.Add(panelButtons);
-            tlpMain.Controls.Add(pnlActions, 0, 1);
+            tlpActions.Controls.Add(panelButtons, 1, 0);
+            tlpMain.Controls.Add(tlpActions, 0, 1);
 
             // Content
             pnlContent = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0, 10, 0, 0) };
