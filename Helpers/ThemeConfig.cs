@@ -170,7 +170,7 @@ namespace GenericInventorySystem
             return p?.BackColor ?? BackgroundColor;
         }
 
-                public static void DrawIconButton(Button btn, Graphics g, string iconName, string localizationKey, Color textColor, Color accentColor, bool isOutline)
+        public static void DrawIconButton(Button btn, Graphics g, string iconName, string localizationKey, Color textColor, Color accentColor, bool isOutline)
         {
             if (btn == null) return;
             bool isArabic = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
@@ -547,7 +547,7 @@ namespace GenericInventorySystem
 
             Rectangle r = new Rectangle(0, 0, btn.Width, btn.Height);
             if (btn.Parent != null)
-                using (var pb = new SolidBrush(btn.Parent.BackColor))
+                using (var pb = new SolidBrush(GetParentColor(btn)))
                     g.FillRectangle(pb, r);
 
             using (var path = GetRoundedPath(r, 8))
@@ -858,8 +858,8 @@ namespace GenericInventorySystem
             btn.Cursor = Cursors.Hand;
             btn.TextAlign = ContentAlignment.MiddleCenter;
             
-            btn.MouseEnter += (s, e) => btn.BackColor = DangerColorBright;
-            btn.MouseLeave += (s, e) => btn.BackColor = DangerColor;
+            btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(0, 184, 138); // Slightly darker/brighter green for hover
+            btn.MouseLeave += (s, e) => btn.BackColor = SuccessColor;
 
             if (!string.IsNullOrEmpty(btn.Text)) { btn.Paint -= Btn_PaintRounded; btn.Paint += Btn_PaintRounded; }
         }
@@ -1101,7 +1101,8 @@ namespace GenericInventorySystem
                     Color c2 = Color.FromArgb(147, 51, 234); 
 
                     // Specific colors based on icon type
-                    if (name.Contains("import")) { c1 = Color.FromArgb(22, 163, 74); c2 = Color.FromArgb(20, 184, 166); } 
+                    if (name == "refresh") { c1 = Color.FromArgb(5, 205, 153); c2 = Color.FromArgb(16, 185, 129); }
+                    else if (name.Contains("import")) { c1 = Color.FromArgb(22, 163, 74); c2 = Color.FromArgb(20, 184, 166); } 
                     else if (name.Contains("export")) { c1 = Color.FromArgb(37, 99, 235); c2 = Color.FromArgb(6, 182, 212); } 
                     else if (name.Contains("filter")) { c1 = Color.FromArgb(249, 115, 22); c2 = Color.FromArgb(236, 72, 153); }
                     else if (name.Contains("search")) { c1 = Color.FromArgb(79, 70, 229); c2 = Color.FromArgb(124, 58, 237); }
@@ -1244,6 +1245,14 @@ namespace GenericInventorySystem
                                 g.DrawLine(whitePen, 16, 32, 48, 32);
                             }
                         }
+                        else if (name == "refresh")
+                        {
+                            using (var p = new Pen(brush, 6) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                            {
+                                g.DrawArc(p, 14, 14, 36, 36, 45, 270);
+                                g.FillPolygon(brush, new Point[] { new Point(42, 10), new Point(52, 22), new Point(36, 26) });
+                            }
+                        }
                         else if (name == "chevron_up")
                         {
                             using (var p = new Pen(brush, 8) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
@@ -1293,7 +1302,7 @@ namespace GenericInventorySystem
         public static Panel CreateCardPanel(Control inner)
         {
             Panel p = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
-            Panel card = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(15) };
+            Panel card = new Panel { Dock = DockStyle.Fill, BackColor = SurfaceColor, Padding = new Padding(15) };
             card.Paint += (s, e) => {
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 Color parentColor = GetParentColor(card);
