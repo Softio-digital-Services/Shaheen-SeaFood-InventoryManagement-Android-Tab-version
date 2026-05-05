@@ -1,0 +1,53 @@
+using System;
+using System.Windows.Forms;
+using GenericInventorySystem.Helpers.Plugins;
+using GenericInventorySystem.Helpers;
+
+namespace GenericInventorySystem.Plugins
+{
+    public class BarcodeLabelsPlugin : ITabPlugin
+    {
+        private PluginContext _context;
+
+        public string Id => "com.softio.plugins.barcodelabels";
+        public string Name => "Barcode Labels Management";
+        public string Version => "1.0.0";
+        public string Description => "Manage Barcode Labels.";
+        public string Author => "Softio Services";
+
+        public bool RequiresLicense => true;
+        public string LicenseFeatureKey => "Plugin_BarcodeLabels";
+
+        public string TabId => "btnLabels";
+        public string TabTitle => LocalizationManager.IsArabic ? "?????? ????????" : "Barcode Labels";
+        public string TabIcon => "barcode";
+        public int TabOrder => 50;
+
+        public void Initialize(PluginContext context)
+        {
+            _context = context;
+        }
+
+        public UserControl CreateTabContent()
+        {
+            var allowed = false;
+            foreach (var role in new string[] { "Admin","Accountant","Staff" }) {
+                if (_context.UserRole == role || (_context.IsAdmin && role == "Admin")) allowed = true;
+            }
+
+            if (allowed)
+            {
+                var form = new GenericInventorySystem.Forms.BarcodeLabelsForm();
+                var loadMethod = form.GetType().GetMethod("LoadData") ?? form.GetType().GetMethod("LoadQuotations");
+                if (loadMethod != null) { if (loadMethod.GetParameters().Length == 1) loadMethod.Invoke(form, new object[] { "" }); else loadMethod.Invoke(form, null); }
+                return form;
+            }
+            
+            return new UserControl { BackColor = System.Drawing.Color.Red };
+        }
+
+        public void Shutdown() { }
+    }
+}
+
+

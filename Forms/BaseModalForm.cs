@@ -33,7 +33,7 @@ namespace GenericInventorySystem.Forms
             this.DoubleBuffered = true;
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.CenterParent;
-            this.BackColor = ThemeConfig.SurfaceColor;
+
             this.Padding = new Padding(0);
 
             this.DoubleBuffered = true;
@@ -104,7 +104,7 @@ namespace GenericInventorySystem.Forms
             // 1. Header Panel
             pnlHeader = new Panel {
                 Dock = DockStyle.Fill,
-                BackColor = Color.Transparent,
+
                 Margin = new Padding(0)
             };
             pnlHeader.MouseDown += Header_MouseDown;
@@ -159,7 +159,7 @@ namespace GenericInventorySystem.Forms
 
             // 2. Content Panel
             ContentPanel = new Controls.ModernScrollPanel {
-                BackColor = Color.Transparent,
+
                 Dock = DockStyle.Fill,
                 Padding = new Padding(30, 10, 30, 10),
                 Margin = new Padding(0, 0, 5, 0) // Inset from right to avoid border overlap
@@ -457,3 +457,4 @@ namespace GenericInventorySystem.Forms
         }
     }
 }
+

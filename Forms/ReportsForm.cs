@@ -67,14 +67,14 @@ namespace GenericInventorySystem.Forms
         {
             this.Controls.Clear();
             this.Size = new Size(1100, 750);
-            this.BackColor = ThemeConfig.BackgroundColor;
+
 
             // Root Layout
             TableLayoutPanel tlpRoot = new TableLayoutPanel();
             tlpRoot.Dock = DockStyle.Fill;
             tlpRoot.ColumnCount = 1;
             tlpRoot.RowCount = 4;
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F)); // Header Compact
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); // Header
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 55F));  // Top Row (Valuation + Pie)
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));  // Bottom Row (KPIs + Bar)
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F)); // Spacer

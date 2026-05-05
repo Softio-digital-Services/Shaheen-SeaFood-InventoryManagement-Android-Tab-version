@@ -22,7 +22,7 @@ namespace GenericInventorySystem.Forms
             
             this.TitleText = (LocalizationManager.IsArabic ? "\u0645\u0639\u0627\u064a\u0646\u0629 \u0639\u0631\u0636 \u0627\u0644\u0633\u0639\u0631" : "Quotation Preview") + " - #" + orderId;
             this.Size = new Size(950, 950); // Increased width to ensure A4 fits
-            this.BackColor = ThemeConfig.BackgroundColor;
+
             this.ContentPanel.Padding = new Padding(20, 20, 20, 20); // Add safety margin
 
             InitializeUI();
@@ -46,7 +46,7 @@ namespace GenericInventorySystem.Forms
             pnlContent = new Panel { 
                 Width = 800, 
                 Height = 1100, 
-                BackColor = Color.White, 
+
                 Margin = new Padding(0, 0, 0, 40),
                 BorderStyle = BorderStyle.FixedSingle,
                 Anchor = AnchorStyles.Top

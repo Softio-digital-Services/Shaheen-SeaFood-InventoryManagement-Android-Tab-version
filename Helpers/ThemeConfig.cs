@@ -134,6 +134,7 @@ namespace GenericInventorySystem
         {
             return new Label
             {
+                Name = "lblStandardHeader", // Ensures global themer identifies this as a header label
                 Text = text,
                 Font = HeaderFont,
                 ForeColor = PrimaryColor,
@@ -158,8 +159,7 @@ namespace GenericInventorySystem
             btn.MouseEnter += (s, e) => btn.BackColor = PrimaryHoverColor;
             btn.MouseLeave += (s, e) => btn.BackColor = PrimaryColor;
 
-            btn.Paint -= Btn_PaintRounded; 
-            btn.Paint += Btn_PaintRounded;
+            if (!string.IsNullOrEmpty(btn.Text)) { btn.Paint -= Btn_PaintRounded; btn.Paint += Btn_PaintRounded; }
         }
 
         public static Color GetParentColor(Control ctrl)
@@ -170,7 +170,7 @@ namespace GenericInventorySystem
             return p?.BackColor ?? BackgroundColor;
         }
 
-        public static void DrawIconButton(Button btn, Graphics g, string iconName, string localizationKey, Color textColor, Color accentColor, bool isOutline)
+                public static void DrawIconButton(Button btn, Graphics g, string iconName, string localizationKey, Color textColor, Color accentColor, bool isOutline)
         {
             if (btn == null) return;
             bool isArabic = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
@@ -182,16 +182,21 @@ namespace GenericInventorySystem
             using (var pb = new SolidBrush(GetParentColor(btn)))
                 g.FillRectangle(pb, -1, -1, btn.Width + 2, btn.Height + 2);
 
+            bool isPaletted = btn.Tag != null && btn.Tag.ToString() == "paletted";
+            Color effectiveBg = isPaletted ? btn.BackColor : accentColor;
+            Color effectiveText = isPaletted ? TextColorWhite : textColor;
+            bool effectiveOutline = isPaletted ? false : isOutline;
+
             using (var path = GetRoundedPath(r, 12)) 
             {
-                if (isOutline)
+                if (effectiveOutline)
                 {
-                    using (Pen pen = new Pen(accentColor, 1.5f))
+                    using (Pen pen = new Pen(effectiveBg, 1.5f))
                         g.DrawPath(pen, path);
                 }
                 else
                 {
-                    using (SolidBrush brush = new SolidBrush(accentColor))
+                    using (SolidBrush brush = new SolidBrush(effectiveBg))
                         g.FillPath(brush, path);
                 }
             }
@@ -218,7 +223,7 @@ namespace GenericInventorySystem
             TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding;
             if (isArabic) flags |= TextFormatFlags.RightToLeft;
 
-            TextRenderer.DrawText(g, text, btn.Font, textRect, textColor, flags);
+            TextRenderer.DrawText(g, text, btn.Font, textRect, effectiveText, flags);
         }
 
         public static void ApplyComboBoxStyle(ComboBox cbo)
@@ -825,6 +830,24 @@ namespace GenericInventorySystem
         [DllImport("user32.dll")] private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
         [DllImport("user32.dll")] private static extern bool ReleaseCapture();
 
+                public static void ApplyPaletteButton(Button btn, Color baseColor)
+        {
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.BackColor = baseColor;
+            btn.ForeColor = TextColorWhite;
+            btn.Font = SmallBoldFont;
+            btn.Cursor = Cursors.Hand;
+            btn.TextAlign = ContentAlignment.MiddleCenter;
+            
+            Color hoverColor = ControlPaint.Light(baseColor, 0.2f);
+            
+            btn.MouseEnter += (s, e) => btn.BackColor = hoverColor;
+            btn.MouseLeave += (s, e) => btn.BackColor = baseColor;
+
+            if (!string.IsNullOrEmpty(btn.Text)) { btn.Paint -= Btn_PaintRounded; btn.Paint += Btn_PaintRounded; }
+        }
+
         public static void ApplyDangerButton(Button btn)
         {
             btn.FlatStyle = FlatStyle.Flat;
@@ -838,15 +861,14 @@ namespace GenericInventorySystem
             btn.MouseEnter += (s, e) => btn.BackColor = DangerColorBright;
             btn.MouseLeave += (s, e) => btn.BackColor = DangerColor;
 
-            btn.Paint -= Btn_PaintRounded;
-            btn.Paint += Btn_PaintRounded;
+            if (!string.IsNullOrEmpty(btn.Text)) { btn.Paint -= Btn_PaintRounded; btn.Paint += Btn_PaintRounded; }
         }
 
         public static void ApplySecondaryButton(Button btn)
         {
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
-            btn.BackColor = Color.FromArgb(230, 230, 240); 
+            btn.BackColor = Color.FromArgb(230, 230, 240);
             btn.ForeColor = TextColorDark;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
@@ -855,8 +877,7 @@ namespace GenericInventorySystem
             btn.MouseEnter += (s, e) => btn.BackColor = SecondaryHoverColor;
             btn.MouseLeave += (s, e) => btn.BackColor = Color.FromArgb(230, 230, 240);
 
-            btn.Paint -= Btn_PaintRounded; 
-            btn.Paint += Btn_PaintRounded;
+            if (!string.IsNullOrEmpty(btn.Text)) { btn.Paint -= Btn_PaintRounded; btn.Paint += Btn_PaintRounded; }
         }
 
         public static void ApplyGridTheme(DataGridView grid)
@@ -1297,6 +1318,230 @@ namespace GenericInventorySystem
             menu.Renderer = new ModernNotificationRenderer();
             menu.BackColor = SurfaceColor;
         }
+
+        // ==========================================
+        // GENERIC BASE STYLING METHODS
+        // ==========================================
+        
+        public static void ApplyFormStyle(Form form)
+        {
+            form.BackColor = BackgroundColor;
+            form.Font = StandardFont;
+            form.ForeColor = TextColorDark;
+        }
+
+                public static void ApplyUserControlStyle(UserControl uc)
+        {
+            if (uc.GetType().Name.StartsWith("Modern") || uc.GetType().Name == "StatCard")
+            {
+                // Modern controls and StatCards manage their own background
+            }
+            else
+            {
+                uc.BackColor = BackgroundColor;
+            }
+            uc.Font = StandardFont;
+            uc.ForeColor = TextColorDark;
+        }
+
+        public static void ApplyPanelStyle(Panel pnl)
+        {
+            pnl.BackColor = BackgroundColor;
+        }
+        
+        public static void ApplyCardStyle(Panel pnl)
+        {
+            pnl.BackColor = SurfaceColor;
+            // Rounded corners and borders should be applied via Paint events if needed, 
+            // but simply setting the background ensures consistency.
+        }
+
+        public static void ApplyTextBoxStyle(TextBox txt)
+        {
+            txt.BackColor = SurfaceColor;
+            txt.ForeColor = TextColorDark;
+            txt.Font = StandardFont;
+            txt.BorderStyle = BorderStyle.None; // Usually wrapped in WrapInStyledInput
+        }
+
+        public static void ApplySearchBoxStyle(TextBox txt)
+        {
+            ApplyTextBoxStyle(txt);
+            // Any search specific tweaks can go here.
+        }
+
+        public static void ApplyLabelStyle(Label lbl, string type = "Standard")
+        {
+            lbl.BackColor = Color.Transparent;
+            switch (type)
+            {
+                case "Header":
+                    lbl.Font = HeaderFont;
+                    lbl.ForeColor = PrimaryColor;
+                    break;
+                case "Subtitle":
+                    lbl.Font = SubHeaderFont;
+                    lbl.ForeColor = SecondaryColor;
+                    break;
+                case "Muted":
+                    lbl.Font = SmallFont;
+                    lbl.ForeColor = MutedTextColor;
+                    break;
+                case "Danger":
+                    lbl.Font = SmallBoldFont;
+                    lbl.ForeColor = DangerColor;
+                    break;
+                case "Success":
+                    lbl.Font = SmallBoldFont;
+                    lbl.ForeColor = SuccessColor;
+                    break;
+                case "Standard":
+                default:
+                    lbl.Font = StandardFont;
+                    lbl.ForeColor = TextColorDark;
+                    break;
+            }
+        }
+        // ==========================================
+        // DYNAMIC GLOBAL THEMER
+        // ==========================================
+                public static void ApplyGlobalTheme(Control parent)
+        {
+            if (parent is Form f)
+            {
+                ApplyFormStyle(f);
+            }
+            else if (parent is UserControl uc)
+            {
+                ApplyUserControlStyle(uc);
+            }
+
+            if (parent is Panel || parent is FlowLayoutPanel)
+            {
+                var actionBtns = parent.Controls.OfType<Button>()
+                    .Where(b => !b.Name.StartsWith("btnWindow") && !b.Name.StartsWith("btnIcon") && !b.Name.ToLower().StartsWith("btntab"))
+                    .ToList();
+
+                                if (actionBtns.Count == 1)
+                {
+                    var btn = actionBtns[0];
+                    string name = btn.Name.ToLower();
+                    if (name.Contains("delete") || name.Contains("remove") || name.Contains("clear"))
+                    {
+                        ApplyDangerButton(btn);
+                    }
+                    else
+                    {
+                        ApplyPaletteButton(btn, PrimaryColor);
+                    }
+                    btn.Tag = "paletted";
+                }
+                else if (actionBtns.Count > 2)
+                {
+                    Color[] palette = new Color[] 
+                    { 
+                        Color.FromArgb(139, 92, 246), // Purple
+                        Color.FromArgb(14, 165, 233), // Sky Blue
+                        Color.FromArgb(236, 72, 153), // Pink
+                        Color.FromArgb(245, 158, 11), // Orange
+                        Color.FromArgb(16, 185, 129), // Emerald
+                        Color.FromArgb(99, 102, 241), // Indigo
+                        Color.FromArgb(20, 184, 166)  // Teal
+                    };
+                    
+                    int pIdx = 0;
+                    foreach (var btn in actionBtns)
+                    {
+                        string name = btn.Name.ToLower();
+                        if (name.Contains("delete") || name.Contains("remove") || name.Contains("clear"))
+                        {
+                            ApplyDangerButton(btn);
+                        }
+                        else
+                        {
+                            ApplyPaletteButton(btn, palette[pIdx % palette.Length]);
+                            pIdx++;
+                        }
+                        btn.Tag = "paletted";
+                    }
+                }
+            }
+
+            foreach (Control c in parent.Controls)
+            {
+                // Skip specific styled panels or charts that are manually configured
+                if (c is Chart) continue;
+                  if (c.GetType().Name == "StatCard") continue; 
+                
+                // Recursively style children
+                if (c.HasChildren) ApplyGlobalTheme(c);
+
+                if (c is Button btn)
+                {
+                    // Ignore window controls
+                    if (btn.Text == string.Empty && btn.Name.StartsWith("btnWindow")) continue;
+                    // Ignore emojis (they usually have a specific paint handler)
+                    if (btn.Name.StartsWith("btnIcon")) continue;
+                    // Ignore custom tabs
+                    if (btn.Name.ToLower().StartsWith("btntab")) continue;
+
+                    // Ignore already paletted buttons
+                    if (btn.Tag != null && btn.Tag.ToString() == "paletted") continue; 
+
+                    string name = btn.Name.ToLower();
+                    if (name.Contains("delete") || name.Contains("remove") || name.Contains("clear"))
+                        ApplyDangerButton(btn);
+                    else if (name.Contains("save") || name.Contains("add") || name.Contains("update") || name.Contains("confirm") || name.Contains("ok") || name.Contains("print") || name.Contains("submit") || name.Contains("scan"))
+                        ApplyPrimaryButton(btn);
+                    else if (!name.Contains("emoji"))
+                        ApplySecondaryButton(btn);
+                }
+                else if (c is TextBox txt)
+                {
+                    ApplyTextBoxStyle(txt);
+                }
+                else if (c is ComboBox cbo)
+                {
+                    ApplyComboBoxStyle(cbo);
+                }
+                else if (c is DataGridView dgv)
+                {
+                    ApplyGridTheme(dgv);
+                }
+                else if (c is Label lbl)
+                {
+                    // If this label already uses HeaderFont (e.g. from CreateStandardHeader), never downgrade it
+                    if (lbl.Font != null && lbl.Font.Size == HeaderFont.Size && lbl.Font.Bold)
+                    {
+                        lbl.BackColor = Color.Transparent;
+                        lbl.ForeColor = PrimaryColor; // Always keep header labels primary blue
+                    }
+                    // Try to guess label type by name keyword
+                    else if (lbl.Name.ToLower().Contains("title") || lbl.Name.ToLower().Contains("header"))
+                        ApplyLabelStyle(lbl, "Header");
+                    else if (lbl.Name.ToLower().Contains("sub") || lbl.Name.ToLower().Contains("desc"))
+                        ApplyLabelStyle(lbl, "Subtitle");
+                    else if (lbl.Name.ToLower().Contains("error") || lbl.Name.ToLower().Contains("warning"))
+                        ApplyLabelStyle(lbl, "Danger");
+                    else if (lbl.Name.ToLower().Contains("success"))
+                        ApplyLabelStyle(lbl, "Success");
+                    else
+                        ApplyLabelStyle(lbl, "Standard");
+                }
+                else if (c is Panel pnl)
+                {
+                    // Do not override complex specific layouts like headers, but ensure base color is standard
+                    if (pnl.BackColor == Color.White || pnl.BackColor == Color.Transparent || pnl.BackColor == ThemeConfig.SurfaceColor)
+                    {
+                        // leave as is if intentionally card-like
+                    }
+                    else
+                    {
+                        ApplyPanelStyle(pnl);
+                    }
+                }
+            }
+        }
     }
 
     public class ModernNotificationRenderer : ToolStripProfessionalRenderer
@@ -1322,3 +1567,19 @@ namespace GenericInventorySystem
         public override Color ToolStripDropDownBackground => Color.White;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

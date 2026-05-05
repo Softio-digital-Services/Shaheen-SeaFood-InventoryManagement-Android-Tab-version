@@ -46,7 +46,7 @@ namespace GenericInventorySystem.Forms
             picBox = new PictureBox
             {
                 SizeMode = PictureBoxSizeMode.Zoom,
-                BackColor = Color.White,
+
                 Size = new Size(340, 340),
                 Anchor = AnchorStyles.None,
                 Margin = new Padding(10)

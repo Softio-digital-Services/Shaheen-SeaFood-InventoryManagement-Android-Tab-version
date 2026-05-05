@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -22,6 +22,7 @@ namespace GenericInventorySystem.Plugins
         public bool   RequiresLicense   => false;
         public string LicenseFeatureKey => "";
 
+        public string TabId    => "btnBackup";
         public string TabTitle => LocalizationManager.IsArabic ? "\u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629" : "Backup";
         public string TabIcon  => "backup";
         public int    TabOrder => 120;
@@ -290,3 +291,4 @@ namespace GenericInventorySystem.Plugins
         }
     }
 }
+

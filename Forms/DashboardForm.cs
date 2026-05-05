@@ -55,7 +55,7 @@ namespace GenericInventorySystem.Forms
             this.components = new System.ComponentModel.Container();
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Size = new System.Drawing.Size(1200, 800);
-            this.BackColor = ThemeConfig.BackgroundColor; // Standard background
+
             
             GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
         }
@@ -135,7 +135,7 @@ namespace GenericInventorySystem.Forms
             {
                 Text = "📶 " + serverUrl,
                 Font = new Font("Segoe UI", 10f),
-                ForeColor = ThemeConfig.MutedTextColor,
+                ForeColor = ThemeConfig.PrimaryColor,
                 Dock = DockStyle.Right,
                 AutoSize = true,
                 TextAlign = ContentAlignment.MiddleRight,
@@ -152,7 +152,7 @@ namespace GenericInventorySystem.Forms
                 System.Windows.Forms.Timer t = new System.Windows.Forms.Timer { Interval = 1500 };
                 t.Tick += (ts, te) => {
                     lblServerUrl.Text = originalText;
-                    lblServerUrl.ForeColor = ThemeConfig.MutedTextColor;
+                    lblServerUrl.ForeColor = ThemeConfig.PrimaryColor;
                     t.Stop();
                     t.Dispose();
                 };
@@ -162,6 +162,7 @@ namespace GenericInventorySystem.Forms
             // Scan-to-Connect button
             var btnScan = new Button
             {
+                Name = "btnScan", // Ensures GlobalTheme ignores or styles correctly
                 Text = "Scan to Connect",
                 Dock = DockStyle.Right,
                 Width = 145,
@@ -212,9 +213,22 @@ namespace GenericInventorySystem.Forms
             _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F)); 
             _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F)); 
             
-            // Bar Chart Card
+            // Bar Chart Card  (with title label above the chart)
             _chartWeeklyRevenue = CreateModernChart();
-            Panel pnlWeeklyCard = ThemeConfig.CreateCardPanel(_chartWeeklyRevenue);
+            Panel pnlWeeklyContent = new Panel { Dock = DockStyle.Fill };
+            Label lblWeeklyTitle = new Label
+            {
+                Name = "lblTitleWeekly",
+                Text = "Weekly Revenue",
+                Font = ThemeConfig.SubHeaderFont,
+                Dock = DockStyle.Top,
+                Height = 30,
+                ForeColor = ThemeConfig.TextColorDark
+            };
+            pnlWeeklyContent.Controls.Add(_chartWeeklyRevenue);
+            pnlWeeklyContent.Controls.Add(lblWeeklyTitle);
+            lblWeeklyTitle.BringToFront();
+            Panel pnlWeeklyCard = ThemeConfig.CreateCardPanel(pnlWeeklyContent);
             pnlWeeklyCard.Margin = new Padding(0, 0, 10, 0);
             _middleLayout.Controls.Add(pnlWeeklyCard, 0, 0);
             
@@ -222,7 +236,7 @@ namespace GenericInventorySystem.Forms
             Panel rightContent = new Panel { Dock = DockStyle.Fill };
             _lblTop = new Label 
             { 
-                Name = "lblTop",
+                Name = "lblTitleTop",
                 Text = "Top Selling Items", 
                 Font = ThemeConfig.SubHeaderFont, 
                 Dock = DockStyle.Top, 
@@ -248,7 +262,7 @@ namespace GenericInventorySystem.Forms
 
             // 3. Bottom Section (Line Chart)
             Panel bottomContent = new Panel { Dock = DockStyle.Fill };
-            _lblTrend = new Label { Name = "lblTrend", Text = "Sales Trends", Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Height = 30, ForeColor = ThemeConfig.TextColorDark };
+            _lblTrend = new Label { Name = "lblTitleTrend", Text = "Sales Trends", Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Height = 30, ForeColor = ThemeConfig.TextColorDark };
             bottomContent.Controls.Add(_lblTrend);
 
             _chartTrends = CreateModernChart();
@@ -397,4 +411,6 @@ namespace GenericInventorySystem.Forms
         }
     }
 }
+
+
 

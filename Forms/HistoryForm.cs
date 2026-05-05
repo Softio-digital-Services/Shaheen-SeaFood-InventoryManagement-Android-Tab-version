@@ -139,7 +139,7 @@ namespace GenericInventorySystem.Forms
         {
             this.SuspendLayout();
             this.Size = new Size(1100, 750);
-            this.BackColor = ThemeConfig.BackgroundColor;
+
 
             // Main Layout
             // Container
@@ -232,7 +232,7 @@ namespace GenericInventorySystem.Forms
             pnlTabs.Height = 50;
             pnlTabs.Margin = new Padding(0);
             
-            pnlIndicator = new Panel { Height = 3, BackColor = ThemeConfig.PrimaryColor, Top = 40, Visible = false };
+            pnlIndicator = new Panel { Height = 3, Top = 40, Visible = false };
             pnlTabs.Controls.Add(pnlIndicator);
 
             btnTabInventory = CreateTabButton("Inventory Logs", 0);
@@ -355,11 +355,12 @@ namespace GenericInventorySystem.Forms
             }
         }
 
-        private Button CreateTabButton(string text, int x)
+                private Button CreateTabButton(string text, int x)
         {
             Button btn = new Button();
             btn.Text = text;
-            btn.Font = ThemeConfig.SubHeaderFont;
+            btn.Name = "btnTab" + text.Replace(" ", "");
+            btn.Font = new Font("Segoe UI", 11F, FontStyle.Regular);
             btn.ForeColor = ThemeConfig.SecondaryColor;
             btn.FlatAppearance.BorderSize = 0;
             btn.FlatStyle = FlatStyle.Flat;
@@ -367,6 +368,11 @@ namespace GenericInventorySystem.Forms
 
             btn.SetBounds(x, 0, 150, 40);
             btn.Cursor = Cursors.Hand;
+            
+            // Hover effects
+            btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 244, 248);
+            btn.FlatAppearance.MouseDownBackColor = ThemeConfig.ActiveBackColor;
+
             btn.Click += (s, e) => SwitchTab(btn);
             return btn;
         }
@@ -394,18 +400,22 @@ namespace GenericInventorySystem.Forms
         }
 
 
-        private void SwitchTab(Button clickedBtn)
+                private void SwitchTab(Button clickedBtn)
         {
             // Reset Styles
-            btnTabInventory.ForeColor = ThemeConfig.SecondaryColor;
-            btnTabCustomers.ForeColor = ThemeConfig.SecondaryColor;
-            btnTabSuppliers.ForeColor = ThemeConfig.SecondaryColor;
-            btnTabOrders.ForeColor = ThemeConfig.SecondaryColor; 
-            btnTabQuotations.ForeColor = ThemeConfig.SecondaryColor; // NEW
-
+            Button[] tabs = { btnTabInventory, btnTabCustomers, btnTabSuppliers, btnTabOrders, btnTabQuotations };
+            foreach (var b in tabs)
+            {
+                if (b == null) continue;
+                b.ForeColor = ThemeConfig.SecondaryColor;
+                b.BackColor = Color.Transparent;
+                b.Font = new Font("Segoe UI", 11F, FontStyle.Regular);
+            }
 
             // Set Active
             clickedBtn.ForeColor = ThemeConfig.PrimaryColor;
+            clickedBtn.BackColor = ThemeConfig.ActiveBackColor;
+            clickedBtn.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
             
             // Move Indicator
             pnlIndicator.Visible = true;
@@ -433,7 +443,7 @@ namespace GenericInventorySystem.Forms
 
         private void ApplyTheme()
         {
-            this.BackColor = ThemeConfig.BackgroundColor;
+
         }
 
         public void LoadHistory()
@@ -603,4 +613,7 @@ namespace GenericInventorySystem.Forms
         
     }
 }
+
+
+
 

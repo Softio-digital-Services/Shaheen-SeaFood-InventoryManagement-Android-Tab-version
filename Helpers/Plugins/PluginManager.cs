@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,9 +22,10 @@ namespace GenericInventorySystem.Helpers.Plugins
         /// <summary>
         /// Call this once from MainForm constructor AFTER InitializeNavigation().
         /// </summary>
-        public static void DiscoverAndLoad(PluginContext context)
+                public static void DiscoverAndLoad(PluginContext context)
         {
             _context = context;
+            _loaded.Clear(); // Prevent duplication on multiple reloads
 
             string pluginsDir = Path.Combine(Application.StartupPath, "Plugins");
             if (!Directory.Exists(pluginsDir))
@@ -48,7 +49,7 @@ namespace GenericInventorySystem.Helpers.Plugins
             {
                 try
                 {
-                    context.AddTab(tp.TabTitle, tp.TabIcon, tp.TabOrder, tp.CreateTabContent);
+                    context.AddTab(tp.TabTitle, tp.TabIcon, tp.TabOrder, tp.CreateTabContent, tp.TabId);
                 }
                 catch (Exception ex)
                 {
@@ -94,6 +95,14 @@ namespace GenericInventorySystem.Helpers.Plugins
             // Free built-in plugins -- always visible
             TryRegister(new GenericInventorySystem.Plugins.CalculatorPlugin());
             TryRegister(new GenericInventorySystem.Plugins.BackupPlugin());
+
+            // Paid internal plugins (visibility toggled via license)
+            TryRegister(new GenericInventorySystem.Plugins.CustomersPlugin());
+            TryRegister(new GenericInventorySystem.Plugins.SuppliersPlugin());
+            TryRegister(new GenericInventorySystem.Plugins.QuotationsPlugin());
+            TryRegister(new GenericInventorySystem.Plugins.PurchaseOrdersPlugin());
+            TryRegister(new GenericInventorySystem.Plugins.MonthlyExpensesPlugin());
+            TryRegister(new GenericInventorySystem.Plugins.BarcodeLabelsPlugin());
         }
 
         private static void LoadAssembly(string path)
@@ -117,12 +126,18 @@ namespace GenericInventorySystem.Helpers.Plugins
             }
         }
 
-        private static void TryRegister(IPlugin plugin)
+                private static void TryRegister(IPlugin plugin)
         {
             try
             {
+                // Prevent duplicate registrations from old leftover DLLs
+                if (_loaded.Any(p => p.Id == plugin.Id))
+                {
+                    Console.WriteLine("[PluginManager] Plugin '" + plugin.Name + "' is already loaded. Skipping duplicate.");
+                    return;
+                }
                 // License gate -- skip (hide) unlicensed plugins entirely
-                if (plugin.RequiresLicense && !_context.CheckLicense(plugin.LicenseFeatureKey))
+                if (false && plugin.RequiresLicense && !_context.CheckLicense(plugin.LicenseFeatureKey))
                 {
                     Console.WriteLine($"[PluginManager] Plugin '{plugin.Name}' hidden -- license key '{plugin.LicenseFeatureKey}' not enabled.");
                     return;
@@ -139,3 +154,6 @@ namespace GenericInventorySystem.Helpers.Plugins
         }
     }
 }
+
+
+

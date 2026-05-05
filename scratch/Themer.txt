@@ -1,0 +1,77 @@
+        // ==========================================
+        // DYNAMIC GLOBAL THEMER
+        // ==========================================
+        public static void ApplyGlobalTheme(Control parent)
+        {
+            if (parent is Form f)
+            {
+                ApplyFormStyle(f);
+            }
+            else if (parent is UserControl uc)
+            {
+                ApplyUserControlStyle(uc);
+            }
+
+            foreach (Control c in parent.Controls)
+            {
+                // Skip specific styled panels or charts that are manually configured
+                if (c is Chart) continue; 
+                
+                // Recursively style children
+                if (c.HasChildren) ApplyGlobalTheme(c);
+
+                if (c is Button btn)
+                {
+                    // Ignore window controls
+                    if (btn.Text == string.Empty && btn.Name.StartsWith("btnWindow")) continue;
+                    // Ignore emojis (they usually have a specific paint handler)
+                    if (btn.Name.StartsWith("btnIcon")) continue; 
+
+                    string name = btn.Name.ToLower();
+                    if (name.Contains("delete") || name.Contains("remove") || name.Contains("clear"))
+                        ApplyDangerButton(btn);
+                    else if (name.Contains("save") || name.Contains("add") || name.Contains("update") || name.Contains("confirm") || name.Contains("ok"))
+                        ApplyPrimaryButton(btn);
+                    else if (!name.Contains("emoji"))
+                        ApplySecondaryButton(btn);
+                }
+                else if (c is TextBox txt)
+                {
+                    ApplyTextBoxStyle(txt);
+                }
+                else if (c is ComboBox cbo)
+                {
+                    ApplyComboBoxStyle(cbo);
+                }
+                else if (c is DataGridView dgv)
+                {
+                    ApplyGridTheme(dgv);
+                }
+                else if (c is Label lbl)
+                {
+                    // Try to guess label type
+                    if (lbl.Name.ToLower().Contains("title") || lbl.Name.ToLower().Contains("header"))
+                        ApplyLabelStyle(lbl, "Header");
+                    else if (lbl.Name.ToLower().Contains("sub") || lbl.Name.ToLower().Contains("desc"))
+                        ApplyLabelStyle(lbl, "Subtitle");
+                    else if (lbl.Name.ToLower().Contains("error") || lbl.Name.ToLower().Contains("warning"))
+                        ApplyLabelStyle(lbl, "Danger");
+                    else if (lbl.Name.ToLower().Contains("success"))
+                        ApplyLabelStyle(lbl, "Success");
+                    else
+                        ApplyLabelStyle(lbl, "Standard");
+                }
+                else if (c is Panel pnl)
+                {
+                    // Do not override complex specific layouts like headers, but ensure base color is standard
+                    if (pnl.BackColor == Color.White || pnl.BackColor == Color.Transparent || pnl.BackColor == ThemeConfig.SurfaceColor)
+                    {
+                        // leave as is if intentionally card-like
+                    }
+                    else
+                    {
+                        ApplyPanelStyle(pnl);
+                    }
+                }
+            }
+        }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Helpers;
@@ -20,7 +20,7 @@ namespace GenericInventorySystem.Forms
             this.WindowState = FormWindowState.Maximized;
             this.TopMost = true;
             this.ShowInTaskbar = false;
-            this.BackColor = Color.FromArgb(15, 23, 42); // Very dark slate (MainForm background)
+
 
             CreateUI();
         }

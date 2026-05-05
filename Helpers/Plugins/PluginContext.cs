@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 
 namespace GenericInventorySystem.Helpers.Plugins
@@ -15,6 +15,7 @@ namespace GenericInventorySystem.Helpers.Plugins
 
         // - Session -
         public string CurrentUser { get; set; }
+        public string UserRole    { get; set; }
         public bool   IsAdmin     { get; set; }
 
         // - Localization -
@@ -30,9 +31,9 @@ namespace GenericInventorySystem.Helpers.Plugins
         // - Navigation callbacks -
         /// <summary>
         /// Register a new sidebar tab. Called by PluginManager -- plugins don't call this directly.
-        /// Signature: (tabTitle, iconNuricon, tabOrder, contentFactory) -> the created Button.
+        /// Signature: (tabTitle, iconNuricon, tabOrder, contentFactory, tabId) -> the created Button.
         /// </summary>
-        public Action<string, string, int, Func<UserControl>> AddTab { get; set; }
+        public Action<string, string, int, Func<UserControl>, string> AddTab { get; set; }
 
         /// <summary>
         /// Add a menu item to a named top-level menu group.

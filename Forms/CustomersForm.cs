@@ -44,7 +44,7 @@ namespace GenericInventorySystem.Forms
 
         private void ApplyTheme()
         {
-            this.BackColor = ThemeConfig.BackgroundColor;
+
             if (lblCustomersTitle != null) { lblCustomersTitle.Font = ThemeConfig.HeaderFont; lblCustomersTitle.ForeColor = ThemeConfig.PrimaryColor; }
 
             ThemeConfig.ApplyGridTheme(dgvCustomers);
@@ -178,13 +178,13 @@ namespace GenericInventorySystem.Forms
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             tlpMain.Dock = DockStyle.Fill;
-            tlpMain.BackColor = ThemeConfig.BackgroundColor;
+
             tlpMain.Padding = new Padding(20);
 
             // Header Panel
             Panel panelTop = new Panel();
             panelTop.Dock = DockStyle.Fill;
-            panelTop.BackColor = ThemeConfig.BackgroundColor;
+
             panelTop.Margin = new Padding(0);
 
             // lblTitle
@@ -207,7 +207,7 @@ namespace GenericInventorySystem.Forms
             panelButtons.FlowDirection = FlowDirection.LeftToRight;
             panelButtons.AutoSize = true;
             panelButtons.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            panelButtons.Location = new Point(360, 70); 
+            panelButtons.Location = new Point(360, 50); 
             panelButtons.Height = 40;
             panelButtons.WrapContents = false;
             panelButtons.Padding = new Padding(0);
@@ -219,7 +219,7 @@ namespace GenericInventorySystem.Forms
             this.btnImport.Name = "btnImportCust";
             this.btnImport.FlatStyle = FlatStyle.Flat;
             btnImport.FlatAppearance.BorderSize = 0;
-            btnImport.BackColor = ThemeConfig.SurfaceColor;
+
             btnImport.Cursor = Cursors.Hand;
             this.btnImport.Margin = new Padding(0, 0, 10, 0);
             this.btnImport.Click += btnImport_Click;
@@ -232,7 +232,7 @@ namespace GenericInventorySystem.Forms
             this.btnExport.Name = "btnExportCust";
             this.btnExport.FlatStyle = FlatStyle.Flat;
             btnExport.FlatAppearance.BorderSize = 0;
-            btnExport.BackColor = ThemeConfig.SurfaceColor;
+
             btnExport.Cursor = Cursors.Hand;
             this.btnExport.Margin = new Padding(0, 0, 10, 0);
             this.btnExport.Click += btnExport_Click;
@@ -245,7 +245,7 @@ namespace GenericInventorySystem.Forms
             this.btnDeleteBulk.Name = "btnDeleteSelected";
             this.btnDeleteBulk.FlatStyle = FlatStyle.Flat;
             btnDeleteBulk.FlatAppearance.BorderSize = 0;
-            btnDeleteBulk.BackColor = ThemeConfig.SurfaceColor;
+
             btnDeleteBulk.Cursor = Cursors.Hand;
             this.btnDeleteBulk.Margin = new Padding(0, 0, 10, 0);
             this.btnDeleteBulk.Click += btnDeleteBulk_Click;
@@ -258,7 +258,7 @@ namespace GenericInventorySystem.Forms
             this.btnCustomerDetails.Name = "btnDetailsCust";
             this.btnCustomerDetails.FlatStyle = FlatStyle.Flat;
             btnCustomerDetails.FlatAppearance.BorderSize = 0;
-            btnCustomerDetails.BackColor = ThemeConfig.SurfaceColor;
+
             btnCustomerDetails.Cursor = Cursors.Hand;
             this.btnCustomerDetails.Margin = new Padding(0, 0, 10, 0);
             this.btnCustomerDetails.Click += btnCustomerDetails_Click;
@@ -271,7 +271,7 @@ namespace GenericInventorySystem.Forms
             this.btnAddNew.Name = "btnAddCust";
             this.btnAddNew.FlatStyle = FlatStyle.Flat;
             btnAddNew.FlatAppearance.BorderSize = 0;
-            btnAddNew.BackColor = ThemeConfig.SurfaceColor;
+
             btnAddNew.Cursor = Cursors.Hand;
             this.btnAddNew.Margin = new Padding(0);
             this.btnAddNew.Click += btnAddNew_Click;

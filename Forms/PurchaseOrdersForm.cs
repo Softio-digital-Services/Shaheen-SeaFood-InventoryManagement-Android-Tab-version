@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -36,7 +36,7 @@ namespace GenericInventorySystem.Forms
         {
             this.SuspendLayout();
             this.Size = new Size(1100, 750);
-            this.BackColor = ThemeConfig.BackgroundColor;
+
 
             // Main Layout
             TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
@@ -79,7 +79,7 @@ namespace GenericInventorySystem.Forms
             {
                 Size = new Size(180, 40),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = ThemeConfig.SurfaceColor,
+
                 Cursor = Cursors.Hand,
                 Margin = new Padding(10, 0, 0, 0)
             };
@@ -95,7 +95,7 @@ namespace GenericInventorySystem.Forms
                 {
                     Size = new Size(200, 40),
                     FlatStyle = FlatStyle.Flat,
-                    BackColor = ThemeConfig.SurfaceColor,
+
                     Cursor = Cursors.Hand,
                     Margin = new Padding(10, 0, 0, 0)
                 };

@@ -53,7 +53,7 @@ namespace GenericInventorySystem.Forms
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
                 RowCount = 1,
-                BackColor = ThemeConfig.SurfaceColor,
+
                 Padding = new Padding(5)
             };
             // Left column for Name (AutoSize), Right for Balance/Buttons (Percent)
@@ -86,7 +86,7 @@ namespace GenericInventorySystem.Forms
             TableLayoutPanel tlpBalance = new TableLayoutPanel
             {
                 Size = new Size(220, 100),
-                BackColor = ThemeConfig.BackgroundColor,
+
                 Margin = new Padding(10, 0, 10, 0),
                 Padding = new Padding(15, 10, 15, 10),
                 ColumnCount = 1,

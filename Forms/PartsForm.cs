@@ -119,12 +119,12 @@ namespace GenericInventorySystem.Forms
             this.SuspendLayout();
 
             // STANDARD LAYOUT
-            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = ThemeConfig.BackgroundColor, Padding = new Padding(20) };
+            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(20) };
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
             // Header (panelTop)
-            Panel panelTop = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.BackgroundColor, Margin = new Padding(0) };
+            Panel panelTop = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
             
             // Title
             Label lblInventoryTitle = ThemeConfig.CreateStandardHeader("Inventory Management");
@@ -156,87 +156,82 @@ namespace GenericInventorySystem.Forms
                 WrapContents = false
             };
 
-            // Filter Button (Rounded Outline)
+            // ── Outline-only (colored border, transparent fill) ──
+            // Filter Button
             btnFilter.Size = new Size(110, 40);
             btnFilter.FlatStyle = FlatStyle.Flat;
             btnFilter.FlatAppearance.BorderSize = 0;
-            btnFilter.BackColor = ThemeConfig.SurfaceColor;
             btnFilter.Cursor = Cursors.Hand;
             btnFilter.Click += BtnFilter_Click;
             btnFilter.Paint += (s, e) => ThemeConfig.DrawIconButton(btnFilter, e.Graphics, "filter", "Parts_Filter", ThemeConfig.WarningColor, ThemeConfig.WarningColor, true);
             panelButtons.Controls.Add(btnFilter);
 
-            // Export Button (Rounded Outline)
+            // Export Button
             btnExport.Size = new Size(100, 40);
             btnExport.FlatStyle = FlatStyle.Flat;
             btnExport.FlatAppearance.BorderSize = 0;
-            btnExport.BackColor = ThemeConfig.SurfaceColor;
             btnExport.Cursor = Cursors.Hand;
             btnExport.Click += BtnExport_Click;
             btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Parts_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
             panelButtons.Controls.Add(btnExport);
 
-            // Import Button (Rounded Outline)
+            // Import Button
             btnImport.Size = new Size(100, 40);
             btnImport.FlatStyle = FlatStyle.Flat;
             btnImport.FlatAppearance.BorderSize = 0;
-            btnImport.BackColor = ThemeConfig.SurfaceColor;
             btnImport.Cursor = Cursors.Hand;
             btnImport.Click += BtnImport_Click;
-            btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Parts_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
+            btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Parts_Import", Color.FromArgb(139, 92, 246), Color.FromArgb(139, 92, 246), true);
             panelButtons.Controls.Add(btnImport);
 
-            // Add Category Button
-            btnAddCategory = new Button();
-            btnAddCategory.Size = new Size(140, 40);
-            btnAddCategory.FlatStyle = FlatStyle.Flat;
-            btnAddCategory.FlatAppearance.BorderSize = 0;
-            btnAddCategory.BackColor = ThemeConfig.SurfaceColor;
-            btnAddCategory.Cursor = Cursors.Hand;
-            btnAddCategory.Click += BtnAddCategory_Click;
-            btnAddCategory.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddCategory, e.Graphics, "add", "Parts_AddCategory", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
-            panelButtons.Controls.Add(btnAddCategory);
-
-            // Delete Selected Button
+            // Delete Selected Button  (outline, danger red border) — comes BEFORE Add Category
             Button btnDeleteSelected = new Button { Size = new Size(130, 40), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand, Name = "btnDeleteSelected" };
             btnDeleteSelected.FlatAppearance.BorderSize = 0;
-            btnDeleteSelected.BackColor = ThemeConfig.SurfaceColor;
             btnDeleteSelected.Click += (s, e) => {
-                 var checkedIds = new System.Collections.Generic.List<int>();
-                 foreach (DataGridViewRow row in dgvParts.Rows) {
-                     var chkCell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
-                     if (chkCell != null && Convert.ToBoolean(chkCell.Value ?? false)) {
-                         if (int.TryParse(row.Cells["part_id"].Value?.ToString(), out int pId)) checkedIds.Add(pId);
-                     }
-                 }
-                 if (checkedIds.Count == 0) { MessageHelper.ShowWarning("Please select at least one item to delete."); return; }
-                 if (MessageHelper.ConfirmAction($"Are you sure you want to delete {checkedIds.Count} selected items?")) {
-                     foreach(int i in checkedIds) _inventoryService.DeletePart(i);
-                     MessageHelper.ShowSuccess($"{checkedIds.Count} items deleted successfully.");
-                     LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
-                 }
+                var checkedIds = new System.Collections.Generic.List<int>();
+                foreach (DataGridViewRow row in dgvParts.Rows) {
+                    var chkCell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
+                    if (chkCell != null && Convert.ToBoolean(chkCell.Value ?? false)) {
+                        if (int.TryParse(row.Cells["part_id"].Value?.ToString(), out int pId)) checkedIds.Add(pId);
+                    }
+                }
+                if (checkedIds.Count == 0) { MessageHelper.ShowWarning("Please select at least one item to delete."); return; }
+                if (MessageHelper.ConfirmAction($"Are you sure you want to delete {checkedIds.Count} selected items?")) {
+                    foreach(int i in checkedIds) _inventoryService.DeletePart(i);
+                    MessageHelper.ShowSuccess($"{checkedIds.Count} items deleted successfully.");
+                    LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
+                }
             };
             btnDeleteSelected.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDeleteSelected, e.Graphics, "delete", "Parts_Delete", ThemeConfig.DangerColor, ThemeConfig.DangerColor, true);
             panelButtons.Controls.Add(btnDeleteSelected);
 
-            // Add Product Button
+            // Add Category Button  (outline, pink border) — comes AFTER Delete
+            btnAddCategory = new Button();
+            btnAddCategory.Size = new Size(140, 40);
+            btnAddCategory.FlatStyle = FlatStyle.Flat;
+            btnAddCategory.FlatAppearance.BorderSize = 0;
+            btnAddCategory.Cursor = Cursors.Hand;
+            btnAddCategory.Click += BtnAddCategory_Click;
+            btnAddCategory.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddCategory, e.Graphics, "add", "Parts_AddCategory", Color.FromArgb(236, 72, 153), Color.FromArgb(236, 72, 153), true);
+            panelButtons.Controls.Add(btnAddCategory);
+
+            // ── Solid-fill primary buttons ──
+            // Add New Product (solid Primary Blue)
             btnAdd.Size = new Size(160, 40);
             btnAdd.FlatStyle = FlatStyle.Flat;
             btnAdd.FlatAppearance.BorderSize = 0;
-            btnAdd.BackColor = ThemeConfig.SurfaceColor;
             btnAdd.Cursor = Cursors.Hand;
             btnAdd.Click += BtnAdd_Click;
             btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Parts_AddProduct", Color.White, ThemeConfig.PrimaryColor, false);
             panelButtons.Controls.Add(btnAdd);
 
-            // Add Service Button
+            // Add New Service (solid Primary Blue)
             btnService.Size = new Size(160, 40);
             btnService.FlatStyle = FlatStyle.Flat;
             btnService.FlatAppearance.BorderSize = 0;
-            btnService.BackColor = ThemeConfig.SurfaceColor;
             btnService.Cursor = Cursors.Hand;
             btnService.Click += BtnService_Click;
-            btnService.Paint += (s, e) => ThemeConfig.DrawIconButton(btnService, e.Graphics, "add", "Parts_AddService", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
+            btnService.Paint += (s, e) => ThemeConfig.DrawIconButton(btnService, e.Graphics, "add", "Parts_AddService", Color.White, ThemeConfig.PrimaryColor, false);
             panelButtons.Controls.Add(btnService);
 
             panelTop.Controls.Add(panelButtons);

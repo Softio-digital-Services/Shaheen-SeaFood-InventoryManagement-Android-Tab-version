@@ -42,7 +42,7 @@ namespace GenericInventorySystem.Forms
 
         private void ApplyTheme()
         {
-            this.BackColor = ThemeConfig.BackgroundColor;
+
             if (lblTitle != null) { lblTitle.Font = ThemeConfig.HeaderFont; lblTitle.ForeColor = ThemeConfig.PrimaryColor; }
             ThemeConfig.ApplyGridTheme(dgvItems);
             ThemeConfig.ApplyPrimaryButton(btnGenerate);
@@ -134,8 +134,8 @@ namespace GenericInventorySystem.Forms
             this.btnGenerate = new ModernButton();
             this.lblTitle = new Label();
             
-            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = ThemeConfig.BackgroundColor, Padding = new Padding(20) };
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 100F));
+            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(20) };
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
             Panel pnlTop = new Panel { Dock = DockStyle.Fill };
@@ -259,12 +259,12 @@ namespace GenericInventorySystem.Forms
         private void btnGenerate_Click(object sender, EventArgs e)
         {
             dgvItems.EndEdit();
-            var selectedItems = new List<LabelPrintItem>();
+            var selectedItems = new List<GenericInventorySystem.Helpers.LabelPrintItem>();
             foreach (DataGridViewRow row in dgvItems.Rows)
             {
                 if (Convert.ToBoolean(row.Cells["colSelect"].Value))
                 {
-                    selectedItems.Add(new LabelPrintItem {
+                    selectedItems.Add(new GenericInventorySystem.Helpers.LabelPrintItem {
                         Name = row.Cells["colName"].Value.ToString(),
                         SKU = row.Cells["colSku"].Value?.ToString() ?? "",
                         Quantity = Convert.ToInt32(row.Cells["colQty"].Value ?? 1)

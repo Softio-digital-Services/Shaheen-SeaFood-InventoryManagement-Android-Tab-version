@@ -40,10 +40,10 @@ namespace GenericInventorySystem.Forms
         private void InitializeComponent()
         {
             this.Size = new Size(1100, 750);
-            this.BackColor = ThemeConfig.BackgroundColor;
+
 
             TableLayoutPanel mainLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70F));  // Header
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // Header
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 180F)); // Entry (Increased for labels)
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid
             mainLayout.Padding = new Padding(20);
@@ -93,13 +93,14 @@ namespace GenericInventorySystem.Forms
             cmbCategory.Items.AddRange(new object[] { "Rent", "Utilities", "Wages", "Supplies", "Maintenance", "Other" });
             
             Button btnQuickAddCat = new Button { 
-                Size = new Size(32, 32), 
-                Location = new Point(138, 30), 
+                Size = new Size(36, 36), 
+                Location = new Point(138, 26), 
                 FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                BackColor = ThemeConfig.PrimaryColor
             };
             btnQuickAddCat.FlatAppearance.BorderSize = 0;
-            btnQuickAddCat.Paint += (s, e) => ThemeConfig.DrawIconButton(btnQuickAddCat, e.Graphics, "add", "", ThemeConfig.PrimaryColor, Color.Transparent, false);
+            btnQuickAddCat.Paint += (s, e) => ThemeConfig.DrawIconButton(btnQuickAddCat, e.Graphics, "add", "", Color.White, ThemeConfig.PrimaryColor, false);
             btnQuickAddCat.Click += (s, e) => {
                 using (var f = new AddCategoryForm()) {
                     if (f.ShowDialog() == DialogResult.OK) {
@@ -152,12 +153,12 @@ namespace GenericInventorySystem.Forms
             };
 
             // Increased width to 140
-            btnAdd = new Button { Text = "", Size = new Size(140, 42), Margin = new Padding(5, 0, 5, 0), FlatStyle = FlatStyle.Flat };
+            btnAdd = new Button { Text = "", Size = new Size(140, 40), Margin = new Padding(5, 0, 5, 0), FlatStyle = FlatStyle.Flat };
             btnAdd.FlatAppearance.BorderSize = 0;
             btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Exp_Add", Color.White, ThemeConfig.PrimaryColor, false);
             btnAdd.Click += BtnAdd_Click;
 
-            btnDelete = new Button { Text = "", Size = new Size(140, 42), Margin = new Padding(5, 0, 5, 0), FlatStyle = FlatStyle.Flat };
+            btnDelete = new Button { Text = "", Size = new Size(140, 40), Margin = new Padding(5, 0, 5, 0), FlatStyle = FlatStyle.Flat };
             btnDelete.FlatAppearance.BorderSize = 0;
             btnDelete.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDelete, e.Graphics, "remove", "Exp_Delete", Color.White, ThemeConfig.DangerColor, false);
             btnDelete.Click += BtnDelete_Click;

@@ -1,4 +1,4 @@
-﻿using System.Windows.Forms;
+using System.Windows.Forms;
 
 namespace GenericInventorySystem.Helpers.Plugins
 {
@@ -7,6 +7,9 @@ namespace GenericInventorySystem.Helpers.Plugins
     /// </summary>
     public interface ITabPlugin : IPlugin
     {
+        /// <summary>Unique ID for the tab, used for programmatic navigation (e.g., from notifications)</summary>
+        string TabId { get; }
+
         /// <summary>Sidebar button label (will be translated if IsArabic is set)</summary>
         string TabTitle { get; }
 

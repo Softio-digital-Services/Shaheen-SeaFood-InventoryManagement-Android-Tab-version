@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using GenericInventorySystem.Helpers;
 using GenericInventorySystem.Services;
@@ -117,7 +117,7 @@ namespace GenericInventorySystem.Forms
 
         private void ApplyTheme()
         {
-            this.BackColor = ThemeConfig.SurfaceColor;
+
             ThemeConfig.ApplyComboBoxStyle(cmbStatus);
         }
 

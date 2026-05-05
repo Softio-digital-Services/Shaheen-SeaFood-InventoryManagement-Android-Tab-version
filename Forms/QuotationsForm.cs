@@ -57,7 +57,7 @@ namespace GenericInventorySystem.Forms
             tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // 0. Title
             tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));  // 1. Actions (Search/Currency)
             tlp.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // 2. Content
-            tlp.BackColor  = ThemeConfig.BackgroundColor;
+
             this.Controls.Add(tlp);
 
             // 0. Title

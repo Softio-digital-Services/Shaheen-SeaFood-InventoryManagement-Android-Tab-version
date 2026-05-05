@@ -103,7 +103,7 @@ namespace GenericInventorySystem.Forms
             Panel pnlCustWrapper = ThemeConfig.WrapInStyledInput(cmbCustomers, 42); pnlCustWrapper.Location = new Point(0, 26); pnlCustWrapper.Width = 160; pnlCustWrapper.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             Button btnAddCust = new ModernButton { Name = "btnAddCust", Text = "", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.Overlay, ImageAlign = ContentAlignment.MiddleCenter, Size = new Size(35, 42), Location = new Point(pnlCustWrapper.Right + 5, 26), Anchor = AnchorStyles.Top | AnchorStyles.Right };
             btnAddCust.Click += (s, e) => { var form = new AddCustomerForm(); if(form.ShowDialog() == DialogResult.OK) { CustomerService svc = new CustomerService(); int newId = svc.AddCustomer(form.CustomerName, form.Phone, form.Email, form.Address, form.CustomerType, form.CreditLimit); LoadCustomers(); if(newId > 0) cmbCustomers.SelectedValue = newId; } };
-            ThemeConfig.ApplySecondaryButton(btnAddCust);
+            ThemeConfig.ApplyPrimaryButton(btnAddCust);
             pnlCol1.Controls.Add(pnlCustWrapper); pnlCol1.Controls.Add(btnAddCust); pnlCol1.Resize += (s, e) => { btnAddCust.Left = pnlCustWrapper.Right + 5; };
             tblInfo.Controls.Add(pnlCol1, 0, 0);
 

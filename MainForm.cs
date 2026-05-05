@@ -12,16 +12,10 @@ namespace GenericInventorySystem
     {
         private Forms.PartsForm partsForm;
         private Forms.UsersForm usersForm;
-        private Forms.QuotationsForm quotationsForm;
         private GenericInventorySystem.Forms.DashboardForm dashboardForm;
         private GenericInventorySystem.Forms.ReportsForm reportsForm;
         private GenericInventorySystem.Forms.HistoryForm historyForm;
-        private Forms.CustomersForm customersForm;
-        private Forms.SuppliersForm suppliersForm;
         private Forms.POSForm posForm;
-        private Forms.PurchaseOrdersForm purchaseOrdersForm;
-        private Forms.MonthlyExpensesForm monthlyExpensesForm;
-        private Forms.BarcodeLabelsForm barcodeLabelsForm;
 
         // Header Controls
         private PictureBox pbNotification;
@@ -60,17 +54,18 @@ namespace GenericInventorySystem
             {
                 ConnectionString = DatabaseConfig.ConnectionString,
                 CurrentUser      = UserSession.Username,
+                UserRole         = UserSession.Role,
                 IsAdmin          = UserSession.IsAdmin,
                 CheckLicense     = (key) => Helpers.LicenseManager.IsFeatureEnabled(key),
                 ShowSuccess      = (msg) => MessageHelper.ShowSuccess(msg),
                 ShowError        = (msg) => MessageHelper.ShowError(msg),
                 ShowInfo         = (msg) => MessageHelper.ShowInfo(msg),
-                AddTab = (tabTitle, iconName, tabOrder, contentFactory) => {
+                AddTab = (tabTitle, iconName, tabOrder, contentFactory, tabId) => {
                     // Filter out Calculator and Backup from sidebar as they are now in the header
                     if (tabTitle.Contains("Calculator") || tabTitle.Contains("Backup") || tabTitle.Contains("\u062d\u0627\u0633\u0628\u0629") || tabTitle.Contains("\u0646\u0633\u062e\u0629")) return;
 
-                    if (this.InvokeRequired) this.Invoke((Action)(() => AddPluginTab(tabTitle, iconName, contentFactory, pnlNav)));
-                    else AddPluginTab(tabTitle, iconName, contentFactory, pnlNav);
+                    if (this.InvokeRequired) this.Invoke((Action)(() => AddPluginTab(tabTitle, iconName, contentFactory, pnlNav, tabId)));
+                    else AddPluginTab(tabTitle, iconName, contentFactory, pnlNav, tabId);
                 },
                 AddMenuItem = (group, item) => {
                     if (this.InvokeRequired) this.Invoke((Action)(() => AddPluginMenuItem(group, item)));
@@ -80,12 +75,13 @@ namespace GenericInventorySystem
             Helpers.Plugins.PluginManager.DiscoverAndLoad(_pluginContext);
         }
 
-        private void AddPluginTab(string tabTitle, string iconName, Func<UserControl> contentFactory, Panel pnlNav)
+        private void AddPluginTab(string tabTitle, string iconName, Func<UserControl> contentFactory, Panel pnlNav, string tabId)
         {
             UserControl cachedContent = null;
             Button btn = CreateNavigationButton(tabTitle, iconName, (s, e) => {
                 if (cachedContent == null) {
                     cachedContent = contentFactory();
+                      ThemeConfig.ApplyGlobalTheme(cachedContent);
                     cachedContent.Dock = DockStyle.Fill;
                     panel3.Controls.Add(cachedContent);
                 }
@@ -93,6 +89,7 @@ namespace GenericInventorySystem
             });
             btn.Dock = DockStyle.Top;
             btn.Margin = new Padding(0);
+            if (!string.IsNullOrEmpty(tabId)) btn.Name = tabId;
             if (pnlNav != null) { pnlNav.Controls.Add(btn); btn.BringToFront(); }
         }
 
@@ -212,6 +209,7 @@ namespace GenericInventorySystem
             try
             {
                 dashboardForm = new GenericInventorySystem.Forms.DashboardForm { Dock = DockStyle.Fill };
+                ThemeConfig.ApplyGlobalTheme(dashboardForm);
             }
             catch (Exception ex)
             {
@@ -236,15 +234,9 @@ namespace GenericInventorySystem
             // Forms Setup
             usersForm = InitializeForm<Forms.UsersForm>();
             partsForm = InitializeForm<Forms.PartsForm>();
-            customersForm = InitializeForm<Forms.CustomersForm>();
-            suppliersForm = InitializeForm<Forms.SuppliersForm>();
             posForm = InitializeForm<Forms.POSForm>();
             reportsForm = InitializeForm<Forms.ReportsForm>();
             historyForm = InitializeForm<Forms.HistoryForm>();
-            quotationsForm = InitializeForm<Forms.QuotationsForm>();
-            purchaseOrdersForm = InitializeForm<Forms.PurchaseOrdersForm>();
-            monthlyExpensesForm = InitializeForm<Forms.MonthlyExpensesForm>();
-            barcodeLabelsForm = InitializeForm<Forms.BarcodeLabelsForm>();
 
             // Navigation Buttons
             Dashboard_btn.Height = 50;
@@ -262,18 +254,13 @@ namespace GenericInventorySystem
             bool isAccountant = UserSession.IsAccountant;
             bool isWorker = UserSession.IsStaff;
 
-            // Worker can see POS, Inventory, Customers
+            // Worker can see POS, Inventory
             if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "Inventory", "inventory", "btnInventory", () => ShowForm(partsForm));
             if (isAdmin || isWorker) AddNavButton(pnlNav, "POS / Checkout", "pos", "btnPOS", () => ShowForm(posForm));
-            if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "Customers", "customers", "btnCustomers", () => ShowForm(customersForm));
-            if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "Barcode Labels", "barcode", "btnLabels", () => ShowForm(barcodeLabelsForm));
             
             // Accountants & Admins
             if (isAdmin || isAccountant)
             {
-                AddNavButton(pnlNav, "Suppliers", "suppliers", "btnSuppliers", () => ShowForm(suppliersForm));
-                AddNavButton(pnlNav, "Purchase Orders", "purchase_orders", "btnPO", () => ShowForm(purchaseOrdersForm));
-                AddNavButton(pnlNav, "Monthly Expenses", "expenses", "btnExpenses", () => { monthlyExpensesForm.LoadData(); ShowForm(monthlyExpensesForm); });
                 AddNavButton(pnlNav, "Reports", "reports", "btnReports", () => { reportsForm.RefreshData(); ShowForm(reportsForm); });
                 AddNavButton(pnlNav, "History", "history", "btnHistory", () => { historyForm.LoadHistory(); ShowForm(historyForm); });
             }
@@ -281,7 +268,6 @@ namespace GenericInventorySystem
             // Admin Only
             if (isAdmin)
             {
-                AddNavButton(pnlNav, "Quotations", "quotations", "btnQuotations", () => { quotationsForm.LoadQuotations(); ShowForm(quotationsForm); });
                 AddNavButton(pnlNav, "Users Management", "users", "btnUsers", () => ShowForm(usersForm));
             }
 
@@ -291,6 +277,7 @@ namespace GenericInventorySystem
 
         private T InitializeForm<T>() where T : UserControl, new() {
             T f = new T { Dock = DockStyle.Fill, Visible = false };
+            ThemeConfig.ApplyGlobalTheme(f);
             panel3.Controls.Add(f);
             return f;
         }
@@ -513,8 +500,8 @@ namespace GenericInventorySystem
                     var item = new ToolStripMenuItem($"{n.Title}: {n.Message}") { Tag = n, Font = ThemeConfig.StandardFont, Image = ThemeConfig.GetNuricon(n.Type == "LowStock" ? "warning" : "check") };
                     item.Click += (s, ev) => { 
                         if (n.Target == "btnInventory") ShowForm(partsForm); 
-                        else if (n.Target == "btnCustomers") ShowForm(customersForm);
-                        else if (n.Target == "btnSuppliers") ShowForm(suppliersForm);
+                        else if (n.Target == "btnCustomers") ClickNavButton("btnCustomers");
+                        else if (n.Target == "btnSuppliers") ClickNavButton("btnSuppliers");
                         else ShowForm(dashboardForm); 
                     };
                     menuNotifications.Items.Add(item);
@@ -600,6 +587,11 @@ namespace GenericInventorySystem
 
 
 
+        private void ClickNavButton(string id) {
+            var btns = this.Controls.Find(id, true);
+            if (btns.Length > 0 && btns[0] is Button btn) { btn.PerformClick(); }
+        }
+
         private void ShowForm(UserControl form) {
             foreach(Control c in panel3.Controls) if(c is UserControl) c.Visible = false;
             form.Visible = true; form.BringToFront();
@@ -672,3 +664,5 @@ namespace GenericInventorySystem
         }
     }
 }
+
+

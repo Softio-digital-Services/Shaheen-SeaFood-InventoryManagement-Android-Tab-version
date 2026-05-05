@@ -56,7 +56,7 @@ namespace GenericInventorySystem.Forms
 
         private void ApplyTheme()
         {
-            this.BackColor = ThemeConfig.SurfaceColor;
+
             
             ThemeConfig.ApplyComboBoxStyle(cmbCategory);
             ThemeConfig.ApplyComboBoxStyle(cmbStatus);

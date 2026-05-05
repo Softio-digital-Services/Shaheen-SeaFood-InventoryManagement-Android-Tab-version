@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Printing;
@@ -9,6 +9,12 @@ using System.IO;
 
 namespace GenericInventorySystem.Helpers
 {
+    public class LabelPrintItem
+    {
+        public string Name { get; set; }
+        public string SKU { get; set; }
+        public int Quantity { get; set; }
+    }
     public class ThermalLabelHelper
     {
         private static List<LabelPrintItem> _currentItems;

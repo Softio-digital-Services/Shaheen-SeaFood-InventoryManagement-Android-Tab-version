@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -28,16 +28,16 @@ namespace GenericInventorySystem.Forms
         {
             this.SuspendLayout();
             this.Size = new Size(1100, 750);
-            this.BackColor = ThemeConfig.BackgroundColor;
+
 
             // Main Layout
-            TableLayoutPanel mainLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = ThemeConfig.BackgroundColor, Padding = new Padding(20) };
+            TableLayoutPanel mainLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(20) };
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             this.Controls.Add(mainLayout);
 
             // 1. Header
-            Panel pnlHeader = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.BackgroundColor, Margin = new Padding(0) };
+            Panel pnlHeader = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
             lblUsersTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Msg_UserManagement"));
             pnlHeader.Controls.Add(lblUsersTitle);
 
@@ -84,7 +84,7 @@ namespace GenericInventorySystem.Forms
 
         private void ApplyTheme()
         {
-            this.BackColor = ThemeConfig.BackgroundColor;
+
             ThemeConfig.ApplyGridTheme(dgvUsers);
         }
 

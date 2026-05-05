@@ -99,7 +99,7 @@ namespace GenericInventorySystem.Controls
             // Labels
             _lblTitle = new Label
             {
-                Font = ThemeConfig.StandardFont, // Soft label
+                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
                 ForeColor = ThemeConfig.MutedTextColor, // Cool Gray
                 AutoSize = true,
                 Location = new Point(20, 15) // Adjusted Top
@@ -108,7 +108,7 @@ namespace GenericInventorySystem.Controls
 
             _lblValue = new Label
             {
-                Font = new Font("Segoe UI", 24F, FontStyle.Bold), // Bigger per Ref
+                Font = new Font("Segoe UI", 22F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark, // Dark Navy
                 AutoSize = true,
                 Location = new Point(18, 40)
@@ -117,7 +117,7 @@ namespace GenericInventorySystem.Controls
 
             _lblSubtitle = new Label
             {
-                Font = new Font("Segoe UI", 8.5F, FontStyle.Regular),
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 ForeColor = ThemeConfig.MutedTextColor,
                 AutoSize = true,
                 Location = new Point(22, 85)
@@ -295,3 +295,5 @@ namespace GenericInventorySystem.Controls
         }
     }
 }
+
+
