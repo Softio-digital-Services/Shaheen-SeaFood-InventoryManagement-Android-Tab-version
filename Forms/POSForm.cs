@@ -268,7 +268,7 @@ namespace GenericInventorySystem.Forms
         private Panel CreateCardPanel()
         {
             Panel p = new Panel(); 
-            p.BackColor = Color.Transparent; 
+            p.BackColor = ThemeConfig.SurfaceColor; 
             p.BorderStyle = BorderStyle.None;
             p.Padding = new Padding(15);
             

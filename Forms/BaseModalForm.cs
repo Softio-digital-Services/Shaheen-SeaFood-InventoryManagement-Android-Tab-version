@@ -32,6 +32,7 @@ namespace GenericInventorySystem.Forms
         {
             this.DoubleBuffered = true;
             this.FormBorderStyle = FormBorderStyle.None;
+            this.BackColor = Color.White;
             this.StartPosition = FormStartPosition.CenterParent;
 
             this.Padding = new Padding(0);

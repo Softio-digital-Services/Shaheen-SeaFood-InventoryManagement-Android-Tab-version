@@ -56,8 +56,8 @@ namespace GenericInventorySystem.Forms
             pnlHeader.Controls.Add(lblExpensesTitle);
             
             lblTotal = new Label { 
-                Font = new Font("Segoe UI", 16F, FontStyle.Bold), 
-                ForeColor = ThemeConfig.DangerColor, 
+                Font = new Font("Segoe UI", 22F, FontStyle.Bold), 
+                ForeColor = ThemeConfig.PrimaryColor, 
                 AutoSize = true, 
                 Dock = DockStyle.Right,
                 TextAlign = ContentAlignment.MiddleRight
@@ -73,7 +73,7 @@ namespace GenericInventorySystem.Forms
                 Padding = new Padding(10),
                 BackColor = ThemeConfig.SurfaceColor 
             };
-            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F)); // Category
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190F)); // Category
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200F)); // Date (Increased from 180)
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F)); // Amount (Increased from 120)
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F)); // Description
@@ -112,7 +112,7 @@ namespace GenericInventorySystem.Forms
             pnlCatContainer.Controls.Add(cmbCategory);
             pnlCatContainer.Controls.Add(btnQuickAddCat);
             
-            Panel pnlDate = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
+            Panel pnlDate = new Panel { Dock = DockStyle.Fill, Margin = new Padding(10, 5, 5, 10) };
             Label lblDateRef = new Label { 
                 Text = LocalizationManager.GetString("Hist_ColDate") ?? "Date", 
                 Font = ThemeConfig.SmallBoldFont, 
