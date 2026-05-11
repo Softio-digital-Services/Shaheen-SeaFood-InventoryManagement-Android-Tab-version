@@ -129,7 +129,7 @@ namespace GenericInventorySystem.Forms
                 Font = ThemeConfig.HeaderFont,
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize = true,
-                Location = isAr ? new Point(pnlHeader.Width - 150, 25) : new Point(25, 25) // Approx positioning, refined in Resize if needed
+                Location = new Point(25, 25) 
             };
             pnlHeader.Controls.Add(lblTitle);
 
@@ -167,17 +167,8 @@ namespace GenericInventorySystem.Forms
             pnlHeader.Controls.Add(btnMaximize);
 
             // Initial positioning (will be refined in Resize)
-            if (isAr)
-            {
-                btnClose.Location = new Point(12, 15);
-                btnMaximize.Location = new Point(47, 15);
-                lblTitle.Location = new Point(pnlHeader.Width - lblTitle.Width - 25, 25);
-            }
-            else
-            {
-                btnClose.Location = new Point(pnlHeader.Width - 40, 15);
-                btnMaximize.Location = new Point(pnlHeader.Width - 75, 15);
-            }
+            btnClose.Location = new Point(pnlHeader.Width - 40, 15);
+            btnMaximize.Location = new Point(pnlHeader.Width - 75, 15);
 
             // 2. Content Panel
             ContentPanel = new Controls.ModernScrollPanel {
@@ -293,7 +284,7 @@ namespace GenericInventorySystem.Forms
             
             FlowLayoutPanel flpButtons = new FlowLayoutPanel {
                 Dock = DockStyle.Fill,
-                FlowDirection = LocalizationManager.IsArabic ? FlowDirection.LeftToRight : FlowDirection.RightToLeft,
+                FlowDirection = FlowDirection.RightToLeft,
                 Padding = new Padding(0),
                 BackColor = Color.Transparent
             };

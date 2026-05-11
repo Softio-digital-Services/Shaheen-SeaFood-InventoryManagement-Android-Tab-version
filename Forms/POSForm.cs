@@ -104,7 +104,7 @@ namespace GenericInventorySystem.Forms
             Button btnAddCust = new ModernButton { Name = "btnAddCust", Text = "", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.Overlay, ImageAlign = ContentAlignment.MiddleCenter, Size = new Size(35, 42), Location = new Point(pnlCustWrapper.Right + 5, 26), Anchor = AnchorStyles.Top | AnchorStyles.Right };
             btnAddCust.Click += (s, e) => { var form = new AddCustomerForm(); if(form.ShowDialog() == DialogResult.OK) { CustomerService svc = new CustomerService(); int newId = svc.AddCustomer(form.CustomerName, form.Phone, form.Email, form.Address, form.CustomerType, form.CreditLimit); LoadCustomers(); if(newId > 0) cmbCustomers.SelectedValue = newId; } };
             ThemeConfig.ApplyPrimaryButton(btnAddCust);
-            pnlCol1.Controls.Add(pnlCustWrapper); pnlCol1.Controls.Add(btnAddCust); pnlCol1.Resize += (s, e) => { btnAddCust.Left = pnlCustWrapper.Right + 5; };
+            pnlCol1.Controls.Add(pnlCustWrapper); pnlCol1.Controls.Add(btnAddCust);
             tblInfo.Controls.Add(pnlCol1, 0, 0);
 
             Panel pnlDate1 = new Panel { Dock = DockStyle.Top, Height = 75, Margin = new Padding(0,0,10,5) };
@@ -179,7 +179,6 @@ namespace GenericInventorySystem.Forms
             gridButtonsPanel.Controls.Add(btnClearCart);
 
             pnlGridHeader.Controls.Add(gridButtonsPanel);
-            pnlGridHeader.Resize += (s, e) => { gridButtonsPanel.Location = new Point(pnlGridHeader.Width - gridButtonsPanel.Width, 0); };
             tlpGrid.Controls.Add(pnlGridHeader, 0, 0);
 
             dgvCart = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AutoGenerateColumns = false, BorderStyle = BorderStyle.None, BackgroundColor = ThemeConfig.SurfaceColor };
@@ -195,21 +194,20 @@ namespace GenericInventorySystem.Forms
             ComboBox cboCurrency = new ComboBox();
             cboCurrency.DropDownStyle = ComboBoxStyle.DropDownList;
             ThemeConfig.ApplyComboBoxStyle(cboCurrency);
-            Panel currPanel = ThemeConfig.WrapInStyledInput(cboCurrency, 42); currPanel.Width = 110; currPanel.Location = new Point(415, 15);
+            Panel currPanel = ThemeConfig.WrapInStyledInput(cboCurrency, 42); 
+            currPanel.Width = 110; 
+            currPanel.Location = new Point(pnlTotals.Width - currPanel.Width - 25, 15);
+            currPanel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             foreach (var c in CurrencyService.SupportedCurrencies) cboCurrency.Items.Add(c);
             // Select USD by default
             for(int i=0; i<cboCurrency.Items.Count; i++) if((cboCurrency.Items[i] as CurrencyInfo)?.Code == "USD") { cboCurrency.SelectedIndex = i; break; }
             cboCurrency.SelectedIndexChanged += (s, e) => { if (cboCurrency.SelectedItem is CurrencyInfo selected) { CurrencyService.ActiveCurrency = selected.Code; UpdateTotal(); } };
             pnlTotals.Controls.Add(currPanel);
-            pnlTotals.Resize += (s, e) => {
-                currPanel.Left = pnlTotals.Width - currPanel.Width - 25;
-            };
 
             Action<string, string, int, bool> addTotalRow = (l, v, y, b) => {
                  pnlTotals.Controls.Add(new Label { Text = l, Name = "lblTotal_" + l, Location = new Point(20, y), AutoSize = true, Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor });
-                 Label val = new Label { Text = v, Name = "lblVal_" + l, Size = new Size(130, 20), TextAlign = ContentAlignment.MiddleRight, Font = b ? ThemeConfig.SubHeaderFont : ThemeConfig.StandardFont, ForeColor = ThemeConfig.TextColorDark };
+                 Label val = new Label { Text = v, Name = "lblVal_" + l, Size = new Size(130, 20), Location = new Point(pnlTotals.Width - 130 - 25, y), TextAlign = ContentAlignment.MiddleRight, Font = b ? ThemeConfig.SubHeaderFont : ThemeConfig.StandardFont, ForeColor = ThemeConfig.TextColorDark, Anchor = AnchorStyles.Top | AnchorStyles.Right };
                  pnlTotals.Controls.Add(val);
-                 pnlTotals.Resize += (s, ev) => { val.Left = pnlTotals.Width - val.Width - 25; val.Top = y; };
                  if(l == "Subtotal") lblSubtotalVal = val; else if(l.Contains("VAT")) lblTaxVal = val; else if(l == "Shipping") lblShippingVal = val; else if(l.Contains("Grand")) lblTotalVal = val;
              };
              addTotalRow("Subtotal", "$0.00", 78, false); 
@@ -232,10 +230,9 @@ namespace GenericInventorySystem.Forms
              var lblShip = pnlTotals.Controls.Find("lblTotal_Shipping", true)[0];
              lblShip.Location = new Point(45, 128);
 
-             numShipping = new NumericUpDown { DecimalPlaces = 2, Width = 80, Location = new Point(445, 126), Visible = false, Font = ThemeConfig.StandardFont };
+             numShipping = new NumericUpDown { DecimalPlaces = 2, Width = 80, Location = new Point(pnlTotals.Width - 80 - 25, 126), Visible = false, Font = ThemeConfig.StandardFont, Anchor = AnchorStyles.Top | AnchorStyles.Right };
              numShipping.ValueChanged += (s, e) => UpdateTotal();
              pnlTotals.Controls.Add(numShipping); numShipping.BringToFront();
-             pnlTotals.Resize += (s, e) => { numShipping.Left = pnlTotals.Width - numShipping.Width - 25; numShipping.Top = 126; };
 
              addTotalRow("Grand Total", "$0.00", 168, true);
                  FlowLayoutPanel pnlButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 60, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 10, 10, 10), BackColor = ThemeConfig.SurfaceColor };

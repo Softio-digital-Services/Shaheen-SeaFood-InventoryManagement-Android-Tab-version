@@ -142,7 +142,7 @@ namespace GenericInventorySystem
                 AutoSize = false,
                 Dock = DockStyle.Top,
                 Height = 35,
-                TextAlign = Helpers.LocalizationManager.IsArabic ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft,
+                TextAlign = ContentAlignment.MiddleLeft,
                 Padding = new Padding(0)
             };
         }
@@ -890,8 +890,6 @@ namespace GenericInventorySystem
             grid.EnableHeadersVisualStyles = false;
             grid.GridColor = Color.FromArgb(230, 230, 230);
             
-            if (Helpers.LocalizationManager.IsArabic) grid.RightToLeft = RightToLeft.Yes;
-            
             grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
             grid.ColumnHeadersDefaultCellStyle.ForeColor = TextColorDark; 
             grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = SelectionBackColor;
@@ -900,12 +898,23 @@ namespace GenericInventorySystem
             grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None; 
             grid.ColumnHeadersHeight = 45; 
             grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
             grid.DefaultCellStyle.BackColor = SurfaceColor;
             grid.DefaultCellStyle.ForeColor = TextColorDark;
             grid.DefaultCellStyle.Font = StandardFont; 
-            grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+
+            if (Helpers.LocalizationManager.IsArabic) 
+            {
+                grid.RightToLeft = RightToLeft.Yes;
+                grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+            else
+            {
+                grid.RightToLeft = RightToLeft.No;
+                grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+                grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            }
             
             grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(237, 242, 247);
             grid.DefaultCellStyle.SelectionForeColor = TextColorDark;
@@ -1510,6 +1519,7 @@ namespace GenericInventorySystem
                     else if (!name.Contains("emoji"))
                         ApplySecondaryButton(btn);
                 }
+
                 else if (c is TextBox txt)
                 {
                     ApplyTextBoxStyle(txt);

@@ -111,7 +111,7 @@ namespace GenericInventorySystem.Forms
                 ForeColor = Color.DimGray,
                 Location = new Point(pnlContent.Width - 350, y + 5),
                 Size = new Size(310, 40),
-                TextAlign = LocalizationManager.IsArabic ? ContentAlignment.TopLeft : ContentAlignment.TopRight
+                TextAlign = LocalizationManager.IsArabic ? ContentAlignment.TopRight : ContentAlignment.TopRight
             };
             pnlContent.Controls.Add(lblQuoteTitle);
 

@@ -20,9 +20,8 @@ namespace GenericInventorySystem.Helpers
         private static ResourceSet _arabicResources;
         private static Dictionary<string, string> _arabicDictionary;
         private static bool _arabicResourcesLoaded = false;
-        
+
         // Track RTL state without stomping on Control.Tag
-        private static ConditionalWeakTable<Control, string> _rtlStates = new ConditionalWeakTable<Control, string>();
 
         public static bool IsArabicBuild
         {
@@ -78,7 +77,7 @@ namespace GenericInventorySystem.Helpers
                 {
                     resxPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "Properties", "Resources.ar.resx");
                 }
-                
+
                 if (File.Exists(resxPath))
                 {
                     _arabicDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -171,6 +170,30 @@ namespace GenericInventorySystem.Helpers
         public static string CurrentLanguage => Thread.CurrentThread.CurrentUICulture.TwoLetterISOLanguageName;
         public static bool IsArabic => CurrentLanguage == "ar";
 
+        // Track RTL state without stomping on Control.Tag
+        private static ConditionalWeakTable<Control, HashSet<string>> _rtlStates = new ConditionalWeakTable<Control, HashSet<string>>();
+
+        private static bool HasRtlState(Control control, string state)
+        {
+            if (_rtlStates.TryGetValue(control, out var states)) return states.Contains(state);
+            return false;
+        }
+
+        private static void AddRtlState(Control control, string state)
+        {
+            if (!_rtlStates.TryGetValue(control, out var states))
+            {
+                states = new HashSet<string>();
+                _rtlStates.Add(control, states);
+            }
+            states.Add(state);
+        }
+
+        private static void RemoveRtlState(Control control, string state)
+        {
+            if (_rtlStates.TryGetValue(control, out var states)) states.Remove(state);
+        }
+
         /// <summary>
         /// Recursively applies RTL (or LTR) to a control tree.
         /// - Sets RightToLeft on every control.
@@ -182,91 +205,131 @@ namespace GenericInventorySystem.Helpers
             if (control == null) return;
             bool isAr = IsArabic;
 
-            // Handle Docking Mirroring
-            if (control is Panel p && (p.Dock == DockStyle.Left || p.Dock == DockStyle.Right))
+            // Skip manual location/anchor mirroring for internal components of ModernTextBox
+            // as it handles its own internal layout logic.
+            bool isInternalModernTextBox = (control.Parent != null && control.Parent.GetType().Name == "ModernTextBox") ||
+                                         (control.Parent != null && control.Parent.Parent != null && control.Parent.Parent.GetType().Name == "ModernTextBox");
+
+            if (!isInternalModernTextBox)
             {
-                _rtlStates.TryGetValue(p, out string state);
-                if (isAr && state != "rtl_dock_swapped")
+                // Handle Docking Mirroring for all controls (Labels, Buttons, Panels, etc.)
+                if (control.Dock == DockStyle.Left || control.Dock == DockStyle.Right)
                 {
-                    p.Dock = (p.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
-                    _rtlStates.Remove(p);
-                    _rtlStates.Add(p, "rtl_dock_swapped");
-                }
-                else if (!isAr && state == "rtl_dock_swapped")
-                {
-                    p.Dock = (p.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
-                    _rtlStates.Remove(p);
+                    bool isSwapped = HasRtlState(control, "rtl_dock_swapped");
+                    if (isAr && !isSwapped)
+                    {
+                        control.Dock = (control.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
+                        AddRtlState(control, "rtl_dock_swapped");
+                    }
+                    else if (!isAr && isSwapped)
+                    {
+                        control.Dock = (control.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
+                        RemoveRtlState(control, "rtl_dock_swapped");
+                    }
                 }
             }
+            
+            // NOTE: Mirroring of text alignment and images is handled automatically by WinForms 
+            // when RightToLeft is set to Yes. We should NOT manually swap TextAlign or ImageAlign.
 
             // Handle FlowLayoutPanel Mirroring
             if (control is FlowLayoutPanel flow)
             {
-                _rtlStates.TryGetValue(flow, out string state);
-                if (isAr && state != "rtl_flow_swapped")
+                bool isSwapped = HasRtlState(flow, "rtl_flow_swapped");
+                if (isAr && !isSwapped)
                 {
                     flow.FlowDirection = (flow.FlowDirection == FlowDirection.LeftToRight) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-                    _rtlStates.Remove(flow);
-                    _rtlStates.Add(flow, "rtl_flow_swapped");
+                    AddRtlState(flow, "rtl_flow_swapped");
                 }
-                else if (!isAr && state == "rtl_flow_swapped")
+                else if (!isAr && isSwapped)
                 {
                     flow.FlowDirection = (flow.FlowDirection == FlowDirection.LeftToRight) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-                    _rtlStates.Remove(flow);
+                    RemoveRtlState(flow, "rtl_flow_swapped");
+                }
+            }
+
+            // Handle Chart Mirroring
+            if (control.GetType().FullName == "System.Windows.Forms.DataVisualization.Charting.Chart")
+            {
+                dynamic chart = control;
+                foreach (var title in chart.Titles)
+                {
+                    title.Alignment = isAr ? ContentAlignment.TopRight : ContentAlignment.TopLeft;
+                }
+                
+                foreach (var legend in chart.Legends)
+                {
+                    if (legend.Docking == System.Windows.Forms.DataVisualization.Charting.Docking.Top || 
+                        legend.Docking == System.Windows.Forms.DataVisualization.Charting.Docking.Bottom)
+                    {
+                        legend.Alignment = isAr ? StringAlignment.Far : StringAlignment.Near;
+                    }
                 }
             }
 
             // Handle TableLayoutPanel Column Mirroring
             if (control is TableLayoutPanel tlp && tlp.ColumnCount > 1)
             {
-                _rtlStates.TryGetValue(tlp, out string state);
-                if (isAr && state != "rtl_tlp_swapped")
+                bool isSwapped = HasRtlState(tlp, "rtl_tlp_swapped");
+                if (isAr && !isSwapped)
                 {
                     MirrorTableLayout(tlp);
-                    _rtlStates.Remove(tlp);
-                    _rtlStates.Add(tlp, "rtl_tlp_swapped");
+                    AddRtlState(tlp, "rtl_tlp_swapped");
                 }
-                else if (!isAr && state == "rtl_tlp_swapped")
+                else if (!isAr && isSwapped)
                 {
                     MirrorTableLayout(tlp);
-                    _rtlStates.Remove(tlp);
+                    RemoveRtlState(tlp, "rtl_tlp_swapped");
                 }
             }
 
-            // Handle Absolute Location Mirroring for child controls (if parent is not a layout panel)
-            if (isAr && control.Parent != null && !(control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel))
+            if (!isInternalModernTextBox)
             {
-                _rtlStates.TryGetValue(control, out string state);
-                if (state != "rtl_loc_swapped")
+                // Handle Absolute Location Mirroring for child controls (if parent is not a layout panel)
+                if (isAr && control.Parent != null && !(control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel))
                 {
-                    control.Location = new Point(control.Parent.ClientSize.Width - control.Location.X - control.Width, control.Location.Y);
-                    _rtlStates.Remove(control);
-                    _rtlStates.Add(control, "rtl_loc_swapped");
+                    if (!HasRtlState(control, "rtl_loc_swapped"))
+                    {
+                        control.Location = new Point(control.Parent.ClientSize.Width - control.Location.X - control.Width, control.Location.Y);
+                        AddRtlState(control, "rtl_loc_swapped");
+                    }
                 }
-            }
-            else if (!isAr && control.Parent != null)
-            {
-                _rtlStates.TryGetValue(control, out string state);
-                if (state == "rtl_loc_swapped")
+                else if (!isAr && control.Parent != null)
                 {
-                    control.Location = new Point(control.Parent.ClientSize.Width - control.Location.X - control.Width, control.Location.Y);
-                    _rtlStates.Remove(control);
+                    if (HasRtlState(control, "rtl_loc_swapped"))
+                    {
+                        control.Location = new Point(control.Parent.ClientSize.Width - control.Location.X - control.Width, control.Location.Y);
+                        RemoveRtlState(control, "rtl_loc_swapped");
+                    }
                 }
-            }
 
-            // Mirror Label/Button text alignment
-            if (control is Label lbl)
-            {
-                if (isAr && (lbl.TextAlign == ContentAlignment.MiddleLeft || lbl.TextAlign == ContentAlignment.TopLeft || lbl.TextAlign == ContentAlignment.BottomLeft))
+                // Swap Anchors (Only for controls that are not Docked, as setting Anchor resets Dock to None)
+                bool isAnchorSwapped = HasRtlState(control, "rtl_anchor_swapped");
+                if (isAr && !isAnchorSwapped && control.Dock == DockStyle.None)
                 {
-                    if (lbl.TextAlign == ContentAlignment.MiddleLeft) lbl.TextAlign = ContentAlignment.MiddleRight;
-                    else if (lbl.TextAlign == ContentAlignment.TopLeft) lbl.TextAlign = ContentAlignment.TopRight;
-                    else if (lbl.TextAlign == ContentAlignment.BottomLeft) lbl.TextAlign = ContentAlignment.BottomRight;
+                    if ((control.Anchor & AnchorStyles.Left) == AnchorStyles.Left && (control.Anchor & AnchorStyles.Right) != AnchorStyles.Right)
+                    {
+                        control.Anchor = (control.Anchor & ~AnchorStyles.Left) | AnchorStyles.Right;
+                        AddRtlState(control, "rtl_anchor_swapped");
+                    }
+                    else if ((control.Anchor & AnchorStyles.Right) == AnchorStyles.Right && (control.Anchor & AnchorStyles.Left) != AnchorStyles.Left)
+                    {
+                        control.Anchor = (control.Anchor & ~AnchorStyles.Right) | AnchorStyles.Left;
+                        AddRtlState(control, "rtl_anchor_swapped");
+                    }
                 }
-            }
-            else if (control is Button btn)
-            {
-                if (isAr && btn.TextAlign == ContentAlignment.MiddleLeft) btn.TextAlign = ContentAlignment.MiddleRight;
+                else if (!isAr && isAnchorSwapped && control.Dock == DockStyle.None)
+                {
+                    if ((control.Anchor & AnchorStyles.Left) == AnchorStyles.Left && (control.Anchor & AnchorStyles.Right) != AnchorStyles.Right)
+                    {
+                        control.Anchor = (control.Anchor & ~AnchorStyles.Left) | AnchorStyles.Right;
+                    }
+                    else if ((control.Anchor & AnchorStyles.Right) == AnchorStyles.Right && (control.Anchor & AnchorStyles.Left) != AnchorStyles.Left)
+                    {
+                        control.Anchor = (control.Anchor & ~AnchorStyles.Right) | AnchorStyles.Left;
+                    }
+                    RemoveRtlState(control, "rtl_anchor_swapped");
+                }
             }
 
             control.RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No;

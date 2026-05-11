@@ -74,7 +74,7 @@ namespace GenericInventorySystem.Forms
             
             // Header Right (Balance + Buttons)
             FlowLayoutPanel flpRight = new FlowLayoutPanel {
-                FlowDirection = LocalizationManager.IsArabic ? FlowDirection.LeftToRight : FlowDirection.RightToLeft,
+                FlowDirection = FlowDirection.RightToLeft,
                 Dock = DockStyle.Fill,
                 Padding = new Padding(0, 10, 0, 0),
                 WrapContents = true 

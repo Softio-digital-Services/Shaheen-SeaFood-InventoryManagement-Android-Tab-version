@@ -58,8 +58,8 @@ namespace GenericInventorySystem.Forms
                 Font = new Font("Segoe UI", 22F, FontStyle.Bold), 
                 ForeColor = ThemeConfig.PrimaryColor, 
                 AutoSize = true, 
-                Dock = LocalizationManager.IsArabic ? DockStyle.Left : DockStyle.Right,
-                TextAlign = LocalizationManager.IsArabic ? ContentAlignment.MiddleLeft : ContentAlignment.MiddleRight
+                Dock = DockStyle.Right,
+                TextAlign = ContentAlignment.MiddleRight
             };
             pnlHeader.Controls.Add(lblTotal);
             mainLayout.Controls.Add(pnlHeader, 0, 0);
@@ -146,7 +146,7 @@ namespace GenericInventorySystem.Forms
             // Actions Container
             FlowLayoutPanel pnlActions = new FlowLayoutPanel { 
                 Dock = DockStyle.Fill, 
-                FlowDirection = LocalizationManager.IsArabic ? FlowDirection.RightToLeft : FlowDirection.LeftToRight, 
+                FlowDirection = FlowDirection.LeftToRight, 
                 Padding = new Padding(0, 30, 0, 0),
                 WrapContents = false
             };
