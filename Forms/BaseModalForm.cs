@@ -24,7 +24,11 @@ namespace GenericInventorySystem.Forms
         public string TitleText 
         { 
             get => lblTitle.Text; 
-            set => lblTitle.Text = value; 
+            set 
+            { 
+                lblTitle.Text = value; 
+                UpdateTitlePosition();
+            } 
         }
         public bool EnforceMinWidth { get; set; } = true;
         public Color BorderColor { get; set; } = ThemeConfig.PrimaryColor;
@@ -65,8 +69,24 @@ namespace GenericInventorySystem.Forms
                     if (btnClose != null) btnClose.Location = new Point(pnlHeader.Width - 35, 12);
                     if (btnMaximize != null) btnMaximize.Location = new Point(pnlHeader.Width - 70, 12);
                 }
+                UpdateTitlePosition();
             }
             this.Invalidate(); 
+        }
+
+        private void UpdateTitlePosition()
+        {
+            if (pnlHeader == null || lblTitle == null) return;
+            
+            bool isAr = LocalizationManager.IsArabic;
+            if (isAr)
+            {
+                lblTitle.Location = new Point(pnlHeader.Width - lblTitle.Width - 25, 25);
+            }
+            else
+            {
+                lblTitle.Location = new Point(25, 25);
+            }
         }
 
         private void UpdateRegion()

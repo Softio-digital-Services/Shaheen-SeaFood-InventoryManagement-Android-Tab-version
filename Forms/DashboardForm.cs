@@ -41,7 +41,8 @@ namespace GenericInventorySystem.Forms
             _dashboardService = new DashboardService();
             InitializeComponent();
             InitializeDashboardLayout();
-            ApplyLocalization(); 
+            ApplyLocalization();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -67,22 +68,29 @@ namespace GenericInventorySystem.Forms
 
             if (this.lblDashboardTitle != null) this.lblDashboardTitle.Text = L("Dash_Title");
             
+            // Re-detect controls if they were created dynamically
+            var btnScan = this.Controls.Find("btnScan", true).FirstOrDefault() as Button;
+            if (btnScan != null) btnScan.Text = L("Dash_ScanToConnect");
+
             if (_cardInventory != null) _cardInventory.Title = L("Dash_TotalInventory");
             if (_cardRevenue != null) _cardRevenue.Title = L("Dash_TotalRevenue");
             if (_cardOrders != null) _cardOrders.Title = L("Dash_TotalOrders");
             if (_cardLowStock != null) _cardLowStock.Title = L("Dash_LowStock");
+
+            var lblWeekly = this.Controls.Find("lblTitleWeekly", true).FirstOrDefault() as Label;
+            if (lblWeekly != null) lblWeekly.Text = L("Dash_WeeklyRevenue");
+
+            var lblTopTitle = this.Controls.Find("lblTitleTop", true).FirstOrDefault() as Label;
+            if (lblTopTitle != null) lblTopTitle.Text = L("Dash_TopSelling");
+
+            var lblTrendTitle = this.Controls.Find("lblTitleTrend", true).FirstOrDefault() as Label;
+            if (lblTrendTitle != null) lblTrendTitle.Text = L("Dash_SalesTrends");
 
             if (_chartWeeklyRevenue != null && _chartWeeklyRevenue.Titles.Count > 0) 
                 _chartWeeklyRevenue.Titles[0].Text = L("Dash_WeeklyRevenue");
             
             if (_chartTrends != null && _chartTrends.Titles.Count > 0) 
                 _chartTrends.Titles[0].Text = L("Dash_MonthlyTrends");
-
-            if (_lblTop != null) _lblTop.Text = L("Dash_TopSelling");
-            if (_lblTrend != null) _lblTrend.Text = L("Dash_SalesTrends");
-
-            if (_lblTop != null) _lblTop.Text = L("Dash_TopSelling");
-            if (_lblTrend != null) _lblTrend.Text = L("Dash_SalesTrends");
 
             LoadData(); // refresh data strings
         }
@@ -116,18 +124,22 @@ namespace GenericInventorySystem.Forms
             
             this.Controls.Add(_mainLayout);
 
-            // 0. Title row -- holds the header label + Scan-to-Connect button
-            Panel titleRow = new Panel
-            {
+            // 0. Title row (Refactored to TLP for robust RTL)
+            TableLayoutPanel tlpHeader = new TableLayoutPanel {
                 Dock = DockStyle.Fill,
-                BackColor = Color.Transparent
+                Margin = new Padding(0),
+                ColumnCount = 3,
+                RowCount = 1
             };
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            _mainLayout.Controls.Add(tlpHeader, 0, 0);
 
-            lblDashboardTitle = ThemeConfig.CreateStandardHeader("Performance Dashboard");
+            lblDashboardTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Dash_Title"));
             lblDashboardTitle.Name = "lblDashboardTitle";
             lblDashboardTitle.Margin = new Padding(0);
-            lblDashboardTitle.Dock = DockStyle.Left;
-            lblDashboardTitle.AutoSize = true;
+            tlpHeader.Controls.Add(lblDashboardTitle, 0, 0);
 
             // Live server URL label
             string serverUrl = ScanToConnectForm.GetServerUrl();
@@ -136,17 +148,17 @@ namespace GenericInventorySystem.Forms
                 Text = "📶 " + serverUrl,
                 Font = new Font("Segoe UI", 10f),
                 ForeColor = ThemeConfig.PrimaryColor,
-                Dock = DockStyle.Right,
                 AutoSize = true,
                 TextAlign = ContentAlignment.MiddleRight,
                 Padding = new Padding(0, 10, 8, 0),
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Right
             };
             
             lblServerUrl.Click += (s, e) => {
                 Clipboard.SetText(serverUrl);
                 string originalText = lblServerUrl.Text;
-                lblServerUrl.Text = "✅ " + LocalizationManager.GetString("Msg_Copied");
+                lblServerUrl.Text = "✅ " + (LocalizationManager.GetString("Msg_Copied") ?? "Copied!");
                 lblServerUrl.ForeColor = ThemeConfig.PrimaryColor;
                 
                 System.Windows.Forms.Timer t = new System.Windows.Forms.Timer { Interval = 1500 };
@@ -158,23 +170,20 @@ namespace GenericInventorySystem.Forms
                 };
                 t.Start();
             };
+            tlpHeader.Controls.Add(lblServerUrl, 1, 0);
 
             // Scan-to-Connect button
             var btnScan = new Button
             {
-                Name = "btnScan", // Ensures GlobalTheme ignores or styles correctly
-                Text = "Scan to Connect",
-                Dock = DockStyle.Right,
+                Name = "btnScan", 
+                Text = LocalizationManager.GetString("Dash_ScanToConnect"),
                 Width = 145,
-                Margin = new Padding(10, 6, 10, 6)
+                Margin = new Padding(10, 6, 10, 6),
+                Anchor = AnchorStyles.Right
             };
             ThemeConfig.ApplyPrimaryButton(btnScan);
             btnScan.Click += (s, e) => new ScanToConnectForm().ShowDialog();
-
-            titleRow.Controls.Add(lblDashboardTitle);
-            titleRow.Controls.Add(lblServerUrl);
-            titleRow.Controls.Add(btnScan);
-            _mainLayout.Controls.Add(titleRow, 0, 0);
+            tlpHeader.Controls.Add(btnScan, 2, 0);
 
             // 1. Cards Layout (Top)
             _cardsLayout = new TableLayoutPanel
@@ -188,10 +197,10 @@ namespace GenericInventorySystem.Forms
             for (int i = 0; i < 4; i++) _cardsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
             
             // Create Cards
-            _cardInventory = CreateStatCard("Total Inventory", "inventory_dashboard", ThemeConfig.PrimaryColor); 
-            _cardRevenue = CreateStatCard("Total Revenue", "revenue", ThemeConfig.SuccessColor); 
-            _cardOrders = CreateStatCard("Total Orders", "orders", ThemeConfig.WarningColor); 
-            _cardLowStock = CreateStatCard("Low Stock", "bell_dashboard", ThemeConfig.DangerColor); 
+            _cardInventory = CreateStatCard(LocalizationManager.GetString("Dash_TotalInventory"), "inventory_dashboard", ThemeConfig.PrimaryColor); 
+            _cardRevenue = CreateStatCard(LocalizationManager.GetString("Dash_TotalRevenue"), "revenue", ThemeConfig.SuccessColor); 
+            _cardOrders = CreateStatCard(LocalizationManager.GetString("Dash_TotalOrders"), "orders", ThemeConfig.WarningColor); 
+            _cardLowStock = CreateStatCard(LocalizationManager.GetString("Dash_LowStock"), "bell_dashboard", ThemeConfig.DangerColor); 
 
 
             _cardsLayout.Controls.Add(_cardInventory, 0, 0);
@@ -219,7 +228,7 @@ namespace GenericInventorySystem.Forms
             Label lblWeeklyTitle = new Label
             {
                 Name = "lblTitleWeekly",
-                Text = "Weekly Revenue",
+                Text = LocalizationManager.GetString("Dash_WeeklyRevenue"),
                 Font = ThemeConfig.SubHeaderFont,
                 Dock = DockStyle.Top,
                 Height = 30,
@@ -237,7 +246,7 @@ namespace GenericInventorySystem.Forms
             _lblTop = new Label 
             { 
                 Name = "lblTitleTop",
-                Text = "Top Selling Items", 
+                Text = LocalizationManager.GetString("Dash_TopSelling"), 
                 Font = ThemeConfig.SubHeaderFont, 
                 Dock = DockStyle.Top, 
                 Height = 30,
@@ -262,7 +271,7 @@ namespace GenericInventorySystem.Forms
 
             // 3. Bottom Section (Line Chart)
             Panel bottomContent = new Panel { Dock = DockStyle.Fill };
-            _lblTrend = new Label { Name = "lblTitleTrend", Text = "Sales Trends", Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Height = 30, ForeColor = ThemeConfig.TextColorDark };
+            _lblTrend = new Label { Name = "lblTitleTrend", Text = LocalizationManager.GetString("Dash_SalesTrends"), Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Height = 30, ForeColor = ThemeConfig.TextColorDark };
             bottomContent.Controls.Add(_lblTrend);
 
             _chartTrends = CreateModernChart();

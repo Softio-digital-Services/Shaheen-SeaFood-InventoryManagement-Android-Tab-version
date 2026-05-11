@@ -529,4 +529,109 @@
   <data name="Popup_OK" xml:space="preserve"><value>موافق</value></data>
   <data name="Popup_Yes" xml:space="preserve"><value>نعم</value></data>
   <data name="Popup_No" xml:space="preserve"><value>لا</value></data>
+  <data name="Msg_ConfirmDeleteCustomers" xml:space="preserve"><value>هل أنت متأكد من حذف العملاء المختارين؟</value></data>
+  <data name="Msg_ConfirmDeleteQuotation" xml:space="preserve"><value>هل أنت متأكد من حذف عرض السعر هذا؟</value></data>
+  <data name="Error_BackupFailed" xml:space="preserve"><value>فشل النسخ الاحتياطي: </value></data>
+  <data name="Error_DbNotFound" xml:space="preserve"><value>ملف قاعدة البيانات غير موجود.</value></data>
+  <data name="Msg_ConfirmDeleteSingle" xml:space="preserve"><value>هل تريد حذف هذا العنصر؟</value></data>
+  <data name="Msg_ContactSupport" xml:space="preserve"><value>اتصل بنا على: softioservices@gmail.com</value></data>
+  <data name="Msg_SelectToDelete" xml:space="preserve"><value>يرجى اختيار عنصر واحد على الأقل للحذف.</value></data>
+  <data name="Msg_QuotationExportSuccess" xml:space="preserve"><value>تم تصدير عرض السعر كـ PDF بنجاح!</value></data>
+  <data name="Msg_ConfirmCaption" xml:space="preserve"><value>تأكيد</value></data>
+  <data name="Error_AppCrash" xml:space="preserve"><value>تعطل البرنامج</value></data>
+  <data name="Msg_QuotationConverted" xml:space="preserve"><value>تم تحويل عرض السعر إلى طلب مبيعات بنجاح!</value></data>
+  <data name="Msg_ConfirmConvertQuotation" xml:space="preserve"><value>تحويل عرض السعر هذا إلى طلب مبيعات نهائي؟ سيؤدي ذلك إلى تقليل المخزون.</value></data>
+  <data name="Msg_NoPdfPrinter" xml:space="preserve"><value>لم يتم العثور على طابعة PDF. يرجى استخدام زر "طباعة" واختيار طابعة PDF يدوياً.</value></data>
+  <data name="Error_InvalidFileFormat" xml:space="preserve"><value>تنسيق ملف غير صالح. الأعمدة المطلوبة: PartNumber, PartName, Category, Quantity, MinimumStock, UnitPrice, Location, Status</value></data>
+  <data name="Msg_DatabaseError" xml:space="preserve"><value>خطأ في قاعدة البيانات أثناء: </value></data>
+  <data name="Msg_StockUpdated" xml:space="preserve"><value>تم تحديث المخزون بنجاح.</value></data>
+  <data name="Msg_CategoryAdded" xml:space="preserve"><value>تم إضافة الفئة! ستظهر الآن في القائمة المنسدلة.</value></data>
+  <data name="Msg_LoggingIn" xml:space="preserve"><value>تسجيل الدخول</value></data>
+  <data name="Msg_LicExpiringSoon" xml:space="preserve"><value>قرب انتهاء الترخيص</value></data>
+  <data name="Msg_LicExpiringSoonBody" xml:space="preserve"><value>سينتهي ترخيصك خلال {0} أيام.
+يرجى تجديد الترخيص لمتابعة استخدام البرنامج.</value></data>
+  <data name="Msg_CriticalError" xml:space="preserve"><value>خطأ حرج: {0}</value></data>
+  <data name="Msg_StackTrace" xml:space="preserve"><value>تتبع الخطأ:</value></data>
+  <data name="Msg_ConfirmConvert" xml:space="preserve"><value>تأكيد التحويل</value></data>
+  <data name="Msg_DeleteQuotation" xml:space="preserve"><value>حذف عرض سعر</value></data>
+  <data name="Msg_DeleteCustomer" xml:space="preserve"><value>حذف عميل</value></data>
+  <data name="Msg_DeleteSupplier" xml:space="preserve"><value>حذف مورد</value></data>
+  <data name="Msg_SelectSupplier" xml:space="preserve"><value>يرجى اختيار مورد.</value></data>
+  <data name="Msg_ReadyToScan" xml:space="preserve"><value>جاهز للمسح!</value></data>
+  <data name="Msg_PdfPrinterNotFound" xml:space="preserve"><value>لم يتم العثور على طابعة PDF (مثلاً Microsoft Print to PDF). يرجى الضغط على زر "طباعة" واختيار طابعة PDF يدوياً.</value></data>
+  <data name="Plugins_BackupTitle" xml:space="preserve"><value>نسخة احتياطية</value></data>
+  <data name="Plugins_BackupNow" xml:space="preserve"><value>إنشاء نسخة احتياطية الآن</value></data>
+  <data name="Plugins_Restore" xml:space="preserve"><value>استعادة نسخة احتياطية</value></data>
+  <data name="Plugins_OpenFolder" xml:space="preserve"><value>فتح مجلد النسخ</value></data>
+  <data name="Plugins_CalcTitle" xml:space="preserve"><value>حاسبة</value></data>
+  <data name="Plugins_LastBackup" xml:space="preserve"><value>آخر نسخة: {0}</value></data>
+  <data name="Plugins_NoBackup" xml:space="preserve"><value>لم يتم إنشاء نسخة بعد</value></data>
+  <data name="Plugins_BackupSuccess" xml:space="preserve"><value>تمت النسخة بنجاح!</value></data>
+  <data name="Plugins_RestoreConfirm" xml:space="preserve"><value>سيتم استبدال قاعدة البيانات. هل أنت متأكد؟</value></data>
+  <data name="Plugins_RestoreSuccess" xml:space="preserve"><value>تمت استعادة قاعدة البيانات. يرجى إعادة تشغيل التطبيق.</value></data>
+  <data name="Plugins_BackupTip" xml:space="preserve"><value>توصية: قم بإنشاء نسخة احتياطية يومياً لحماية بياناتك.</value></data>
+  <data name="Plugins_ScanTitle" xml:space="preserve"><value>امسح للاتصال -- نقطة البيع الويب</value></data>
+  <data name="POS_ItemReturn" xml:space="preserve"><value>إرجاع أصناف</value></data>
+  <data name="Title_ItemReturn" xml:space="preserve"><value>إرجاع أصناف (بدون إيصال)</value></data>
+  <data name="Return_Qty" xml:space="preserve"><value>كمية الإرجاع</value></data>
+  <data name="Dash_ScanHint" xml:space="preserve"><value>افتح الكاميرا على الجهاز -&gt; وجهها نحو رمز QR -&gt; اضغط على الرابط
+أو اضغط على الرابط أعلاه لنسخه</value></data>
+  <data name="POS_AddItem" xml:space="preserve"><value>إضافة صنف</value></data>
+  <data name="POS_ReturnItems" xml:space="preserve"><value>إرجاع الطلبات</value></data>
+  <data name="Return_ReadyToScan" xml:space="preserve"><value>جاهز لمسح الباركود...</value></data>
+  <data name="Msg_EnterOrderId" xml:space="preserve"><value>يرجى إدخال رقم الطلب للبدء بعملية الإرجاع</value></data>
+  <data name="Msg_OrderId" xml:space="preserve"><value>رقم الطلب:</value></data>
+  <data name="Tran_Continue" xml:space="preserve"><value>متابعة</value></data>
+  <data name="Msg_InvalidOrderId" xml:space="preserve"><value>رقم الطلب غير صحيح. يرجى إدخال رقم صالح.</value></data>
+  <data name="Title_ReturnOrder" xml:space="preserve"><value>إرجاع طلب</value></data>
+  <data name="Title_SelectProduct" xml:space="preserve"><value>اختر الصنف</value></data>
+  <data name="Prod_GridName" xml:space="preserve"><value>اسم الصنف</value></data>
+  <data name="Prod_GridSKU" xml:space="preserve"><value>رقم القطعة</value></data>
+  <data name="Prod_GridBarcode" xml:space="preserve"><value>الباركود</value></data>
+  <data name="Prod_GridPrice" xml:space="preserve"><value>السعر</value></data>
+  <data name="Prod_GridStock" xml:space="preserve"><value>المخزون</value></data>
+  <data name="POS_NoDrafts" xml:space="preserve"><value>لا يوجد مسودات محفوظة.</value></data>
+  <data name="Title_SelectDraft" xml:space="preserve"><value>اختر المسودة</value></data>
+  <data name="Users_GridID" xml:space="preserve"><value>المعرف</value></data>
+  <data name="Users_GridUsername" xml:space="preserve"><value>اسم المستخدم</value></data>
+  <data name="Title_BarcodeLabels" xml:space="preserve"><value>توليد ملصقات الباركود</value></data>
+  <data name="Btn_PreviewPrint" xml:space="preserve"><value>معاينة وطباعة</value></data>
+  <data name="PO_GridNumber" xml:space="preserve"><value>رقم الطلب #</value></data>
+  <data name="PO_QuickAdd" xml:space="preserve"><value>إضافة سريعة (بحث):</value></data>
+  <data name="PO_Subtotal" xml:space="preserve"><value>المجموع الفرعي</value></data>
+  <data name="PO_GrandTotal" xml:space="preserve"><value>المجموع الكلي:</value></data>
+  <data name="Msg_StockUpdated" xml:space="preserve"><value>تم تحديث المخزون بنجاح.</value></data>
+  <data name="Msg_SelectSupplier" xml:space="preserve"><value>يرجى اختيار المورد.</value></data>
+  <data name="Exp_MonthlyExpenses" xml:space="preserve"><value>المصاريف الشهرية</value></data>
+  <data name="Exp_Action" xml:space="preserve"><value>الإجراء</value></data>
+  <data name="Exp_Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Exp_Auto" xml:space="preserve"><value>تلقائي</value></data>
+  <data name="Exp_PayNow" xml:space="preserve"><value>ادفع الآن</value></data>
+  <data name="Exp_Paid" xml:space="preserve"><value>مدفوع</value></data>
+  <data name="Exp_Unpaid" xml:space="preserve"><value>غير مدفوع</value></data>
+  <data name="Exp_Recurring" xml:space="preserve"><value>متكرر</value></data>
+  <data name="Exp_Details" xml:space="preserve"><value>تفاصيل المصروف...</value></data>
+  <data name="Exp_CategoryLabel" xml:space="preserve"><value>فئة المصروف</value></data>
+  <data name="Exp_AmountLabel" xml:space="preserve"><value>المبلغ</value></data>
+  <data name="Exp_DescriptionLabel" xml:space="preserve"><value>الوصف</value></data>
+  <data name="Exp_Rent" xml:space="preserve"><value>إيجار</value></data>
+  <data name="Exp_Utilities" xml:space="preserve"><value>فواتير</value></data>
+  <data name="Exp_Wages" xml:space="preserve"><value>أجور</value></data>
+  <data name="Exp_Supplies" xml:space="preserve"><value>مستلزمات</value></data>
+  <data name="Exp_Maintenance" xml:space="preserve"><value>صيانة</value></data>
+  <data name="Exp_Other" xml:space="preserve"><value>أخرى</value></data>
+  <data name="Exp_AddSuccess" xml:space="preserve"><value>تمت إضافة المصروف بنجاح.</value></data>
+  <data name="Exp_DeleteSuccess" xml:space="preserve"><value>تم حذف المصروف بنجاح.</value></data>
+  <data name="Exp_GreaterZero" xml:space="preserve"><value>يجب أن يكون المبلغ أكبر من 0</value></data>
+  <data name="POS_Subtotal" xml:space="preserve"><value>المجموع الفرعي</value></data>
+  <data name="POS_VAT" xml:space="preserve"><value>ضريبة (11%)</value></data>
+  <data name="POS_Shipping" xml:space="preserve"><value>الشحن</value></data>
+  <data name="POS_GrandTotal" xml:space="preserve"><value>المجموع الكلي</value></data>
+  <data name="POS_Checkout" xml:space="preserve"><value>دفع وتسجيل</value></data>
+  <data name="POS_PayLater" xml:space="preserve"><value>دفع لاحقاً</value></data>
+  <data name="POS_Draft" xml:space="preserve"><value>مسودة</value></data>
+  <data name="POS_Receipt" xml:space="preserve"><value>إيصال</value></data>
+  <data name="Exp_Total" xml:space="preserve"><value>المجموع</value></data>
+  <data name="Exp_Date" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="POS_Quotation" xml:space="preserve"><value>عرض سعر</value></data>
 </root>

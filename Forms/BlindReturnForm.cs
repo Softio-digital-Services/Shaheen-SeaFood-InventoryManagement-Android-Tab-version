@@ -28,7 +28,8 @@ namespace GenericInventorySystem.Forms
             _inventoryService = new InventoryService();
             _returnService = new ReturnService();
             
-            this.TitleText = "Item Return (No Receipt)";
+            this.TitleText = LocalizationManager.GetString("Title_ItemReturn");
+            LocalizationManager.ApplyRTL(this);
 
             InitializeForm();
         }
@@ -50,7 +51,7 @@ namespace GenericInventorySystem.Forms
 
             // Label indicating scanner is active
             Panel pnlSearch = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
-            Label lblScannerReady = new Label { Text = "Ready to scan barcode...", Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Location = new Point(0, 15) };
+            Label lblScannerReady = new Label { Text = LocalizationManager.GetString("Return_ReadyToScan"), Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Location = new Point(0, 15) };
             pnlSearch.Controls.Add(lblScannerReady);
             tlpMain.Controls.Add(pnlSearch, 0, 0);
 
@@ -66,7 +67,7 @@ namespace GenericInventorySystem.Forms
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", DataPropertyName = "part_name", HeaderText = LocalizationManager.GetString("Parts_GridProduct"), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitPrice", DataPropertyName = "price", HeaderText = LocalizationManager.GetString("POS_GridPrice"), Width = 100, ReadOnly = true });
             
-            DataGridViewTextBoxColumn colReturn = new DataGridViewTextBoxColumn { Name = "QtyToReturn", DataPropertyName = "quantity", HeaderText = "Return Qty", Width = 120 };
+            DataGridViewTextBoxColumn colReturn = new DataGridViewTextBoxColumn { Name = "QtyToReturn", DataPropertyName = "quantity", HeaderText = LocalizationManager.GetString("Return_Qty"), Width = 120 };
             colReturn.DefaultCellStyle.BackColor = Color.FromArgb(240, 248, 255);
             dgvItems.Columns.Add(colReturn);
             
@@ -130,7 +131,7 @@ namespace GenericInventorySystem.Forms
             LoadCustomers();
 
             // Summary Section (Right)
-            lblTotalRefund = new Label { Text = "Total Refund: $0.00", Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.TopRight };
+            lblTotalRefund = new Label { Text = LocalizationManager.GetString("Msg_TotalRefund") + CurrencyService.Format(0), Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.TopRight };
             tlpBottom.Controls.Add(lblTotalRefund, 1, 0);
 
             tlpMain.Controls.Add(tlpBottom, 0, 2);

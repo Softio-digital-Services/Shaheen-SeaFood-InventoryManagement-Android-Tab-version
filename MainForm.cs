@@ -21,7 +21,7 @@ namespace GenericInventorySystem
         private PictureBox pbNotification;
         private PictureBox pbUserAvatar;
         private ContextMenuStrip menuNotifications;
-        private ContextMenuStrip menuUserProfile;
+
         
         private Services.DashboardService _dashboardService;
         private System.Windows.Forms.Timer _notificationTimer;
@@ -243,7 +243,7 @@ namespace GenericInventorySystem
             Dashboard_btn.Width = 225; // Force exact width matching panel2
             Dashboard_btn.Margin = new Padding(0);
             Dashboard_btn.Dock = DockStyle.Top;
-            Dashboard_btn.Text = "  Dashboard";
+            Dashboard_btn.Text = "  " + LocalizationManager.GetString("Nav_Dashboard");
             Dashboard_btn.Image = ResizeImage(ThemeConfig.GetNuricon("dashboard"), 18, 18);
             ThemeConfig.ApplySidebarButtonIcon(Dashboard_btn, Dashboard_btn.Image, false);
             Dashboard_btn.BringToFront(); // Place below logo
@@ -318,7 +318,7 @@ namespace GenericInventorySystem
             button3.Parent = pnlBranding;
             button3.Dock = DockStyle.Top; 
             button3.Height = 50; 
-            button3.Text = "  Logout"; 
+            button3.Text = "  " + LocalizationManager.GetString("Nav_Logout"); 
             button3.ForeColor = ThemeConfig.DangerColor;
             Image logoutIcon = ThemeConfig.GetNuricon("logout");
             if (logoutIcon != null) { button3.Image = ResizeImage(logoutIcon, 22, 22); button3.ImageAlign = ContentAlignment.MiddleLeft; button3.TextImageRelation = TextImageRelation.ImageBeforeText; }
@@ -358,7 +358,7 @@ namespace GenericInventorySystem
             pnlFooter.BringToFront(); // Ensure it stays on top of the fill panel
 
             Label lblVersion = new Label {
-                Text = "Generic Inventory System | Version 1.0.2 | (c) 2026 Softio Services",
+                Text = LocalizationManager.GetString("Nav_MainTitle") + " | Version 1.0.2 | (c) 2026 Softio Services",
                 AutoSize = true,
                 Font = new Font("Segoe UI", 8.5f),
                 ForeColor = ThemeConfig.TextColorDark,
@@ -368,7 +368,7 @@ namespace GenericInventorySystem
             pnlFooter.Controls.Add(lblVersion);
 
             Label lblDeveloper = new Label {
-                Text = "Developed by Softio",
+                Text = LocalizationManager.IsArabic ? "تطوير سوفتيو" : "Developed by Softio",
                 AutoSize = true,
                 Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
                 ForeColor = ThemeConfig.PrimaryColor,
@@ -536,7 +536,7 @@ namespace GenericInventorySystem
             panel1.Padding = Padding.Empty;
             panel1.Margin = Padding.Empty;
             panel1.BorderStyle = BorderStyle.None; // Remove border that adds padding
-            label1.Text = "Welcome, " + UserSession.FullName;
+            label1.Text = string.Format(LocalizationManager.GetString("WelcomeUser") ?? "Welcome, {0}", UserSession.FullName, UserSession.Role);
             label1.Font = ThemeConfig.SmallBoldFont;
             label1.ForeColor = Color.FromArgb(180, 255, 255, 255); // Subtle white
 
@@ -555,7 +555,13 @@ namespace GenericInventorySystem
         }
 
         private Button CreateNavigationButton(string text, string iconName, EventHandler clickHandler) {
-            SidebarButton btn = new SidebarButton { Height = 50, Dock = DockStyle.Top, Text = "  " + text, FlatStyle = FlatStyle.Flat };
+            SidebarButton btn = new SidebarButton { 
+                Height = 50, 
+                Dock = DockStyle.Top, 
+                Text = "  " + text, 
+                FlatStyle = FlatStyle.Flat,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
             Image icon = ThemeConfig.GetNuricon(iconName);
             if (icon != null) btn.Image = ResizeImage(icon, 18, 18);
             ThemeConfig.ApplySidebarButtonIcon(btn, btn.Image, false);

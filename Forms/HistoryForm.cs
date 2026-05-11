@@ -158,23 +158,43 @@ namespace GenericInventorySystem.Forms
             mainLayout.Controls.Add(lblHistoryTitle, 0, 0);
 
             // 1. Actions Row (Search + Refresh)
-            Panel pnlActions = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
+            TableLayoutPanel tlpActions = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                ColumnCount = 2,
+                RowCount = 1
+            };
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F));
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            mainLayout.Controls.Add(tlpActions, 0, 1);
             
-            txtSearch = new ModernTextBox();
-            txtSearch.IsSearch = true;
-            txtSearch.ShowLabel = false;
-            txtSearch.PlaceholderText = "Search history...";
-            txtSearch.Size = new Size(320, 40);
-            txtSearch.Location = new Point(0, 5); 
+            txtSearch = new ModernTextBox {
+                IsSearch = true,
+                ShowLabel = false,
+                PlaceholderText = LocalizationManager.GetString("Hist_Search") ?? "Search history...",
+                Size = new Size(320, 40),
+                Anchor = AnchorStyles.Left
+            };
             txtSearch.TextChanged += (s, e) => ApplyFilter();
-            pnlActions.Controls.Add(txtSearch);
+            tlpActions.Controls.Add(txtSearch, 0, 0);
 
-            Panel pnlRefreshWrapper = new Panel { Dock = DockStyle.Right, Width = 140, Padding = new Padding(5, 5, 0, 15) };
+            FlowLayoutPanel panelButtons = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                AutoSize = true,
+                Anchor = AnchorStyles.Right,
+                WrapContents = false,
+                Padding = new Padding(0),
+                Margin = new Padding(0)
+            };
+            tlpActions.Controls.Add(panelButtons, 1, 0);
+
             Button btnRefresh = new Button();
             btnRefresh.Name = "btnRefresh";
-            btnRefresh.Text = "Refresh";
-            btnRefresh.Dock = DockStyle.Fill;
+            btnRefresh.Size = new Size(160, 40);
+            btnRefresh.Margin = new Padding(0, 0, 10, 0);
             ThemeConfig.ApplySecondaryButton(btnRefresh);
+            panelButtons.Controls.Add(btnRefresh);
             
             // Animation Timer
             _refreshTimer = new System.Windows.Forms.Timer { Interval = 30 }; // ~33 FPS
@@ -201,12 +221,8 @@ namespace GenericInventorySystem.Forms
                 await System.Threading.Tasks.Task.Run(() => LoadHistory());
                 StopRefreshAnimation();
             };
-            pnlRefreshWrapper.Controls.Add(btnRefresh);
-            pnlActions.Controls.Add(pnlRefreshWrapper);
-
-            mainLayout.Controls.Add(pnlActions, 0, 1);
-
-            // 2. Stats Panel
+            
+            // Stats Panel
             TableLayoutPanel tlpStats = new TableLayoutPanel();
             tlpStats.Dock = DockStyle.Fill;
             tlpStats.ColumnCount = 3;

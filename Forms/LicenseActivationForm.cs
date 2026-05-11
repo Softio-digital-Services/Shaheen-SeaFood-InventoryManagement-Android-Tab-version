@@ -22,7 +22,7 @@ namespace GenericInventorySystem.Forms
         {
             InitializeComponent();
             // Adaptive sizing handled by BaseModalForm.OnLoad
-            
+
             ApplyLocalization();
             LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
         }
@@ -68,11 +68,12 @@ namespace GenericInventorySystem.Forms
             lblHwIdTitle = new Label { Text = "Machine ID (for support):", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true };
             lblHardwareId = new Label { Text = HardwareInfo.GetShortHardwareId(), Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true };
             lnkCopyHardwareId = new LinkLabel { Text = "Copy to Clipboard", Font = ThemeConfig.StandardFont, AutoSize = true, Margin = new Padding(0, 5, 0, 0) };
-            lnkCopyHardwareId.LinkClicked += (s, e) => { 
-                Clipboard.SetText(lblHardwareId.Text); 
-                MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_MachineIdCopied")); 
+            lnkCopyHardwareId.LinkClicked += (s, e) =>
+            {
+                Clipboard.SetText(lblHardwareId.Text);
+                MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_MachineIdCopied"));
             };
-            
+
             tlpMachineId.Controls.Add(lblHwIdTitle, 0, 0);
             tlpMachineId.Controls.Add(lblHardwareId, 0, 1);
             tlpMachineId.Controls.Add(lnkCopyHardwareId, 0, 2);
@@ -104,11 +105,11 @@ namespace GenericInventorySystem.Forms
 
             this.TitleText = LocalizationManager.GetString("Msg_LicenseActivation");
             lblSubtitle.Text = "Enter your license key to activate the software";
-            
+
             txtLicenseKey.LabelText = LocalizationManager.GetString("Msg_LicenseKey");
             lblHwIdTitle.Text = "Machine ID (for support):";
             lnkCopyHardwareId.Text = LocalizationManager.GetString("Msg_CopyClipboard");
-            
+
             SetFooterButtons(
                 "Activate",
                 "Exit",
@@ -138,7 +139,7 @@ namespace GenericInventorySystem.Forms
 
             // Validate and activate
             // User requested to remove Name field, so we use a default internal name for validation
-            string customerName = "Licensed User"; 
+            string customerName = "Licensed User";
             LicenseKey license = LicenseManager.ActivateLicense(licenseKey, customerName);
 
             if (license == null)
@@ -150,11 +151,11 @@ namespace GenericInventorySystem.Forms
 
             // Success
             LicenseActivated = true;
-            string successMsg = LocalizationManager.IsArabic 
+            string successMsg = LocalizationManager.IsArabic
                 ? $"تم تفعيل الترخيص بنجاح!\n\nتنتهي الصلاحية في: {license.ExpirationDate:MMMM dd, yyyy}"
                 : $"License activated successfully!\n\nExpires: {license.ExpirationDate:MMMM dd, yyyy}";
             MessageHelper.ShowSuccess(successMsg);
-            
+
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
@@ -175,7 +176,7 @@ namespace GenericInventorySystem.Forms
                 if (trial != null)
                 {
                     LicenseActivated = true;
-                    string msg = LocalizationManager.IsArabic 
+                    string msg = LocalizationManager.IsArabic
                         ? $"تم تفعيل الفترة التجريبية! لديك {trial.DaysRemaining()} يومًا متبقية."
                         : $"Trial activated! You have {trial.DaysRemaining()} days remaining.";
                     MessageHelper.ShowSuccess(msg);

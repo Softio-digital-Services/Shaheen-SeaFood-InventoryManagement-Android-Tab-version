@@ -37,32 +37,61 @@ namespace GenericInventorySystem.Forms
             this.Controls.Add(mainLayout);
 
             // 1. Header
-            Panel pnlHeader = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
+            TableLayoutPanel tlpHeader = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                ColumnCount = 1,
+                RowCount = 2
+            };
+            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); // Title
+            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 65F)); // Actions
+            mainLayout.Controls.Add(tlpHeader, 0, 0);
+            
+            // Title
             lblUsersTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Msg_UserManagement"));
-            pnlHeader.Controls.Add(lblUsersTitle);
+            lblUsersTitle.Name = "lblUsersTitle";
+            tlpHeader.Controls.Add(lblUsersTitle, 0, 0);
 
-            txtSearch = new ModernTextBox { IsSearch = true, ShowLabel = false, PlaceholderText = "Search users...", Size = new Size(320, 40), Location = new Point(0, 55) };
+            // Actions (Search + Buttons)
+            TableLayoutPanel tlpActions = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                ColumnCount = 2,
+                RowCount = 1
+            };
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F));
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpHeader.Controls.Add(tlpActions, 0, 1);
+
+            txtSearch = new ModernTextBox { 
+                IsSearch = true, 
+                ShowLabel = false, 
+                PlaceholderText = LocalizationManager.GetString("Msg_SearchUsers") ?? "Search users...", 
+                Size = new Size(320, 40),
+                Anchor = AnchorStyles.Left
+            };
             txtSearch.TextChanged += (s, e) => LoadData(txtSearch.Text);
-            pnlHeader.Controls.Add(txtSearch);
+            tlpActions.Controls.Add(txtSearch, 0, 0);
+
+            FlowLayoutPanel panelButtons = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                AutoSize = true,
+                Anchor = AnchorStyles.Right,
+                WrapContents = false,
+                Padding = new Padding(0),
+                Margin = new Padding(0)
+            };
+            tlpActions.Controls.Add(panelButtons, 1, 0);
 
             btnAddUser = new Button { Text = "", Size = new Size(160, 40) };
             btnAddUser.FlatStyle = FlatStyle.Flat;
             btnAddUser.FlatAppearance.BorderSize = 0;
             btnAddUser.Cursor = Cursors.Hand;
+            btnAddUser.Margin = new Padding(0, 0, 10, 0);
             btnAddUser.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddUser, e.Graphics, "add", "User_AddUser", Color.White, ThemeConfig.PrimaryColor, false);
             btnAddUser.Click += btnAddUser_Click;
-            pnlHeader.Controls.Add(btnAddUser);
-            
-            pnlHeader.Resize += (s, e) => {
-                if (LocalizationManager.IsArabic) {
-                    txtSearch.Location = new Point(pnlHeader.Width - txtSearch.Width, 55);
-                    btnAddUser.Location = new Point(0, 50);
-                } else {
-                    txtSearch.Location = new Point(0, 55);
-                    btnAddUser.Location = new Point(pnlHeader.Width - btnAddUser.Width, 50);
-                }
-            };
-            mainLayout.Controls.Add(pnlHeader, 0, 0);
+            panelButtons.Controls.Add(btnAddUser);
 
             // 2. Grid
             dgvUsers = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal, RowHeadersVisible = false, AutoGenerateColumns = false, AllowUserToAddRows = false, ReadOnly = true };
@@ -94,8 +123,8 @@ namespace GenericInventorySystem.Forms
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
             lblUsersTitle.Text = LocalizationManager.GetString("Msg_UserManagement");
             btnAddUser.Invalidate(); // Refresh the painted icon and text
-            if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = "ID";
-            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = "Username";
+            if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = LocalizationManager.GetString("Users_GridID");
+            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = LocalizationManager.GetString("Users_GridUsername");
             if (dgvUsers.Columns["actions"] != null) dgvUsers.Columns["actions"].HeaderText = LocalizationManager.GetString("Parts_GridActions");
         }
 

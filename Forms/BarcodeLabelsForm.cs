@@ -53,9 +53,9 @@ namespace GenericInventorySystem.Forms
             LocalizationManager.ApplyRTL(this);
             bool isAr = LocalizationManager.IsArabic;
             
-            lblTitle.Text = "Barcode Labels Generation"; // Title not in resources - use English
+            lblTitle.Text = LocalizationManager.GetString("Title_BarcodeLabels");
             txtSearch.PlaceholderText = LocalizationManager.GetString("Parts_Search");
-            btnGenerate.Text = isAr ? "معاينة وطباعة" : "Preview and Print";
+            btnGenerate.Text = LocalizationManager.GetString("Btn_PreviewPrint");
 
             if (dgvItems.Columns.Count > 0)
             {

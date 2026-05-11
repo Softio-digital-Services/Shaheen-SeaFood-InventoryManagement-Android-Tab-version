@@ -65,8 +65,8 @@ namespace GenericInventorySystem
                 {
                     int daysLeft = license.DaysRemaining();
                     GenericInventorySystem.Forms.ModernMessageBox.Show(
-                        $"Your license will expire in {daysLeft} days.\n\nPlease renew your license to continue using the software.",
-                        "License Expiring Soon",
+                        string.Format(LocalizationManager.GetString("Msg_LicExpiringSoonBody"), daysLeft),
+                        LocalizationManager.GetString("Msg_LicExpiringSoon"),
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning
                     );
@@ -76,7 +76,11 @@ namespace GenericInventorySystem
             }
             catch (Exception ex)
             {
-                GenericInventorySystem.Forms.ModernMessageBox.Show($"CRITICAL ERROR: {ex.Message}\n\nStack Trace:\n{ex.StackTrace}", "Application Crash", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                GenericInventorySystem.Forms.ModernMessageBox.Show(
+                    string.Format(LocalizationManager.GetString("Msg_CriticalError"), ex.Message) + $"\n\n{LocalizationManager.GetString("Msg_StackTrace")}\n{ex.StackTrace}", 
+                    LocalizationManager.GetString("Error_AppCrash"), 
+                    MessageBoxButtons.OK, 
+                    MessageBoxIcon.Error);
             }
         }
 

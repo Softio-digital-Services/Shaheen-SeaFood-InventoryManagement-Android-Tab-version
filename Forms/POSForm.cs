@@ -155,20 +155,20 @@ namespace GenericInventorySystem.Forms
                 BackColor = ThemeConfig.SurfaceColor // Fix corners
             };
 
-            btnAddItem = new ModernButton { Size = new Size(135, 36), Text = "Add Item", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0), Margin = new Padding(5, 7, 0, 0) };
+            btnAddItem = new ModernButton { Size = new Size(135, 36), Text = LocalizationManager.GetString("POS_AddItem"), Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0), Margin = new Padding(5, 7, 0, 0) };
             btnAddItem.Click += BtnAddItem_Click; ThemeConfig.ApplyPrimaryButton(btnAddItem); 
 
-            ModernButton btnBlindReturn = new ModernButton { Text = "Item Return", Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
+            ModernButton btnBlindReturn = new ModernButton { Text = LocalizationManager.GetString("POS_ItemReturn"), Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
             btnBlindReturn.Click += (s, e) => { var form = new BlindReturnForm(); form.ShowDialog(); };
             ThemeConfig.ApplyEmojiButton(btnBlindReturn, ThemeConfig.WarningColor, ThemeConfig.WarningBorder, Color.White);
 
-            btnReturnItems = new ModernButton { Text = "Return Items", Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
+            btnReturnItems = new ModernButton { Text = LocalizationManager.GetString("POS_ReturnItems"), Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
             btnReturnItems.Click += BtnReturnItems_Click; ThemeConfig.ApplyEmojiButton(btnReturnItems, ThemeConfig.ActiveBackColor, ThemeConfig.BorderColor, ThemeConfig.TextColorDark);
 
-            btnManageDrafts = new ModernButton { Text = "Manage Drafts", Size = new Size(130, 36), Margin = new Padding(5, 7, 0, 0) };
+            btnManageDrafts = new ModernButton { Text = LocalizationManager.GetString("POS_ManageDrafts"), Size = new Size(130, 36), Margin = new Padding(5, 7, 0, 0) };
             btnManageDrafts.Click += BtnLoadDraft_Click; ThemeConfig.ApplyEmojiButton(btnManageDrafts, ThemeConfig.WarningColor, ThemeConfig.WarningBorder, Color.White);
 
-            btnClearCart = new ModernButton { Text = "Clear Cart", Size = new Size(110, 36), Margin = new Padding(0, 7, 0, 0) };
+            btnClearCart = new ModernButton { Text = LocalizationManager.GetString("POS_ClearCart"), Size = new Size(110, 36), Margin = new Padding(0, 7, 0, 0) };
             btnClearCart.Click += (s, e) => { if(cartTable.Rows.Count > 0 && MessageHelper.ConfirmAction(LocalizationManager.GetString("POS_ClearCartConfirm"))) { cartTable.Rows.Clear(); UpdateTotal(); MessageHelper.ShowSuccess(LocalizationManager.GetString("POS_ClearCartSuccess")); } };
             ThemeConfig.ApplyEmojiButton(btnClearCart, ThemeConfig.DangerColor, ThemeConfig.DangerBorder, Color.White);
 
@@ -190,7 +190,7 @@ namespace GenericInventorySystem.Forms
             tlpBottomArea.Controls.Add(pnlInfo, 0, 0);
             
             Panel pnlTotals = CreateCardPanel(); pnlTotals.Dock = DockStyle.Fill;
-            pnlTotals.Controls.Add(new Label { Text = "Order Summary", Name = "lblTotalsTitle", Location = new Point(20, 15), AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark });
+            pnlTotals.Controls.Add(new Label { Text = LocalizationManager.GetString("POS_OrderSummary"), Name = "lblTotalsTitle", Location = new Point(20, 15), AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark });
             ComboBox cboCurrency = new ComboBox();
             cboCurrency.DropDownStyle = ComboBoxStyle.DropDownList;
             ThemeConfig.ApplyComboBoxStyle(cboCurrency);
@@ -210,15 +210,15 @@ namespace GenericInventorySystem.Forms
                  pnlTotals.Controls.Add(val);
                  if(l == "Subtotal") lblSubtotalVal = val; else if(l.Contains("VAT")) lblTaxVal = val; else if(l == "Shipping") lblShippingVal = val; else if(l.Contains("Grand")) lblTotalVal = val;
              };
-             addTotalRow("Subtotal", "$0.00", 78, false); 
+             addTotalRow(LocalizationManager.GetString("POS_Subtotal"), "$0.00", 78, false); 
              
              // Add VAT Checkbox
              chkApplyVAT = new CheckBox { Text = "", Checked = false, AutoSize = true, Location = new Point(20, 105), Cursor = Cursors.Hand };
              chkApplyVAT.CheckedChanged += (s, e) => UpdateTotal();
              pnlTotals.Controls.Add(chkApplyVAT);
              
-             addTotalRow("VAT (11%)", "$0.00", 103, false); 
-             var lblTax = pnlTotals.Controls.Find("lblTotal_VAT (11%)", true)[0];
+             addTotalRow(LocalizationManager.GetString("POS_VAT"), "$0.00", 103, false); 
+             var lblTax = pnlTotals.Controls.Find("lblTotal_" + LocalizationManager.GetString("POS_VAT"), true)[0];
              lblTax.Location = new Point(45, 103); 
              
              // Add Shipping Toggle and Input
@@ -226,30 +226,30 @@ namespace GenericInventorySystem.Forms
              chkApplyShipping.CheckedChanged += (s, e) => { numShipping.Visible = chkApplyShipping.Checked; UpdateTotal(); };
              pnlTotals.Controls.Add(chkApplyShipping);
 
-             addTotalRow("Shipping", "$0.00", 128, false);
-             var lblShip = pnlTotals.Controls.Find("lblTotal_Shipping", true)[0];
+             addTotalRow(LocalizationManager.GetString("POS_Shipping"), "$0.00", 128, false);
+             var lblShip = pnlTotals.Controls.Find("lblTotal_" + LocalizationManager.GetString("POS_Shipping"), true)[0];
              lblShip.Location = new Point(45, 128);
 
              numShipping = new NumericUpDown { DecimalPlaces = 2, Width = 80, Location = new Point(pnlTotals.Width - 80 - 25, 126), Visible = false, Font = ThemeConfig.StandardFont, Anchor = AnchorStyles.Top | AnchorStyles.Right };
              numShipping.ValueChanged += (s, e) => UpdateTotal();
              pnlTotals.Controls.Add(numShipping); numShipping.BringToFront();
 
-             addTotalRow("Grand Total", "$0.00", 168, true);
+             addTotalRow(LocalizationManager.GetString("POS_GrandTotal"), "$0.00", 168, true);
                  FlowLayoutPanel pnlButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 60, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 10, 10, 10), BackColor = ThemeConfig.SurfaceColor };
               
-              btnCheckout = new ModernButton { Text = "Checkout", Size = new Size(140, 40), Image = ThemeConfig.GetNuricon("pos"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0) };
+              btnCheckout = new ModernButton { Text = LocalizationManager.GetString("POS_Checkout"), Size = new Size(140, 40), Image = ThemeConfig.GetNuricon("pos"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0) };
               btnCheckout.Click += BtnCheckout_Click; ThemeConfig.ApplyPrimaryButton(btnCheckout); 
 
-              btnPayLater = new ModernButton { Name = "btnPayLater", Size = new Size(150, 40), Text = "Pay Later", Image = ThemeConfig.GetNuricon("history"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
+              btnPayLater = new ModernButton { Name = "btnPayLater", Size = new Size(150, 40), Text = LocalizationManager.GetString("POS_PayLater"), Image = ThemeConfig.GetNuricon("history"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
               btnPayLater.Enabled = false; btnPayLater.Click += BtnPayLater_Click; ThemeConfig.ApplyEmojiButton(btnPayLater, Color.FromArgb(255, 152, 0), Color.FromArgb(230, 126, 34), Color.White);
 
-              Button btnDraft = new ModernButton { Name = "btnDraft", Size = new Size(140, 40), Text = "Draft", Image = ThemeConfig.GetNuricon("export"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
+              Button btnDraft = new ModernButton { Name = "btnDraft", Size = new Size(140, 40), Text = LocalizationManager.GetString("POS_Draft"), Image = ThemeConfig.GetNuricon("export"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
               btnDraft.Click += BtnSaveDraft_Click; ThemeConfig.ApplySecondaryButton(btnDraft); 
 
-              Button btnPrintReceipt = new ModernButton { Name = "btnPrintReceipt", Size = new Size(160, 40), Text = "Receipt", Image = ThemeConfig.GetNuricon("print"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
+              Button btnPrintReceipt = new ModernButton { Name = "btnPrintReceipt", Size = new Size(160, 40), Text = LocalizationManager.GetString("POS_Receipt"), Image = ThemeConfig.GetNuricon("print"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
               btnPrintReceipt.Click += BtnPrintReceipt_Click; ThemeConfig.ApplyEmojiButton(btnPrintReceipt, ThemeConfig.ActiveBackColor, ThemeConfig.SuccessColor, ThemeConfig.TextColorDark);
 
-              btnQuotation = new ModernButton { Name = "btnQuotation", Size = new Size(180, 40), Text = "Quotation", Image = ThemeConfig.GetNuricon("quotations"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(0), Cursor = Cursors.Hand };
+              btnQuotation = new ModernButton { Name = "btnQuotation", Size = new Size(180, 40), Text = LocalizationManager.GetString("POS_Quotation"), Image = ThemeConfig.GetNuricon("quotations"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(0), Cursor = Cursors.Hand };
               btnQuotation.Click += BtnSaveQuotation_Click; ThemeConfig.ApplyEmojiButton(btnQuotation, ThemeConfig.ActiveBackColor, ThemeConfig.PrimaryColor, ThemeConfig.TextColorDark);
 
               pnlButtons.Controls.Add(btnCheckout);
@@ -596,8 +596,8 @@ namespace GenericInventorySystem.Forms
 
         private void BtnLoadDraft_Click(object sender, EventArgs e)
         {
-             DataTable ds = new OrderService().GetDrafts(); if(ds.Rows.Count == 0) { MessageHelper.ShowInfo("No drafts."); return; }
-             BaseModalForm f = new BaseModalForm { TitleText = "Select Draft", Size = new Size(600, 450) };
+             DataTable ds = new OrderService().GetDrafts(); if(ds.Rows.Count == 0) { MessageHelper.ShowInfo(LocalizationManager.GetString("POS_NoDrafts")); return; }
+             BaseModalForm f = new BaseModalForm { TitleText = LocalizationManager.GetString("Title_SelectDraft"), Size = new Size(600, 450) };
              
              TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(10) };
              tlp.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));

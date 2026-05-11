@@ -39,8 +39,9 @@ namespace GenericInventorySystem.Helpers
         {
             Thread.CurrentThread.CurrentUICulture = new CultureInfo(cultureCode);
 
-            // Keep the currency format consistent (e.g. '$') instead of changing to SAR when Arabic is selected
-            var customCulture = (CultureInfo)new CultureInfo(cultureCode).Clone();
+            // Keep date and number formatting consistent (Invariant) to prevent database/parsing errors
+            // but allow UICulture to handle translations.
+            var customCulture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
             customCulture.NumberFormat.CurrencySymbol = "$";
             Thread.CurrentThread.CurrentCulture = customCulture;
 
@@ -179,6 +180,32 @@ namespace GenericInventorySystem.Helpers
             return false;
         }
 
+        private static void MirrorTextAlign(Control control)
+        {
+            if (control is Label lbl)
+            {
+                lbl.TextAlign = SwapAlignment(lbl.TextAlign);
+            }
+            else if (control is Button btn)
+            {
+                btn.TextAlign = SwapAlignment(btn.TextAlign);
+            }
+        }
+
+        private static ContentAlignment SwapAlignment(ContentAlignment alignment)
+        {
+            switch (alignment)
+            {
+                case ContentAlignment.TopLeft: return ContentAlignment.TopRight;
+                case ContentAlignment.TopRight: return ContentAlignment.TopLeft;
+                case ContentAlignment.MiddleLeft: return ContentAlignment.MiddleRight;
+                case ContentAlignment.MiddleRight: return ContentAlignment.MiddleLeft;
+                case ContentAlignment.BottomLeft: return ContentAlignment.BottomRight;
+                case ContentAlignment.BottomRight: return ContentAlignment.BottomLeft;
+                default: return alignment;
+            }
+        }
+
         private static void AddRtlState(Control control, string state)
         {
             if (!_rtlStates.TryGetValue(control, out var states))
@@ -205,6 +232,19 @@ namespace GenericInventorySystem.Helpers
             if (control == null) return;
             bool isAr = IsArabic;
 
+            // Apply RightToLeft early so child layout logic respects it
+            if (control is FlowLayoutPanel flp)
+            {
+                // Force buttons to flow from the left in both modes if they are in the action buttons panel
+                // This keeps them clustered at the outer edge of the screen
+                flp.RightToLeft = RightToLeft.No;
+                flp.FlowDirection = FlowDirection.LeftToRight;
+            }
+            else
+            {
+                control.RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No;
+            }
+
             // Skip manual location/anchor mirroring for internal components of ModernTextBox
             // as it handles its own internal layout logic.
             bool isInternalModernTextBox = (control.Parent != null && control.Parent.GetType().Name == "ModernTextBox") ||
@@ -229,8 +269,7 @@ namespace GenericInventorySystem.Helpers
                 }
             }
             
-            // NOTE: Mirroring of text alignment and images is handled automatically by WinForms 
-            // when RightToLeft is set to Yes. We should NOT manually swap TextAlign or ImageAlign.
+
 
             // Handle FlowLayoutPanel Mirroring
             if (control is FlowLayoutPanel flow)
@@ -267,21 +306,8 @@ namespace GenericInventorySystem.Helpers
                 }
             }
 
-            // Handle TableLayoutPanel Column Mirroring
-            if (control is TableLayoutPanel tlp && tlp.ColumnCount > 1)
-            {
-                bool isSwapped = HasRtlState(tlp, "rtl_tlp_swapped");
-                if (isAr && !isSwapped)
-                {
-                    MirrorTableLayout(tlp);
-                    AddRtlState(tlp, "rtl_tlp_swapped");
-                }
-                else if (!isAr && isSwapped)
-                {
-                    MirrorTableLayout(tlp);
-                    RemoveRtlState(tlp, "rtl_tlp_swapped");
-                }
-            }
+            // RightToLeft property handles TableLayoutPanel column mirroring automatically
+            // No manual MirrorTableLayout needed.
 
             if (!isInternalModernTextBox)
             {
@@ -304,7 +330,10 @@ namespace GenericInventorySystem.Helpers
                 }
 
                 // Swap Anchors (Only for controls that are not Docked, as setting Anchor resets Dock to None)
+                // Skip for TLP/FLP children as these containers handle mirroring via RightToLeft property
                 bool isAnchorSwapped = HasRtlState(control, "rtl_anchor_swapped");
+                bool isLayoutChild = control.Parent != null && (control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel);
+
                 if (isAr && !isAnchorSwapped && control.Dock == DockStyle.None)
                 {
                     if ((control.Anchor & AnchorStyles.Left) == AnchorStyles.Left && (control.Anchor & AnchorStyles.Right) != AnchorStyles.Right)
@@ -332,7 +361,7 @@ namespace GenericInventorySystem.Helpers
                 }
             }
 
-            control.RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No;
+
 
             foreach (Control child in control.Controls)
                 ApplyRTL(child);

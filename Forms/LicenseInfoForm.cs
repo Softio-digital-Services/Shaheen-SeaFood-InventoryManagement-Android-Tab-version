@@ -10,7 +10,7 @@ namespace GenericInventorySystem.Forms
     {
         private LicenseKey _license;
         private TableLayoutPanel tlpInfo;
-        private Label lblTitle;
+
         private Label lblRenewal;
 
         public LicenseInfoForm()

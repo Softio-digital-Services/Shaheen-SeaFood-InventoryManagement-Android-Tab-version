@@ -247,7 +247,7 @@ namespace GenericInventorySystem
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "user login");
-                MessageHelper.ShowDatabaseError("logging in");
+                MessageHelper.ShowDatabaseError(LocalizationManager.GetString("Msg_LoggingIn"));
             }
         }
 

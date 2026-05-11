@@ -157,9 +157,9 @@ namespace GenericInventorySystem.Forms
             // Buttons Panel
             FlowLayoutPanel panelButtons = new FlowLayoutPanel
             {
-                FlowDirection = FlowDirection.RightToLeft, // Pin to right
+                FlowDirection = FlowDirection.LeftToRight,
                 AutoSize = true,
-                Dock = DockStyle.Fill,
+                Anchor = AnchorStyles.Right,
                 WrapContents = false,
                 Padding = new Padding(0),
                 Margin = new Padding(0)
@@ -171,7 +171,7 @@ namespace GenericInventorySystem.Forms
             btnService.FlatStyle = FlatStyle.Flat;
             btnService.FlatAppearance.BorderSize = 0;
             btnService.Cursor = Cursors.Hand;
-            btnService.Margin = new Padding(10, 5, 0, 0);
+            btnService.Margin = new Padding(0, 0, 10, 0);
             btnService.Click += BtnService_Click;
             btnService.Paint += (s, e) => ThemeConfig.DrawIconButton(btnService, e.Graphics, "add", "Parts_AddService", Color.White, ThemeConfig.PrimaryColor, false);
             panelButtons.Controls.Add(btnService);
@@ -181,21 +181,21 @@ namespace GenericInventorySystem.Forms
             btnAdd.FlatStyle = FlatStyle.Flat;
             btnAdd.FlatAppearance.BorderSize = 0;
             btnAdd.Cursor = Cursors.Hand;
-            btnAdd.Margin = new Padding(10, 5, 0, 0);
+            btnAdd.Margin = new Padding(0, 0, 10, 0);
             btnAdd.Click += BtnAdd_Click;
             btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Parts_AddProduct", Color.White, ThemeConfig.PrimaryColor, false);
             panelButtons.Controls.Add(btnAdd);
 
             // ── Outline buttons ──
             // Add Category
-            btnAddCategory = new Button { Size = new Size(140, 40), FlatStyle = FlatStyle.Flat, Margin = new Padding(10, 5, 0, 0), Cursor = Cursors.Hand };
+            btnAddCategory = new Button { Size = new Size(140, 40), FlatStyle = FlatStyle.Flat, Margin = new Padding(0, 0, 10, 0), Cursor = Cursors.Hand };
             btnAddCategory.FlatAppearance.BorderSize = 0;
             btnAddCategory.Click += BtnAddCategory_Click;
             btnAddCategory.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddCategory, e.Graphics, "add", "Parts_AddCategory", Color.FromArgb(236, 72, 153), Color.FromArgb(236, 72, 153), true);
             panelButtons.Controls.Add(btnAddCategory);
 
             // Delete Selected
-            Button btnDeleteSelected = new Button { Size = new Size(130, 40), FlatStyle = FlatStyle.Flat, Margin = new Padding(10, 5, 0, 0), Cursor = Cursors.Hand, Name = "btnDeleteSelected" };
+            Button btnDeleteSelected = new Button { Size = new Size(130, 40), FlatStyle = FlatStyle.Flat, Margin = new Padding(0, 0, 10, 0), Cursor = Cursors.Hand, Name = "btnDeleteSelected" };
             btnDeleteSelected.FlatAppearance.BorderSize = 0;
             btnDeleteSelected.Click += (s, e) => {
                 var checkedIds = new List<int>();
@@ -205,8 +205,8 @@ namespace GenericInventorySystem.Forms
                         if (int.TryParse(row.Cells["part_id"].Value?.ToString(), out int pId)) checkedIds.Add(pId);
                     }
                 }
-                if (checkedIds.Count == 0) { MessageHelper.ShowWarning("Please select at least one item to delete."); return; }
-                if (MessageHelper.ConfirmAction($"Are you sure you want to delete {checkedIds.Count} selected items?")) {
+                if (checkedIds.Count == 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_SelectOne")); return; }
+                if (MessageHelper.ConfirmAction(string.Format(LocalizationManager.GetString("Msg_ConfirmDelete"), checkedIds.Count))) {
                     foreach(int i in checkedIds) _inventoryService.DeletePart(i);
                     LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
                 }
@@ -217,7 +217,7 @@ namespace GenericInventorySystem.Forms
             // Import
             btnImport.Size = new Size(100, 40);
             btnImport.FlatStyle = FlatStyle.Flat;
-            btnImport.Margin = new Padding(10, 5, 0, 0);
+            btnImport.Margin = new Padding(0, 0, 10, 0);
             btnImport.FlatAppearance.BorderSize = 0;
             btnImport.Cursor = Cursors.Hand;
             btnImport.Click += BtnImport_Click;
@@ -227,7 +227,7 @@ namespace GenericInventorySystem.Forms
             // Export
             btnExport.Size = new Size(100, 40);
             btnExport.FlatStyle = FlatStyle.Flat;
-            btnExport.Margin = new Padding(10, 5, 0, 0);
+            btnExport.Margin = new Padding(0, 0, 10, 0);
             btnExport.FlatAppearance.BorderSize = 0;
             btnExport.Cursor = Cursors.Hand;
             btnExport.Click += BtnExport_Click;
@@ -237,7 +237,7 @@ namespace GenericInventorySystem.Forms
             // Filter
             btnFilter.Size = new Size(110, 40);
             btnFilter.FlatStyle = FlatStyle.Flat;
-            btnFilter.Margin = new Padding(10, 5, 0, 0);
+            btnFilter.Margin = new Padding(0, 0, 10, 0);
             btnFilter.FlatAppearance.BorderSize = 0;
             btnFilter.Cursor = Cursors.Hand;
             btnFilter.Click += BtnFilter_Click;
@@ -507,6 +507,7 @@ namespace GenericInventorySystem.Forms
 
                 string status = e.Value?.ToString() ?? "Active";
                 bool isActive = status.Equals("Active", StringComparison.OrdinalIgnoreCase);
+                string displayStatus = isActive ? LocalizationManager.GetString("Status_Active") : LocalizationManager.GetString("Status_Inactive");
 
                 // Target: White/Light Bg, Green Border, Green Text
                 Color borderColor = isActive ? ThemeConfig.SuccessBorder : ThemeConfig.DangerBorder;
@@ -522,7 +523,7 @@ namespace GenericInventorySystem.Forms
                     e.Graphics.FillPath(brush, path);
                     e.Graphics.DrawPath(pen, path);
 
-                    TextRenderer.DrawText(e.Graphics, status, ThemeConfig.MicroBoldFont, badgeRect, txtColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                    TextRenderer.DrawText(e.Graphics, displayStatus, ThemeConfig.MicroBoldFont, badgeRect, txtColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                 }
 
             }

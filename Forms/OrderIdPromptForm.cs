@@ -13,36 +13,46 @@ namespace GenericInventorySystem.Forms
 
         public OrderIdPromptForm()
         {
-            this.TitleText = "Return Order";
-            this.Size = new Size(400, 280);
+            this.TitleText = LocalizationManager.GetString("Title_ReturnOrder");
+            this.Size = new Size(420, 280);
+            LocalizationManager.ApplyRTL(this);
 
-            Panel pnl = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20) };
+            TableLayoutPanel tlp = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                Padding = new Padding(20)
+            };
+            tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            tlp.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             
             Label lblDesc = new Label
             {
                 Text = LocalizationManager.GetString("Msg_EnterOrderId"),
                 AutoSize = true,
                 Font = ThemeConfig.StandardFont,
-                Location = new Point(20, 10),
-                ForeColor = ThemeConfig.SecondaryColor
+                ForeColor = ThemeConfig.SecondaryColor,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 15)
             };
             
             txtOrderId = new ModernTextBox
             {
-                LabelText = LocalizationManager.GetString("Msg_OrderId") ?? "Order ID:",
-                Location = new Point(20, 40),
-                Width = 360,
-                Height = 67 // 25 label + 42 input
+                LabelText = LocalizationManager.GetString("Msg_OrderId"),
+                Dock = DockStyle.Top,
+                Width = 340,
+                Height = 67 
             };
             txtOrderId.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) Submit(); };
             
-            pnl.Controls.Add(lblDesc);
-            pnl.Controls.Add(txtOrderId);
+            tlp.Controls.Add(lblDesc, 0, 0);
+            tlp.Controls.Add(txtOrderId, 0, 1);
 
-            this.ContentPanel.Controls.Add(pnl);
+            this.ContentPanel.Controls.Add(tlp);
 
             SetFooterButtons(
-                LocalizationManager.GetString("Tran_Continue") ?? "Continue",
+                LocalizationManager.GetString("Tran_Continue"),
                 LocalizationManager.GetString("Popup_Cancel"),
                 (s, e) => Submit(),
                 (s, e) => { DialogResult = DialogResult.Cancel; Close(); }

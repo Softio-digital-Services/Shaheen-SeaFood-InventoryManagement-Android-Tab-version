@@ -21,6 +21,7 @@ namespace GenericInventorySystem.Forms
         public ProductSelectorForm()
         {
             InitializeComponent();
+            LocalizationManager.ApplyRTL(this);
             ApplyTheme();
             LoadProducts();
         }
@@ -28,7 +29,7 @@ namespace GenericInventorySystem.Forms
         private void InitializeComponent()
         {
             // Adaptive sizing handled by BaseModalForm.OnLoad
-            this.TitleText = "Select Product";
+            this.TitleText = LocalizationManager.GetString("Title_SelectProduct");
 
             TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(15) };
             tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
@@ -75,11 +76,11 @@ namespace GenericInventorySystem.Forms
 
                 if (LocalizationManager.IsArabic)
                 {
-                    if (dgvProducts.Columns["Name"] != null) dgvProducts.Columns["Name"].HeaderText = "اسم الصنف";
-                    if (dgvProducts.Columns["SKU"] != null) dgvProducts.Columns["SKU"].HeaderText = "رقم القطعة";
-                    if (dgvProducts.Columns["Barcode"] != null) dgvProducts.Columns["Barcode"].HeaderText = "الباركود";
-                    if (dgvProducts.Columns["Price"] != null) dgvProducts.Columns["Price"].HeaderText = "السعر";
-                    if (dgvProducts.Columns["Stock"] != null) dgvProducts.Columns["Stock"].HeaderText = "المخزون";
+                if (dgvProducts.Columns["Name"] != null) dgvProducts.Columns["Name"].HeaderText = LocalizationManager.GetString("Prod_GridName");
+                if (dgvProducts.Columns["SKU"] != null) dgvProducts.Columns["SKU"].HeaderText = LocalizationManager.GetString("Prod_GridSKU");
+                if (dgvProducts.Columns["Barcode"] != null) dgvProducts.Columns["Barcode"].HeaderText = LocalizationManager.GetString("Prod_GridBarcode");
+                if (dgvProducts.Columns["Price"] != null) dgvProducts.Columns["Price"].HeaderText = LocalizationManager.GetString("Prod_GridPrice");
+                if (dgvProducts.Columns["Stock"] != null) dgvProducts.Columns["Stock"].HeaderText = LocalizationManager.GetString("Prod_GridStock");
                 }
             }
             catch (Exception ex)

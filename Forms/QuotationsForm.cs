@@ -68,12 +68,25 @@ namespace GenericInventorySystem.Forms
             tlp.Controls.Add(lblQuotationsTitle, 0, 0);
 
             // 1. Actions Row
-            Panel pnlActions = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
+            TableLayoutPanel tlpActions = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                ColumnCount = 2,
+                RowCount = 1
+            };
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F));
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlp.Controls.Add(tlpActions, 0, 1);
             
-            txtSearch = new ModernTextBox();
-            txtSearch.IsSearch = true;
-            txtSearch.ShowLabel = false;
-            txtSearch.PlaceholderText = LocalizationManager.GetString("Msg_SearchQuotations") ?? "Search quotations...";
+            txtSearch = new ModernTextBox {
+                IsSearch = true,
+                ShowLabel = false,
+                PlaceholderText = LocalizationManager.GetString("Msg_SearchQuotations") ?? "Search quotations...",
+                Size = new Size(320, 40),
+                Anchor = AnchorStyles.Left
+            };
+            txtSearch.TextChanged += (s, e) => LoadQuotations(txtSearch.Text);
+            tlpActions.Controls.Add(txtSearch, 0, 0);
             
             // Grid
             dgvQuotes = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AutoGenerateColumns = false, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, RowHeadersVisible = false };

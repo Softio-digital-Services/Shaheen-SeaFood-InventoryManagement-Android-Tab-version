@@ -22,7 +22,7 @@ namespace GenericInventorySystem.Forms
         public ScanToConnectForm()
         {
             InitializeComponent();
-            this.TitleText = "Scan to Connect -- Web POS";
+            this.TitleText = LocalizationManager.GetString("Plugins_ScanTitle");
             LoadData();
         }
 
@@ -81,9 +81,7 @@ namespace GenericInventorySystem.Forms
             // Hint label
             lblHint = new Label
             {
-                Text = LocalizationManager.IsArabic 
-                    ? "افتح الكاميرا على الجهاز -> وجهها نحو رمز QR -> اضغط على الرابط\nأو اضغط على الرابط أعلاه لنسخه" 
-                    : "Open camera on tablet -> point at QR code -> tap the link\nOr click the URL above to copy it",
+                Text = LocalizationManager.GetString("Dash_ScanHint"),
                 Font = ThemeConfig.StandardFont,
                 ForeColor = ThemeConfig.SecondaryColor,
                 TextAlign = ContentAlignment.MiddleCenter,

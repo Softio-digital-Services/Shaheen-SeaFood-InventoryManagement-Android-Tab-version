@@ -75,9 +75,9 @@ namespace GenericInventorySystem.Forms
             // Buttons Panel
             FlowLayoutPanel panelButtons = new FlowLayoutPanel
             {
-                FlowDirection = FlowDirection.RightToLeft,
+                FlowDirection = FlowDirection.LeftToRight,
                 AutoSize = true,
-                Dock = DockStyle.Fill,
+                Anchor = AnchorStyles.Right,
                 WrapContents = false,
                 Padding = new Padding(0, 0, 0, 0)
             };
@@ -88,7 +88,7 @@ namespace GenericInventorySystem.Forms
                 Size = new Size(180, 40),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(10, 5, 0, 0)
+                Margin = new Padding(0, 0, 10, 0)
             };
             btnNewPO.FlatAppearance.BorderSize = 0;
             btnNewPO.Click += BtnNewPO_Click;
@@ -103,7 +103,7 @@ namespace GenericInventorySystem.Forms
                     Size = new Size(200, 40),
                     FlatStyle = FlatStyle.Flat,
                     Cursor = Cursors.Hand,
-                    Margin = new Padding(10, 5, 0, 0)
+                    Margin = new Padding(0, 0, 10, 0)
                 };
                 btnAutoPO.FlatAppearance.BorderSize = 0;
                 btnAutoPO.Click += BtnAutoPO_Click;
@@ -119,7 +119,7 @@ namespace GenericInventorySystem.Forms
             dgvPO = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, ReadOnly = true, AutoGenerateColumns = false, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None };
             ThemeConfig.ApplyGridTheme(dgvPO);
 
-            dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "POID", DataPropertyName = "po_id", HeaderText = "PO #", Width = 80 });
+            dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "POID", DataPropertyName = "po_id", HeaderText = LocalizationManager.GetString("PO_GridNumber"), Width = 80 });
             dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", DataPropertyName = "order_date", HeaderText = LocalizationManager.GetString("PO_Date"), Width = 150 });
             dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Supplier", DataPropertyName = "supplier_name", HeaderText = LocalizationManager.GetString("PO_Supplier"), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
             dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", DataPropertyName = "total_amount", HeaderText = LocalizationManager.GetString("PO_Amount"), Width = 120 });
@@ -236,7 +236,7 @@ namespace GenericInventorySystem.Forms
                 {
                     try {
                         _purchaseService.MarkAsReceived(poId);
-                        MessageHelper.ShowSuccess("Stock updated successfully.");
+                        MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_StockUpdated"));
                         LoadPurchaseOrders();
                     } catch(Exception ex) { MessageHelper.ShowError(ex.Message); }
                 }
@@ -293,7 +293,7 @@ namespace GenericInventorySystem.Forms
             ModernComboBox cmbParts = new ModernComboBox { 
                 Height = 75, // Increased to ensure no clipping
                 Dock = DockStyle.Bottom, 
-                LabelText = ("Quick Add Part (Search):"),
+                LabelText = LocalizationManager.GetString("PO_QuickAdd"),
                 Margin = new Padding(0, 0, 10, 5) // Bottom margin to prevent clipping
             };
             DataTable dtParts = DatabaseHelper.ExecuteDataTable("SELECT id, part_name, purchase_price FROM parts WHERE date_deleted IS NULL");
@@ -327,14 +327,14 @@ namespace GenericInventorySystem.Forms
             dgvItems.Columns.Add("PartName", LocalizationManager.GetString("AddPart_Product")); dgvItems.Columns["PartName"].ReadOnly = true; dgvItems.Columns["PartName"].Width = 350;
             dgvItems.Columns.Add("Qty", LocalizationManager.GetString("POS_GridQty")); dgvItems.Columns["Qty"].Width = 100;
             dgvItems.Columns.Add("Cost", LocalizationManager.GetString("POS_GridUnitCost")); dgvItems.Columns["Cost"].Width = 150;
-            dgvItems.Columns.Add("Subtotal", "Subtotal"); dgvItems.Columns["Subtotal"].ReadOnly = true; dgvItems.Columns["Subtotal"].Width = 150;
+            dgvItems.Columns.Add("Subtotal", LocalizationManager.GetString("PO_Subtotal")); dgvItems.Columns["Subtotal"].ReadOnly = true; dgvItems.Columns["Subtotal"].Width = 150;
             tlpRoot.Controls.Add(dgvItems, 0, 1); // RESTORED
 
             // --- FOOTER SECTION ---
             Panel pnlFooter = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
             
             Label lblGrandTotal = new Label { 
-                Text = "Grand Total: $0.00", 
+                Text = LocalizationManager.GetString("PO_GrandTotal") + " " + CurrencyService.Format(0), 
                 AutoSize = true, 
                 Font = ThemeConfig.HeaderFont, 
                 ForeColor = ThemeConfig.TextColorDark,
@@ -411,7 +411,7 @@ namespace GenericInventorySystem.Forms
 
             btnSave.Click += (s, e) => {
                 if (cmbSup.SelectedValue == null) {
-                    MessageHelper.ShowWarning("Please select a supplier.");
+                    MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_SelectSupplier"));
                     return;
                 }
                 List<PurchaseItemInfo> items = new List<PurchaseItemInfo>();
@@ -437,7 +437,7 @@ namespace GenericInventorySystem.Forms
         private void UpdatePOTotal(DataGridView dgv, Label lbl) {
             decimal total = 0;
             foreach (DataGridViewRow row in dgv.Rows) total += Convert.ToDecimal(row.Cells["Subtotal"].Value ?? 0);
-            lbl.Text = $"Grand Total: {CurrencyService.Format(total)}";
+            lbl.Text = LocalizationManager.GetString("PO_GrandTotal") + " " + CurrencyService.Format(total);
         }
 
         private void BtnAutoPO_Click(object sender, EventArgs e)

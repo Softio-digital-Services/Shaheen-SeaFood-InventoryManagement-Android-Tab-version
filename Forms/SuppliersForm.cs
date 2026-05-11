@@ -138,9 +138,9 @@ namespace GenericInventorySystem.Forms
 
             // Actions Panel (FlowLayout for Buttons)
             FlowLayoutPanel panelButtons = new FlowLayoutPanel();
-            panelButtons.FlowDirection = FlowDirection.RightToLeft; // Pin to right
+            panelButtons.FlowDirection = FlowDirection.LeftToRight;
             panelButtons.AutoSize = true;
-            panelButtons.Dock = DockStyle.Fill;
+            panelButtons.Anchor = AnchorStyles.Right; // Pins to far edge (mirrored in RTL)
             panelButtons.WrapContents = false;
             panelButtons.Padding = new Padding(0);
             panelButtons.Margin = new Padding(0);
@@ -152,7 +152,7 @@ namespace GenericInventorySystem.Forms
             this.btnAdd.FlatStyle = FlatStyle.Flat;
             btnAdd.FlatAppearance.BorderSize = 0;
             btnAdd.Cursor = Cursors.Hand;
-            this.btnAdd.Margin = new Padding(10, 0, 0, 0);
+            this.btnAdd.Margin = new Padding(0, 0, 10, 0);
             this.btnAdd.Click += BtnAdd_Click;
             this.btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Sup_AddSupplier", ThemeConfig.TextColorLight, ThemeConfig.PrimaryColor, false);
             panelButtons.Controls.Add(this.btnAdd);
@@ -165,7 +165,7 @@ namespace GenericInventorySystem.Forms
             this.btnDetails.FlatAppearance.BorderSize = 0;
             this.btnDetails.BackColor = Color.Transparent;
             this.btnDetails.Cursor = Cursors.Hand;
-            this.btnDetails.Margin = new Padding(10, 0, 0, 0);
+            this.btnDetails.Margin = new Padding(0, 0, 10, 0);
             this.btnDetails.Click += BtnDetails_Click;
             this.btnDetails.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDetails, e.Graphics, "view", "Sup_Details", ThemeConfig.TextColorLight, ThemeConfig.WarningColor, false);
             panelButtons.Controls.Add(this.btnDetails);
@@ -178,7 +178,7 @@ namespace GenericInventorySystem.Forms
             btnDeleteSelected.FlatStyle = FlatStyle.Flat;
             btnDeleteSelected.FlatAppearance.BorderSize = 0;
             btnDeleteSelected.Cursor = Cursors.Hand;
-            btnDeleteSelected.Margin = new Padding(10, 0, 0, 0);
+            btnDeleteSelected.Margin = new Padding(0, 0, 10, 0);
             btnDeleteSelected.Click += (s, e) =>
             {
                 var checkedIds = new System.Collections.Generic.List<int>();
@@ -216,7 +216,7 @@ namespace GenericInventorySystem.Forms
             this.btnExport.FlatStyle = FlatStyle.Flat;
             btnExport.FlatAppearance.BorderSize = 0;
             btnExport.Cursor = Cursors.Hand;
-            this.btnExport.Margin = new Padding(10, 0, 0, 0);
+            this.btnExport.Margin = new Padding(0, 0, 10, 0);
             this.btnExport.Click += BtnExport_Click;
             this.btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Sup_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
             panelButtons.Controls.Add(this.btnExport);
@@ -228,7 +228,7 @@ namespace GenericInventorySystem.Forms
             this.btnImport.FlatStyle = FlatStyle.Flat;
             btnImport.FlatAppearance.BorderSize = 0;
             btnImport.Cursor = Cursors.Hand;
-            this.btnImport.Margin = new Padding(10, 0, 0, 0);
+            this.btnImport.Margin = new Padding(0, 0, 10, 0);
             this.btnImport.Click += BtnImport_Click;
             this.btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Sup_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
             panelButtons.Controls.Add(this.btnImport);

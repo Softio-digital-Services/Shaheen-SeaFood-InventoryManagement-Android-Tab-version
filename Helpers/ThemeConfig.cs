@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.IO;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
+using GenericInventorySystem.Helpers;
 
 namespace GenericInventorySystem
 {

@@ -77,8 +77,8 @@ namespace GenericInventorySystem.Forms
                 if (dgvCustomers.Columns.Contains("colBalance")) dgvCustomers.Columns["colBalance"].HeaderText = L("Cust_GridBalance");
                 if (dgvCustomers.Columns.Contains("colActions")) dgvCustomers.Columns["colActions"].HeaderText = L("Cust_GridActions");
 
-                if (dgvCustomers.Columns.Contains("colCreditLimit")) dgvCustomers.Columns["colCreditLimit"].HeaderText = "Credit Limit";
-                if (dgvCustomers.Columns.Contains("colDueDate")) dgvCustomers.Columns["colDueDate"].HeaderText = "Due Date";
+                if (dgvCustomers.Columns.Contains("colCreditLimit")) dgvCustomers.Columns["colCreditLimit"].HeaderText = L("AddCust_CreditLimit");
+                if (dgvCustomers.Columns.Contains("colDueDate")) dgvCustomers.Columns["colDueDate"].HeaderText = L("AddCust_DueDate");
             }
         }
 
@@ -218,9 +218,9 @@ namespace GenericInventorySystem.Forms
 
             // Actions Panel (FlowLayout for Buttons)
             FlowLayoutPanel panelButtons = new FlowLayoutPanel();
-            panelButtons.FlowDirection = FlowDirection.RightToLeft; // Pin to right edge
+            panelButtons.FlowDirection = FlowDirection.LeftToRight;
             panelButtons.AutoSize = true;
-            panelButtons.Dock = DockStyle.Fill;
+            panelButtons.Anchor = AnchorStyles.Right;
             panelButtons.WrapContents = false;
             panelButtons.Padding = new Padding(0);
             panelButtons.Margin = new Padding(0);
@@ -232,7 +232,7 @@ namespace GenericInventorySystem.Forms
             this.btnAddNew.FlatStyle = FlatStyle.Flat;
             btnAddNew.FlatAppearance.BorderSize = 0;
             btnAddNew.Cursor = Cursors.Hand;
-            btnAddNew.Margin = new Padding(10, 0, 0, 0);
+            btnAddNew.Margin = new Padding(0, 0, 10, 0);
             btnAddNew.Click += btnAddNew_Click;
             btnAddNew.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddNew, e.Graphics, "add", "Cust_AddCustomer", Color.White, ThemeConfig.PrimaryColor, false);
             panelButtons.Controls.Add(btnAddNew);
@@ -244,7 +244,7 @@ namespace GenericInventorySystem.Forms
             this.btnCustomerDetails.FlatStyle = FlatStyle.Flat;
             btnCustomerDetails.FlatAppearance.BorderSize = 0;
             btnCustomerDetails.Cursor = Cursors.Hand;
-            btnCustomerDetails.Margin = new Padding(10, 0, 0, 0);
+            btnCustomerDetails.Margin = new Padding(0, 0, 10, 0);
             btnCustomerDetails.Click += btnCustomerDetails_Click;
             btnCustomerDetails.Paint += (s, e) => ThemeConfig.DrawIconButton(btnCustomerDetails, e.Graphics, "view", "Cust_Details", ThemeConfig.TextColorLight, ThemeConfig.WarningColor, false);
             panelButtons.Controls.Add(btnCustomerDetails);
@@ -256,7 +256,7 @@ namespace GenericInventorySystem.Forms
             this.btnDeleteBulk.FlatStyle = FlatStyle.Flat;
             btnDeleteBulk.FlatAppearance.BorderSize = 0;
             btnDeleteBulk.Cursor = Cursors.Hand;
-            btnDeleteBulk.Margin = new Padding(10, 0, 0, 0);
+            btnDeleteBulk.Margin = new Padding(0, 0, 10, 0);
             btnDeleteBulk.Click += btnDeleteBulk_Click;
             btnDeleteBulk.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDeleteBulk, e.Graphics, "delete", "Cust_Delete", ThemeConfig.DangerBorder, ThemeConfig.DangerBorder, true);
             panelButtons.Controls.Add(btnDeleteBulk);
@@ -268,7 +268,7 @@ namespace GenericInventorySystem.Forms
             this.btnExport.FlatStyle = FlatStyle.Flat;
             btnExport.FlatAppearance.BorderSize = 0;
             btnExport.Cursor = Cursors.Hand;
-            btnExport.Margin = new Padding(10, 0, 0, 0);
+            btnExport.Margin = new Padding(0, 0, 10, 0);
             btnExport.Click += btnExport_Click;
             btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Cust_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
             panelButtons.Controls.Add(btnExport);
@@ -280,7 +280,7 @@ namespace GenericInventorySystem.Forms
             this.btnImport.FlatStyle = FlatStyle.Flat;
             btnImport.FlatAppearance.BorderSize = 0;
             btnImport.Cursor = Cursors.Hand;
-            btnImport.Margin = new Padding(10, 0, 0, 0);
+            btnImport.Margin = new Padding(0, 0, 10, 0);
             btnImport.Click += btnImport_Click;
             btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Cust_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
             panelButtons.Controls.Add(btnImport);
