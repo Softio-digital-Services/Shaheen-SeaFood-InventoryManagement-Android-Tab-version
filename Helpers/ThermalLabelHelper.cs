@@ -13,6 +13,7 @@ namespace GenericInventorySystem.Helpers
     {
         public string Name { get; set; }
         public string SKU { get; set; }
+        public decimal Price { get; set; }
         public int Quantity { get; set; }
     }
     public class ThermalLabelHelper
@@ -69,6 +70,7 @@ namespace GenericInventorySystem.Helpers
             // Fonts
             Font nameFont = new Font("Segoe UI", 8, FontStyle.Bold);
             Font skuFont = new Font("Consolas", 7);
+            Font priceFont = new Font("Segoe UI", 8, FontStyle.Bold);
 
             // 1. Draw Product Name (Centered top)
             string displayName = item.Name.Length > 25 ? item.Name.Substring(0, 22) + "..." : item.Name;
@@ -80,8 +82,12 @@ namespace GenericInventorySystem.Helpers
             Bitmap barcode = bs.RenderCode128(item.SKU, 180, 45);
             g.DrawImage(barcode, new Rectangle(10, 25, 180, 45));
 
-            // 3. Draw SKU Text (Centered bottom)
-            g.DrawString(item.SKU, skuFont, Brushes.Black, new RectangleF(0, 72, 200, 15), new StringFormat { Alignment = StringAlignment.Center });
+            // 3. Draw SKU Text (Centered below barcode)
+            g.DrawString(item.SKU, skuFont, Brushes.Black, new RectangleF(0, 71, 200, 14), new StringFormat { Alignment = StringAlignment.Center });
+
+            // 4. Draw Price Text (Centered bottom)
+            string priceStr = CurrencyService.Format(item.Price);
+            g.DrawString(priceStr, priceFont, Brushes.Black, new RectangleF(0, 84, 200, 15), new StringFormat { Alignment = StringAlignment.Center });
 
             // Logic to handle multiple copies per item
             _copyIndex++;

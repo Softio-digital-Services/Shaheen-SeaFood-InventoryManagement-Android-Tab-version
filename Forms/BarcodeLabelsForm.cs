@@ -62,6 +62,7 @@ namespace GenericInventorySystem.Forms
                 dgvItems.Columns["colSelect"].HeaderText = ""; // Empty because we have a checkbox
                 dgvItems.Columns["colName"].HeaderText = LocalizationManager.GetString("Parts_GridProduct");
                 dgvItems.Columns["colSku"].HeaderText = LocalizationManager.GetString("AddPart_SKU");
+                if (dgvItems.Columns.Contains("colPrice")) dgvItems.Columns["colPrice"].HeaderText = LocalizationManager.GetString("Parts_GridPrice");
                 dgvItems.Columns["colBarcode"].HeaderText = LocalizationManager.GetString("Parts_GridBarcode");
                 dgvItems.Columns["colQty"].HeaderText = LocalizationManager.GetString("POS_GridQty");
                 dgvItems.Columns["colMinus"].HeaderText = "";
@@ -79,7 +80,7 @@ namespace GenericInventorySystem.Forms
         {
             try
             {
-                string sql = "SELECT id, part_name, part_number FROM parts WHERE date_deleted IS NULL ORDER BY part_name";
+                string sql = "SELECT id, part_name, part_number, selling_price FROM parts WHERE date_deleted IS NULL ORDER BY part_name";
                 _dtItems = DatabaseHelper.ExecuteDataTable(sql);
                 DisplayData(_dtItems);
                 if (_headerCheckBox != null) _headerCheckBox.Checked = false;
@@ -99,6 +100,7 @@ namespace GenericInventorySystem.Forms
                 row.Cells["colId"].Value = r["id"];
                 row.Cells["colName"].Value = r["part_name"];
                 row.Cells["colSku"].Value = r["part_number"];
+                row.Cells["colPrice"].Value = r["selling_price"] != DBNull.Value ? Convert.ToDecimal(r["selling_price"]) : 0m;
                 row.Cells["colQty"].Value = 1; 
                 row.Cells["colSelect"].Value = false;
                 row.Cells["colMinus"].Value = "-";
@@ -188,6 +190,7 @@ namespace GenericInventorySystem.Forms
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colId", Visible = false });
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", Width = 200, ReadOnly = true });
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSku", Width = 120, ReadOnly = false });
+            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPrice", Width = 100, ReadOnly = true });
             dgvItems.Columns.Add(new DataGridViewImageColumn { Name = "colBarcode", Width = 140, ImageLayout = DataGridViewImageCellLayout.Zoom, ReadOnly = true });
             
             dgvItems.Columns.Add(new DataGridViewButtonColumn { Name = "colMinus", Width = 25, FlatStyle = FlatStyle.Flat });
@@ -196,6 +199,17 @@ namespace GenericInventorySystem.Forms
 
             dgvItems.CellContentClick += DgvItems_CellContentClick;
             dgvItems.CellPainting += DgvItems_CellPainting;
+            dgvItems.CellFormatting += (s, ev) => {
+                if (ev.RowIndex < 0) return;
+                if (dgvItems.Columns[ev.ColumnIndex].Name == "colPrice" && ev.Value != null)
+                {
+                    if (decimal.TryParse(ev.Value.ToString(), out decimal p))
+                    {
+                        ev.Value = CurrencyService.Format(p);
+                        ev.FormattingApplied = true;
+                    }
+                }
+            };
 
             ThemeConfig.ApplyHeaderCheckBox(dgvItems, "colSelect");
 
@@ -267,6 +281,7 @@ namespace GenericInventorySystem.Forms
                     selectedItems.Add(new GenericInventorySystem.Helpers.LabelPrintItem {
                         Name = row.Cells["colName"].Value.ToString(),
                         SKU = row.Cells["colSku"].Value?.ToString() ?? "",
+                        Price = row.Cells["colPrice"].Value != null ? Convert.ToDecimal(row.Cells["colPrice"].Value) : 0m,
                         Quantity = Convert.ToInt32(row.Cells["colQty"].Value ?? 1)
                     });
                 }
@@ -286,6 +301,7 @@ namespace GenericInventorySystem.Forms
     {
         public string Name { get; set; }
         public string SKU { get; set; }
+        public decimal Price { get; set; }
         public int Quantity { get; set; }
     }
 }

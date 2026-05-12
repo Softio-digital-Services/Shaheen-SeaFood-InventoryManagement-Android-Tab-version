@@ -1270,4 +1270,176 @@
   <data name="Msg_UpdateService" xml:space="preserve">
     <value>Update Service</value>
   </data>
+  <data name="Plugins_ScanTitle" xml:space="preserve">
+    <value>Scan to Connect -- Web POS</value>
+  </data>
+  <data name="POS_ItemReturn" xml:space="preserve">
+    <value>Return Items</value>
+  </data>
+  <data name="Title_ItemReturn" xml:space="preserve">
+    <value>Return Items (No Receipt)</value>
+  </data>
+  <data name="Return_Qty" xml:space="preserve">
+    <value>Return Qty</value>
+  </data>
+  <data name="Dash_ScanHint" xml:space="preserve">
+    <value>Open Camera on your device -&gt; Point towards QR code -&gt; Click the link
+Or click the link above to copy it</value>
+  </data>
+  <data name="POS_ReturnItems" xml:space="preserve">
+    <value>Return Orders</value>
+  </data>
+  <data name="Return_ReadyToScan" xml:space="preserve">
+    <value>Ready to scan barcode...</value>
+  </data>
+  <data name="Msg_EnterOrderId" xml:space="preserve">
+    <value>Please enter the Order ID to start the return process</value>
+  </data>
+  <data name="Msg_OrderId" xml:space="preserve">
+    <value>Order ID:</value>
+  </data>
+  <data name="Tran_Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="Msg_InvalidOrderId" xml:space="preserve">
+    <value>Invalid Order ID. Please enter a valid number.</value>
+  </data>
+  <data name="Title_ReturnOrder" xml:space="preserve">
+    <value>Return Order</value>
+  </data>
+  <data name="Title_SelectProduct" xml:space="preserve">
+    <value>Select Product</value>
+  </data>
+  <data name="Prod_GridName" xml:space="preserve">
+    <value>Item Name</value>
+  </data>
+  <data name="Prod_GridSKU" xml:space="preserve">
+    <value>SKU</value>
+  </data>
+  <data name="Prod_GridBarcode" xml:space="preserve">
+    <value>Barcode</value>
+  </data>
+  <data name="Prod_GridPrice" xml:space="preserve">
+    <value>Price</value>
+  </data>
+  <data name="Prod_GridStock" xml:space="preserve">
+    <value>Stock</value>
+  </data>
+  <data name="POS_NoDrafts" xml:space="preserve">
+    <value>No saved drafts.</value>
+  </data>
+  <data name="Title_SelectDraft" xml:space="preserve">
+    <value>Select Draft</value>
+  </data>
+  <data name="Users_GridID" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="Users_GridUsername" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="Title_BarcodeLabels" xml:space="preserve">
+    <value>Generate Barcode Labels</value>
+  </data>
+  <data name="Btn_PreviewPrint" xml:space="preserve">
+    <value>Preview &amp; Print</value>
+  </data>
+  <data name="PO_GridNumber" xml:space="preserve">
+    <value>Order #</value>
+  </data>
+  <data name="PO_QuickAdd" xml:space="preserve">
+    <value>Quick Add (Search):</value>
+  </data>
+  <data name="PO_Subtotal" xml:space="preserve">
+    <value>Subtotal</value>
+  </data>
+  <data name="PO_GrandTotal" xml:space="preserve">
+    <value>Grand Total:</value>
+  </data>
+  <data name="Msg_StockUpdated" xml:space="preserve">
+    <value>Stock updated successfully.</value>
+  </data>
+  <data name="Msg_SelectSupplier" xml:space="preserve">
+    <value>Please select a supplier.</value>
+  </data>
+  <data name="Exp_MonthlyExpenses" xml:space="preserve">
+    <value>Monthly Expenses</value>
+  </data>
+  <data name="Exp_Action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="Exp_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Exp_Auto" xml:space="preserve">
+    <value>Auto</value>
+  </data>
+  <data name="Exp_PayNow" xml:space="preserve">
+    <value>Pay Now</value>
+  </data>
+  <data name="Exp_Paid" xml:space="preserve">
+    <value>Paid</value>
+  </data>
+  <data name="Exp_Unpaid" xml:space="preserve">
+    <value>Unpaid</value>
+  </data>
+  <data name="Exp_Recurring" xml:space="preserve">
+    <value>Recurring</value>
+  </data>
+  <data name="Exp_Details" xml:space="preserve">
+    <value>Expense details...</value>
+  </data>
+  <data name="Exp_CategoryLabel" xml:space="preserve">
+    <value>Expense Category</value>
+  </data>
+  <data name="Exp_AmountLabel" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="Exp_DescriptionLabel" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Exp_Rent" xml:space="preserve">
+    <value>Rent</value>
+  </data>
+  <data name="Exp_Utilities" xml:space="preserve">
+    <value>Utilities</value>
+  </data>
+  <data name="Exp_Wages" xml:space="preserve">
+    <value>Wages</value>
+  </data>
+  <data name="Exp_Supplies" xml:space="preserve">
+    <value>Supplies</value>
+  </data>
+  <data name="Exp_Maintenance" xml:space="preserve">
+    <value>Maintenance</value>
+  </data>
+  <data name="Exp_Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="Exp_AddSuccess" xml:space="preserve">
+    <value>Expense added successfully.</value>
+  </data>
+  <data name="Exp_DeleteSuccess" xml:space="preserve">
+    <value>Expense deleted successfully.</value>
+  </data>
+  <data name="Exp_GreaterZero" xml:space="preserve">
+    <value>Amount must be greater than 0</value>
+  </data>
+  <data name="POS_VAT" xml:space="preserve">
+    <value>VAT (11%)</value>
+  </data>
+  <data name="POS_Draft" xml:space="preserve">
+    <value>Draft</value>
+  </data>
+  <data name="POS_Receipt" xml:space="preserve">
+    <value>Receipt</value>
+  </data>
+  <data name="POS_Quotation" xml:space="preserve">
+    <value>Quotation</value>
+  </data>
+  <data name="Nav_Barcode" xml:space="preserve">
+    <value>Barcode Labels</value>
+  </data>
+  <data name="Dash_ScanToConnect" xml:space="preserve">
+    <value>Scan to Connect</value>
+  </data>
 </root>

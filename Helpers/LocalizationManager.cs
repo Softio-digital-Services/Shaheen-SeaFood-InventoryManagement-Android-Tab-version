@@ -108,7 +108,6 @@ namespace GenericInventorySystem.Helpers
                 System.Diagnostics.Debug.WriteLine("Failed to load Arabic resources: " + ex.Message);
             }
         }
-
         // Get a localized string: use Arabic set if available for Arabic, otherwise fallback to default ResourceManager
         public static string GetString(string key)
         {

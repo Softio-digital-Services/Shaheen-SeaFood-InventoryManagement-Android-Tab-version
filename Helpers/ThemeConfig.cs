@@ -161,7 +161,6 @@ namespace GenericInventorySystem
             btn.MouseEnter += (s, e) => btn.BackColor = PrimaryHoverColor;
             btn.MouseLeave += (s, e) => btn.BackColor = PrimaryColor;
 
-            if (!string.IsNullOrEmpty(btn.Text)) { btn.Paint -= Btn_PaintRounded; btn.Paint += Btn_PaintRounded; }
         }
 
         public static Color GetParentColor(Control ctrl)
@@ -848,7 +847,6 @@ namespace GenericInventorySystem
             btn.MouseEnter += (s, e) => btn.BackColor = hoverColor;
             btn.MouseLeave += (s, e) => btn.BackColor = baseColor;
 
-            if (!string.IsNullOrEmpty(btn.Text)) { btn.Paint -= Btn_PaintRounded; btn.Paint += Btn_PaintRounded; }
         }
 
         public static void ApplyDangerButton(Button btn)
@@ -864,7 +862,6 @@ namespace GenericInventorySystem
             btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(0, 184, 138); // Slightly darker/brighter green for hover
             btn.MouseLeave += (s, e) => btn.BackColor = SuccessColor;
 
-            if (!string.IsNullOrEmpty(btn.Text)) { btn.Paint -= Btn_PaintRounded; btn.Paint += Btn_PaintRounded; }
         }
 
         public static void ApplySecondaryButton(Button btn)
@@ -880,7 +877,6 @@ namespace GenericInventorySystem
             btn.MouseEnter += (s, e) => btn.BackColor = SecondaryHoverColor;
             btn.MouseLeave += (s, e) => btn.BackColor = Color.FromArgb(230, 230, 240);
 
-            if (!string.IsNullOrEmpty(btn.Text)) { btn.Paint -= Btn_PaintRounded; btn.Paint += Btn_PaintRounded; }
         }
 
         public static void ApplyGridTheme(DataGridView grid)

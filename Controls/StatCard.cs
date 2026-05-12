@@ -165,37 +165,47 @@ namespace GenericInventorySystem.Controls
             int labelX, labelWidth;
             if (isRtl)
             {
-                // In RTL: icon is on the LEFT (15–65). Labels span from 75 to Width-15.
-                labelX = 75;
+                // In RTL: icon is on the LEFT (15–65). Labels span from 75 to (Width - 15).
+                labelX    = 75;
                 labelWidth = Math.Max(0, this.Width - labelX - 15);
                 
-                _lblTitle.AutoSize = false;
-                _lblValue.AutoSize = false;
+                _lblTitle.AutoSize    = false;
+                _lblValue.AutoSize    = false;
                 _lblSubtitle.AutoSize = false;
                 
-                _lblTitle.Size = new Size(labelWidth, 25);
-                _lblValue.Size = new Size(labelWidth, 45);
+                _lblTitle.Size    = new Size(labelWidth, 25);
+                _lblValue.Size    = new Size(labelWidth, 45);
                 _lblSubtitle.Size = new Size(labelWidth, 20);
             }
             else
             {
                 // In LTR: icon is on the RIGHT (Width-70). Labels start at 20.
-                labelX = 20;
+                labelX    = 20;
                 labelWidth = this.Width - 90;
                 
-                _lblTitle.AutoSize = true;
-                _lblValue.AutoSize = true;
+                _lblTitle.AutoSize    = true;
+                _lblValue.AutoSize    = true;
                 _lblSubtitle.AutoSize = true;
             }
 
             // Apply positions
-            _lblTitle.Location = new Point(labelX, 15);
-            _lblValue.Location = new Point(labelX - 2, 40);
+            _lblTitle.Location    = new Point(labelX, 15);
+            _lblValue.Location    = new Point(labelX - 2, 40);
             _lblSubtitle.Location = new Point(labelX + 2, 85);
 
-            // Text alignment — right-align text in RTL so it reads naturally from the right edge
-            _lblTitle.TextAlign  = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
-            _lblValue.TextAlign  = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            // ── TEXT ALIGNMENT ─────────────────────────────────────────────────────
+            // WinForms mirrors ContentAlignment when a Label's RightToLeft == Yes.
+            //   MiddleRight + RightToLeft.Yes → renders on the LEFT  (wrong)
+            //   MiddleRight + RightToLeft.No  → renders on the RIGHT (correct)
+            // We pin each label to RightToLeft.No so ContentAlignment.MiddleRight
+            // always means "right edge of the label box" regardless of the parent
+            // form's RTL setting.
+            _lblTitle.RightToLeft    = RightToLeft.No;
+            _lblValue.RightToLeft    = RightToLeft.No;
+            _lblSubtitle.RightToLeft = RightToLeft.No;
+
+            _lblTitle.TextAlign    = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            _lblValue.TextAlign    = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
             _lblSubtitle.TextAlign = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
         }
 
