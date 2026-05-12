@@ -90,7 +90,7 @@ namespace GenericInventorySystem.Forms
             pnlInfo.Controls.Add(tblInfo);
 
             Panel pnlCol1 = new Panel { Dock = DockStyle.Top, AutoSize = true, BackColor = Color.Transparent, Padding = new Padding(0,0,10,0) }; 
-            pnlCol1.Controls.Add(new Label { Text = "Customer", Name = "lblCust", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark });
+            pnlCol1.Controls.Add(new Label { Text = "Customer", Name = "lblCust", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             cmbCustomers = new ComboBox(); ThemeConfig.ApplyComboBoxStyle(cmbCustomers);
             cmbCustomers.SelectedIndexChanged += (s, e) => {
                 if (btnPayLater != null) {
@@ -108,7 +108,7 @@ namespace GenericInventorySystem.Forms
             tblInfo.Controls.Add(pnlCol1, 0, 0);
 
             Panel pnlDate1 = new Panel { Dock = DockStyle.Top, Height = 75, Margin = new Padding(0,0,10,5) };
-            pnlDate1.Controls.Add(new Label { Text = "Order Date", Name = "lblDateTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
+            pnlDate1.Controls.Add(new Label { Text = "Order Date", Name = "lblDateTitle", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             dtOrderDate = new FlatDateTimePicker { Width = 150 };
             Panel pnlDate1Input = ThemeConfig.WrapInStyledInput(dtOrderDate, 42);
             pnlDate1Input.Dock = DockStyle.Top;
@@ -116,7 +116,7 @@ namespace GenericInventorySystem.Forms
             tblInfo.Controls.Add(pnlDate1, 0, 1);
 
             Panel pnlDate2 = new Panel { Dock = DockStyle.Top, Height = 75, Margin = new Padding(0,0,10,0) };
-            pnlDate2.Controls.Add(new Label { Text = "Delivery", Name = "lblDelTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
+            pnlDate2.Controls.Add(new Label { Text = "Delivery", Name = "lblDelTitle", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             dtDeliveryDate = new FlatDateTimePicker { Width = 150, Value = null, MinDate = DateTime.Today };
             Panel pnlDate2Input = ThemeConfig.WrapInStyledInput(dtDeliveryDate, 42);
             pnlDate2Input.Dock = DockStyle.Top;
@@ -124,7 +124,7 @@ namespace GenericInventorySystem.Forms
             tblInfo.Controls.Add(pnlDate2, 0, 2);
 
             Panel pnlDate3 = new Panel { Dock = DockStyle.Top, Height = 75, Margin = new Padding(0, 0, 10, 0) };
-            pnlDate3.Controls.Add(new Label { Text = "Due Date", Name = "lblDueTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
+            pnlDate3.Controls.Add(new Label { Text = "Due Date", Name = "lblDueTitle", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             dtDueDate = new FlatDateTimePicker { Width = 150, Value = DateTime.Today.AddDays(30) };
             Panel pnlDate3Input = ThemeConfig.WrapInStyledInput(dtDueDate, 42);
             pnlDate3Input.Dock = DockStyle.Top;
@@ -132,7 +132,7 @@ namespace GenericInventorySystem.Forms
             tblInfo.Controls.Add(pnlDate3, 1, 2);
 
             Panel pnlCol3 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
-            pnlCol3.Controls.Add(new Label { Text = "Shipping To", Name = "lblAddrTitle", AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
+            pnlCol3.Controls.Add(new Label { Text = "Shipping To", Name = "lblAddrTitle", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             txtShippingAddress = new TextBox { Multiline = true, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, BorderStyle = BorderStyle.None };
             Panel pnlAddrWrapper = ThemeConfig.WrapInStyledInput(txtShippingAddress, 210, true); pnlAddrWrapper.Dock = DockStyle.Fill;
             pnlCol3.Controls.Add(pnlAddrWrapper); pnlAddrWrapper.BringToFront(); tblInfo.Controls.Add(pnlCol3, 1, 0); tblInfo.SetRowSpan(pnlCol3, 2);

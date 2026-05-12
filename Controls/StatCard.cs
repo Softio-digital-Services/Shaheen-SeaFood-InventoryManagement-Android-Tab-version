@@ -146,11 +146,17 @@ namespace GenericInventorySystem.Controls
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
+            RepositionForRTL();
         }
 
         private void RepositionForRTL()
         {
-            bool isRtl = this.RightToLeft == RightToLeft.Yes;
+            // Guard: may be called before InitializeControls finishes
+            if (_iconPanel == null || _lblTitle == null || _lblValue == null || _lblSubtitle == null) return;
+
+            // Use IsArabic as the source of truth — the inherited RightToLeft property
+            // may not have propagated yet when OnResize fires during initialization.
+            bool isRtl = Helpers.LocalizationManager.IsArabic;
             
             // Icon Position
             _iconPanel.Location = isRtl ? new Point(15, 25) : new Point(this.Width - 70, 25);
@@ -159,9 +165,9 @@ namespace GenericInventorySystem.Controls
             int labelX, labelWidth;
             if (isRtl)
             {
-                // Icon occupies 15 to 65. Let labels occupy from 75 to Width-15.
+                // In RTL: icon is on the LEFT (15–65). Labels span from 75 to Width-15.
                 labelX = 75;
-                labelWidth = this.Width - labelX - 15;
+                labelWidth = Math.Max(0, this.Width - labelX - 15);
                 
                 _lblTitle.AutoSize = false;
                 _lblValue.AutoSize = false;
@@ -173,7 +179,7 @@ namespace GenericInventorySystem.Controls
             }
             else
             {
-                // Icon occupies Width-70. Let labels occupy from 20 to Width-80.
+                // In LTR: icon is on the RIGHT (Width-70). Labels start at 20.
                 labelX = 20;
                 labelWidth = this.Width - 90;
                 
@@ -187,14 +193,10 @@ namespace GenericInventorySystem.Controls
             _lblValue.Location = new Point(labelX - 2, 40);
             _lblSubtitle.Location = new Point(labelX + 2, 85);
 
-            // Alignment
-            _lblTitle.RightToLeft = isRtl ? RightToLeft.Yes : RightToLeft.No;
-            _lblValue.RightToLeft = isRtl ? RightToLeft.Yes : RightToLeft.No;
-            _lblSubtitle.RightToLeft = isRtl ? RightToLeft.Yes : RightToLeft.No;
-
-            _lblTitle.TextAlign = isRtl ? ContentAlignment.TopRight : ContentAlignment.TopLeft;
-            _lblValue.TextAlign = isRtl ? ContentAlignment.TopRight : ContentAlignment.TopLeft;
-            _lblSubtitle.TextAlign = isRtl ? ContentAlignment.TopRight : ContentAlignment.TopLeft;
+            // Text alignment — right-align text in RTL so it reads naturally from the right edge
+            _lblTitle.TextAlign  = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            _lblValue.TextAlign  = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            _lblSubtitle.TextAlign = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
         }
 
         // Call this after setting Value/Title to ensure labels move if their width changed

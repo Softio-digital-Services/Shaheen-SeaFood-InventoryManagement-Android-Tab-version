@@ -904,17 +904,17 @@ namespace GenericInventorySystem
             grid.DefaultCellStyle.ForeColor = TextColorDark;
             grid.DefaultCellStyle.Font = StandardFont; 
 
-            if (Helpers.LocalizationManager.IsArabic) 
+            // Center all cell and header text regardless of language direction
+            grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+
+            if (Helpers.LocalizationManager.IsArabic)
             {
                 grid.RightToLeft = RightToLeft.Yes;
-                grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-                grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
             }
             else
             {
                 grid.RightToLeft = RightToLeft.No;
-                grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-                grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             }
             
             grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(237, 242, 247);
@@ -1042,7 +1042,9 @@ namespace GenericInventorySystem
             
             btn.ImageAlign = ContentAlignment.MiddleLeft;
             btn.TextImageRelation = TextImageRelation.ImageBeforeText;
-            btn.Padding = new Padding(15, 0, 0, 0);
+            int padLeft = LocalizationManager.IsArabic ? 0 : 15;
+            int padRight = LocalizationManager.IsArabic ? 15 : 0;
+            btn.Padding = new Padding(padLeft, 0, padRight, 0);
         }
 
         public static Image GetNuricon(string name)

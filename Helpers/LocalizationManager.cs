@@ -232,25 +232,14 @@ namespace GenericInventorySystem.Helpers
             if (control == null) return;
             bool isAr = IsArabic;
 
-            // Apply RightToLeft early so child layout logic respects it
-            if (control is FlowLayoutPanel flp)
-            {
-                // Force buttons to flow from the left in both modes if they are in the action buttons panel
-                // This keeps them clustered at the outer edge of the screen
-                flp.RightToLeft = RightToLeft.No;
-                flp.FlowDirection = FlowDirection.LeftToRight;
-            }
-            else
-            {
-                control.RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No;
-            }
+            control.RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No;
 
-            // Skip manual location/anchor mirroring for internal components of ModernTextBox
-            // as it handles its own internal layout logic.
-            bool isInternalModernTextBox = (control.Parent != null && control.Parent.GetType().Name == "ModernTextBox") ||
-                                         (control.Parent != null && control.Parent.Parent != null && control.Parent.Parent.GetType().Name == "ModernTextBox");
+            // Skip manual location/anchor mirroring for internal components of ModernTextBox and StatCard
+            // as they handle their own internal layout logic.
+            bool isInternalHandled = (control.Parent != null && (control.Parent.GetType().Name == "ModernTextBox" || control.Parent.GetType().Name == "StatCard")) ||
+                                     (control.Parent != null && control.Parent.Parent != null && (control.Parent.Parent.GetType().Name == "ModernTextBox" || control.Parent.Parent.GetType().Name == "StatCard"));
 
-            if (!isInternalModernTextBox)
+            if (!isInternalHandled)
             {
                 // Handle Docking Mirroring for all controls (Labels, Buttons, Panels, etc.)
                 if (control.Dock == DockStyle.Left || control.Dock == DockStyle.Right)
@@ -271,21 +260,7 @@ namespace GenericInventorySystem.Helpers
             
 
 
-            // Handle FlowLayoutPanel Mirroring
-            if (control is FlowLayoutPanel flow)
-            {
-                bool isSwapped = HasRtlState(flow, "rtl_flow_swapped");
-                if (isAr && !isSwapped)
-                {
-                    flow.FlowDirection = (flow.FlowDirection == FlowDirection.LeftToRight) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-                    AddRtlState(flow, "rtl_flow_swapped");
-                }
-                else if (!isAr && isSwapped)
-                {
-                    flow.FlowDirection = (flow.FlowDirection == FlowDirection.LeftToRight) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-                    RemoveRtlState(flow, "rtl_flow_swapped");
-                }
-            }
+
 
             // Handle Chart Mirroring
             if (control.GetType().FullName == "System.Windows.Forms.DataVisualization.Charting.Chart")
@@ -309,7 +284,7 @@ namespace GenericInventorySystem.Helpers
             // RightToLeft property handles TableLayoutPanel column mirroring automatically
             // No manual MirrorTableLayout needed.
 
-            if (!isInternalModernTextBox)
+            if (!isInternalHandled)
             {
                 // Handle Absolute Location Mirroring for child controls (if parent is not a layout panel)
                 if (isAr && control.Parent != null && !(control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel))

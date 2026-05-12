@@ -322,7 +322,7 @@ namespace GenericInventorySystem
             button3.ForeColor = ThemeConfig.DangerColor;
             Image logoutIcon = ThemeConfig.GetNuricon("logout");
             if (logoutIcon != null) { button3.Image = ResizeImage(logoutIcon, 22, 22); button3.ImageAlign = ContentAlignment.MiddleLeft; button3.TextImageRelation = TextImageRelation.ImageBeforeText; }
-            button3.TextAlign = ContentAlignment.MiddleLeft; button3.Padding = new Padding(15, 0, 0, 0); button3.Font = ThemeConfig.ButtonFont;
+            button3.TextAlign = ContentAlignment.MiddleLeft; button3.Padding = new Padding(LocalizationManager.IsArabic ? 0 : 15, 0, LocalizationManager.IsArabic ? 15 : 0, 0); button3.Font = ThemeConfig.ButtonFont;
             button3.FlatAppearance.MouseOverBackColor = ThemeConfig.DangerLight;
 
             // Softio Logo in Sidebar

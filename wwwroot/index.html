@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>POS – Inventory System</title>
     <link rel="stylesheet" href="index.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+Arabic:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -16,16 +16,16 @@
                 <div class="logo-glow-container">
                     <img src="nuricon_POS_web.png" alt="Logo" style="width:100px; height:auto;">
                 </div>
-                <h2>Inventory Portal</h2>
-                <p style="color:var(--text-muted); font-size:0.9rem;">Sign in to manage your garage</p>
+                <h2 data-i18n="login_title">Inventory Portal</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem;" data-i18n="login_subtitle">Sign in to manage your garage</p>
             </div>
             <div id="loginError" class="error-box hidden"></div>
             <div class="input-group">
-                <label>Username</label>
+                <label data-i18n="login_username">Username</label>
                 <input type="text" id="loginUser" placeholder="admin" autocomplete="username">
             </div>
             <div class="input-group">
-                <label>Password</label>
+                <label data-i18n="login_password">Password</label>
                 <div class="password-wrapper" style="position:relative;">
                     <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
                     <div class="password-toggle" id="togglePassword">
@@ -34,7 +34,7 @@
                     </div>
                 </div>
             </div>
-            <button class="btn-primary-large" id="btnLogin">Sign In</button>
+            <button class="btn-primary-large" id="btnLogin" data-i18n="login_btn">Sign In</button>
         </div>
     </div>
 
@@ -72,6 +72,9 @@
                 <button class="btn-icon-top" id="btnLock" title="Lock Screen">
                     <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                 </button>
+                <button class="btn-icon-top btn-lang-toggle" id="btnToggleLang" title="Toggle Arabic / English">
+                    <span id="langLabel">AR</span>
+                </button>
                 <button class="btn-icon-top" id="btnLogout" style="color:var(--danger);">
                     <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                 </button>
@@ -86,14 +89,14 @@
                         <svg viewBox="0 0 24 24" width="60" height="60" stroke="var(--accent)" stroke-width="2" fill="none" style="margin-bottom:15px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     </div>
                     <h2 id="lockUserDisplay">Session Locked</h2>
-                    <p style="color:var(--text-muted); font-size:0.9rem;">Enter password to resume</p>
+                    <p style="color:var(--text-muted); font-size:0.9rem;" data-i18n="lock_subtitle">Enter password to resume</p>
                 </div>
                 <div class="input-group">
-                    <label>Password</label>
+                <label data-i18n="login_password">Password</label>
                     <input type="password" id="lockPass" placeholder="••••••••">
                 </div>
-                <button class="btn-primary-large" id="btnUnlock">Unlock</button>
-                <button class="btn-clear" id="btnLockLogout" style="margin-top:20px; width:100%; height:40px;">Switch User / Logout</button>
+                <button class="btn-primary-large" id="btnUnlock" data-i18n="lock_unlock">Unlock</button>
+                <button class="btn-clear" id="btnLockLogout" style="margin-top:20px; width:100%; height:40px;" data-i18n="lock_switch">Switch User / Logout</button>
             </div>
         </div>
 
@@ -109,7 +112,7 @@
         <aside class="cart-sidebar">
             <div class="cart-header">
                 <div style="display:flex; flex-direction:column; gap:6px;">
-                    <h2>Order</h2>
+                    <h2 data-i18n="order_title">Order</h2>
                     <div id="scannerStatus" class="scanner-status-mini pulse">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right:6px;vertical-align:middle;">
                             <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
@@ -119,32 +122,32 @@
                         Scanner Ready
                     </div>
                 </div>
-                <button class="btn-clear" id="btnClearCart">Clear</button>
+                <button class="btn-clear" id="btnClearCart" data-i18n="cart_clear">Clear</button>
             </div>
             <div class="cart-items" id="cartItems"></div>
             <div class="cart-footer">
                 <div class="summary-line" style="margin-bottom:20px;">
-                    <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Display Currency</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;" data-i18n="cart_currency">Display Currency</span>
                     <select id="currencySelect" class="currency-select" style="width:120px;">
                         <option value="USD">USD ($)</option>
                     </select>
                 </div>
                 <div class="summary-line">
-                    <span>Subtotal</span>
+                    <span data-i18n="cart_subtotal">Subtotal</span>
                     <span id="subTotal">$0.00</span>
                 </div>
                 <div class="summary-line" style="display:flex; align-items:center;">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span>Tax (10%)</span>
+                        <span data-i18n="cart_tax">Tax (10%)</span>
                         <input type="checkbox" id="applyTax" style="width:18px;height:18px;">
                     </div>
                     <span id="taxTotal">$0.00</span>
                 </div>
                 <div class="summary-line total">
-                    <span>Total</span>
+                    <span data-i18n="cart_total">Total</span>
                     <span id="grandTotal">$0.00</span>
                 </div>
-                <button class="btn-checkout" id="btnCheckout">Process Checkout</button>
+                <button class="btn-checkout" id="btnCheckout" data-i18n="cart_checkout">Process Checkout</button>
             </div>
         </aside>
 
@@ -157,18 +160,18 @@
     <!-- ADD ITEM MODAL -->
     <div id="addItemModal" class="overlay hidden">
         <div class="scanner-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
                 <h2 style="margin:0;" id="modalTitle">Add New Product</h2>
                 <button id="btnCloseAddModal" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
             </div>
             <input type="hidden" id="editItemId">
             <div class="input-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; text-align:left;">
                 <div class="input-group">
-                    <label>Product Name</label>
+                    <label data-i18n="modal_field_name">Product Name</label>
                     <input type="text" id="newItemName" placeholder="e.g. Brake Pads">
                 </div>
                 <div class="input-group">
-                    <label>Category</label>
+                    <label data-i18n="modal_field_category">Category</label>
                     <select id="newItemCategory">
                         <option value="Engine">Engine</option>
                         <option value="Brakes">Brakes</option>
@@ -179,15 +182,15 @@
                     </select>
                 </div>
                 <div class="input-group">
-                    <label>Price ($)</label>
+                    <label data-i18n="modal_field_price">Price ($)</label>
                     <input type="number" id="newItemPrice" placeholder="0.00">
                 </div>
                 <div class="input-group">
-                    <label>Initial Stock</label>
+                    <label data-i18n="modal_field_stock">Initial Stock</label>
                     <input type="number" id="newItemStock" placeholder="0">
                 </div>
                 <div class="input-group" style="grid-column: span 2;">
-                    <label>Barcode / SKU</label>
+                    <label data-i18n="modal_field_barcode">Barcode / SKU</label>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="newItemBarcode" placeholder="Scan or type barcode" style="flex:1;">
                         <button class="btn-camera-scan" id="btnModalCameraScan" style="width:55px;">
@@ -217,8 +220,8 @@
     <!-- RETURNS MODAL -->
     <div id="returnsModal" class="overlay hidden">
         <div class="scanner-card" style="max-width:500px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-                <h2 style="margin:0;">Order Returns</h2>
+            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+                <h2 style="margin:0;" data-i18n="returns_title">Order Returns</h2>
                 <button id="btnCloseReturnsModal" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
             </div>
             
@@ -229,12 +232,12 @@
             <div id="returnsItemSelection" class="hidden">
                 <div id="returnItemsList" style="text-align:left; margin-bottom:20px;"></div>
                 <div class="input-group">
-                    <label>Reason for Return</label>
+                    <label data-i18n="returns_reason_label">Reason for Return</label>
                     <input type="text" id="returnReason" placeholder="e.g. Defective item">
                 </div>
                 <div style="display:flex; gap:10px;">
-                    <button class="btn-clear" onclick="backToOrderList()" style="flex:1;">Back</button>
-                    <button class="btn-primary-large" id="btnProcessReturn" style="flex:2; margin-top:0;">Process Refund</button>
+                    <button class="btn-clear" onclick="backToOrderList()" style="flex:1;" data-i18n="returns_back">Back</button>
+                    <button class="btn-primary-large" id="btnProcessReturn" style="flex:2; margin-top:0;" data-i18n="returns_process">Process Refund</button>
                 </div>
             </div>
         </div>
@@ -242,7 +245,7 @@
 
     <!-- NOTIFICATION PORTAL (Outside any stacking context) -->
     <div class="notification-panel hidden" id="notificationPanel">
-        <div class="notif-header">System Alerts</div>
+        <div class="notif-header" data-i18n="notif_header">System Alerts</div>
         <div class="notif-list" id="notificationList"></div>
     </div>
 

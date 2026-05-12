@@ -1,3 +1,178 @@
+// ─── INTERNATIONALIZATION (i18n) ENGINE ───────────────────────────────────
+const TRANSLATIONS = {
+    en: {
+        // Login
+        login_title: 'Inventory Portal',
+        login_subtitle: 'Sign in to manage your garage',
+        login_username: 'Username',
+        login_password: 'Password',
+        login_btn: 'Sign In',
+        // Lock screen
+        lock_unlock: 'Unlock',
+        lock_switch: 'Switch User / Logout',
+        lock_title: 'Session Locked',
+        lock_subtitle: 'Enter password to resume',
+        // Order / Cart
+        order_title: 'Order',
+        cart_clear: 'Clear',
+        cart_currency: 'Display Currency',
+        cart_subtotal: 'Subtotal',
+        cart_tax: 'Tax (10%)',
+        cart_total: 'Total',
+        cart_checkout: 'Process Checkout',
+        // Scanner status
+        scanner_ready: 'Scanner Ready',
+        // Notifications
+        notif_header: 'System Alerts',
+        notif_all_good: 'All good!',
+        notif_low_stock: 'Low Stock',
+        notif_out_of_stock: 'Out of Stock',
+        // Products
+        all_parts: 'All Parts',
+        stock_label: 'Stock',
+        // Add/Edit Modal
+        modal_add_title: 'Add New Product',
+        modal_edit_title: 'Edit Product',
+        modal_add_btn: 'Add Product',
+        modal_save_btn: 'Save Changes',
+        modal_field_name: 'Product Name',
+        modal_field_name_ph: 'e.g. Brake Pads',
+        modal_field_category: 'Category',
+        modal_field_price: 'Price ($)',
+        modal_field_stock: 'Initial Stock',
+        modal_field_barcode: 'Barcode / SKU',
+        modal_field_barcode_ph: 'Scan or type barcode',
+        // Returns modal
+        returns_title: 'Order Returns',
+        returns_reason_label: 'Reason for Return',
+        returns_reason_ph: 'e.g. Defective item',
+        returns_back: 'Back',
+        returns_process: 'Process Refund',
+        // Camera
+        camera_flip: 'Flip Camera',
+    },
+    ar: {
+        // Login
+        login_title: 'بوابة المخزون',
+        login_subtitle: 'سجّل دخولك لإدارة المستودع',
+        login_username: 'اسم المستخدم',
+        login_password: 'كلمة المرور',
+        login_btn: 'تسجيل الدخول',
+        // Lock screen
+        lock_unlock: 'إلغاء القفل',
+        lock_switch: 'تبديل المستخدم / تسجيل الخروج',
+        lock_title: 'الجلسة مقفلة',
+        lock_subtitle: 'أدخل كلمة المرور للمتابعة',
+        // Order / Cart
+        order_title: 'الطلب',
+        cart_clear: 'مسح',
+        cart_currency: 'عملة العرض',
+        cart_subtotal: 'المجموع الفرعي',
+        cart_tax: 'الضريبة (10%)',
+        cart_total: 'الإجمالي',
+        cart_checkout: 'إتمام الدفع',
+        // Scanner status
+        scanner_ready: 'الماسح جاهز',
+        // Notifications
+        notif_header: 'تنبيهات النظام',
+        notif_all_good: 'كل شيء على ما يرام!',
+        notif_low_stock: 'مخزون منخفض',
+        notif_out_of_stock: 'نفد المخزون',
+        // Products
+        all_parts: 'جميع القطع',
+        stock_label: 'المخزون',
+        // Add/Edit Modal
+        modal_add_title: 'إضافة منتج جديد',
+        modal_edit_title: 'تعديل المنتج',
+        modal_add_btn: 'إضافة المنتج',
+        modal_save_btn: 'حفظ التغييرات',
+        modal_field_name: 'اسم المنتج',
+        modal_field_name_ph: 'مثال: تيل أمامي',
+        modal_field_category: 'الفئة',
+        modal_field_price: 'السعر',
+        modal_field_stock: 'الكمية الابتدائية',
+        modal_field_barcode: 'الباركود / الرمز',
+        modal_field_barcode_ph: 'امسح أو اكتب الباركود',
+        // Returns modal
+        returns_title: 'مرتجعات الطلبات',
+        returns_reason_label: 'سبب الإرجاع',
+        returns_reason_ph: 'مثال: منتج معيب',
+        returns_back: 'رجوع',
+        returns_process: 'معالجة الاسترداد',
+        // Camera
+        camera_flip: 'تبديل الكاميرا',
+    }
+};
+
+let currentLang = localStorage.getItem('pos_lang') || 'en';
+
+function t(key) {
+    return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) || TRANSLATIONS['en'][key] || key;
+}
+
+function applyLanguage() {
+    const isRtl = currentLang === 'ar';
+    const html = document.documentElement;
+
+    // Set html attributes
+    html.setAttribute('lang', currentLang);
+    html.setAttribute('dir', isRtl ? 'rtl' : 'ltr');
+
+    // Update lang toggle button label
+    const langLabel = document.getElementById('langLabel');
+    if (langLabel) langLabel.textContent = isRtl ? 'EN' : 'AR';
+
+    // Translate all static data-i18n elements
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+    });
+
+    // Translate dynamic placeholders
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.placeholder = isRtl ? 'ابحث في المخزون...' : 'Search inventory...';
+
+    // Add/Edit modal input placeholders
+    const newItemName = document.getElementById('newItemName');
+    if (newItemName) newItemName.placeholder = t('modal_field_name_ph');
+
+    const newItemBarcode = document.getElementById('newItemBarcode');
+    if (newItemBarcode) newItemBarcode.placeholder = t('modal_field_barcode_ph');
+
+    // Returns modal placeholder
+    const returnReason = document.getElementById('returnReason');
+    if (returnReason) returnReason.placeholder = t('returns_reason_ph');
+
+    // Login screen placeholders
+    const loginUser = document.getElementById('loginUser');
+    if (loginUser) loginUser.placeholder = isRtl ? 'مدير' : 'admin';
+
+    // Camera modal flip button text
+    const btnSwitch = document.getElementById('btnSwitchCamera');
+    if (btnSwitch) {
+        // Preserve the svg, update the text node
+        const textNode = [...btnSwitch.childNodes].find(n => n.nodeType === Node.TEXT_NODE);
+        if (textNode) textNode.textContent = '\n                    ' + t('camera_flip') + '\n                ';
+    }
+
+    const scannerStatus = document.getElementById('scannerStatus');
+    if (scannerStatus) {
+        // Preserve the SVG icon, only update the trailing text node
+        const textNode = [...scannerStatus.childNodes].find(n => n.nodeType === Node.TEXT_NODE);
+        if (textNode) textNode.textContent = '\n                        ' + t('scanner_ready') + '\n                    ';
+    }
+
+    // Re-render dynamic content so it picks up new language
+    renderCategories();
+    renderProducts();
+    checkLowStockAlerts();
+
+    // Persist preference
+    localStorage.setItem('pos_lang', currentLang);
+}
+
+// ─── END i18n ENGINE ──────────────────────────────────────────────────────
+
 // STATE MANAGEMENT (Now dynamic with fallbacks)
 const DEFAULT_PRODUCTS = [
     { id: 1, name: 'Brake Pads - Front', price: 85.00, stock: 12, category: 'Brakes', image: '🛑' },
@@ -15,13 +190,22 @@ const API_BASE = '';
 
 // CORE INITIALIZATION
 document.addEventListener('DOMContentLoaded', async () => {
+    // 0. Apply saved language first (before UI renders)
+    applyLanguage();
+
     // 1. Setup UI Handlers First (Ensures buttons work immediately)
     checkLoginState(); 
     
+    // LANGUAGE TOGGLE
+    safeListen('btnToggleLang', 'click', () => {
+        currentLang = currentLang === 'en' ? 'ar' : 'en';
+        applyLanguage();
+    });
+
     // MODAL HANDLERS
     safeListen('btnOpenAddModal', 'click', () => {
-        document.getElementById('modalTitle').innerText = 'Add New Product';
-        document.getElementById('btnSubmitItem').innerText = 'Add Product';
+        document.getElementById('modalTitle').innerText = t('modal_add_title');
+        document.getElementById('btnSubmitItem').innerText = t('modal_add_btn');
         document.getElementById('editItemId').value = '';
         document.getElementById('addItemModal').classList.remove('hidden');
     });
@@ -207,10 +391,10 @@ function renderCategories(apiCategories = null) {
     categories.forEach(cat => {
         const btn = document.createElement('button');
         btn.className = `cat-btn ${currentCategory === cat ? 'active' : ''}`;
-        btn.innerText = cat === 'All' ? 'All Parts' : cat;
+        btn.innerText = cat === 'All' ? t('all_parts') : cat;
         btn.onclick = () => {
             currentCategory = cat;
-            renderCategories(); // This will now use the preserved masterCategories
+            renderCategories();
             renderProducts();
         };
         container.appendChild(btn);
@@ -262,7 +446,7 @@ function renderProducts() {
             <div class="product-info">
                 <div class="product-name">${p.name}</div>
                 <div class="product-price">${formatPrice(p.price)}</div>
-                <div class="product-stock ${p.stock < 5 ? 'low' : ''}">Stock: ${p.stock}</div>
+                <div class="product-stock ${p.stock < 5 ? 'low' : ''}">${t('stock_label')}: ${p.stock}</div>
             </div>
         `;
         grid.appendChild(card);
@@ -272,8 +456,8 @@ function renderProducts() {
 function openEditModal(id) {
     const item = allProducts.find(p => p.id === id);
     if (!item) return;
-    document.getElementById('modalTitle').innerText = 'Edit Product';
-    document.getElementById('btnSubmitItem').innerText = 'Save Changes';
+    document.getElementById('modalTitle').innerText = t('modal_edit_title');
+    document.getElementById('btnSubmitItem').innerText = t('modal_save_btn');
     document.getElementById('editItemId').value = item.id;
     document.getElementById('newItemName').value = item.name;
     document.getElementById('newItemCategory').value = item.category || 'Engine';
@@ -569,13 +753,13 @@ function checkLowStockAlerts() {
     }
     if (list) {
         list.innerHTML = lowItems.length === 0 
-            ? '<div class="notif-item"><div class="title">All good!</div></div>' 
+            ? `<div class="notif-item"><div class="title">${t('notif_all_good')}</div></div>` 
             : '';
         lowItems.forEach(item => {
             const div = document.createElement('div');
             const isOut = item.stock <= 0;
             div.className = `notif-item ${isOut ? 'out-of-stock' : 'low-stock'}`;
-            div.innerHTML = `<div class="title">${item.name}</div><div class="desc">${isOut ? 'Out of Stock' : 'Low Stock'}: ${item.stock} left</div>`;
+            div.innerHTML = `<div class="title">${item.name}</div><div class="desc">${isOut ? t('notif_out_of_stock') : t('notif_low_stock')}: ${item.stock} left</div>`;
             list.appendChild(div);
         });
     }

@@ -566,3 +566,193 @@ body {
     border-radius: 6px;
     text-align: center;
 }
+
+/* ─── LANGUAGE TOGGLE BUTTON ──────────────────────────────────────── */
+.btn-lang-toggle {
+    width: auto !important;
+    padding: 0 12px !important;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--accent) !important;
+    border-color: var(--accent) !important;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+.btn-lang-toggle:hover {
+    background: rgba(16, 185, 129, 0.15) !important;
+}
+
+/* ─── RTL / ARABIC LAYOUT ─────────────────────────────────────────── */
+[dir="rtl"] body {
+    font-family: 'Noto Sans Arabic', 'Inter', sans-serif;
+}
+
+/*
+  Lock the grid container to LTR so column positions are explicit and
+  browser RTL auto-reversal doesn't fight us. Then restore RTL inside
+  each child panel so text reads right-to-left correctly.
+*/
+[dir="rtl"] .pos-container {
+    direction: ltr;
+    grid-template-columns: 30% 70%; /* sidebar(30%) | products(70%) */
+}
+
+/* SIDEBAR on the LEFT in RTL */
+[dir="rtl"] .cart-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+    direction: rtl;
+    border-left: none;
+    border-right: 1px solid var(--border-color);
+}
+
+/* PRODUCTS AREA on the RIGHT in RTL */
+[dir="rtl"] .products-area {
+    grid-column: 2;
+    grid-row: 2;
+    direction: rtl;
+}
+
+/* Header and footer: restore RTL content direction */
+[dir="rtl"] .top-nav {
+    direction: rtl;
+    grid-column: 1 / span 2;
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .tablet-footer {
+    direction: rtl;
+    grid-column: 1 / span 2;
+}
+
+[dir="rtl"] .top-actions {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+}
+
+/* Search bar: mirror icon side */
+[dir="rtl"] .search-bar {
+    margin-right: 0;
+    margin-left: 15px;
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .search-icon-wrapper {
+    left: auto;
+    right: 18px;
+}
+
+[dir="rtl"] .search-bar input {
+    padding: 12px 48px 12px 20px;
+    text-align: right;
+}
+
+/* Cart sidebar: flip summary lines */
+[dir="rtl"] .cart-header {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .cart-item {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .cart-item-info {
+    text-align: right;
+}
+
+[dir="rtl"] .summary-line {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .cart-item-total {
+    text-align: left;
+}
+
+/* Scanner status: flip icon margin */
+[dir="rtl"] .scanner-status-mini svg {
+    margin-right: 0;
+    margin-left: 6px;
+}
+
+/* Categories & products: RTL text */
+[dir="rtl"] .product-name,
+[dir="rtl"] .product-price,
+[dir="rtl"] .product-stock {
+    text-align: right;
+}
+
+/* Card edit button: mirror to left */
+[dir="rtl"] .card-edit-btn {
+    right: auto;
+    left: 10px;
+}
+
+/* Login card: RTL labels */
+[dir="rtl"] .login-card {
+    direction: rtl;
+    text-align: right;
+}
+
+[dir="rtl"] .input-group {
+    text-align: right;
+}
+
+[dir="rtl"] .input-group input,
+[dir="rtl"] .input-group select {
+    text-align: right;
+    direction: rtl;
+}
+
+[dir="rtl"] .password-toggle {
+    right: auto;
+    left: 5px;
+}
+
+/* Modals — direction:rtl restores RTL inside the scanner-card panels */
+[dir="rtl"] .scanner-card {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Modal header row: flip so × is on LEFT, title on RIGHT */
+[dir="rtl"] .modal-header {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .input-grid {
+    direction: rtl;
+    text-align: right !important;
+}
+
+/* Notifications panel: flip to left side */
+[dir="rtl"] .notification-panel {
+    right: auto;
+    left: 150px;
+    direction: rtl;
+    text-align: right;
+}
+
+[dir="rtl"] .notif-item.low-stock {
+    border-left: none;
+    border-right: 4px solid var(--accent);
+}
+
+[dir="rtl"] .notif-item.out-of-stock {
+    border-left: none;
+    border-right: 4px solid var(--danger);
+}
+
+/* Returns modal */
+[dir="rtl"] .order-row {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .return-item-row {
+    flex-direction: row-reverse;
+}
+
+/* Qty controls */
+[dir="rtl"] .qty-controls {
+    flex-direction: row-reverse;
+}
