@@ -45,7 +45,7 @@ namespace GenericInventorySystem.Forms
 
             lblSubtitle = new Label
             {
-                Text = "Enter your license key to activate the software",
+                Text = LocalizationManager.GetString("Msg_LicenseSubtitle"),
                 Font = ThemeConfig.StandardFont,
                 ForeColor = ThemeConfig.SecondaryColor,
                 AutoSize = true,
@@ -65,9 +65,9 @@ namespace GenericInventorySystem.Forms
 
             // Hardware ID Section
             TableLayoutPanel tlpMachineId = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, AutoSize = true };
-            lblHwIdTitle = new Label { Text = "Machine ID (for support):", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true };
+            lblHwIdTitle = new Label { Text = LocalizationManager.GetString("Msg_MachineIdTitle"), Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true };
             lblHardwareId = new Label { Text = HardwareInfo.GetShortHardwareId(), Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true };
-            lnkCopyHardwareId = new LinkLabel { Text = "Copy to Clipboard", Font = ThemeConfig.StandardFont, AutoSize = true, Margin = new Padding(0, 5, 0, 0) };
+            lnkCopyHardwareId = new LinkLabel { Text = LocalizationManager.GetString("Msg_CopyClipboard"), Font = ThemeConfig.StandardFont, AutoSize = true, Margin = new Padding(0, 5, 0, 0) };
             lnkCopyHardwareId.LinkClicked += (s, e) =>
             {
                 Clipboard.SetText(lblHardwareId.Text);
@@ -104,18 +104,18 @@ namespace GenericInventorySystem.Forms
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
             this.TitleText = LocalizationManager.GetString("Msg_LicenseActivation");
-            lblSubtitle.Text = "Enter your license key to activate the software";
+            lblSubtitle.Text = LocalizationManager.GetString("Msg_LicenseSubtitle");
 
             txtLicenseKey.LabelText = LocalizationManager.GetString("Msg_LicenseKey");
-            lblHwIdTitle.Text = "Machine ID (for support):";
+            lblHwIdTitle.Text = LocalizationManager.GetString("Msg_MachineIdTitle");
             lnkCopyHardwareId.Text = LocalizationManager.GetString("Msg_CopyClipboard");
 
             SetFooterButtons(
-                "Activate",
-                "Exit",
+                LocalizationManager.GetString("Btn_Activate"),
+                LocalizationManager.GetString("Btn_Exit"),
                 BtnActivate_Click,
                 (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); },
-                "Start 30-Day Trial",
+                LocalizationManager.GetString("Btn_StartTrial"),
                 BtnStartTrial_Click
             );
         }

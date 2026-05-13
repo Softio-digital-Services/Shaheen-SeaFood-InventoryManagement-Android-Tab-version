@@ -100,6 +100,7 @@ namespace GenericInventorySystem.Plugins
             // Display
             _display = new TextBox();
             _display.ReadOnly    = true;
+            _display.TabStop     = false;
             _display.Text        = "0";
             _display.Font        = new Font("Segoe UI", 28, FontStyle.Bold);
             _display.TextAlign   = HorizontalAlignment.Right;
@@ -108,6 +109,7 @@ namespace GenericInventorySystem.Plugins
             _display.ForeColor   = ThemeConfig.TextColorDark;
             _display.Location    = new Point(10, 15);
             _display.Size        = new Size(320, 55);
+            _display.GotFocus   += (s, e) => { _display.SelectionLength = 0; card.Focus(); };
             card.Controls.Add(_display);
 
             // Separator
@@ -140,6 +142,7 @@ namespace GenericInventorySystem.Plugins
                     btn.Location  = new Point(startX + c * (bw + gap), startY + r * (bh + gap));
                     btn.FlatStyle = FlatStyle.Flat;
                     btn.FlatAppearance.BorderSize = 0;
+                    btn.TabStop   = false;
                     btn.Font      = new Font("Segoe UI", 14, FontStyle.Regular);
                     btn.Cursor    = Cursors.Hand;
 

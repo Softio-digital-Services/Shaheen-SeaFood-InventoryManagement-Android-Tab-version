@@ -36,7 +36,7 @@ namespace GenericInventorySystem.Forms
             LocalizationManager.ApplyRTL(this); LocalizationManager.TranslateControl(this);
             Func<string, string> L = LocalizationManager.GetString;
             Action<string, string> setText = (name, key) => { var ctrls = this.Controls.Find(name, true); if (ctrls.Length > 0) ctrls[0].Text = L(key); };
-            setText("lblPOSTitle", "POS_Title"); setText("lblCust", "POS_Customer"); setText("lblDateTitle", "POS_OrderDate"); setText("lblDelTitle", "POS_DeliveryDate");
+            setText("lblPOSTitle", "POS_Title"); setText("lblCustTitle", "POS_Customer"); setText("lblDateTitle", "POS_OrderDate"); setText("lblDelTitle", "POS_DeliveryDate");
             setText("lblDueTitle", "Tran_DueDateLabel");
             setText("lblAddrTitle", "POS_ShippingTo"); setText("lblLineItems", "POS_LineItems"); setText("lblTotalsTitle", "POS_OrderSummary"); setText("btnDraft", "POS_SaveDraft");
             if(btnQuotation != null) btnQuotation.Text = L("POS_SaveQuotation");
@@ -90,7 +90,7 @@ namespace GenericInventorySystem.Forms
             pnlInfo.Controls.Add(tblInfo);
 
             Panel pnlCol1 = new Panel { Dock = DockStyle.Top, AutoSize = true, BackColor = Color.Transparent, Padding = new Padding(0,0,10,0) }; 
-            pnlCol1.Controls.Add(new Label { Text = "Customer", Name = "lblCust", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
+            pnlCol1.Controls.Add(new Label { Text = "Customer", Name = "lblCustTitle", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
             cmbCustomers = new ComboBox(); ThemeConfig.ApplyComboBoxStyle(cmbCustomers);
             cmbCustomers.SelectedIndexChanged += (s, e) => {
                 if (btnPayLater != null) {
@@ -160,17 +160,17 @@ namespace GenericInventorySystem.Forms
 
             ModernButton btnBlindReturn = new ModernButton { Text = LocalizationManager.GetString("POS_ItemReturn"), Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
             btnBlindReturn.Click += (s, e) => { var form = new BlindReturnForm(); form.ShowDialog(); };
-            ThemeConfig.ApplyEmojiButton(btnBlindReturn, ThemeConfig.WarningColor, ThemeConfig.WarningBorder, Color.White);
+            ThemeConfig.ApplyPaletteButton(btnBlindReturn, ThemeConfig.WarningColor);
 
             btnReturnItems = new ModernButton { Text = LocalizationManager.GetString("POS_ReturnItems"), Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
-            btnReturnItems.Click += BtnReturnItems_Click; ThemeConfig.ApplyEmojiButton(btnReturnItems, ThemeConfig.ActiveBackColor, ThemeConfig.BorderColor, ThemeConfig.TextColorDark);
+            btnReturnItems.Click += BtnReturnItems_Click; ThemeConfig.ApplyPaletteButton(btnReturnItems, ThemeConfig.SecondaryColor);
 
             btnManageDrafts = new ModernButton { Text = LocalizationManager.GetString("POS_ManageDrafts"), Size = new Size(130, 36), Margin = new Padding(5, 7, 0, 0) };
-            btnManageDrafts.Click += BtnLoadDraft_Click; ThemeConfig.ApplyEmojiButton(btnManageDrafts, ThemeConfig.WarningColor, ThemeConfig.WarningBorder, Color.White);
+            btnManageDrafts.Click += BtnLoadDraft_Click; ThemeConfig.ApplyPaletteButton(btnManageDrafts, ThemeConfig.WarningColor);
 
             btnClearCart = new ModernButton { Text = LocalizationManager.GetString("POS_ClearCart"), Size = new Size(110, 36), Margin = new Padding(0, 7, 0, 0) };
             btnClearCart.Click += (s, e) => { if(cartTable.Rows.Count > 0 && MessageHelper.ConfirmAction(LocalizationManager.GetString("POS_ClearCartConfirm"))) { cartTable.Rows.Clear(); UpdateTotal(); MessageHelper.ShowSuccess(LocalizationManager.GetString("POS_ClearCartSuccess")); } };
-            ThemeConfig.ApplyEmojiButton(btnClearCart, ThemeConfig.DangerColor, ThemeConfig.DangerBorder, Color.White);
+            ThemeConfig.ApplyPaletteButton(btnClearCart, ThemeConfig.DangerColor);
 
             gridButtonsPanel.Controls.Add(btnAddItem);
             gridButtonsPanel.Controls.Add(btnBlindReturn);
@@ -241,16 +241,16 @@ namespace GenericInventorySystem.Forms
               btnCheckout.Click += BtnCheckout_Click; ThemeConfig.ApplyPrimaryButton(btnCheckout); 
 
               btnPayLater = new ModernButton { Name = "btnPayLater", Size = new Size(150, 40), Text = LocalizationManager.GetString("POS_PayLater"), Image = ThemeConfig.GetNuricon("history"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
-              btnPayLater.Enabled = false; btnPayLater.Click += BtnPayLater_Click; ThemeConfig.ApplyEmojiButton(btnPayLater, Color.FromArgb(255, 152, 0), Color.FromArgb(230, 126, 34), Color.White);
+              btnPayLater.Enabled = false; btnPayLater.Click += BtnPayLater_Click; ThemeConfig.ApplyPaletteButton(btnPayLater, Color.FromArgb(255, 152, 0));
 
               Button btnDraft = new ModernButton { Name = "btnDraft", Size = new Size(140, 40), Text = LocalizationManager.GetString("POS_Draft"), Image = ThemeConfig.GetNuricon("export"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
               btnDraft.Click += BtnSaveDraft_Click; ThemeConfig.ApplySecondaryButton(btnDraft); 
 
               Button btnPrintReceipt = new ModernButton { Name = "btnPrintReceipt", Size = new Size(160, 40), Text = LocalizationManager.GetString("POS_Receipt"), Image = ThemeConfig.GetNuricon("print"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
-              btnPrintReceipt.Click += BtnPrintReceipt_Click; ThemeConfig.ApplyEmojiButton(btnPrintReceipt, ThemeConfig.ActiveBackColor, ThemeConfig.SuccessColor, ThemeConfig.TextColorDark);
+              btnPrintReceipt.Click += BtnPrintReceipt_Click; ThemeConfig.ApplyPaletteButton(btnPrintReceipt, ThemeConfig.SecondaryColor);
 
               btnQuotation = new ModernButton { Name = "btnQuotation", Size = new Size(180, 40), Text = LocalizationManager.GetString("POS_Quotation"), Image = ThemeConfig.GetNuricon("quotations"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(0), Cursor = Cursors.Hand };
-              btnQuotation.Click += BtnSaveQuotation_Click; ThemeConfig.ApplyEmojiButton(btnQuotation, ThemeConfig.ActiveBackColor, ThemeConfig.PrimaryColor, ThemeConfig.TextColorDark);
+              btnQuotation.Click += BtnSaveQuotation_Click; ThemeConfig.ApplyPaletteButton(btnQuotation, ThemeConfig.PrimaryColor);
 
               pnlButtons.Controls.Add(btnCheckout);
               pnlButtons.Controls.Add(btnPayLater);

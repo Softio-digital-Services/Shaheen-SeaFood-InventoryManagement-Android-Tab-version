@@ -1341,7 +1341,7 @@ Or click the link above to copy it</value>
     <value>Generate Barcode Labels</value>
   </data>
   <data name="Btn_PreviewPrint" xml:space="preserve">
-    <value>Preview &amp; Print</value>
+    <value>Preview and Print</value>
   </data>
   <data name="PO_GridNumber" xml:space="preserve">
     <value>Order #</value>
@@ -1441,5 +1441,101 @@ Or click the link above to copy it</value>
   </data>
   <data name="Dash_ScanToConnect" xml:space="preserve">
     <value>Scan to Connect</value>
+  </data>
+  <!-- License Activation Dialog -->
+  <data name="Msg_LicenseActivation" xml:space="preserve">
+    <value>License Activation</value>
+  </data>
+  <data name="Msg_LicenseKey" xml:space="preserve">
+    <value>License Key</value>
+  </data>
+  <data name="Msg_LicenseSubtitle" xml:space="preserve">
+    <value>Enter your license key to activate the software</value>
+  </data>
+  <data name="Msg_MachineIdTitle" xml:space="preserve">
+    <value>Machine ID (for support):</value>
+  </data>
+  <data name="Msg_CopyClipboard" xml:space="preserve">
+    <value>Copy to Clipboard</value>
+  </data>
+  <data name="Msg_MachineIdCopied" xml:space="preserve">
+    <value>Machine ID copied to clipboard!</value>
+  </data>
+  <data name="Msg_LicenseInvalid" xml:space="preserve">
+    <value>Invalid license key. Please check and try again.</value>
+  </data>
+  <data name="Msg_StartTrial" xml:space="preserve">
+    <value>Start a 30-day free trial? This can only be done once.</value>
+  </data>
+  <data name="Msg_TrialUsed" xml:space="preserve">
+    <value>You have already used your free trial period.</value>
+  </data>
+  <data name="Msg_TrialFailed" xml:space="preserve">
+    <value>Failed to start trial. Please contact support.</value>
+  </data>
+  <data name="Btn_Activate" xml:space="preserve">
+    <value>Activate</value>
+  </data>
+  <data name="Btn_Exit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="Btn_StartTrial" xml:space="preserve">
+    <value>Start 30-Day Trial</value>
+  </data>
+  <!-- Common Popup Buttons -->
+  <data name="Popup_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Popup_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Popup_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Popup_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <!-- Return Forms -->
+  <data name="Title_ItemReturn" xml:space="preserve">
+    <value>Item Return</value>
+  </data>
+  <data name="Return_Title" xml:space="preserve">
+    <value>Item Return</value>
+  </data>
+  <data name="Return_Action" xml:space="preserve">
+    <value>Return Items</value>
+  </data>
+  <data name="Return_Qty" xml:space="preserve">
+    <value>Return Qty</value>
+  </data>
+  <data name="Return_ReadyToScan" xml:space="preserve">
+    <value>Ready to scan barcode...</value>
+  </data>
+  <data name="Msg_ReturnReason" xml:space="preserve">
+    <value>Return Reason</value>
+  </data>
+  <data name="Msg_TotalRefund" xml:space="preserve">
+    <value>Total Refund: </value>
+  </data>
+  <data name="Msg_CashReturn" xml:space="preserve">
+    <value>Cash Return / Walk-in</value>
+  </data>
+  <data name="Msg_ProcessReturn" xml:space="preserve">
+    <value>Process Return</value>
+  </data>
+  <data name="Msg_ReturnOneItem" xml:space="preserve">
+    <value>Please return at least one item with a quantity greater than zero.</value>
+  </data>
+  <data name="Msg_ConfirmReturn" xml:space="preserve">
+    <value>Are you sure you want to process this return?</value>
+  </data>
+  <data name="Msg_ReturnSuccess" xml:space="preserve">
+    <value>Return processed successfully!</value>
+  </data>
+  <data name="Tran_Print" xml:space="preserve">
+    <value>Print</value>
+  </data>
+  <data name="Tran_Export" xml:space="preserve">
+    <value>Export</value>
   </data>
 </root>

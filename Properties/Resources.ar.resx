@@ -634,4 +634,38 @@
   <data name="Exp_Total" xml:space="preserve"><value>المجموع</value></data>
   <data name="Exp_Date" xml:space="preserve"><value>التاريخ</value></data>
   <data name="POS_Quotation" xml:space="preserve"><value>عرض سعر</value></data>
+  <!-- License Activation Dialog -->
+  <data name="Msg_LicenseActivation" xml:space="preserve"><value>تفعيل الترخيص</value></data>
+  <data name="Msg_LicenseKey" xml:space="preserve"><value>مفتاح الترخيص</value></data>
+  <data name="Msg_LicenseSubtitle" xml:space="preserve"><value>أدخل مفتاح الترخيص لتفعيل البرنامج</value></data>
+  <data name="Msg_MachineIdTitle" xml:space="preserve"><value>معرف الجهاز (للدعم الفني):</value></data>
+  <data name="Msg_CopyClipboard" xml:space="preserve"><value>نسخ إلى الحافظة</value></data>
+  <data name="Msg_MachineIdCopied" xml:space="preserve"><value>تم نسخ معرف الجهاز!</value></data>
+  <data name="Msg_LicenseInvalid" xml:space="preserve"><value>مفتاح الترخيص غير صالح. يرجى التحقق والمحاولة مجدداً.</value></data>
+  <data name="Msg_StartTrial" xml:space="preserve"><value>هل تريد بدء تجربة مجانية لمدة 30 يوماً؟ يمكن القيام بذلك مرة واحدة فقط.</value></data>
+  <data name="Msg_TrialUsed" xml:space="preserve"><value>لقد استخدمت بالفعل فترة التجربة المجانية.</value></data>
+  <data name="Msg_TrialFailed" xml:space="preserve"><value>فشل بدء التجربة. يرجى التواصل مع الدعم الفني.</value></data>
+  <data name="Btn_Activate" xml:space="preserve"><value>تفعيل</value></data>
+  <data name="Btn_Exit" xml:space="preserve"><value>خروج</value></data>
+  <data name="Btn_StartTrial" xml:space="preserve"><value>ابدأ التجربة المجانية</value></data>
+  <!-- Common Popup Buttons -->
+  <data name="Popup_OK" xml:space="preserve"><value>موافق</value></data>
+  <data name="Popup_Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Popup_Yes" xml:space="preserve"><value>نعم</value></data>
+  <data name="Popup_No" xml:space="preserve"><value>لا</value></data>
+  <!-- Return Forms -->
+  <data name="Title_ItemReturn" xml:space="preserve"><value>إرجاع الأصناف</value></data>
+  <data name="Return_Title" xml:space="preserve"><value>إرجاع الأصناف</value></data>
+  <data name="Return_Action" xml:space="preserve"><value>إرجاع الأصناف</value></data>
+  <data name="Return_Qty" xml:space="preserve"><value>الكمية المرتجعة</value></data>
+  <data name="Return_ReadyToScan" xml:space="preserve"><value>جاهز لمسح الباركود...</value></data>
+  <data name="Msg_ReturnReason" xml:space="preserve"><value>سبب الإرجاع</value></data>
+  <data name="Msg_TotalRefund" xml:space="preserve"><value>إجمالي المبلغ المسترد: </value></data>
+  <data name="Msg_CashReturn" xml:space="preserve"><value>إرجاع نقدي / عميل عام</value></data>
+  <data name="Msg_ProcessReturn" xml:space="preserve"><value>تنفيذ الإرجاع</value></data>
+  <data name="Msg_ReturnOneItem" xml:space="preserve"><value>يرجى إرجاع صنف واحد على الأقل بكمية أكبر من صفر.</value></data>
+  <data name="Msg_ConfirmReturn" xml:space="preserve"><value>هل أنت متأكد من رغبتك في تنفيذ هذا الإرجاع؟</value></data>
+  <data name="Msg_ReturnSuccess" xml:space="preserve"><value>تم تنفيذ الإرجاع بنجاح!</value></data>
+  <data name="Tran_Print" xml:space="preserve"><value>طباعة</value></data>
+  <data name="Tran_Export" xml:space="preserve"><value>تصدير</value></data>
 </root>

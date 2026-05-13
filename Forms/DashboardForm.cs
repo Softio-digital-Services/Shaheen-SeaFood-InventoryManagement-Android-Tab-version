@@ -173,7 +173,7 @@ namespace GenericInventorySystem.Forms
             tlpHeader.Controls.Add(lblServerUrl, 1, 0);
 
             // Scan-to-Connect button
-            var btnScan = new Button
+            var btnScan = new ModernButton
             {
                 Name = "btnScan", 
                 Text = LocalizationManager.GetString("Dash_ScanToConnect"),

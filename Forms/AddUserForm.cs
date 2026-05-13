@@ -44,7 +44,7 @@ namespace GenericInventorySystem.Forms
             this.txtPassword = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), UseSystemPasswordChar = true };
             this.txtConfirmPassword = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), UseSystemPasswordChar = true };
             this.txtFullName = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
-            this.cmbRole = new ComboBox();
+            this.cmbRole = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
             this.lblSection = new Label { Name = "lblSection", AutoSize = true, Margin = new Padding(0, 0, 0, 15) };
             this.lblRole = new Label { Name = "lblRole", AutoSize = true, Margin = new Padding(0, 5, 0, 5) };
 

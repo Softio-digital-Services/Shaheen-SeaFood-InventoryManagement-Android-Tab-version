@@ -593,31 +593,49 @@ namespace GenericInventorySystem
                     g.DrawPath(glowPen, path);
             }    
 
-            // Draw image if exists
-            if (btn.Image != null)
-            {
-                Rectangle imgRect = GetImageRectangle(btn);
-                using (var tinted = TintImage(btn.Image, btn.ForeColor))
-                {
-                    g.DrawImage(tinted, imgRect);
-                }
-            }
-
-            TextFormatFlags flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
-            if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
-                flags |= TextFormatFlags.RightToLeft;
-
-            Rectangle textRect = Rectangle.Round(r);
+            // Draw image + text, centered as a group when ImageBeforeText
             if (btn.Image != null && btn.TextImageRelation == TextImageRelation.ImageBeforeText)
             {
-                Rectangle imgRect = GetImageRectangle(btn);
-                int offset = imgRect.Right + 8; // Margin between icon and text
-                textRect = new Rectangle(offset, 0, btn.Width - offset - 4, btn.Height);
-                flags &= ~TextFormatFlags.HorizontalCenter;
-                flags |= TextFormatFlags.Left;
-            }
+                // Measure icon size
+                int iconSize = btn.Height - 16;
+                if (!string.IsNullOrEmpty(btn.Text)) iconSize = Math.Min(iconSize, 20);
+                const int gap = 6;
 
-            TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor, flags);
+                // Measure text width
+                Size textSize = TextRenderer.MeasureText(btn.Text, btn.Font);
+                int totalW = iconSize + gap + textSize.Width;
+
+                // Start X to center the whole block
+                int startX = (btn.Width - totalW) / 2;
+                int iconY  = (btn.Height - iconSize) / 2;
+
+                // Draw icon
+                using (var tinted = TintImage(btn.Image, btn.ForeColor))
+                    g.DrawImage(tinted, new Rectangle(startX, iconY, iconSize, iconSize));
+
+                // Draw text right after icon
+                int textX = startX + iconSize + gap;
+                Rectangle textRect = new Rectangle(textX, 0, textSize.Width + 4, btn.Height);
+                TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.NoPadding | TextFormatFlags.EndEllipsis;
+                if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
+                    flags |= TextFormatFlags.RightToLeft;
+                TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor, flags);
+            }
+            else
+            {
+                // No image — just draw text centered
+                if (btn.Image != null)
+                {
+                    Rectangle imgRect = GetImageRectangle(btn);
+                    using (var tinted = TintImage(btn.Image, btn.ForeColor))
+                        g.DrawImage(tinted, imgRect);
+                }
+
+                TextFormatFlags flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
+                if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
+                    flags |= TextFormatFlags.RightToLeft;
+                TextRenderer.DrawText(g, btn.Text, btn.Font, Rectangle.Round(r), btn.ForeColor, flags);
+            }
         }
 
         private static Rectangle GetImageRectangle(Button btn)

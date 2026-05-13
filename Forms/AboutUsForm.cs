@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using GenericInventorySystem.Helpers;
+using GenericInventorySystem.Controls;
 
 namespace GenericInventorySystem.Forms
 {
@@ -86,7 +87,7 @@ namespace GenericInventorySystem.Forms
             container.Controls.Add(lblDev);
 
             // Links/Contact
-            Button btnContact = new Button {
+            Button btnContact = new ModernButton {
                 Text = "  " + (LocalizationManager.IsArabic ? "تواصل معنا" : "Contact Support"),
                 Size = new Size(200, 45),
                 Location = new Point(150, 385),
