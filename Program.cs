@@ -22,25 +22,30 @@ namespace GenericInventorySystem
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            
+
+            // Set initial language to Arabic for testing
+            //GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("en-US");
+
             // Set initial language to English
-            GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("en-US");
-            
+            GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("ar");
+
             // Expose background task for server hosting without blocking UI thread
             _ = Task.Run(() => StartApiServer());
-            
-            Application.ThreadException += (s, e) => {
-                try { System.IO.File.AppendAllText("crash.txt", DateTime.Now.ToString() + ": " + e.Exception.ToString() + "\n\n"); } catch {}
+
+            Application.ThreadException += (s, e) =>
+            {
+                try { System.IO.File.AppendAllText("crash.txt", DateTime.Now.ToString() + ": " + e.Exception.ToString() + "\n\n"); } catch { }
             };
-            AppDomain.CurrentDomain.UnhandledException += (s, e) => {
-                try { System.IO.File.AppendAllText("crash.txt", DateTime.Now.ToString() + ": " + e.ExceptionObject.ToString() + "\n\n"); } catch {}
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                try { System.IO.File.AppendAllText("crash.txt", DateTime.Now.ToString() + ": " + e.ExceptionObject.ToString() + "\n\n"); } catch { }
             };
-            
-            try 
+
+            try
             {
                 // Initialize Database (Create if missing)
                 GenericInventorySystem.Helpers.DatabaseInitializer.Initialize();
-                
+
                 // Ensure schema is up to date (add missing columns)
                 DatabaseHelper.EnsureSchema();
 
@@ -77,9 +82,9 @@ namespace GenericInventorySystem
             catch (Exception ex)
             {
                 GenericInventorySystem.Forms.ModernMessageBox.Show(
-                    string.Format(LocalizationManager.GetString("Msg_CriticalError"), ex.Message) + $"\n\n{LocalizationManager.GetString("Msg_StackTrace")}\n{ex.StackTrace}", 
-                    LocalizationManager.GetString("Error_AppCrash"), 
-                    MessageBoxButtons.OK, 
+                    string.Format(LocalizationManager.GetString("Msg_CriticalError"), ex.Message) + $"\n\n{LocalizationManager.GetString("Msg_StackTrace")}\n{ex.StackTrace}",
+                    LocalizationManager.GetString("Error_AppCrash"),
+                    MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
         }
@@ -92,7 +97,7 @@ namespace GenericInventorySystem
                 const string certPassword = "SoftioPos2026!";
 
                 var builder = WebApplication.CreateBuilder();
-                
+
                 // Configure Kestrel for both HTTP and HTTPS
                 builder.WebHost.ConfigureKestrel(options =>
                 {
@@ -113,20 +118,22 @@ namespace GenericInventorySystem
                 builder.Services.AddSignalR();
 
                 var app = builder.Build();
-                
+
                 // --- Discovery Logic ---
                 string localIp = "localhost";
-                try {
+                try
+                {
                     var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
                     localIp = host.AddressList.FirstOrDefault(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString() ?? "localhost";
-                } catch { }
+                }
+                catch { }
 
                 // Register HubContext so WinForms can broadcast events
                 InventoryBroadcaster.HubContext = app.Services
                     .GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<InventoryHub>>();
 
                 app.UseCors();
-                
+
                 // Camera requires HTTPS OR the Chrome Flag (chrome://flags/#unsafely-treat-insecure-origin-as-secure)
                 // We'll allow both HTTP and HTTPS to co-exist for easier access
                 // if (!builder.Environment.IsDevelopment()) { app.UseHsts(); }
@@ -134,7 +141,7 @@ namespace GenericInventorySystem
 
                 app.UseDefaultFiles();
                 app.UseStaticFiles();
-                
+
                 // Serve desktop assets to the web portal
                 string assetsPath = System.IO.Path.Combine(builder.Environment.ContentRootPath, "Assets");
                 if (System.IO.Directory.Exists(assetsPath))
@@ -153,13 +160,15 @@ namespace GenericInventorySystem
                 app.MapGet("/api/status", () => Microsoft.AspNetCore.Http.Results.Ok(new { status = "API Running", version = "2.0", realtime = "SignalR Active" }));
 
                 // - Config/Language -
-                app.MapGet("/api/config", () => Microsoft.AspNetCore.Http.Results.Ok(new {
+                app.MapGet("/api/config", () => Microsoft.AspNetCore.Http.Results.Ok(new
+                {
                     language = LocalizationManager.IsArabic ? "ar" : "en",
                     isArabic = LocalizationManager.IsArabic
                 }));
 
                 // Wire up dynamic language broadcast to connected web portals
-                LocalizationManager.LanguageChanged += (s, e) => {
+                LocalizationManager.LanguageChanged += (s, e) =>
+                {
                     _ = InventoryBroadcaster.Broadcast("LanguageChanged", LocalizationManager.IsArabic ? "ar" : "en");
                 };
 
@@ -189,12 +198,12 @@ namespace GenericInventorySystem
                             if (string.IsNullOrEmpty(catImage))
                             {
                                 string cleanCat = category.ToLower().Trim();
-                                
+
                                 // Try finding a matching icon (SVG preferred, then PNG)
                                 string[] extensions = { ".svg", ".png" };
                                 bool found = false;
-                                
-                                foreach(var ext in extensions)
+
+                                foreach (var ext in extensions)
                                 {
                                     string iconFile = $"nuricon_{cleanCat}{ext}";
                                     if (System.IO.File.Exists(System.IO.Path.Combine(assetsPath, iconFile)))
@@ -233,16 +242,17 @@ namespace GenericInventorySystem
                                     partImage = "/Assets/" + partImage;
                             }
 
-                            products.Add(new {
-                                id       = Convert.ToInt32(row["id"]),
-                                name     = row["part_name"].ToString(),
-                                price    = Convert.ToDecimal(row["selling_price"]),
-                                stock    = Convert.ToInt32(row["quantity_in_stock"]),
+                            products.Add(new
+                            {
+                                id = Convert.ToInt32(row["id"]),
+                                name = row["part_name"].ToString(),
+                                price = Convert.ToDecimal(row["selling_price"]),
+                                stock = Convert.ToInt32(row["quantity_in_stock"]),
                                 minStock = Convert.ToInt32(row["minimum_stock_level"]),
-                                barcode  = row["barcode"].ToString(),
-                                sku      = row["part_number"].ToString(),
+                                barcode = row["barcode"].ToString(),
+                                sku = row["part_number"].ToString(),
                                 category = category,
-                                image    = partImage,
+                                image = partImage,
                                 categoryImage = catImage,
                                 isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase)
                             });
@@ -265,9 +275,9 @@ namespace GenericInventorySystem
                         var categories = new System.Collections.Generic.List<string>();
                         foreach (System.Data.DataRow row in dt.Rows)
                             categories.Add(row["category_name"].ToString());
-                        
+
                         if (!categories.Contains("Services")) categories.Add("Services");
-                        
+
                         return Microsoft.AspNetCore.Http.Results.Ok(categories);
                     }
                     catch (Exception ex)
@@ -301,7 +311,8 @@ namespace GenericInventorySystem
                             return Microsoft.AspNetCore.Http.Results.Unauthorized();
 
                         var row = dt.Rows[0];
-                        return Microsoft.AspNetCore.Http.Results.Ok(new {
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
                             username = row["username"].ToString(),
                             role = row["role"].ToString(),
                             fullName = row["full_name"].ToString()
@@ -344,12 +355,12 @@ namespace GenericInventorySystem
                             VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active')";
 
                         DatabaseHelper.ExecuteNonQuery(sql,
-                            new Microsoft.Data.Sqlite.SqliteParameter("@name",    body.Name),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@sku",     body.Sku ?? ""),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@cat",     catId),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@name", body.Name),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@sku", body.Sku ?? ""),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@cat", catId),
                             new Microsoft.Data.Sqlite.SqliteParameter("@p_price", body.Price * 0.7m),
                             new Microsoft.Data.Sqlite.SqliteParameter("@s_price", body.Price),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@stock",   body.Stock),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@stock", body.Stock),
                             new Microsoft.Data.Sqlite.SqliteParameter("@barcode", body.Barcode ?? ""));
 
                         DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via WebPOS (Qty: {body.Stock})");
@@ -393,9 +404,9 @@ namespace GenericInventorySystem
                             {
                                 DatabaseHelper.ExecuteNonQuery(
                                     "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)",
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@oid",   orderId),
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@pid",   item.Id),
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@qty",   item.Qty),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@oid", orderId),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@pid", item.Id),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
                                     new Microsoft.Data.Sqlite.SqliteParameter("@price", item.Price));
 
                                 DatabaseHelper.ExecuteNonQuery(
@@ -419,7 +430,7 @@ namespace GenericInventorySystem
                         return Microsoft.AspNetCore.Http.Results.Problem("Checkout failed: " + ex.Message);
                     }
                 });
-                
+
                 // - Currencies (GET) -
                 app.MapGet("/api/currencies", () =>
                 {
@@ -429,7 +440,8 @@ namespace GenericInventorySystem
                         var currencies = new System.Collections.Generic.List<object>();
                         foreach (System.Data.DataRow row in dt.Rows)
                         {
-                            currencies.Add(new {
+                            currencies.Add(new
+                            {
                                 code = row["code"].ToString(),
                                 name = row["name"].ToString(),
                                 symbol = row["symbol"].ToString(),
@@ -453,11 +465,12 @@ namespace GenericInventorySystem
                               LEFT JOIN customers c ON o.customer_id = c.customer_id
                               WHERE o.status != 'Cancelled'
                               ORDER BY o.order_id DESC LIMIT 50");
-                        
+
                         var sales = new System.Collections.Generic.List<object>();
                         foreach (System.Data.DataRow row in dt.Rows)
                         {
-                            sales.Add(new {
+                            sales.Add(new
+                            {
                                 orderId = Convert.ToInt32(row["order_id"]),
                                 date = Convert.ToDateTime(row["order_date"]),
                                 total = Convert.ToDecimal(row["total_amount"]),
@@ -480,11 +493,12 @@ namespace GenericInventorySystem
                               JOIN parts p ON oi.part_id = p.id
                               WHERE oi.order_id = @id",
                             new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
-                        
+
                         var items = new System.Collections.Generic.List<object>();
                         foreach (System.Data.DataRow row in dt.Rows)
                         {
-                            items.Add(new {
+                            items.Add(new
+                            {
                                 partId = Convert.ToInt32(row["part_id"]),
                                 name = row["part_name"].ToString(),
                                 qty = Convert.ToInt32(row["quantity"]),
@@ -510,22 +524,23 @@ namespace GenericInventorySystem
 
                         var returnService = new ReturnService();
                         var items = new System.Collections.Generic.List<ReturnItemInfo>();
-                        foreach(var i in body.Items)
+                        foreach (var i in body.Items)
                         {
-                            items.Add(new ReturnItemInfo { 
-                                PartId = i.PartId, 
-                                Quantity = i.Qty, 
-                                RefundAmount = i.RefundAmount 
+                            items.Add(new ReturnItemInfo
+                            {
+                                PartId = i.PartId,
+                                Quantity = i.Qty,
+                                RefundAmount = i.RefundAmount
                             });
                         }
 
                         // Use a dummy user or extract from context if we have one
-                        UserSession.Username = "WebPOS"; 
+                        UserSession.Username = "WebPOS";
 
                         returnService.ProcessReturn(body.OrderId, items, body.Reason);
-                        
+
                         _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Return processed for Order #{body.OrderId}");
-                        
+
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
@@ -564,10 +579,10 @@ namespace GenericInventorySystem
         }
         private class CheckoutItem
         {
-            public int     Id    { get; set; }
-            public string  Name  { get; set; }
+            public int Id { get; set; }
+            public string Name { get; set; }
             public decimal Price { get; set; }
-            public int     Qty   { get; set; }
+            public int Qty { get; set; }
         }
 
         private class ReturnPayload

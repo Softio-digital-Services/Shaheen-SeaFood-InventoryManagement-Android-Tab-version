@@ -190,7 +190,8 @@ const API_BASE = '';
 
 // CORE INITIALIZATION
 document.addEventListener('DOMContentLoaded', async () => {
-    // 0. Apply saved language first (before UI renders)
+    // 0. Fetch backend language config immediately to sync web portal language with desktop app natively before UI renders
+    await fetchLanguageConfig();
     applyLanguage();
 
     // 1. Setup UI Handlers First (Ensures buttons work immediately)

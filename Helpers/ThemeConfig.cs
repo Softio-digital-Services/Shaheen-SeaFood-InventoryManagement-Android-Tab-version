@@ -163,6 +163,8 @@ namespace GenericInventorySystem
 
         }
 
+        private static System.Runtime.CompilerServices.ConditionalWeakTable<Button, string> _standardButtonKeys = new System.Runtime.CompilerServices.ConditionalWeakTable<Button, string>();
+
         public static void ApplyStandardAddButton(Button btn, string localizationKey = null)
         {
             if (btn == null) return;
@@ -177,11 +179,12 @@ namespace GenericInventorySystem
             btn.FlatAppearance.MouseOverBackColor = PrimaryHoverColor;
             btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(10, 85, 200);
             
-            if (!string.IsNullOrEmpty(localizationKey))
+            // Suppress native text shadows completely
+            btn.Text = "";
+            if (localizationKey != null)
             {
-                string trans = Helpers.LocalizationManager.GetString(localizationKey);
-                if (trans != localizationKey && !string.IsNullOrEmpty(trans))
-                    btn.Text = trans;
+                _standardButtonKeys.Remove(btn);
+                _standardButtonKeys.Add(btn, localizationKey);
             }
 
             btn.MouseEnter -= StandardAdd_MouseEnter;
@@ -200,7 +203,8 @@ namespace GenericInventorySystem
         {
             if (s is Button btn)
             {
-                DrawIconButton(btn, e.Graphics, "add", null, Color.White, PrimaryColor, false);
+                _standardButtonKeys.TryGetValue(btn, out string key);
+                DrawIconButton(btn, e.Graphics, "add", key, Color.White, PrimaryColor, false);
             }
         }
 
@@ -218,11 +222,12 @@ namespace GenericInventorySystem
             btn.FlatAppearance.MouseOverBackColor = Color.Transparent;
             btn.FlatAppearance.MouseDownBackColor = Color.Transparent;
             
-            if (!string.IsNullOrEmpty(localizationKey))
+            // Suppress native text shadows completely
+            btn.Text = "";
+            if (localizationKey != null)
             {
-                string trans = Helpers.LocalizationManager.GetString(localizationKey);
-                if (trans != localizationKey && !string.IsNullOrEmpty(trans))
-                    btn.Text = trans;
+                _standardButtonKeys.Remove(btn);
+                _standardButtonKeys.Add(btn, localizationKey);
             }
 
             btn.MouseEnter -= StandardOutline_MouseEnter;
@@ -241,7 +246,8 @@ namespace GenericInventorySystem
         {
             if (s is Button btn)
             {
-                DrawIconButton(btn, e.Graphics, "delete", null, DangerColor, DangerColor, true);
+                _standardButtonKeys.TryGetValue(btn, out string key);
+                DrawIconButton(btn, e.Graphics, "delete", key, DangerColor, DangerColor, true);
             }
         }
 
@@ -259,11 +265,12 @@ namespace GenericInventorySystem
             btn.FlatAppearance.MouseOverBackColor = Color.Transparent;
             btn.FlatAppearance.MouseDownBackColor = Color.Transparent;
             
-            if (!string.IsNullOrEmpty(localizationKey))
+            // Suppress native text shadows completely
+            btn.Text = "";
+            if (localizationKey != null)
             {
-                string trans = Helpers.LocalizationManager.GetString(localizationKey);
-                if (trans != localizationKey && !string.IsNullOrEmpty(trans))
-                    btn.Text = trans;
+                _standardButtonKeys.Remove(btn);
+                _standardButtonKeys.Add(btn, localizationKey);
             }
 
             btn.MouseEnter -= StandardOutline_MouseEnter;
@@ -279,7 +286,8 @@ namespace GenericInventorySystem
         {
             if (s is Button btn)
             {
-                DrawIconButton(btn, e.Graphics, "refresh", null, SuccessColor, SuccessColor, true);
+                _standardButtonKeys.TryGetValue(btn, out string key);
+                DrawIconButton(btn, e.Graphics, "refresh", key, SuccessColor, SuccessColor, true);
             }
         }
 

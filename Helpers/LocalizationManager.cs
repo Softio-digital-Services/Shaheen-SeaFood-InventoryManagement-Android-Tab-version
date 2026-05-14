@@ -35,15 +35,21 @@ namespace GenericInventorySystem.Helpers
             }
         }
 
+        private static string _currentLanguage = "en";
+
         public static void SetLanguage(string cultureCode)
         {
-            Thread.CurrentThread.CurrentUICulture = new CultureInfo(cultureCode);
+            var culture = new CultureInfo(cultureCode);
+            Thread.CurrentThread.CurrentUICulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture; // Guarantee ThreadPool/API threads inherit this!
+            _currentLanguage = culture.TwoLetterISOLanguageName;
 
             // Keep date and number formatting consistent (Invariant) to prevent database/parsing errors
             // but allow UICulture to handle translations.
             var customCulture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
             customCulture.NumberFormat.CurrencySymbol = "$";
             Thread.CurrentThread.CurrentCulture = customCulture;
+            CultureInfo.DefaultThreadCurrentCulture = customCulture;
 
             // Load Arabic resources on first Arabic activation
             if (IsArabic && !_arabicResourcesLoaded)
@@ -167,7 +173,7 @@ namespace GenericInventorySystem.Helpers
             }
         }
 
-        public static string CurrentLanguage => Thread.CurrentThread.CurrentUICulture.TwoLetterISOLanguageName;
+        public static string CurrentLanguage => _currentLanguage;
         public static bool IsArabic => CurrentLanguage == "ar";
 
         // Track RTL state without stomping on Control.Tag

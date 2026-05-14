@@ -429,8 +429,12 @@ body {
     position: relative; 
     cursor: pointer; 
     transition: all 0.2s;
-    padding: 6px;
-    border-radius: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .notification-bell:hover { background: rgba(255,255,255,0.05); color: var(--accent); }
 
@@ -635,7 +639,7 @@ body {
 [dir="rtl"] .search-bar {
     margin-right: 0;
     margin-left: 15px;
-    flex-direction: row-reverse;
+    flex-direction: row;
 }
 
 [dir="rtl"] .search-icon-wrapper {
@@ -646,6 +650,11 @@ body {
 [dir="rtl"] .search-bar input {
     padding: 12px 48px 12px 20px;
     text-align: right;
+}
+
+[dir="rtl"] .bell-badge {
+    right: auto;
+    left: -5px;
 }
 
 /* Cart sidebar: allow natural RTL flex layout mirroring */
