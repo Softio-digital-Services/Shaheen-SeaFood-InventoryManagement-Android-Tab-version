@@ -294,7 +294,8 @@ namespace GenericInventorySystem.Forms
                 Height = 75, // Increased to ensure no clipping
                 Dock = DockStyle.Bottom, 
                 LabelText = LocalizationManager.GetString("PO_QuickAdd"),
-                Margin = new Padding(0, 0, 10, 5) // Bottom margin to prevent clipping
+                Margin = new Padding(0, 0, 10, 5), // Bottom margin to prevent clipping
+                DropDownStyle = ComboBoxStyle.DropDownList
             };
             DataTable dtParts = DatabaseHelper.ExecuteDataTable("SELECT id, part_name, purchase_price FROM parts WHERE date_deleted IS NULL");
             cmbParts.DataSource = dtParts; cmbParts.DisplayMember = "part_name"; cmbParts.ValueMember = "id";
@@ -429,6 +430,31 @@ namespace GenericInventorySystem.Forms
                 }
                 _purchaseService.CreatePurchaseOrder(Convert.ToInt32(cmbSup.SelectedValue), items, "Manual PO Creation");
                 f.DialogResult = DialogResult.OK; f.Close(); LoadPurchaseOrders();
+            };
+
+            f.Shown += (s, e) => {
+                f.ActiveControl = null;
+                dgvItems.Focus();
+                cmbSup.InnerComboBox.Select(0, 0);
+                cmbParts.InnerComboBox.Select(0, 0);
+            };
+
+            cmbSup.InnerComboBox.SelectedIndexChanged += (s, e) => {
+                if (cmbSup.InnerComboBox.IsHandleCreated) {
+                    cmbSup.InnerComboBox.BeginInvoke(new Action(() => {
+                        cmbSup.InnerComboBox.Select(0, 0);
+                        dgvItems.Focus();
+                    }));
+                }
+            };
+
+            cmbParts.InnerComboBox.SelectedIndexChanged += (s, e) => {
+                if (cmbParts.InnerComboBox.IsHandleCreated) {
+                    cmbParts.InnerComboBox.BeginInvoke(new Action(() => {
+                        cmbParts.InnerComboBox.Select(0, 0);
+                        dgvItems.Focus();
+                    }));
+                }
             };
 
             f.ShowDialog();

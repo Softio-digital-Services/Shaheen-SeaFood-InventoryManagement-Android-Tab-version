@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using GenericInventorySystem.Helpers;
@@ -41,22 +41,22 @@ namespace GenericInventorySystem.Services
             if (isWalkIn)
             {
                 sqlOrder = "INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, status) " +
-                           "VALUES (datetime('now'), @total, @status, @paid, @ostatus); SELECT SCOPE_IDENTITY();";
+                           "VALUES (datetime('now'), @total, @status, @paid, @ostatus); SELECT last_insert_rowid();";
             }
             else
             {
                 sqlOrder = "INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, customer_id, status) " +
-                           "VALUES (datetime('now'), @total, @status, @paid, @cid, @ostatus); SELECT SCOPE_IDENTITY();";
+                           "VALUES (datetime('now'), @total, @status, @paid, @cid, @ostatus); SELECT last_insert_rowid();";
             }
 
-            decimal orderIdDec = DatabaseHelper.ExecuteScalar<decimal>(sqlOrder,
+            long orderIdLong = DatabaseHelper.ExecuteScalar<long>(sqlOrder,
                 new SqliteParameter("@total", totalAmount),
                 new SqliteParameter("@status", paymentStatus),
                 new SqliteParameter("@paid", amountPaid),
                 new SqliteParameter("@cid", customerId),
                 new SqliteParameter("@ostatus", orderStatus)
             );
-            int orderId = Convert.ToInt32(orderIdDec);
+            int orderId = Convert.ToInt32(orderIdLong);
 
             // If Draft or Quotation, skip stock updates and balance updates
             if (orderStatus == "Draft" || orderStatus == "Quotation")

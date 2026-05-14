@@ -125,6 +125,9 @@ namespace GenericInventorySystem.Forms
             dgvHistory = new DataGridView();
             dgvHistory.DataError += (s, e) => { e.ThrowException = false; };
             dgvHistory.Dock = DockStyle.Fill;
+            dgvHistory.AllowUserToAddRows = false;
+            dgvHistory.ReadOnly = true;
+            dgvHistory.RowHeadersVisible = false;
             dgvHistory.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvHistory.CellFormatting += DgvHistory_CellFormatting;
             ThemeConfig.ApplyGridTheme(dgvHistory);
@@ -222,7 +225,7 @@ namespace GenericInventorySystem.Forms
 
         private void DgvHistory_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            if (e.RowIndex < 0 || e.Value == null) return;
+            if (e.RowIndex < 0 || e.Value == null || e.Value == DBNull.Value || string.IsNullOrEmpty(e.Value.ToString())) return;
 
             string colName = dgvHistory.Columns[e.ColumnIndex].Name;
 

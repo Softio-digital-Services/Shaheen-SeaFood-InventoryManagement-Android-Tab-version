@@ -359,6 +359,8 @@ namespace GenericInventorySystem.Forms
                     _chartWeeklyRevenue.Series.Clear();
                     Series seriesBar = new Series(L("Rep_ChartSales"));
                     seriesBar.ChartType = SeriesChartType.Column;
+                    seriesBar.Color = ThemeConfig.PrimaryColor;
+                    seriesBar["PointWidth"] = "0.25";
                     seriesBar.ChartArea = "Default"; // Explicit link to the area we forced in ThemeConfig
                     
                     // Add series first, then points (safer for some Chart versions)

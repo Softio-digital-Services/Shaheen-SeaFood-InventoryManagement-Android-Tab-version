@@ -163,6 +163,101 @@ namespace GenericInventorySystem
 
         }
 
+        public static void ApplyStandardAddButton(Button btn, string localizationKey = null)
+        {
+            if (btn == null) return;
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.BackColor = PrimaryColor;
+            btn.ForeColor = Color.White;
+            btn.Font = SmallBoldFont;
+            btn.Cursor = Cursors.Hand;
+            
+            if (!string.IsNullOrEmpty(localizationKey))
+            {
+                string trans = Helpers.LocalizationManager.GetString(localizationKey);
+                if (trans != localizationKey && !string.IsNullOrEmpty(trans))
+                    btn.Text = trans;
+            }
+
+            btn.MouseEnter -= StandardAdd_MouseEnter;
+            btn.MouseEnter += StandardAdd_MouseEnter;
+            btn.MouseLeave -= StandardAdd_MouseLeave;
+            btn.MouseLeave += StandardAdd_MouseLeave;
+
+            btn.Paint -= StandardAdd_Paint;
+            btn.Paint += StandardAdd_Paint;
+        }
+
+        private static void StandardAdd_MouseEnter(object s, EventArgs e) { if (s is Button b) b.BackColor = PrimaryHoverColor; }
+        private static void StandardAdd_MouseLeave(object s, EventArgs e) { if (s is Button b) b.BackColor = PrimaryColor; }
+
+        private static void StandardAdd_Paint(object s, PaintEventArgs e)
+        {
+            if (s is Button btn)
+            {
+                DrawIconButton(btn, e.Graphics, "add", null, Color.White, PrimaryColor, false);
+            }
+        }
+
+        public static void ApplyStandardDeleteButton(Button btn, string localizationKey = null)
+        {
+            if (btn == null) return;
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.BackColor = Color.Transparent;
+            btn.ForeColor = DangerColor;
+            btn.Font = SmallBoldFont;
+            btn.Cursor = Cursors.Hand;
+            
+            if (!string.IsNullOrEmpty(localizationKey))
+            {
+                string trans = Helpers.LocalizationManager.GetString(localizationKey);
+                if (trans != localizationKey && !string.IsNullOrEmpty(trans))
+                    btn.Text = trans;
+            }
+
+            btn.Paint -= StandardDelete_Paint;
+            btn.Paint += StandardDelete_Paint;
+        }
+
+        private static void StandardDelete_Paint(object s, PaintEventArgs e)
+        {
+            if (s is Button btn)
+            {
+                DrawIconButton(btn, e.Graphics, "delete", null, DangerColor, DangerColor, true);
+            }
+        }
+
+        public static void ApplyStandardRefreshButton(Button btn, string localizationKey = null)
+        {
+            if (btn == null) return;
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.BackColor = Color.Transparent;
+            btn.ForeColor = SuccessColor;
+            btn.Font = SmallBoldFont;
+            btn.Cursor = Cursors.Hand;
+            
+            if (!string.IsNullOrEmpty(localizationKey))
+            {
+                string trans = Helpers.LocalizationManager.GetString(localizationKey);
+                if (trans != localizationKey && !string.IsNullOrEmpty(trans))
+                    btn.Text = trans;
+            }
+
+            btn.Paint -= StandardRefresh_Paint;
+            btn.Paint += StandardRefresh_Paint;
+        }
+
+        private static void StandardRefresh_Paint(object s, PaintEventArgs e)
+        {
+            if (s is Button btn)
+            {
+                DrawIconButton(btn, e.Graphics, "refresh", null, SuccessColor, SuccessColor, true);
+            }
+        }
+
         public static Color GetParentColor(Control ctrl)
         {
             Control p = ctrl.Parent;
@@ -176,6 +271,10 @@ namespace GenericInventorySystem
             if (btn == null) return;
             bool isArabic = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
             string text = GenericInventorySystem.Helpers.LocalizationManager.GetString(localizationKey);
+            if (string.IsNullOrEmpty(text) || text == localizationKey)
+            {
+                if (!string.IsNullOrEmpty(btn.Text)) text = btn.Text;
+            }
 
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
@@ -206,7 +305,8 @@ namespace GenericInventorySystem
             int iconSize = 24;
             int margin = 8;
             
-            int iconX = isArabic ? (btn.Width - iconSize - margin) : margin;
+            bool hasText = !string.IsNullOrEmpty(text);
+            int iconX = hasText ? (isArabic ? (btn.Width - iconSize - margin) : margin) : (btn.Width - iconSize) / 2;
             int iconY = (btn.Height - iconSize) / 2;
             
             if (img != null)
@@ -217,14 +317,17 @@ namespace GenericInventorySystem
                 }
             }
 
-            int textX = isArabic ? margin : (iconX + iconSize + 4);
-            int textW = btn.Width - iconSize - (margin * 2) - 4;
-            Rectangle textRect = new Rectangle(textX, 0, textW, btn.Height);
+            if (hasText)
+            {
+                int textX = isArabic ? margin : (iconX + iconSize + 4);
+                int textW = btn.Width - iconSize - (margin * 2) - 4;
+                Rectangle textRect = new Rectangle(textX, 0, textW, btn.Height);
 
-            TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding;
-            if (isArabic) flags |= TextFormatFlags.RightToLeft;
+                TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding;
+                if (isArabic) flags |= TextFormatFlags.RightToLeft;
 
-            TextRenderer.DrawText(g, text, btn.Font, textRect, effectiveText, flags);
+                TextRenderer.DrawText(g, text, btn.Font, textRect, effectiveText, flags);
+            }
         }
 
         public static void ApplyComboBoxStyle(ComboBox cbo)
@@ -367,8 +470,10 @@ namespace GenericInventorySystem
 
                     if (s.ChartType == SeriesChartType.SplineArea || s.ChartType == SeriesChartType.Column)
                     {
+                        if (s.Color.IsEmpty || s.Color.ToArgb() == Color.Blue.ToArgb()) s.Color = PrimaryColor;
                         s.BackGradientStyle = GradientStyle.TopBottom;
                         s.BackSecondaryColor = Color.FromArgb(100, s.Color);
+                        if (s.ChartType == SeriesChartType.Column) s["PointWidth"] = "0.25";
                     }
                     
                     if (s.ChartType == SeriesChartType.Doughnut)
@@ -748,8 +853,8 @@ namespace GenericInventorySystem
                 ts.Height = 40;
                 ts.Dock = DockStyle.None;
                 ts.CanOverflow = false; // Remove the extra section / overflow arrow
-                ts.Location = new Point(180, 12); 
-                ts.Width = preview.Width - 220;
+                ts.Location = new Point(20, 45); 
+                ts.Width = preview.Width - 40;
                 ts.Padding = new Padding(0);
                 ts.Renderer = new ModernNotificationRenderer();
 
@@ -803,8 +908,8 @@ namespace GenericInventorySystem
             {
                 ppc.BackColor = BackgroundColor;
                 ppc.Dock = DockStyle.None;
-                ppc.Location = new Point(8, 72); // Inset from left/right to protect borders
-                ppc.Size = new Size(preview.Width - 16, preview.Height - 80);
+                ppc.Location = new Point(8, 92); // Inset from left/right to protect borders
+                ppc.Size = new Size(preview.Width - 16, preview.Height - 100);
                 ppc.Zoom = 1.0;
                 ppc.Columns = 1;
                 ppc.AutoZoom = true;
@@ -833,13 +938,13 @@ namespace GenericInventorySystem
 
                     // Header Separator line - Darker and more obvious
                     using (Pen sep = new Pen(Color.FromArgb(220, 225, 235), 1.5f))
-                        g.DrawLine(sep, 1, 70, preview.Width - 2, 70);
+                        g.DrawLine(sep, 1, 90, preview.Width - 2, 90);
                 }
             };
 
             // Support dragging
             preview.MouseDown += (s, e) => {
-                if (e.Button == MouseButtons.Left && e.Y < 70)
+                if (e.Button == MouseButtons.Left && e.Y < 90)
                 {
                     ReleaseCapture();
                     SendMessage(preview.Handle, 0xA1, 0x2, 0);

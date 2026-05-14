@@ -196,11 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Setup UI Handlers First (Ensures buttons work immediately)
     checkLoginState(); 
     
-    // LANGUAGE TOGGLE
-    safeListen('btnToggleLang', 'click', () => {
-        currentLang = currentLang === 'en' ? 'ar' : 'en';
-        applyLanguage();
-    });
+
 
     // MODAL HANDLERS
     safeListen('btnOpenAddModal', 'click', () => {
@@ -316,8 +312,22 @@ function safeListen(id, event, callback) {
     if (el) el.addEventListener(event, callback);
 }
 
+async function fetchLanguageConfig() {
+    try {
+        const res = await fetch(`${API_BASE}/api/config`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.language && data.language !== currentLang) {
+                currentLang = data.language;
+                applyLanguage();
+            }
+        }
+    } catch (e) { console.error("Language config fetch failed", e); }
+}
+
 async function initApp() {
     try {
+        await fetchLanguageConfig();
         await fetchInventory();
         await fetchCategories();
         await fetchCurrencies();
@@ -817,6 +827,14 @@ async function setupSignalR() {
     connection.on("InventoryChanged", (msg) => {
         console.log("Real-time sync: InventoryChanged", msg);
         initApp(); // Full refresh for structural changes
+    });
+
+    connection.on("LanguageChanged", (lang) => {
+        console.log("Real-time sync: LanguageChanged", lang);
+        if (lang && lang !== currentLang) {
+            currentLang = lang;
+            applyLanguage();
+        }
     });
 
     try {

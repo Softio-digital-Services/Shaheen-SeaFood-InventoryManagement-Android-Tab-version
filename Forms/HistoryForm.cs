@@ -61,6 +61,10 @@ namespace GenericInventorySystem.Forms
             // Default Tab
             SwitchTab(btnTabInventory);
             LoadHistory();
+
+            GlobalEvents.OnOrdersUpdated += () => {
+                if (!this.IsDisposed) LoadHistory();
+            };
         }
 
         private void ApplyLocalization()

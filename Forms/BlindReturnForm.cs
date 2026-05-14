@@ -131,8 +131,9 @@ namespace GenericInventorySystem.Forms
             LoadCustomers();
 
             // Summary Section (Right)
-            lblTotalRefund = new Label { Text = LocalizationManager.GetString("Msg_TotalRefund") + CurrencyService.Format(0), Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.TopRight };
-            tlpBottom.Controls.Add(lblTotalRefund, 1, 0);
+            lblTotalRefund = new Label { Text = LocalizationManager.GetString("Msg_TotalRefund") + CurrencyService.Format(0), Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.BottomRight };
+            tlpBottom.Controls.Add(lblTotalRefund, 1, 1);
+            tlpBottom.SetRowSpan(pnlLeft, 2);
 
             tlpMain.Controls.Add(tlpBottom, 0, 2);
             this.ContentPanel.Controls.Add(tlpMain);

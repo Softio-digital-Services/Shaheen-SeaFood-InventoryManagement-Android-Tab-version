@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using GenericInventorySystem.Helpers;
@@ -20,7 +20,7 @@ namespace GenericInventorySystem.Services
 
                 // 2. Insert Return Record
                 string sqlReturn = "INSERT INTO returns (order_id, return_date, total_refund, reason, performed_by) " +
-                                  "VALUES (@oid, datetime('now'), @refund, @reason, @user); SELECT SCOPE_IDENTITY();";
+                                  "VALUES (@oid, datetime('now'), @refund, @reason, @user); SELECT last_insert_rowid();";
                 
                 object returnIdObj = DatabaseHelper.ExecuteScalar<object>(sqlReturn,
                     new SqliteParameter("@oid", orderId),
@@ -109,7 +109,7 @@ namespace GenericInventorySystem.Services
 
                 // 2. Insert Return Record (order_id is NULL)
                 string sqlReturn = "INSERT INTO returns (return_date, total_refund, reason, performed_by) " +
-                                  "VALUES (datetime('now'), @refund, @reason, @user); SELECT SCOPE_IDENTITY();";
+                                  "VALUES (datetime('now'), @refund, @reason, @user); SELECT last_insert_rowid();";
                 
                 object returnIdObj = DatabaseHelper.ExecuteScalar<object>(sqlReturn,
                     new SqliteParameter("@refund", totalRefund),

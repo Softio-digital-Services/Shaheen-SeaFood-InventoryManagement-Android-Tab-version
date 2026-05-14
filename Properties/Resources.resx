@@ -223,7 +223,7 @@
     <value>Add Category</value>
   </data>
   <data name="Parts_AddProduct" xml:space="preserve">
-    <value>Add New Product</value>
+    <value>Add New Item</value>
   </data>
   <data name="Parts_AddService" xml:space="preserve">
     <value>Add New Service</value>
@@ -694,10 +694,10 @@
     <value>Refresh</value>
   </data>
   <data name="AddPart_TitleNew" xml:space="preserve">
-    <value>Add New Part</value>
+    <value>Add New Item</value>
   </data>
   <data name="AddPart_TitleEdit" xml:space="preserve">
-    <value>Edit Part</value>
+    <value>Edit Item</value>
   </data>
   <data name="AddPart_Barcode" xml:space="preserve">
     <value>Barcode</value>
@@ -1331,6 +1331,9 @@ Or click the link above to copy it</value>
   <data name="Title_SelectDraft" xml:space="preserve">
     <value>Select Draft</value>
   </data>
+  <data name="POS_Load" xml:space="preserve">
+    <value>Load</value>
+  </data>
   <data name="Users_GridID" xml:space="preserve">
     <value>ID</value>
   </data>
@@ -1537,5 +1540,32 @@ Or click the link above to copy it</value>
   </data>
   <data name="Tran_Export" xml:space="preserve">
     <value>Export</value>
+  </data>
+  <data name="Msg_LicenseInfo" xml:space="preserve">
+    <value>License Information</value>
+  </data>
+  <data name="Msg_LicenseType" xml:space="preserve">
+    <value>License Type</value>
+  </data>
+  <data name="Msg_CustomerName" xml:space="preserve">
+    <value>Registered To</value>
+  </data>
+  <data name="Msg_LicenseKeyLabel" xml:space="preserve">
+    <value>License Key</value>
+  </data>
+  <data name="Msg_ActivatedOn" xml:space="preserve">
+    <value>Activated On</value>
+  </data>
+  <data name="Msg_ExpiresOn" xml:space="preserve">
+    <value>Expires On</value>
+  </data>
+  <data name="Msg_DaysRemaining" xml:space="preserve">
+    <value>Days Remaining</value>
+  </data>
+  <data name="Msg_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Msg_NoLicense" xml:space="preserve">
+    <value>No active license found</value>
   </data>
 </root>

@@ -13,14 +13,15 @@ namespace GenericInventorySystem.Forms
     {
         private int _orderId;
         private OrderService _orderService;
-        private Panel pnlContent;
+        private List<Panel> _generatedPages = new List<Panel>();
+        private int _currentPrintPageIndex = 0;
 
         public QuotationPreviewForm(int orderId)
         {
             _orderId = orderId;
             _orderService = new OrderService();
             
-            this.TitleText = (LocalizationManager.IsArabic ? "\u0645\u0639\u0627\u064a\u0646\u0629 \u0639\u0631\u0636 \u0627\u0644\u0633\u0639\u0631" : "Quotation Preview") + " - #" + orderId;
+            this.TitleText = (LocalizationManager.IsArabic ? "معاينة عرض السعر" : "Quotation Preview") + " - #" + orderId;
             this.Size = new Size(950, 950); // Increased width to ensure A4 fits
 
             this.ContentPanel.Padding = new Padding(20, 20, 20, 20); // Add safety margin
@@ -31,7 +32,7 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeUI()
         {
-            // Adaptive sizing handled by BaseModalForm.OnLoad
+            this.ContentPanel.AutoScroll = true;
             
             SetFooterButtons(
                 LocalizationManager.GetString("Tran_Print") ?? "Print",
@@ -42,22 +43,11 @@ namespace GenericInventorySystem.Forms
                 (s, e) => this.Close()
             );
 
-            // The actual document (A4-ish proportions)
-            pnlContent = new Panel { 
-                Width = 800, 
-                Height = 1100, 
-
-                Margin = new Padding(0, 0, 0, 40),
-                BorderStyle = BorderStyle.FixedSingle,
-                Anchor = AnchorStyles.Top
-            };
-            
-            // Center in ContentPanel
-            pnlContent.Left = (this.ContentPanel.Width - pnlContent.Width) / 2;
-            this.ContentPanel.Controls.Add(pnlContent);
-            
             this.ContentPanel.Resize += (s, e) => {
-                pnlContent.Left = Math.Max(0, (this.ContentPanel.Width - pnlContent.Width) / 2);
+                foreach (Control ctrl in this.ContentPanel.Controls)
+                {
+                    if (ctrl is Panel p) p.Left = Math.Max(0, (this.ContentPanel.Width - p.Width) / 2);
+                }
             };
         }
 
@@ -79,202 +69,286 @@ namespace GenericInventorySystem.Forms
             }
         }
 
+        private Panel CreateA4PagePanel()
+        {
+            return new Panel {
+                Width = 800,
+                Height = 1131,
+                BackColor = Color.White,
+                Margin = new Padding(0, 0, 0, 40),
+                BorderStyle = BorderStyle.FixedSingle,
+                Anchor = AnchorStyles.Top
+            };
+        }
+
         private void RenderDocument(List<OrderItem> items, decimal total)
         {
-            pnlContent.Controls.Clear();
-            pnlContent.BorderStyle = BorderStyle.None;
-            
-            int y = 40;
+            this.ContentPanel.Controls.Clear();
+            _generatedPages.Clear();
 
-            // Header - Logo & Company Info
-            PictureBox pbLogo = new PictureBox { Size = new Size(70, 70), Location = new Point(40, y), SizeMode = PictureBoxSizeMode.Zoom };
-            pbLogo.Image = ThemeConfig.GetNuricon("pos");
-            try 
-            { 
-                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png");
-                if (System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath);
-            } catch { }
-            pnlContent.Controls.Add(pbLogo);
+            int currentItemIndex = 0;
+            int pageNumber = 1;
 
-            Label lblCompany = new Label { 
-                Text = ThemeConfig.CompanyName.ToUpper(), 
-                Font = new Font("Segoe UI", 24, FontStyle.Bold), 
-                ForeColor = ThemeConfig.PrimaryColor,
-                Location = new Point(130, y), 
-                AutoSize = true 
-            };
-            pnlContent.Controls.Add(lblCompany);
-
-            Label lblQuoteTitle = new Label {
-                Text = LocalizationManager.IsArabic ? "\u0639\u0631\u0636 \u0633\u0639\u0631" : "QUOTATION",
-                Font = new Font("Segoe UI", 20, FontStyle.Bold),
-                ForeColor = Color.DimGray,
-                Location = new Point(pnlContent.Width - 350, y + 5),
-                Size = new Size(310, 40),
-                TextAlign = LocalizationManager.IsArabic ? ContentAlignment.TopRight : ContentAlignment.TopRight
-            };
-            pnlContent.Controls.Add(lblQuoteTitle);
-
-            y += 45;
-            Label lblCompInfo = new Label {
-                Text = "[Street Address] | [City, ST ZIP]\nWebsite: somedomain.com | Phone: [000-000-0000]",
-                Font = new Font("Segoe UI", 9),
-                Location = new Point(130, y),
-                Size = new Size(400, 40),
-                ForeColor = Color.Gray
-            };
-            pnlContent.Controls.Add(lblCompInfo);
-
-            // Quote Details Strip
-            y += 60;
-            Panel pnlDetails = new Panel { BackColor = Color.FromArgb(245, 247, 250), Location = new Point(40, y), Size = new Size(pnlContent.Width - 80, 40) };
-            pnlContent.Controls.Add(pnlDetails);
-
-            string customerId = DatabaseHelper.ExecuteScalar<string>($"SELECT customer_id FROM orders WHERE order_id = {_orderId}");
-            Label lblQuoteInfo = new Label {
-                Text = $"QUOTE #: {_orderId}   |   DATE: {DateTime.Now:dd MMM yyyy}   |   CUST ID: {customerId ?? "N/A"}   |   VALIDITY: 15 Days",
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                ForeColor = Color.FromArgb(64, 64, 64),
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            pnlDetails.Controls.Add(lblQuoteInfo);
-
-            y += 60;
-
-            // Customer Section
-            Label lblCustHeader = new Label { Text = "CUSTOMER DETAILS", Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = ThemeConfig.PrimaryColor, Location = new Point(40, y), AutoSize = true };
-            pnlContent.Controls.Add(lblCustHeader);
-            y += 25;
-
-            string customerName = DatabaseHelper.ExecuteScalar<string>($@"
-                SELECT COALESCE(c.full_name, 'Walk-in Customer') 
-                FROM orders o LEFT JOIN customers c ON o.customer_id = c.customer_id 
-                WHERE o.order_id = {_orderId}");
-
-            Label lblCustInfo = new Label {
-                Text = $"{customerName}\n[Company Name] | [Street Address] | [Phone]",
-                Font = new Font("Segoe UI", 10),
-                Location = new Point(40, y),
-                Size = new Size(600, 45),
-                ForeColor = Color.Black
-            };
-            pnlContent.Controls.Add(lblCustInfo);
-
-            y += 60;
-
-            // Table
-            DataGridView grid = new DataGridView();
-            grid.Location = new Point(40, y);
-            grid.Width = pnlContent.Width - 80;
-            grid.AllowUserToAddRows = false; grid.ReadOnly = true; grid.RowHeadersVisible = false;
-            grid.BackgroundColor = Color.White; grid.BorderStyle = BorderStyle.None; grid.ScrollBars = ScrollBars.None;
-            grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            grid.EnableHeadersVisualStyles = false;
-            grid.AllowUserToResizeRows = false;
-            grid.RowTemplate.Height = 75; // Professional height for photos
-            grid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-            grid.DefaultCellStyle.Padding = new Padding(5);
-            
-            grid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-            
-            ThemeConfig.ApplyGridTheme(grid);
-            grid.ColumnHeadersHeight = 40;
-            grid.RowTemplate.Height = 60; // Minimum height for photos
-
-            grid.Columns.Add(new DataGridViewImageColumn { Name = "Photo", HeaderText = "PHOTO", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom });
-            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Desc", HeaderText = "ITEM DESCRIPTION", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Qty", HeaderText = "QTY", Width = 60, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
-            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Price", HeaderText = "PRICE", Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
-            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = "TOTAL", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9.5F, FontStyle.Bold) } });
-
-            foreach(var item in items)
+            while (currentItemIndex < items.Count || pageNumber == 1)
             {
-                Image partImg = ThemeConfig.GetNuricon("pos");
-                try { if (!string.IsNullOrEmpty(item.PartImage) && System.IO.File.Exists(item.PartImage)) partImg = Image.FromFile(item.PartImage); } catch { }
-                grid.Rows.Add(partImg, $"{item.PartName}\n{item.Description}", item.Quantity, item.UnitPrice.ToString("N2"), (item.Quantity * item.UnitPrice).ToString("N2"));
-            }
+                Panel page = CreateA4PagePanel();
+                _generatedPages.Add(page);
 
-            // Force auto-resize to fit content
-            grid.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
+                int gridStartY = 40;
 
-            // Calculate exact height based on rendered rows
-            int totalRowsHeight = 0;
-            foreach (DataGridViewRow row in grid.Rows) totalRowsHeight += row.Height;
-            grid.Height = grid.ColumnHeadersHeight + totalRowsHeight + 10;
-            pnlContent.Controls.Add(grid);
-            
-            y += grid.Height + 40;
+                if (pageNumber == 1)
+                {
+                    // Full Main Header
+                    int hy = 40;
+                    PictureBox pbLogo = new PictureBox { Size = new Size(70, 70), Location = new Point(40, hy), SizeMode = PictureBoxSizeMode.Zoom };
+                    pbLogo.Image = ThemeConfig.GetNuricon("pos");
+                    try {
+                        string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png");
+                        if (System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath);
+                    } catch { }
+                    page.Controls.Add(pbLogo);
 
-            // Summary & Terms Side-by-Side
-            Panel pnlSummaryWrap = new Panel { Location = new Point(40, y), Size = new Size(pnlContent.Width - 80, 180) };
-            pnlContent.Controls.Add(pnlSummaryWrap);
+                    Label lblCompany = new Label {
+                        Text = ThemeConfig.CompanyName.ToUpper(),
+                        Font = new Font("Segoe UI", 24, FontStyle.Bold),
+                        ForeColor = ThemeConfig.PrimaryColor,
+                        Location = new Point(130, hy),
+                        AutoSize = true
+                    };
+                    page.Controls.Add(lblCompany);
 
-            // Terms (Left)
-            Label lblTermsHead = new Label { Text = "TERMS AND CONDITIONS", Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = ThemeConfig.PrimaryColor, Location = new Point(0, 0), AutoSize = true };
-            pnlSummaryWrap.Controls.Add(lblTermsHead);
-            
-            Label lblTerms = new Label {
-                Text = "â€¢ Validity: 15 days from issue.\nâ€¢ Payment due prior to delivery.\nâ€¢ Acceptance indicates billing confirmation.\n\nAccepted By: __________________________",
-                Font = new Font("Segoe UI", 8.5F),
-                Location = new Point(0, 25),
-                Size = new Size(400, 140),
-                ForeColor = Color.DimGray
-            };
-            pnlSummaryWrap.Controls.Add(lblTerms);
+                    Label lblQuoteTitle = new Label {
+                        Text = LocalizationManager.IsArabic ? "عرض سعر" : "QUOTATION",
+                        Font = new Font("Segoe UI", 20, FontStyle.Bold),
+                        ForeColor = Color.DimGray,
+                        Location = new Point(page.Width - 350, hy + 5),
+                        Size = new Size(310, 40),
+                        TextAlign = ContentAlignment.TopRight
+                    };
+                    page.Controls.Add(lblQuoteTitle);
 
-            // Summary (Right)
-            decimal taxRate = 0.0625m;
-            decimal taxAmount = total * taxRate;
-            decimal grandTotal = total + taxAmount;
+                    hy += 45;
+                    Label lblCompInfo = new Label {
+                        Text = "[Street Address] | [City, ST ZIP]\nWebsite: somedomain.com | Phone: [000-000-0000]",
+                        Font = new Font("Segoe UI", 9),
+                        Location = new Point(130, hy),
+                        Size = new Size(400, 40),
+                        ForeColor = Color.Gray
+                    };
+                    page.Controls.Add(lblCompInfo);
 
-            int sx = pnlSummaryWrap.Width - 280;
-            string[] labels = { "Subtotal", "Taxable Amount", "Tax (6.25%)", "GRAND TOTAL" };
-            string[] vals = { total.ToString("C2"), total.ToString("C2"), taxAmount.ToString("C2"), grandTotal.ToString("C2") };
+                    hy += 60;
+                    Panel pnlDetails = new Panel { BackColor = Color.FromArgb(245, 247, 250), Location = new Point(40, hy), Size = new Size(page.Width - 80, 40) };
+                    page.Controls.Add(pnlDetails);
 
-            for (int i = 0; i < 4; i++) {
-                bool isLast = (i == 3);
-                Label lblL = new Label { Text = labels[i], Font = new Font("Segoe UI", isLast ? 10 : 9, isLast ? FontStyle.Bold : FontStyle.Regular), Location = new Point(sx, i * 28), Size = new Size(130, 25), TextAlign = ContentAlignment.MiddleRight };
-                Label lblV = new Label { 
-                    Text = vals[i], 
-                    Font = new Font("Segoe UI", isLast ? 12 : 10, isLast ? FontStyle.Bold : FontStyle.Regular), 
-                    Location = new Point(sx + 135, i * 28), 
-                    Size = new Size(140, 25), 
-                    TextAlign = ContentAlignment.MiddleRight,
-                    ForeColor = isLast ? ThemeConfig.PrimaryColor : Color.Black
+                    string customerId = DatabaseHelper.ExecuteScalar<string>($"SELECT customer_id FROM orders WHERE order_id = {_orderId}");
+                    Label lblQuoteInfo = new Label {
+                        Text = $"QUOTE #: {_orderId}   |   DATE: {DateTime.Now:dd MMM yyyy}   |   CUST ID: {customerId ?? "N/A"}   |   VALIDITY: 15 Days",
+                        Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                        ForeColor = Color.FromArgb(64, 64, 64),
+                        Dock = DockStyle.Fill,
+                        TextAlign = ContentAlignment.MiddleCenter
+                    };
+                    pnlDetails.Controls.Add(lblQuoteInfo);
+
+                    hy += 60;
+                    Label lblCustHeader = new Label { Text = "CUSTOMER DETAILS", Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = ThemeConfig.PrimaryColor, Location = new Point(40, hy), AutoSize = true };
+                    page.Controls.Add(lblCustHeader);
+                    hy += 25;
+
+                    string customerName = DatabaseHelper.ExecuteScalar<string>($@"
+                        SELECT COALESCE(c.full_name, 'Walk-in Customer') 
+                        FROM orders o LEFT JOIN customers c ON o.customer_id = c.customer_id 
+                        WHERE o.order_id = {_orderId}");
+
+                    Label lblCustInfo = new Label {
+                        Text = $"{customerName}\n[Company Name] | [Street Address] | [Phone]",
+                        Font = new Font("Segoe UI", 10),
+                        Location = new Point(40, hy),
+                        Size = new Size(600, 45),
+                        ForeColor = Color.Black
+                    };
+                    page.Controls.Add(lblCustInfo);
+
+                    gridStartY = hy + 60; // Starts at y = 310
+                }
+                else
+                {
+                    // Continued Header
+                    Label lblCont = new Label {
+                        Text = $"QUOTATION #{_orderId} (Continued - Page {pageNumber})",
+                        Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                        ForeColor = Color.Gray,
+                        Location = new Point(40, 40),
+                        AutoSize = true
+                    };
+                    page.Controls.Add(lblCont);
+                    gridStartY = 80;
+                }
+
+                // Create Grid for this specific page
+                DataGridView grid = new DataGridView {
+                    Location = new Point(40, gridStartY),
+                    Width = page.Width - 80,
+                    AllowUserToAddRows = false, ReadOnly = true, RowHeadersVisible = false,
+                    BackgroundColor = Color.White, BorderStyle = BorderStyle.None, ScrollBars = ScrollBars.None,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    EnableHeadersVisualStyles = false, AllowUserToResizeRows = false
                 };
-                pnlSummaryWrap.Controls.Add(lblL);
-                pnlSummaryWrap.Controls.Add(lblV);
+                grid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+                grid.DefaultCellStyle.Padding = new Padding(5);
+                ThemeConfig.ApplyGridTheme(grid);
+                grid.ColumnHeadersHeight = 40;
+                grid.RowTemplate.Height = 60;
+
+                grid.Columns.Add(new DataGridViewImageColumn { Name = "Photo", HeaderText = "PHOTO", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Desc", HeaderText = "ITEM DESCRIPTION", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Qty", HeaderText = "QTY", Width = 60, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Price", HeaderText = "PRICE", Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = "TOTAL", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9.5F, FontStyle.Bold) } });
+
+                // Calculate available grid height depending on whether this can be the final page
+                int remainingItems = items.Count - currentItemIndex;
+                int estimatedHeightNeeded = 40 + (remainingItems * 60) + 10;
+                
+                // Final page footer block reserves Y bounds from 860 down. Max printable grid baseline on final page is 850.
+                int maxGridHeightIfLastPage = 850 - gridStartY;
+
+                bool isLastPage = (estimatedHeightNeeded <= maxGridHeightIfLastPage);
+                int maxGridHeightForThisPage = isLastPage ? maxGridHeightIfLastPage : (1080 - gridStartY);
+                int currentGridHeight = 40; // Starts with header height
+
+                while (currentItemIndex < items.Count)
+                {
+                    var item = items[currentItemIndex];
+                    if (currentGridHeight + 60 + 10 > maxGridHeightForThisPage && grid.Rows.Count > 0)
+                    {
+                        // Current page capacity reached, continue remaining rows onto subsequent page sheet
+                        break;
+                    }
+
+                    Image partImg = ThemeConfig.GetNuricon("pos");
+                    try { if (!string.IsNullOrEmpty(item.PartImage) && System.IO.File.Exists(item.PartImage)) partImg = Image.FromFile(item.PartImage); } catch { }
+                    grid.Rows.Add(partImg, $"{item.PartName}\n{item.Description}", item.Quantity, CurrencyService.Format(item.UnitPrice), CurrencyService.Format(item.Quantity * item.UnitPrice));
+                    
+                    currentGridHeight += 60;
+                    currentItemIndex++;
+                }
+
+                grid.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
+                int actualRowsHeight = 0;
+                foreach (DataGridViewRow r in grid.Rows) actualRowsHeight += r.Height;
+                grid.Height = grid.ColumnHeadersHeight + actualRowsHeight + 10;
+                page.Controls.Add(grid);
+
+                // Attach complete summary footer exclusively to the final output page
+                if (currentItemIndex >= items.Count)
+                {
+                    int footerStartY = 860;
+                    Panel pnlSummaryWrap = new Panel { Location = new Point(40, footerStartY), Size = new Size(page.Width - 80, 180) };
+                    page.Controls.Add(pnlSummaryWrap);
+
+                    Label lblTermsHead = new Label { 
+                        Text = LocalizationManager.IsArabic ? "الشروط والأحكام" : "TERMS AND CONDITIONS", 
+                        Font = new Font("Segoe UI", 9, FontStyle.Bold), 
+                        ForeColor = ThemeConfig.PrimaryColor, 
+                        Location = new Point(0, 0), 
+                        AutoSize = true 
+                    };
+                    pnlSummaryWrap.Controls.Add(lblTermsHead);
+                    
+                    string termsText = LocalizationManager.IsArabic ?
+                        "• الصلاحية: 15 يوماً من تاريخ الإصدار.\n• يستحق الدفع قبل التسليم.\n• القبول يعتبر تأكيداً للفوترة.\n\nتم القبول بواسطة: __________________________" :
+                        "• Validity: 15 days from issue.\n• Payment due prior to delivery.\n• Acceptance indicates billing confirmation.\n\nAccepted By: __________________________";
+
+                    Label lblTerms = new Label {
+                        Text = termsText,
+                        Font = new Font("Segoe UI", 8.5F),
+                        Location = new Point(0, 25),
+                        Size = new Size(400, 140),
+                        ForeColor = Color.DimGray
+                    };
+                    pnlSummaryWrap.Controls.Add(lblTerms);
+
+                    decimal taxRate = 0.0625m;
+                    decimal taxAmount = total * taxRate;
+                    decimal grandTotal = total + taxAmount;
+
+                    int sx = pnlSummaryWrap.Width - 280;
+                    string[] labels = LocalizationManager.IsArabic ? 
+                        new string[] { "المجموع الفرعي", "المبلغ الخاضع للضريبة", "الضريبة (6.25%)", "المجموع الكلي" } :
+                        new string[] { "Subtotal", "Taxable Amount", "Tax (6.25%)", "GRAND TOTAL" };
+                    string[] vals = { CurrencyService.Format(total), CurrencyService.Format(total), CurrencyService.Format(taxAmount), CurrencyService.Format(grandTotal) };
+
+                    for (int i = 0; i < 4; i++) {
+                        bool isLast = (i == 3);
+                        Label lblL = new Label { Text = labels[i], Font = new Font("Segoe UI", isLast ? 10 : 9, isLast ? FontStyle.Bold : FontStyle.Regular), Location = new Point(sx, i * 28), Size = new Size(130, 25), TextAlign = ContentAlignment.MiddleRight };
+                        Label lblV = new Label { 
+                            Text = vals[i], 
+                            Font = new Font("Segoe UI", isLast ? 12 : 10, isLast ? FontStyle.Bold : FontStyle.Regular), 
+                            Location = new Point(sx + 135, i * 28), 
+                            Size = new Size(140, 25), 
+                            TextAlign = ContentAlignment.MiddleRight,
+                            ForeColor = isLast ? ThemeConfig.PrimaryColor : Color.Black
+                        };
+                        pnlSummaryWrap.Controls.Add(lblL);
+                        pnlSummaryWrap.Controls.Add(lblV);
+                    }
+
+                    Label lblFinal = new Label {
+                        Text = LocalizationManager.IsArabic ? "شكراً لتعاملكم معنا! يرجى التواصل معنا في حال وجود أي استفسارات." : "Thank you for your business! Please contact us if you have any questions.",
+                        Font = new Font("Segoe UI", 10, FontStyle.Bold | FontStyle.Italic),
+                        Location = new Point(0, 1050),
+                        Size = new Size(page.Width, 30),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        ForeColor = Color.Gray
+                    };
+                    page.Controls.Add(lblFinal);
+
+                    Label lblContactFooter = new Label {
+                        Text = "Phone: +1 (555) 000-0000  |  Email: contact@acmecorp.com  |  Website: www.acmecorp.com",
+                        Font = new Font("Segoe UI", 8.5F),
+                        Location = new Point(0, 1085),
+                        Size = new Size(page.Width, 25),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        ForeColor = Color.Silver
+                    };
+                    page.Controls.Add(lblContactFooter);
+                    
+                    break;
+                }
+                else
+                {
+                    // Render minimalist continued marker on intermediate document footers
+                    Label lblPageFooter = new Label {
+                        Text = $"Page {pageNumber}",
+                        Font = new Font("Segoe UI", 8.5F, FontStyle.Italic),
+                        ForeColor = Color.Silver,
+                        Location = new Point(0, 1100),
+                        Size = new Size(page.Width, 20),
+                        TextAlign = ContentAlignment.MiddleCenter
+                    };
+                    page.Controls.Add(lblPageFooter);
+                }
+
+                pageNumber++;
             }
 
-            y += 200;
-            Label lblFinal = new Label {
-                Text = "Thank you for your business! Please contact us if you have any questions.",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold | FontStyle.Italic),
-                Location = new Point(0, y),
-                Size = new Size(pnlContent.Width, 30),
-                TextAlign = ContentAlignment.MiddleCenter,
-                ForeColor = Color.Gray
-            };
-            pnlContent.Controls.Add(lblFinal);
-
-            y += 40;
-            Label lblContactFooter = new Label {
-                Text = "Phone: +1 (555) 000-0000  |  Email: contact@acmecorp.com  |  Website: www.acmecorp.com",
-                Font = new Font("Segoe UI", 8.5F),
-                Location = new Point(0, y),
-                Size = new Size(pnlContent.Width, 25),
-                TextAlign = ContentAlignment.MiddleCenter,
-                ForeColor = Color.Silver
-            };
-            pnlContent.Controls.Add(lblContactFooter);
-
-            // Ensure pnlContent is tall enough for all footer elements
-            pnlContent.Height = Math.Max(1100, y + 60);
+            // Lay out physical sheet list into main scrollable preview viewport
+            int pageTopOffset = 0;
+            foreach (Panel p in _generatedPages)
+            {
+                p.Top = pageTopOffset;
+                p.Left = Math.Max(0, (this.ContentPanel.Width - p.Width) / 2);
+                this.ContentPanel.Controls.Add(p);
+                pageTopOffset += p.Height + 30;
+            }
         }
 
         private void HandlePrint()
         {
+            if (_generatedPages.Count == 0) return;
+            _currentPrintPageIndex = 0;
             try
             {
                 using (PrintDocument pd = new PrintDocument())
@@ -282,7 +356,14 @@ namespace GenericInventorySystem.Forms
                     pd.DocumentName = $"Quotation_{_orderId}";
                     pd.DefaultPageSettings.Margins = new Margins(50, 50, 50, 50);
 
-                    pd.PrintPage += (s, e) => DrawDocumentToGraphics(e.Graphics, e.MarginBounds);
+                    pd.PrintPage += (s, e) => {
+                        if (_currentPrintPageIndex < _generatedPages.Count)
+                        {
+                            DrawPageToGraphics(_generatedPages[_currentPrintPageIndex], e.Graphics, e.MarginBounds);
+                            _currentPrintPageIndex++;
+                        }
+                        e.HasMorePages = (_currentPrintPageIndex < _generatedPages.Count);
+                    };
 
                     using (PrintDialog diag = new PrintDialog { Document = pd, UseEXDialog = true })
                     {
@@ -299,21 +380,14 @@ namespace GenericInventorySystem.Forms
             }
         }
 
-        private void DrawDocumentToGraphics(Graphics g, Rectangle marginBounds)
+        private void DrawPageToGraphics(Panel pageCanvas, Graphics g, Rectangle marginBounds)
         {
-            // Create a bitmap of the content panel
-            using (Bitmap bmp = new Bitmap(pnlContent.Width, pnlContent.Height))
+            using (Bitmap bmp = new Bitmap(pageCanvas.Width, pageCanvas.Height))
             {
-                pnlContent.DrawToBitmap(bmp, new Rectangle(0, 0, pnlContent.Width, pnlContent.Height));
-
-                // Calculate scaling to fit the page width
-                float printableWidth = marginBounds.Width;
-                float scale = printableWidth / bmp.Width;
-
+                pageCanvas.DrawToBitmap(bmp, new Rectangle(0, 0, pageCanvas.Width, pageCanvas.Height));
+                float scale = marginBounds.Width / (float)bmp.Width;
                 int targetWidth = (int)(bmp.Width * scale);
                 int targetHeight = (int)(bmp.Height * scale);
-
-                // Draw the bitmap to the printer graphics
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
                 g.DrawImage(bmp, new Rectangle(marginBounds.Left, marginBounds.Top, targetWidth, targetHeight));
             }
@@ -321,11 +395,11 @@ namespace GenericInventorySystem.Forms
 
         private void HandleExport()
         {
+            if (_generatedPages.Count == 0) return;
             try
             {
                 using (PrintDocument pd = new PrintDocument())
                 {
-                    // Find an available PDF printer
                     string pdfPrinter = null;
                     foreach (string printer in System.Drawing.Printing.PrinterSettings.InstalledPrinters)
                     {
@@ -350,13 +424,21 @@ namespace GenericInventorySystem.Forms
 
                         if (diag.ShowDialog() == DialogResult.OK)
                         {
+                            _currentPrintPageIndex = 0;
                             pd.PrinterSettings.PrinterName = pdfPrinter;
                             pd.PrinterSettings.PrintToFile = true;
                             pd.PrinterSettings.PrintFileName = diag.FileName;
                             pd.DocumentName = $"Quotation_{_orderId}";
                             pd.DefaultPageSettings.Margins = new Margins(50, 50, 50, 50);
 
-                            pd.PrintPage += (s, e) => DrawDocumentToGraphics(e.Graphics, e.MarginBounds);
+                            pd.PrintPage += (s, e) => {
+                                if (_currentPrintPageIndex < _generatedPages.Count)
+                                {
+                                    DrawPageToGraphics(_generatedPages[_currentPrintPageIndex], e.Graphics, e.MarginBounds);
+                                    _currentPrintPageIndex++;
+                                }
+                                e.HasMorePages = (_currentPrintPageIndex < _generatedPages.Count);
+                            };
                             
                             pd.Print();
                             MessageHelper.ShowInfo("Quotation exported as PDF successfully!");

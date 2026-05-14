@@ -89,8 +89,9 @@ namespace GenericInventorySystem.Forms
             tlpBottom.Controls.Add(tlpReason, 0, 0);
 
             // Summary Section (Right)
-            lblTotalRefund = new Label { Text = "Total Refund: $0.00", Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.TopRight };
-            tlpBottom.Controls.Add(lblTotalRefund, 1, 0);
+            lblTotalRefund = new Label { Text = "Total Refund: $0.00", Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.BottomRight };
+            tlpBottom.Controls.Add(lblTotalRefund, 1, 1);
+            tlpBottom.SetRowSpan(tlpReason, 2);
 
             tlpMain.Controls.Add(tlpBottom, 0, 1);
             this.ContentPanel.Controls.Add(tlpMain);

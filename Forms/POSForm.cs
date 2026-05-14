@@ -205,10 +205,17 @@ namespace GenericInventorySystem.Forms
             pnlTotals.Controls.Add(currPanel);
 
             Action<string, string, int, bool> addTotalRow = (l, v, y, b) => {
-                 pnlTotals.Controls.Add(new Label { Text = l, Name = "lblTotal_" + l, Location = new Point(20, y), AutoSize = true, Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor });
-                 Label val = new Label { Text = v, Name = "lblVal_" + l, Size = new Size(130, 20), Location = new Point(pnlTotals.Width - 130 - 25, y), TextAlign = ContentAlignment.MiddleRight, Font = b ? ThemeConfig.SubHeaderFont : ThemeConfig.StandardFont, ForeColor = ThemeConfig.TextColorDark, Anchor = AnchorStyles.Top | AnchorStyles.Right };
+                 string safeName = l;
+                 if (l.Contains("Grand") || b) safeName = "Grand Total";
+                 else if (l.Contains("VAT")) safeName = "VAT (11%)";
+                 else if (l.Contains("Sub")) safeName = "Subtotal";
+                 else if (l.Contains("Ship")) safeName = "Shipping";
+                 
+                 Label lblTitle = new Label { Text = l, Name = "lblTotal_" + safeName, Location = new Point(20, b ? y - 2 : y), AutoSize = true, Font = b ? new Font("Segoe UI", 12F, FontStyle.Bold) : ThemeConfig.StandardFont, ForeColor = b ? ThemeConfig.PrimaryColor : ThemeConfig.SecondaryColor };
+                 pnlTotals.Controls.Add(lblTitle);
+                 Label val = new Label { Text = v, Name = "lblVal_" + safeName, Size = new Size(150, 25), Location = new Point(pnlTotals.Width - 150 - 25, b ? y - 2 : y), TextAlign = ContentAlignment.MiddleRight, Font = b ? new Font("Segoe UI", 12.5F, FontStyle.Bold) : ThemeConfig.StandardFont, ForeColor = b ? ThemeConfig.PrimaryColor : ThemeConfig.TextColorDark, Anchor = AnchorStyles.Top | AnchorStyles.Right };
                  pnlTotals.Controls.Add(val);
-                 if(l == "Subtotal") lblSubtotalVal = val; else if(l.Contains("VAT")) lblTaxVal = val; else if(l == "Shipping") lblShippingVal = val; else if(l.Contains("Grand")) lblTotalVal = val;
+                 if(safeName == "Subtotal") lblSubtotalVal = val; else if(safeName.Contains("VAT")) lblTaxVal = val; else if(safeName == "Shipping") lblShippingVal = val; else if(safeName.Contains("Grand")) lblTotalVal = val;
              };
              addTotalRow(LocalizationManager.GetString("POS_Subtotal"), "$0.00", 78, false); 
              
@@ -424,7 +431,7 @@ namespace GenericInventorySystem.Forms
         {
             if (cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
             System.Drawing.Printing.PrintDocument pd = new System.Drawing.Printing.PrintDocument();
-            try { pd.DefaultPageSettings.PaperSize = new System.Drawing.Printing.PaperSize("Receipt", 315, 600); } catch { }
+            try { pd.DefaultPageSettings.PaperSize = new System.Drawing.Printing.PaperSize("Receipt", 315, 700); } catch { }
             pd.PrintPage += PrintReceiptPage;
             var preview = new PrintPreviewDialog { 
                 Document = pd, 
@@ -451,6 +458,16 @@ namespace GenericInventorySystem.Forms
                 g.DrawString(CurrencyService.Format((decimal)r["Total"]), fI, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20;
             }
             y += 10; g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
+            
+            decimal s = 0; foreach (DataRow r in cartTable.Rows) if (r.RowState != DataRowState.Deleted) s += (decimal)r["Total"];
+            decimal t = chkApplyVAT.Checked ? (s * 0.11m) : 0;
+            decimal ship = chkApplyShipping.Checked ? numShipping.Value : 0;
+
+            g.DrawString("Subtotal:", fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(s), fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20;
+            if (t > 0) { g.DrawString("VAT (11%):", fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(t), fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20; }
+            if (ship > 0) { g.DrawString("Shipping:", fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(ship), fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20; }
+            y += 5; g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
+
             g.DrawString("GRAND TOTAL:", fH, Brushes.Black, m, y); g.DrawString(lblTotalVal.Text, fH, Brushes.Black, new Rectangle(m, y, w, 25), rA);
             y += 40; g.DrawString("Thank you!", fS, Brushes.Black, new Rectangle(m, y, w, 20), cA); e.HasMorePages = false;
         }
@@ -597,29 +614,100 @@ namespace GenericInventorySystem.Forms
         private void BtnLoadDraft_Click(object sender, EventArgs e)
         {
              DataTable ds = new OrderService().GetDrafts(); if(ds.Rows.Count == 0) { MessageHelper.ShowInfo(LocalizationManager.GetString("POS_NoDrafts")); return; }
-             BaseModalForm f = new BaseModalForm { TitleText = LocalizationManager.GetString("Title_SelectDraft"), Size = new Size(600, 450) };
+             BaseModalForm f = new BaseModalForm { TitleText = LocalizationManager.GetString("Title_SelectDraft"), Size = new Size(750, 450) };
              
              TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(10) };
              tlp.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
              tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
 
-             DataGridView dgv = new DataGridView { Dock = DockStyle.Fill, DataSource = ds, ReadOnly = true, SelectionMode = DataGridViewSelectionMode.FullRowSelect, AllowUserToAddRows = false, RowHeadersVisible = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
+             DataGridView dgv = new DataGridView { Dock = DockStyle.Fill, AutoGenerateColumns = false, DataSource = ds, ReadOnly = true, SelectionMode = DataGridViewSelectionMode.FullRowSelect, AllowUserToAddRows = false, RowHeadersVisible = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
+             
+             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "order_id", HeaderText = "ID", DataPropertyName = "order_id", Width = 60 });
+             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "order_date", HeaderText = LocalizationManager.GetString("Hist_ColDate") ?? "Date", DataPropertyName = "order_date", Width = 150 });
+             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "CustomerName", HeaderText = LocalizationManager.GetString("Cust_Title") ?? "Customer", DataPropertyName = "CustomerName" });
+             
+             var colTotal = new DataGridViewTextBoxColumn { Name = "total_amount", HeaderText = LocalizationManager.GetString("Msg_Total") ?? "Total", DataPropertyName = "total_amount", Width = 110 };
+             colTotal.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+             colTotal.DefaultCellStyle.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+             colTotal.DefaultCellStyle.ForeColor = ThemeConfig.PrimaryColor;
+             dgv.Columns.Add(colTotal);
+             
+             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "customer_id", DataPropertyName = "customer_id", Visible = false });
+
+             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = LocalizationManager.GetString("Parts_GridActions") ?? "Actions", Width = 80 });
+
+             dgv.CellFormatting += (sGrid, eGrid) => {
+                 if (eGrid.RowIndex >= 0 && dgv.Columns[eGrid.ColumnIndex].Name == "total_amount" && eGrid.Value != null) {
+                     if (decimal.TryParse(eGrid.Value.ToString(), out decimal usdTotal)) {
+                         eGrid.Value = GenericInventorySystem.Services.CurrencyService.Format(usdTotal);
+                         eGrid.FormattingApplied = true;
+                     }
+                 }
+             };
+
+             int hoveredDraftRow = -1;
+             dgv.CellPainting += (sGrid, eGrid) => {
+                 if (eGrid.RowIndex >= 0 && dgv.Columns[eGrid.ColumnIndex].Name == "colActions") {
+                     eGrid.Handled = true;
+                     eGrid.PaintBackground(eGrid.CellBounds, true);
+                     Image imgDel = ThemeConfig.GetNuricon("delete");
+                     if (imgDel != null) {
+                         int startX = eGrid.CellBounds.X + (eGrid.CellBounds.Width - 32) / 2;
+                         int startY = eGrid.CellBounds.Y + (eGrid.CellBounds.Height - 32) / 2;
+                         eGrid.Graphics.DrawImage(imgDel, new Rectangle(startX, startY, 32, 32));
+                     }
+                 }
+             };
+
+             dgv.CellClick += (sGrid, eGrid) => {
+                 if (eGrid.RowIndex >= 0 && dgv.Columns[eGrid.ColumnIndex].Name == "colActions") {
+                     int oid = Convert.ToInt32(dgv.Rows[eGrid.RowIndex].Cells["order_id"].Value);
+                     if (MessageHelper.ConfirmAction(LocalizationManager.GetString("Exp_ConfirmDelete") ?? "Are you sure you want to delete this draft?")) {
+                         new OrderService().DeleteOrder(oid);
+                         DataTable freshDs = new OrderService().GetDrafts();
+                         dgv.DataSource = freshDs;
+                         if (freshDs.Rows.Count == 0) {
+                             f.DialogResult = DialogResult.Cancel;
+                             f.Close();
+                         }
+                     }
+                 }
+             };
+
+             dgv.CellMouseMove += (sGrid, eGrid) => {
+                 if (eGrid.RowIndex >= 0 && dgv.Columns[eGrid.ColumnIndex].Name == "colActions") {
+                     if (hoveredDraftRow != eGrid.RowIndex) {
+                         hoveredDraftRow = eGrid.RowIndex;
+                         dgv.InvalidateCell(eGrid.ColumnIndex, eGrid.RowIndex);
+                     }
+                     dgv.Cursor = Cursors.Hand;
+                 } else {
+                     dgv.Cursor = Cursors.Default;
+                 }
+             };
+
+             dgv.CellMouseLeave += (sGrid, eGrid) => {
+                 hoveredDraftRow = -1;
+                 dgv.Cursor = Cursors.Default;
+             };
+
              ThemeConfig.ApplyGridTheme(dgv); dgv.ColumnHeadersVisible = true;
              
-             Button bl = new ModernButton { Text = "Load", Size = new Size(120, 45), Anchor = AnchorStyles.Right }; 
+             Button bl = new ModernButton { Text = LocalizationManager.GetString("POS_Load") ?? "Load", Size = new Size(120, 45), Anchor = AnchorStyles.Right }; 
              ThemeConfig.ApplyPrimaryButton(bl);
              
              bl.Click += (s2, e2) => { if(dgv.SelectedRows.Count > 0) {
-                 int oid = (int)dgv.SelectedRows[0].Cells["order_id"].Value;
-                 object cid = dgv.SelectedRows[0].Cells["customer_id"].Value; LoadDraftIntoCart(oid, (cid == DBNull.Value) ? -1 : (int)cid); f.DialogResult = DialogResult.OK; f.Close();
+                 int oid = Convert.ToInt32(dgv.SelectedRows[0].Cells["order_id"].Value);
+                 object cid = dgv.SelectedRows[0].Cells["customer_id"].Value; LoadDraftIntoCart(oid, (cid == DBNull.Value || cid == null) ? -1 : Convert.ToInt32(cid)); f.DialogResult = DialogResult.OK; f.Close();
              }};
              
              tlp.Controls.Add(dgv, 0, 0);
              tlp.Controls.Add(bl, 0, 1);
              
              f.ContentPanel.Controls.Add(tlp);
+             LocalizationManager.ApplyRTL(f);
              f.ShowDialog();
-        }
+         }
 
         private void LoadDraftIntoCart(int draftOrderId, int customerId)
         {

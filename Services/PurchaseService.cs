@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.Sqlite;
@@ -16,7 +16,7 @@ namespace GenericInventorySystem.Services
                 foreach (var item in items) total += item.Quantity * item.CostPrice;
 
                 string sql = "INSERT INTO purchase_orders (supplier_id, order_date, total_amount, status, notes) " +
-                             "VALUES (@sid, datetime('now'), @total, 'Pending', @notes); SELECT SCOPE_IDENTITY();";
+                             "VALUES (@sid, datetime('now'), @total, 'Pending', @notes); SELECT last_insert_rowid();";
                 
                 object idObj = DatabaseHelper.ExecuteScalar<object>(sql,
                     new SqliteParameter("@sid", supplierId),

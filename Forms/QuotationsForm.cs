@@ -28,6 +28,10 @@ namespace GenericInventorySystem.Forms
 
             // Currency Sync
             GenericInventorySystem.Services.CurrencyService.CurrencyChanged += (s, e) => { dgvQuotes.Invalidate(); };
+
+            GlobalEvents.OnOrdersUpdated += () => {
+                if (!this.IsDisposed) LoadQuotations();
+            };
         }
 
         private void ApplyLocalization()
@@ -118,7 +122,7 @@ namespace GenericInventorySystem.Forms
                 {
                     Font   = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                     ForeColor = ThemeConfig.PrimaryColor,
-                    Alignment = DataGridViewContentAlignment.MiddleRight
+                    Alignment = DataGridViewContentAlignment.MiddleCenter
                 }
             };
             dgvQuotes.Columns.Add(colTotal);
@@ -252,6 +256,12 @@ namespace GenericInventorySystem.Forms
         // Data loading
         public void LoadQuotations(string search = "")
         {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new Action(() => LoadQuotations(search)));
+                return;
+            }
+
             DataTable dt = _orderService.GetQuotations();
             if (!string.IsNullOrEmpty(search))
             {

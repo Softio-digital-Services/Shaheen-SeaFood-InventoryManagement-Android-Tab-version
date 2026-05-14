@@ -83,7 +83,7 @@
   <data name="Parts_Search" xml:space="preserve"><value>بحث...</value></data>
   <data name="Parts_Filter" xml:space="preserve"><value>تصفية</value></data>
   <data name="Parts_AddCategory" xml:space="preserve"><value>إضافة فئة</value></data>
-  <data name="Parts_AddProduct" xml:space="preserve"><value>إضافة منتج جديد</value></data>
+  <data name="Parts_AddProduct" xml:space="preserve"><value>إضافة صنف جديد</value></data>
   <data name="Parts_AddService" xml:space="preserve"><value>إضافة خدمة جديدة</value></data>
   <data name="Parts_Import" xml:space="preserve"><value>استيراد</value></data>
   <data name="Parts_Export" xml:space="preserve"><value>تصدير</value></data>
@@ -592,6 +592,7 @@
   <data name="Prod_GridStock" xml:space="preserve"><value>المخزون</value></data>
   <data name="POS_NoDrafts" xml:space="preserve"><value>لا يوجد مسودات محفوظة.</value></data>
   <data name="Title_SelectDraft" xml:space="preserve"><value>اختر المسودة</value></data>
+  <data name="POS_Load" xml:space="preserve"><value>تحميل</value></data>
   <data name="Users_GridID" xml:space="preserve"><value>المعرف</value></data>
   <data name="Users_GridUsername" xml:space="preserve"><value>اسم المستخدم</value></data>
   <data name="Title_BarcodeLabels" xml:space="preserve"><value>توليد ملصقات الباركود</value></data>
@@ -668,4 +669,13 @@
   <data name="Msg_ReturnSuccess" xml:space="preserve"><value>تم تنفيذ الإرجاع بنجاح!</value></data>
   <data name="Tran_Print" xml:space="preserve"><value>طباعة</value></data>
   <data name="Tran_Export" xml:space="preserve"><value>تصدير</value></data>
+  <data name="Msg_LicenseInfo" xml:space="preserve"><value>معلومات الترخيص</value></data>
+  <data name="Msg_LicenseType" xml:space="preserve"><value>نوع الترخيص</value></data>
+  <data name="Msg_CustomerName" xml:space="preserve"><value>مسجل باسم</value></data>
+  <data name="Msg_LicenseKeyLabel" xml:space="preserve"><value>مفتاح الترخيص</value></data>
+  <data name="Msg_ActivatedOn" xml:space="preserve"><value>تاريخ التفعيل</value></data>
+  <data name="Msg_ExpiresOn" xml:space="preserve"><value>تاريخ الانتهاء</value></data>
+  <data name="Msg_DaysRemaining" xml:space="preserve"><value>الأيام المتبقية</value></data>
+  <data name="Msg_Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Msg_NoLicense" xml:space="preserve"><value>لا يوجد ترخيص فعال</value></data>
 </root>

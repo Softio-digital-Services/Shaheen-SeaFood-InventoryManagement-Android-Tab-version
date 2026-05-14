@@ -168,35 +168,27 @@ namespace GenericInventorySystem.Forms
             // ── Solid-fill primary buttons ──
             // Add New Service
             btnService.Size = new Size(160, 40);
-            btnService.FlatStyle = FlatStyle.Flat;
-            btnService.FlatAppearance.BorderSize = 0;
-            btnService.Cursor = Cursors.Hand;
             btnService.Margin = new Padding(0, 0, 10, 0);
             btnService.Click += BtnService_Click;
-            btnService.Paint += (s, e) => ThemeConfig.DrawIconButton(btnService, e.Graphics, "add", "Parts_AddService", Color.White, ThemeConfig.PrimaryColor, false);
+            ThemeConfig.ApplyStandardAddButton(btnService, "Parts_AddService");
             panelButtons.Controls.Add(btnService);
 
             // Add New Product
             btnAdd.Size = new Size(160, 40);
-            btnAdd.FlatStyle = FlatStyle.Flat;
-            btnAdd.FlatAppearance.BorderSize = 0;
-            btnAdd.Cursor = Cursors.Hand;
             btnAdd.Margin = new Padding(0, 0, 10, 0);
             btnAdd.Click += BtnAdd_Click;
-            btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Parts_AddProduct", Color.White, ThemeConfig.PrimaryColor, false);
+            ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_AddProduct");
             panelButtons.Controls.Add(btnAdd);
 
             // ── Outline buttons ──
             // Add Category
-            btnAddCategory = new Button { Size = new Size(140, 40), FlatStyle = FlatStyle.Flat, Margin = new Padding(0, 0, 10, 0), Cursor = Cursors.Hand };
-            btnAddCategory.FlatAppearance.BorderSize = 0;
+            btnAddCategory = new Button { Size = new Size(140, 40), Margin = new Padding(0, 0, 10, 0) };
             btnAddCategory.Click += BtnAddCategory_Click;
-            btnAddCategory.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddCategory, e.Graphics, "add", "Parts_AddCategory", Color.FromArgb(236, 72, 153), Color.FromArgb(236, 72, 153), true);
+            ThemeConfig.ApplyStandardAddButton(btnAddCategory, "Parts_AddCategory");
             panelButtons.Controls.Add(btnAddCategory);
 
             // Delete Selected
-            Button btnDeleteSelected = new Button { Size = new Size(130, 40), FlatStyle = FlatStyle.Flat, Margin = new Padding(0, 0, 10, 0), Cursor = Cursors.Hand, Name = "btnDeleteSelected" };
-            btnDeleteSelected.FlatAppearance.BorderSize = 0;
+            Button btnDeleteSelected = new Button { Size = new Size(130, 40), Margin = new Padding(0, 0, 10, 0), Name = "btnDeleteSelected" };
             btnDeleteSelected.Click += (s, e) => {
                 var checkedIds = new List<int>();
                 foreach (DataGridViewRow row in dgvParts.Rows) {
@@ -211,7 +203,7 @@ namespace GenericInventorySystem.Forms
                     LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
                 }
             };
-            btnDeleteSelected.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDeleteSelected, e.Graphics, "delete", "Parts_Delete", ThemeConfig.DangerColor, ThemeConfig.DangerColor, true);
+            ThemeConfig.ApplyStandardDeleteButton(btnDeleteSelected, "Parts_Delete");
             panelButtons.Controls.Add(btnDeleteSelected);
 
             // Import

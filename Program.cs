@@ -152,6 +152,17 @@ namespace GenericInventorySystem
                 // - Status -
                 app.MapGet("/api/status", () => Microsoft.AspNetCore.Http.Results.Ok(new { status = "API Running", version = "2.0", realtime = "SignalR Active" }));
 
+                // - Config/Language -
+                app.MapGet("/api/config", () => Microsoft.AspNetCore.Http.Results.Ok(new {
+                    language = LocalizationManager.IsArabic ? "ar" : "en",
+                    isArabic = LocalizationManager.IsArabic
+                }));
+
+                // Wire up dynamic language broadcast to connected web portals
+                LocalizationManager.LanguageChanged += (s, e) => {
+                    _ = InventoryBroadcaster.Broadcast("LanguageChanged", LocalizationManager.IsArabic ? "ar" : "en");
+                };
+
                 // - Products (live from DB) -
                 app.MapGet("/api/products", () =>
                 {
