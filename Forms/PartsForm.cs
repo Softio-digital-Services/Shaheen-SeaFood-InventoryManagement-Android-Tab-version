@@ -70,13 +70,13 @@ namespace GenericInventorySystem.Forms
 
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
 
-            if (btnAdd != null) btnAdd.Invalidate();
-            if (btnService != null) btnService.Invalidate();
-            if (btnAddCategory != null) btnAddCategory.Invalidate();
+            if (btnAdd != null) ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_AddProduct");
+            if (btnService != null) ThemeConfig.ApplyStandardAddButton(btnService, "Parts_AddService");
+            if (btnAddCategory != null) ThemeConfig.ApplyStandardAddButton(btnAddCategory, "Parts_AddCategory");
             if (btnFilter != null) btnFilter.Invalidate();
             if (btnImport != null) btnImport.Invalidate();
             if (btnExport != null) btnExport.Invalidate();
-            if (ctrlDel.Length > 0) ctrlDel[0].Invalidate();
+            if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Parts_Delete");
 
             GenericInventorySystem.Helpers.LocalizationManager.TranslateControl(this);
 

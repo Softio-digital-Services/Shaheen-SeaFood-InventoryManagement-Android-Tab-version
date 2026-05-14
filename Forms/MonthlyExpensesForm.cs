@@ -183,15 +183,13 @@ namespace GenericInventorySystem.Forms
             };
 
             // Increased width to 140
-            btnAdd = new Button { Text = "", Size = new Size(140, 40), Margin = new Padding(5, 0, 5, 0), FlatStyle = FlatStyle.Flat };
-            btnAdd.FlatAppearance.BorderSize = 0;
-            btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Exp_Add", Color.White, ThemeConfig.PrimaryColor, false);
+            btnAdd = new Button { Size = new Size(140, 40), Margin = new Padding(5, 0, 5, 0) };
             btnAdd.Click += BtnAdd_Click;
+            ThemeConfig.ApplyStandardAddButton(btnAdd, "Exp_Add");
 
-            btnDelete = new Button { Text = "", Size = new Size(140, 40), Margin = new Padding(5, 0, 5, 0), FlatStyle = FlatStyle.Flat };
-            btnDelete.FlatAppearance.BorderSize = 0;
-            btnDelete.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDelete, e.Graphics, "remove", "Exp_Delete", Color.White, ThemeConfig.DangerColor, false);
+            btnDelete = new Button { Size = new Size(140, 40), Margin = new Padding(5, 0, 5, 0) };
             btnDelete.Click += BtnDelete_Click;
+            ThemeConfig.ApplyStandardDeleteButton(btnDelete, "Exp_Delete");
 
             chkRecurring = new CheckBox { 
                 Text = LocalizationManager.GetString("Exp_Recurring"), 
@@ -277,9 +275,8 @@ namespace GenericInventorySystem.Forms
             LocalizationManager.ApplyRTL(this);
             lblExpensesTitle.Text = LocalizationManager.GetString("Exp_Title");
             
-            // Text removed to preserve DrawIconButton icons
-            btnAdd.Text = ""; 
-            btnDelete.Text = "";
+            ThemeConfig.ApplyStandardAddButton(btnAdd, "Exp_Add");
+            ThemeConfig.ApplyStandardDeleteButton(btnDelete, "Exp_Delete");
             
             if (txtDescription != null) txtDescription.PlaceholderText = LocalizationManager.GetString("Exp_Description");
             if (cmbCategory != null) cmbCategory.PlaceholderText = LocalizationManager.GetString("Exp_Category");

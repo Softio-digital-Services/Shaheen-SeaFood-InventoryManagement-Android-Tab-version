@@ -76,7 +76,7 @@ namespace GenericInventorySystem.Forms
 
             var ctrlRefresh = this.Controls.Find("btnRefresh", true);
             if (ctrlRefresh.Length > 0 && ctrlRefresh[0] is Button btnRefresh)
-                btnRefresh.Text = L("Hist_Refresh");
+                ThemeConfig.ApplyStandardRefreshButton(btnRefresh, "Hist_Refresh");
 
             if (btnTabInventory != null) btnTabInventory.Text = L("Hist_TabInventory");
             if (btnTabCustomers != null) btnTabCustomers.Text = L("Hist_TabCustomers");
@@ -197,7 +197,7 @@ namespace GenericInventorySystem.Forms
             btnRefresh.Name = "btnRefresh";
             btnRefresh.Size = new Size(160, 40);
             btnRefresh.Margin = new Padding(0, 0, 10, 0);
-            ThemeConfig.ApplySecondaryButton(btnRefresh);
+            ThemeConfig.ApplyStandardRefreshButton(btnRefresh, "Hist_Refresh");
             panelButtons.Controls.Add(btnRefresh);
             
             // Animation Timer
@@ -208,15 +208,13 @@ namespace GenericInventorySystem.Forms
             };
 
             btnRefresh.Paint += (s, e) => {
-                // Clear background
-                using (var pb = new SolidBrush(ThemeConfig.GetParentColor(btnRefresh)))
-                    e.Graphics.FillRectangle(pb, -1, -1, btnRefresh.Width + 2, btnRefresh.Height + 2);
-                
-                // Draw rotating icon or static icon
                 if (_isRefreshing)
+                {
+                    // Clear background
+                    using (var pb = new SolidBrush(ThemeConfig.GetParentColor(btnRefresh)))
+                        e.Graphics.FillRectangle(pb, -1, -1, btnRefresh.Width + 2, btnRefresh.Height + 2);
                     DrawRotatingRefreshIcon(btnRefresh, e.Graphics);
-                else
-                    ThemeConfig.DrawIconButton(btnRefresh, e.Graphics, "refresh", "Hist_Refresh", ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, true);
+                }
             };
 
             btnRefresh.Click += async (s, e) => {

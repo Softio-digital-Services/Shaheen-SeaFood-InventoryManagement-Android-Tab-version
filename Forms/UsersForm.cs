@@ -84,13 +84,9 @@ namespace GenericInventorySystem.Forms
             };
             tlpActions.Controls.Add(panelButtons, 1, 0);
 
-            btnAddUser = new Button { Text = "", Size = new Size(160, 40) };
-            btnAddUser.FlatStyle = FlatStyle.Flat;
-            btnAddUser.FlatAppearance.BorderSize = 0;
-            btnAddUser.Cursor = Cursors.Hand;
-            btnAddUser.Margin = new Padding(0, 0, 10, 0);
-            btnAddUser.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddUser, e.Graphics, "add", "User_AddUser", Color.White, ThemeConfig.PrimaryColor, false);
+            btnAddUser = new Button { Size = new Size(160, 40), Margin = new Padding(0, 0, 10, 0) };
             btnAddUser.Click += btnAddUser_Click;
+            ThemeConfig.ApplyStandardAddButton(btnAddUser, "User_AddUser");
             panelButtons.Controls.Add(btnAddUser);
 
             // 2. Grid
@@ -122,7 +118,7 @@ namespace GenericInventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
             lblUsersTitle.Text = LocalizationManager.GetString("Msg_UserManagement");
-            btnAddUser.Invalidate(); // Refresh the painted icon and text
+            ThemeConfig.ApplyStandardAddButton(btnAddUser, "User_AddUser");
             if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = LocalizationManager.GetString("Users_GridID");
             if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = LocalizationManager.GetString("Users_GridUsername");
             if (dgvUsers.Columns["actions"] != null) dgvUsers.Columns["actions"].HeaderText = LocalizationManager.GetString("Parts_GridActions");

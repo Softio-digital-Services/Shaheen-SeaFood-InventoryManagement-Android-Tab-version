@@ -70,13 +70,12 @@ namespace GenericInventorySystem.Forms
 
             btnRefresh = new ModernButton
             {
-                Text = LocalizationManager.GetString("Curr_RefreshBtn"),
                 Height = 45,
                 Dock = DockStyle.Top,
                 Cursor = Cursors.Hand,
                 Margin = new Padding(0, 10, 0, 0)
             };
-            ThemeConfig.ApplyPrimaryButton(btnRefresh);
+            ThemeConfig.ApplyStandardRefreshButton(btnRefresh, "Curr_RefreshBtn");
             btnRefresh.Click += BtnRefresh_Click;
             tlpHeader.Controls.Add(btnRefresh, 2, 0);
 

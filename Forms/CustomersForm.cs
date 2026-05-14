@@ -60,12 +60,12 @@ namespace GenericInventorySystem.Forms
             if (lblCustomersTitle != null) lblCustomersTitle.Text = L("Cust_Title") ?? "Customers management";
             if (txtSearch != null) txtSearch.PlaceholderText = L("Cust_Search") ?? "Search customers...";
 
-            if (btnAddNew != null) btnAddNew.Invalidate();
+            if (btnAddNew != null) ThemeConfig.ApplyStandardAddButton(btnAddNew, "Cust_AddCustomer");
             if (btnImport != null) btnImport.Invalidate();
             if (btnExport != null) btnExport.Invalidate();
 
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
-            if (ctrlDel.Length > 0) ctrlDel[0].Invalidate();
+            if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Cust_Delete");
 
             // Grid Columns
             if (dgvCustomers != null && dgvCustomers.Columns.Count > 0)
@@ -227,14 +227,10 @@ namespace GenericInventorySystem.Forms
 
             // Add Customer Button (Primary Solid) - Added first to FLP (RTL)
             this.btnAddNew.Size = new System.Drawing.Size(160, 40);
-            this.btnAddNew.Text = "";
             this.btnAddNew.Name = "btnAddCust";
-            this.btnAddNew.FlatStyle = FlatStyle.Flat;
-            btnAddNew.FlatAppearance.BorderSize = 0;
-            btnAddNew.Cursor = Cursors.Hand;
-            btnAddNew.Margin = new Padding(0, 0, 10, 0);
-            btnAddNew.Click += btnAddNew_Click;
-            btnAddNew.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddNew, e.Graphics, "add", "Cust_AddCustomer", Color.White, ThemeConfig.PrimaryColor, false);
+            this.btnAddNew.Margin = new Padding(0, 0, 10, 0);
+            this.btnAddNew.Click += btnAddNew_Click;
+            ThemeConfig.ApplyStandardAddButton(this.btnAddNew, "Cust_AddCustomer");
             panelButtons.Controls.Add(btnAddNew);
 
             // Details Button
@@ -251,14 +247,10 @@ namespace GenericInventorySystem.Forms
 
             // Delete Selected Button (Red Outline)
             this.btnDeleteBulk.Size = new System.Drawing.Size(130, 40);
-            this.btnDeleteBulk.Text = "";
             this.btnDeleteBulk.Name = "btnDeleteSelected";
-            this.btnDeleteBulk.FlatStyle = FlatStyle.Flat;
-            btnDeleteBulk.FlatAppearance.BorderSize = 0;
-            btnDeleteBulk.Cursor = Cursors.Hand;
-            btnDeleteBulk.Margin = new Padding(0, 0, 10, 0);
-            btnDeleteBulk.Click += btnDeleteBulk_Click;
-            btnDeleteBulk.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDeleteBulk, e.Graphics, "delete", "Cust_Delete", ThemeConfig.DangerBorder, ThemeConfig.DangerBorder, true);
+            this.btnDeleteBulk.Margin = new Padding(0, 0, 10, 0);
+            this.btnDeleteBulk.Click += btnDeleteBulk_Click;
+            ThemeConfig.ApplyStandardDeleteButton(this.btnDeleteBulk, "Cust_Delete");
             panelButtons.Controls.Add(btnDeleteBulk);
 
             // Export Button (Blue Outline)
@@ -390,13 +382,19 @@ namespace GenericInventorySystem.Forms
                 e.PaintBackground(e.CellBounds, true);
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
+                int iconSize = 24;
+                int gap = 12;
+                int totalWidth = (iconSize * 2) + gap;
+                int startX = e.CellBounds.X + (e.CellBounds.Width - totalWidth) / 2;
+                int startY = e.CellBounds.Y + (e.CellBounds.Height - iconSize) / 2;
+
                 // Edit Icon 
-                Rectangle editRect = new Rectangle(e.CellBounds.X + 12, e.CellBounds.Y + (e.CellBounds.Height - 24) / 2, 24, 24);
+                Rectangle editRect = new Rectangle(startX, startY, iconSize, iconSize);
                 Image imgEdit = ThemeConfig.GetNuricon("edit");
                 if (imgEdit != null) e.Graphics.DrawImage(imgEdit, editRect);
 
                 // Delete Icon
-                Rectangle delRect = new Rectangle(e.CellBounds.X + 48, e.CellBounds.Y + (e.CellBounds.Height - 24) / 2, 24, 24);
+                Rectangle delRect = new Rectangle(startX + iconSize + gap, startY, iconSize, iconSize);
                 Image imgDelete = ThemeConfig.GetNuricon("delete");
                 if (imgDelete != null) e.Graphics.DrawImage(imgDelete, delRect);
             }
@@ -411,11 +409,17 @@ namespace GenericInventorySystem.Forms
 
             int id = Convert.ToInt32(dgvCustomers.Rows[e.RowIndex].Cells["colId"].Value);
 
-            if (e.X >= 8 && e.X <= 40) // Edit Rect (12-36, added tolerance)
+            int colWidth = dgvCustomers.Columns[e.ColumnIndex].Width;
+            int iconSize = 24;
+            int gap = 12;
+            int totalWidth = (iconSize * 2) + gap;
+            int startX = (colWidth - totalWidth) / 2;
+
+            if (e.X >= startX - 4 && e.X <= startX + iconSize + 4) // Edit Rect with tolerance
             {
                 EditCustomer(id);
             }
-            else if (e.X >= 44 && e.X <= 76) // Delete Rect (48-72, added tolerance)
+            else if (e.X >= startX + iconSize + gap - 4 && e.X <= startX + totalWidth + 4) // Delete Rect with tolerance
             {
                 DeleteCustomer(id);
             }

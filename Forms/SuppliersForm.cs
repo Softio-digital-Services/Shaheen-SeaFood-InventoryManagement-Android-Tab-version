@@ -44,13 +44,13 @@ namespace GenericInventorySystem.Forms
                 txtSearch.PlaceholderText = L("Sup_Search");
             }
 
-            if (btnAdd != null) btnAdd.Invalidate();
+            if (btnAdd != null) ThemeConfig.ApplyStandardAddButton(btnAdd, "Sup_AddSupplier");
             if (btnDetails != null) btnDetails.Invalidate();
             if (btnImport != null) btnImport.Invalidate();
             if (btnExport != null) btnExport.Invalidate();
 
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
-            if (ctrlDel.Length > 0) ctrlDel[0].Invalidate();
+            if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Sup_Delete");
 
             if (dgvSuppliers != null && dgvSuppliers.Columns.Count > 0)
             {
@@ -98,7 +98,8 @@ namespace GenericInventorySystem.Forms
             tlpMain.Padding = new Padding(20);
 
             // Header Panel (TableLayoutPanel for robust RTL)
-            TableLayoutPanel tlpHeader = new TableLayoutPanel {
+            TableLayoutPanel tlpHeader = new TableLayoutPanel
+            {
                 Dock = DockStyle.Fill,
                 Margin = new Padding(0),
                 ColumnCount = 1,
@@ -108,12 +109,13 @@ namespace GenericInventorySystem.Forms
             tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F)); // Actions Row
 
             // Row 0: Title
-             this.lblSuppliersTitle = ThemeConfig.CreateStandardHeader("Supplier Management");
+            this.lblSuppliersTitle = ThemeConfig.CreateStandardHeader("Supplier Management");
             this.lblSuppliersTitle.Name = "lblSuppliersTitle";
             tlpHeader.Controls.Add(this.lblSuppliersTitle, 0, 0);
 
             // Row 1: Actions (Search + Buttons)
-            TableLayoutPanel tlpActions = new TableLayoutPanel {
+            TableLayoutPanel tlpActions = new TableLayoutPanel
+            {
                 Dock = DockStyle.Fill,
                 Margin = new Padding(0),
                 ColumnCount = 2,
@@ -129,10 +131,11 @@ namespace GenericInventorySystem.Forms
             txtSearch.PlaceholderText = "Search Suppliers...";
             txtSearch.Size = new Size(320, 40);
             txtSearch.Anchor = AnchorStyles.Left;
-            txtSearch.TextChanged += (s, e) => { 
+            txtSearch.TextChanged += (s, e) =>
+            {
                 string ph = GenericInventorySystem.Helpers.LocalizationManager.GetString("Sup_Search");
-                if (txtSearch.Text != ph && txtSearch.Text != "Search...") 
-                    LoadData(txtSearch.Text); 
+                if (txtSearch.Text != ph && txtSearch.Text != "Search...")
+                    LoadData(txtSearch.Text);
             };
             tlpActions.Controls.Add(txtSearch, 0, 0);
 
@@ -147,14 +150,10 @@ namespace GenericInventorySystem.Forms
 
             // Add New Supplier Button - Added first (RTL pin)
             this.btnAdd.Size = new System.Drawing.Size(160, 40);
-            this.btnAdd.Text = "";
             this.btnAdd.Name = "btnAddSupplier";
-            this.btnAdd.FlatStyle = FlatStyle.Flat;
-            btnAdd.FlatAppearance.BorderSize = 0;
-            btnAdd.Cursor = Cursors.Hand;
             this.btnAdd.Margin = new Padding(0, 0, 10, 0);
             this.btnAdd.Click += BtnAdd_Click;
-            this.btnAdd.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAdd, e.Graphics, "add", "Sup_AddSupplier", ThemeConfig.TextColorLight, ThemeConfig.PrimaryColor, false);
+            ThemeConfig.ApplyStandardAddButton(this.btnAdd, "Sup_AddSupplier");
             panelButtons.Controls.Add(this.btnAdd);
 
             // Supplier Details Button
@@ -173,11 +172,7 @@ namespace GenericInventorySystem.Forms
             // Delete Selected Button (Red Outline)
             Button btnDeleteSelected = new Button();
             btnDeleteSelected.Size = new Size(130, 40);
-            btnDeleteSelected.Text = ""; 
             btnDeleteSelected.Name = "btnDeleteSelected";
-            btnDeleteSelected.FlatStyle = FlatStyle.Flat;
-            btnDeleteSelected.FlatAppearance.BorderSize = 0;
-            btnDeleteSelected.Cursor = Cursors.Hand;
             btnDeleteSelected.Margin = new Padding(0, 0, 10, 0);
             btnDeleteSelected.Click += (s, e) =>
             {
@@ -196,17 +191,17 @@ namespace GenericInventorySystem.Forms
                     MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_SelectOneSupplier"));
                     return;
                 }
-                string confirmMsg = LocalizationManager.IsArabic 
-                    ? $"هل أنت متأكد من رغبتك في حذف {checkedIds.Count} من الموردين المحددين؟" 
+                string confirmMsg = LocalizationManager.IsArabic
+                    ? $"هل أنت متأكد من رغبتك في حذف {checkedIds.Count} من الموردين المحددين؟"
                     : $"Are you sure you want to delete {checkedIds.Count} selected suppliers?";
                 if (MessageHelper.ConfirmAction(confirmMsg))
                 {
                     Services.SupplierService supplierService = new Services.SupplierService();
-                    foreach(int i in checkedIds) supplierService.DeleteSupplier(i);
+                    foreach (int i in checkedIds) supplierService.DeleteSupplier(i);
                     LoadData();
                 }
             };
-            btnDeleteSelected.Paint += (s, e) => ThemeConfig.DrawIconButton(btnDeleteSelected, e.Graphics, "delete", "Sup_Delete", ThemeConfig.DangerColor, ThemeConfig.DangerColor, true);
+            ThemeConfig.ApplyStandardDeleteButton(btnDeleteSelected, "Sup_Delete");
             panelButtons.Controls.Add(btnDeleteSelected);
 
             // Export Button
@@ -309,13 +304,19 @@ namespace GenericInventorySystem.Forms
                 e.Handled = true;
                 e.PaintBackground(e.CellBounds, true);
 
+                int iconSize = 24;
+                int gap = 12;
+                int totalWidth = (iconSize * 2) + gap;
+                int startX = e.CellBounds.X + (e.CellBounds.Width - totalWidth) / 2;
+                int startY = e.CellBounds.Y + (e.CellBounds.Height - iconSize) / 2;
+
                 // Edit Icon
-                Rectangle editRect = new Rectangle(e.CellBounds.X + 8, e.CellBounds.Y + 14, 32, 32);
+                Rectangle editRect = new Rectangle(startX, startY, iconSize, iconSize);
                 Image imgEdit = ThemeConfig.GetNuricon("edit");
                 if (imgEdit != null) e.Graphics.DrawImage(imgEdit, editRect);
 
                 // Delete Icon
-                Rectangle delRect = new Rectangle(e.CellBounds.X + 48, e.CellBounds.Y + 14, 32, 32);
+                Rectangle delRect = new Rectangle(startX + iconSize + gap, startY, iconSize, iconSize);
                 Image imgDelete = ThemeConfig.GetNuricon("delete");
                 if (imgDelete != null) e.Graphics.DrawImage(imgDelete, delRect);
             }
@@ -330,7 +331,13 @@ namespace GenericInventorySystem.Forms
 
             int id = Convert.ToInt32(dgvSuppliers.Rows[e.RowIndex].Cells["ID"].Value);
 
-            if (e.X >= 5 && e.X <= 42) // Edit Rect (8, 14, 32, 32) + tolerance
+            int colWidth = dgvSuppliers.Columns[e.ColumnIndex].Width;
+            int iconSize = 24;
+            int gap = 12;
+            int totalWidth = (iconSize * 2) + gap;
+            int startX = (colWidth - totalWidth) / 2;
+
+            if (e.X >= startX - 4 && e.X <= startX + iconSize + 4) // Edit Rect with tolerance
             {
                 // Edit
                 if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
@@ -357,7 +364,7 @@ namespace GenericInventorySystem.Forms
                     LoadData();
                 }
             }
-            else if (e.X >= 45 && e.X <= 82) // Delete Rect (48, 14, 32, 32) + tolerance
+            else if (e.X >= startX + iconSize + gap - 4 && e.X <= startX + totalWidth + 4) // Delete Rect with tolerance
             {
                 // Delete
                 if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)

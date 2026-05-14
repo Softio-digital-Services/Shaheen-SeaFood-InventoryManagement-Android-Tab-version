@@ -166,12 +166,16 @@ namespace GenericInventorySystem
         public static void ApplyStandardAddButton(Button btn, string localizationKey = null)
         {
             if (btn == null) return;
+            btn.Tag = "standard_add";
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = PrimaryColor;
-            btn.ForeColor = Color.White;
+            btn.ForeColor = Color.Transparent;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
+            btn.UseVisualStyleBackColor = false;
+            btn.FlatAppearance.MouseOverBackColor = PrimaryHoverColor;
+            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(10, 85, 200);
             
             if (!string.IsNullOrEmpty(localizationKey))
             {
@@ -189,8 +193,8 @@ namespace GenericInventorySystem
             btn.Paint += StandardAdd_Paint;
         }
 
-        private static void StandardAdd_MouseEnter(object s, EventArgs e) { if (s is Button b) b.BackColor = PrimaryHoverColor; }
-        private static void StandardAdd_MouseLeave(object s, EventArgs e) { if (s is Button b) b.BackColor = PrimaryColor; }
+        private static void StandardAdd_MouseEnter(object s, EventArgs e) { if (s is Button b) { b.BackColor = PrimaryHoverColor; b.Invalidate(); } }
+        private static void StandardAdd_MouseLeave(object s, EventArgs e) { if (s is Button b) { b.BackColor = PrimaryColor; b.Invalidate(); } }
 
         private static void StandardAdd_Paint(object s, PaintEventArgs e)
         {
@@ -203,12 +207,16 @@ namespace GenericInventorySystem
         public static void ApplyStandardDeleteButton(Button btn, string localizationKey = null)
         {
             if (btn == null) return;
+            btn.Tag = "standard_delete";
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = Color.Transparent;
-            btn.ForeColor = DangerColor;
+            btn.ForeColor = Color.Transparent;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
+            btn.UseVisualStyleBackColor = false;
+            btn.FlatAppearance.MouseOverBackColor = Color.Transparent;
+            btn.FlatAppearance.MouseDownBackColor = Color.Transparent;
             
             if (!string.IsNullOrEmpty(localizationKey))
             {
@@ -217,9 +225,17 @@ namespace GenericInventorySystem
                     btn.Text = trans;
             }
 
+            btn.MouseEnter -= StandardOutline_MouseEnter;
+            btn.MouseEnter += StandardOutline_MouseEnter;
+            btn.MouseLeave -= StandardOutline_MouseLeave;
+            btn.MouseLeave += StandardOutline_MouseLeave;
+
             btn.Paint -= StandardDelete_Paint;
             btn.Paint += StandardDelete_Paint;
         }
+
+        private static void StandardOutline_MouseEnter(object s, EventArgs e) { if (s is Button b) b.Invalidate(); }
+        private static void StandardOutline_MouseLeave(object s, EventArgs e) { if (s is Button b) b.Invalidate(); }
 
         private static void StandardDelete_Paint(object s, PaintEventArgs e)
         {
@@ -232,12 +248,16 @@ namespace GenericInventorySystem
         public static void ApplyStandardRefreshButton(Button btn, string localizationKey = null)
         {
             if (btn == null) return;
+            btn.Tag = "standard_refresh";
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = Color.Transparent;
-            btn.ForeColor = SuccessColor;
+            btn.ForeColor = Color.Transparent;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
+            btn.UseVisualStyleBackColor = false;
+            btn.FlatAppearance.MouseOverBackColor = Color.Transparent;
+            btn.FlatAppearance.MouseDownBackColor = Color.Transparent;
             
             if (!string.IsNullOrEmpty(localizationKey))
             {
@@ -245,6 +265,11 @@ namespace GenericInventorySystem
                 if (trans != localizationKey && !string.IsNullOrEmpty(trans))
                     btn.Text = trans;
             }
+
+            btn.MouseEnter -= StandardOutline_MouseEnter;
+            btn.MouseEnter += StandardOutline_MouseEnter;
+            btn.MouseLeave -= StandardOutline_MouseLeave;
+            btn.MouseLeave += StandardOutline_MouseLeave;
 
             btn.Paint -= StandardRefresh_Paint;
             btn.Paint += StandardRefresh_Paint;
@@ -279,18 +304,37 @@ namespace GenericInventorySystem
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
 
-            using (var pb = new SolidBrush(GetParentColor(btn)))
-                g.FillRectangle(pb, -1, -1, btn.Width + 2, btn.Height + 2);
-
             bool isPaletted = btn.Tag != null && btn.Tag.ToString() == "paletted";
-            Color effectiveBg = isPaletted ? btn.BackColor : accentColor;
+            bool isStandardAdd = btn.Tag != null && btn.Tag.ToString() == "standard_add";
+            Color baseBgColor = isPaletted ? btn.BackColor : accentColor;
+            if (isStandardAdd) baseBgColor = PrimaryColor;
+
+            bool isHovered = btn.ClientRectangle.Contains(btn.PointToClient(System.Windows.Forms.Cursor.Position));
+
+            Color effectiveBg = baseBgColor;
+            if (isHovered && !isOutline)
+            {
+                effectiveBg = isStandardAdd ? PrimaryHoverColor : Color.FromArgb(Math.Max(0, baseBgColor.R - 20), Math.Max(0, baseBgColor.G - 20), Math.Max(0, baseBgColor.B - 20));
+            }
+
             Color effectiveText = isPaletted ? TextColorWhite : textColor;
             bool effectiveOutline = isPaletted ? false : isOutline;
+
+            if (btn.BackColor != Color.Transparent || isPaletted)
+            {
+                using (var pb = new SolidBrush(GetParentColor(btn)))
+                    g.FillRectangle(pb, -1, -1, btn.Width + 2, btn.Height + 2);
+            }
 
             using (var path = GetRoundedPath(r, 12)) 
             {
                 if (effectiveOutline)
                 {
+                    if (isHovered)
+                    {
+                        using (var hoverBrush = new SolidBrush(Color.FromArgb(20, effectiveBg)))
+                            g.FillPath(hoverBrush, path);
+                    }
                     using (Pen pen = new Pen(effectiveBg, 1.5f))
                         g.DrawPath(pen, path);
                 }
@@ -1564,7 +1608,7 @@ namespace GenericInventorySystem
             if (parent is Panel || parent is FlowLayoutPanel)
             {
                 var actionBtns = parent.Controls.OfType<Button>()
-                    .Where(b => !b.Name.StartsWith("btnWindow") && !b.Name.StartsWith("btnIcon") && !b.Name.ToLower().StartsWith("btntab"))
+                    .Where(b => !b.Name.StartsWith("btnWindow") && !b.Name.StartsWith("btnIcon") && !b.Name.ToLower().StartsWith("btntab") && (b.Tag == null || !b.Tag.ToString().StartsWith("standard_")))
                     .ToList();
 
                                 if (actionBtns.Count == 1)
@@ -1630,8 +1674,8 @@ namespace GenericInventorySystem
                     // Ignore custom tabs
                     if (btn.Name.ToLower().StartsWith("btntab")) continue;
 
-                    // Ignore already paletted buttons
-                    if (btn.Tag != null && btn.Tag.ToString() == "paletted") continue; 
+                    // Ignore already paletted or standard buttons
+                    if (btn.Tag != null && (btn.Tag.ToString() == "paletted" || btn.Tag.ToString().StartsWith("standard_"))) continue; 
 
                     string name = btn.Name.ToLower();
                     if (name.Contains("delete") || name.Contains("remove") || name.Contains("clear"))
