@@ -24,10 +24,10 @@ namespace GenericInventorySystem
             Application.SetCompatibleTextRenderingDefault(false);
 
             // Set initial language to Arabic for testing
-            //GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("en-US");
+            GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("en-US");
 
             // Set initial language to English
-            GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("ar");
+            //GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("ar");
 
             // Expose background task for server hosting without blocking UI thread
             _ = Task.Run(() => StartApiServer());

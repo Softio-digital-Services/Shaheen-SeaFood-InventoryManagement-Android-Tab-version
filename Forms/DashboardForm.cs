@@ -117,7 +117,7 @@ namespace GenericInventorySystem.Forms
             
             // Row Styles
             // Row Styles
-            _mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // Title (Standardized)
+            _mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));       // Header
             _mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); // Cards
             _mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 55F));   // Middle (Bar Chart + List)
             _mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));   // Bottom (Line Chart)
