@@ -475,10 +475,12 @@ namespace GenericInventorySystem.Forms
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            if (this.ParentForm != null)
+            Form parent = this.FindForm();
+            if (parent != null)
             {
-                this.ParentForm.KeyPreview = true;
-                this.ParentForm.KeyPress += POSForm_KeyPress;
+                parent.KeyPreview = true;
+                parent.KeyPress -= POSForm_KeyPress;
+                parent.KeyPress += POSForm_KeyPress;
             }
         }
 
@@ -499,7 +501,7 @@ namespace GenericInventorySystem.Forms
             }
         }
 
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        public bool HandleKeyPress(Keys keyData)
         {
             if (keyData == Keys.Enter && this.Visible)
             {
@@ -513,7 +515,7 @@ namespace GenericInventorySystem.Forms
                     if(dt.Rows.Count > 0) 
                     { 
                         DataRow r = dt.Rows[0]; 
-                        AddToCart((int)r["id"], r["part_name"].ToString(), (decimal)r["selling_price"], (int)r["quantity_in_stock"]); 
+                        AddToCart(Convert.ToInt32(r["id"]), r["part_name"].ToString(), Convert.ToDecimal(r["selling_price"]), Convert.ToInt32(r["quantity_in_stock"])); 
                     }
                     else 
                     { 
@@ -524,7 +526,7 @@ namespace GenericInventorySystem.Forms
                     return true; // Suppress Enter key so it doesn't click focused buttons
                 }
             }
-            return base.ProcessCmdKey(ref msg, keyData);
+            return false;
         }
 
         private void AddToCart(int id, string name, decimal price, int stock)

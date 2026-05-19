@@ -616,6 +616,12 @@ function checkLoginState() {
 async function handleLogin() {
     const user = document.getElementById('loginUser').value;
     const pass = document.getElementById('loginPass').value;
+    const errorBox = document.getElementById('loginError');
+
+    if (errorBox) {
+        errorBox.classList.add('hidden');
+        errorBox.innerText = '';
+    }
 
     try {
         const res = await fetch(`${API_BASE}/api/login`, {
@@ -637,10 +643,20 @@ async function handleLogin() {
             globalBarcodeScanner.init(); // Activate scanner immediately on login
             initApp();
         } else {
-            showToast("Invalid credentials", "error");
+            const msg = "Invalid username or password";
+            if (errorBox) {
+                errorBox.innerText = msg;
+                errorBox.classList.remove('hidden');
+            }
+            showToast(msg, "error");
         }
     } catch (err) {
-        showToast("Login server offline", "error");
+        const msg = "Login server offline";
+        if (errorBox) {
+            errorBox.innerText = msg;
+            errorBox.classList.remove('hidden');
+        }
+        showToast(msg, "error");
     }
 }
 
@@ -797,7 +813,7 @@ function setupNotificationSystem() {
 function showToast(msg, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.style.cssText = `position:fixed; bottom:30px; left:50%; transform:translateX(-50%); padding:12px 24px; background:rgba(20,20,20,0.95); backdrop-filter:blur(10px); border:1px solid var(--border-color); color:white; border-radius:12px; z-index:9000; font-weight:700; box-shadow:0 10px 30px rgba(0,0,0,0.5);`;
+    toast.style.cssText = `position:fixed; bottom:30px; left:50%; transform:translateX(-50%); padding:12px 24px; background:rgba(20,20,20,0.95); backdrop-filter:blur(10px); border:1px solid var(--border-color); color:white; border-radius:12px; z-index:999999; font-weight:700; box-shadow:0 10px 30px rgba(0,0,0,0.5);`;
     if (type === 'error') toast.style.borderLeft = '4px solid var(--danger)';
     if (type === 'success') toast.style.borderLeft = '4px solid var(--accent)';
     toast.innerText = msg;

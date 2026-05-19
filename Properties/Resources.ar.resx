@@ -459,6 +459,11 @@
   <data name="Msg_Reason" xml:space="preserve"><value>سبب التعديل:</value></data>
   <data name="Msg_Adjust" xml:space="preserve"><value>تعديل</value></data>
   <data name="Msg_PartUpdated" xml:space="preserve"><value>تم تحديث الصنف بنجاح!</value></data>
+  <data name="Msg_PartAdded" xml:space="preserve"><value>تم إضافة الصنف بنجاح!</value></data>
+  <data name="Msg_ProductAdded" xml:space="preserve"><value>تم إضافة المنتج بنجاح!</value></data>
+  <data name="Msg_ServiceAdded" xml:space="preserve"><value>تم إضافة الخدمة بنجاح!</value></data>
+  <data name="Msg_UserUpdated" xml:space="preserve"><value>تم تحديث المستخدم بنجاح!</value></data>
+  <data name="Msg_UserSaveError" xml:space="preserve"><value>خطأ أثناء حفظ المستخدم: </value></data>
   <data name="Msg_UpdateSuccess" xml:space="preserve"><value>تم تحديث السجل بنجاح!</value></data>
   <data name="Msg_AddSelected" xml:space="preserve"><value>إضافة الصنف المختار</value></data>
   <data name="Msg_Saved" xml:space="preserve"><value>تم الحفظ بنجاح!</value></data>

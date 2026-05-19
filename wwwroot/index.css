@@ -753,3 +753,15 @@ body {
 [dir="rtl"] .qty-controls {
     flex-direction: row-reverse;
 }
+
+.error-box {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-align: center;
+}

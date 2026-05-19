@@ -1561,7 +1561,7 @@ namespace GenericInventorySystem
         {
             try
             {
-                string iconPath = Path.Combine(Application.StartupPath, "Assets", "inventory_icon.ico");
+                string iconPath = Path.Combine(Application.StartupPath, "Assets", "inventory_ico.ico");
                 if (File.Exists(iconPath)) form.Icon = new Icon(iconPath);
             }
             catch { }

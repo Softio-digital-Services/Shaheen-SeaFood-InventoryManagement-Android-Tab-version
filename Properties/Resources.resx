@@ -1253,6 +1253,21 @@
   <data name="Msg_PartUpdated" xml:space="preserve">
     <value>Item updated successfully!</value>
   </data>
+  <data name="Msg_PartAdded" xml:space="preserve">
+    <value>Item added successfully!</value>
+  </data>
+  <data name="Msg_ProductAdded" xml:space="preserve">
+    <value>Product added successfully!</value>
+  </data>
+  <data name="Msg_ServiceAdded" xml:space="preserve">
+    <value>Service added successfully!</value>
+  </data>
+  <data name="Msg_UserUpdated" xml:space="preserve">
+    <value>User updated successfully!</value>
+  </data>
+  <data name="Msg_UserSaveError" xml:space="preserve">
+    <value>Error saving user: </value>
+  </data>
   <data name="Msg_UpdateSuccess" xml:space="preserve">
     <value>Record updated successfully!</value>
   </data>

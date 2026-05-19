@@ -601,7 +601,20 @@ namespace GenericInventorySystem
         private void ShowForm(UserControl form) {
             foreach(Control c in panel3.Controls) if(c is UserControl) c.Visible = false;
             form.Visible = true; form.BringToFront();
+            form.Focus();
             if (form is GenericInventorySystem.Forms.DashboardForm dash) dash.RefreshDashboard();
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (posForm != null && posForm.Visible)
+            {
+                if (posForm.HandleKeyPress(keyData))
+                {
+                    return true;
+                }
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         private void ItemAddUser_Click(object sender, EventArgs e) { new Forms.AddUserForm().ShowDialog(this); }

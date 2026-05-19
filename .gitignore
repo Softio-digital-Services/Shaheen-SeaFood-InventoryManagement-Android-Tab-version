@@ -1,4 +1,4 @@
-﻿# Build output
+# Build output
 bin/
 obj/
 publish/
@@ -22,3 +22,7 @@ packages/
 
 # User-specific files
 *.rsuser
+
+# Publish and Installer output
+publish-output/
+InstallerOutput/
