@@ -15,6 +15,7 @@ namespace GenericInventorySystem.Helpers
         public string HardwareId { get; set; }
         public bool IsActive { get; set; }
         public string MachineName { get; set; }
+        public string ProductId { get; set; }
 
         public LicenseKey()
         {

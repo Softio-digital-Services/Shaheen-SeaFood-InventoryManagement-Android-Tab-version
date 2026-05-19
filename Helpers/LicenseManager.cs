@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 
@@ -15,7 +15,7 @@ namespace GenericInventorySystem.Helpers
         /// <summary>
         /// Validates a license key format and checksum
         /// </summary>
-        public static bool ValidateLicenseKey(string licenseKey, string customerName)
+        public static bool ValidateLicenseKey(string licenseKey, string customerName, string expectedProductId = ProductCode)
         {
             if (string.IsNullOrWhiteSpace(licenseKey) || string.IsNullOrWhiteSpace(customerName))
                 return false;
@@ -35,7 +35,7 @@ namespace GenericInventorySystem.Helpers
             string checksum = licenseKey.Substring(20, 5);
 
             // Verify product code
-            if (productCode != ProductCode)
+            if (expectedProductId != "*" && productCode != expectedProductId)
                 return false;
 
             // Verify checksum. Try universal first, then legacy bound to customer name
@@ -51,9 +51,9 @@ namespace GenericInventorySystem.Helpers
         /// <summary>
         /// Activates a license key for the current machine
         /// </summary>
-        public static LicenseKey ActivateLicense(string licenseKey, string customerName)
+        public static LicenseKey ActivateLicense(string licenseKey, string customerName, string expectedProductId = ProductCode)
         {
-            if (!ValidateLicenseKey(licenseKey, customerName))
+            if (!ValidateLicenseKey(licenseKey, customerName, expectedProductId))
                 return null;
 
             licenseKey = licenseKey.Replace("-", "").Replace(" ", "").ToUpper();
@@ -61,6 +61,7 @@ namespace GenericInventorySystem.Helpers
             try
             {
                 // Extract components
+                string productCode = licenseKey.Substring(0, 5);
                 string typeCode = licenseKey.Substring(5, 5);
                 string dateCode = licenseKey.Substring(15, 5);
 
@@ -79,7 +80,8 @@ namespace GenericInventorySystem.Helpers
                     ActivationDate = DateTime.Now,
                     ExpirationDate = expirationDate,
                     HardwareId = HardwareInfo.GetMachineFingerprint(),
-                    IsActive = true
+                    IsActive = true,
+                    ProductId = productCode
                 };
 
                 // Verify hardware binding (Strict validation)
@@ -121,7 +123,7 @@ namespace GenericInventorySystem.Helpers
             // Strict checksum validation for non-trial licenses
             if (!license.IsTrial())
             {
-                return ValidateLicenseKey(license.Key, license.CustomerName);
+                return ValidateLicenseKey(license.Key, license.CustomerName, ProductCode);
             }
 
             return true;
@@ -147,7 +149,7 @@ namespace GenericInventorySystem.Helpers
 
             // Full paid license -> all currently-defined features enabled
             // (Extend this to parse license.FeatureFlags in future)
-            return ValidateLicenseKey(license.Key, license.CustomerName);
+            return ValidateLicenseKey(license.Key, license.CustomerName, ProductCode);
         }
 
         /// <summary>
@@ -162,7 +164,8 @@ namespace GenericInventorySystem.Helpers
                 ActivationDate = DateTime.Now,
                 ExpirationDate = DateTime.Now.AddDays(TrialDays),
                 HardwareId = HardwareInfo.GetMachineFingerprint(),
-                IsActive = true
+                IsActive = true,
+                ProductId = ProductCode
             };
 
             if (LicenseStorage.SaveLicense(trial))
@@ -182,20 +185,24 @@ namespace GenericInventorySystem.Helpers
         /// <summary>
         /// Generates a new license key (for admin use)
         /// </summary>
-        public static string GenerateLicenseKey(string licenseType, DateTime expirationDate, string customerName, string hardwareId = null)
+        public static string GenerateLicenseKey(string licenseType, DateTime expirationDate, string customerName, string hardwareId = null, string productId = ProductCode)
         {
             if (string.IsNullOrWhiteSpace(customerName))
                 throw new ArgumentException("Customer name is required for license generation.");
+            if (string.IsNullOrWhiteSpace(productId) || productId.Length != 5)
+                throw new ArgumentException("Product code must be exactly 5 characters.");
+
+            productId = productId.ToUpper();
 
             string typeCode = EncodeLicenseType(licenseType);
             string hwHash = string.IsNullOrEmpty(hardwareId) ? "00000" : (hardwareId.Length >= 5 ? hardwareId.Substring(0, 5).ToUpper() : hardwareId.ToUpper().PadRight(5, 'X'));
             string dateCode = EncodeDate(expirationDate);
 
             // Compute checksum without customer name to allow key-only activation (Universal)
-            string dataToHash = ProductCode + typeCode + hwHash + dateCode;
+            string dataToHash = productId + typeCode + hwHash + dateCode;
             string checksum = ComputeChecksum(dataToHash);
 
-            string fullKey = ProductCode + typeCode + hwHash + dateCode + checksum;
+            string fullKey = productId + typeCode + hwHash + dateCode + checksum;
             return FormatLicenseKey(fullKey);
         }
 
