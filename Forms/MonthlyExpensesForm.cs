@@ -20,6 +20,7 @@ namespace GenericInventorySystem.Forms
         private ModernTextBox txtDescription;
         private ModernComboBox cmbCategory;
         private FlatDateTimePicker dtpDate;
+        private Label lblDateRef;
         private Button btnAdd;
         private Button btnDelete;
         private Label lblTotal;
@@ -41,59 +42,34 @@ namespace GenericInventorySystem.Forms
 
 
             TableLayoutPanel mainLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // Header
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));  // Header
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 180F)); // Entry (Increased for labels)
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid
             mainLayout.Padding = new Padding(20);
             this.Controls.Add(mainLayout);
 
-            // Header (Standardized Pattern)
-            TableLayoutPanel tlpHeader = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 1,
-                RowCount = 2
-            };
-            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); // Row 0: Title
-            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F)); // Row 1: Actions (Search + Total)
-            mainLayout.Controls.Add(tlpHeader, 0, 0);
-
-            // Title Row
-            Panel pnlTitleRow = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
+            // Title
             lblExpensesTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Exp_MonthlyExpenses"));
             lblExpensesTitle.Name = "lblExpensesTitle";
-            pnlTitleRow.Controls.Add(lblExpensesTitle);
-            tlpHeader.Controls.Add(pnlTitleRow, 0, 0);
-
-            // Actions Row (Search + Total)
-            TableLayoutPanel tlpActions = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 2,
-                RowCount = 1
-            };
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F));
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpHeader.Controls.Add(tlpActions, 0, 1);
 
             txtSearch = new ModernTextBox {
                 IsSearch = true,
                 ShowLabel = false,
                 PlaceholderText = LocalizationManager.GetString("Parts_Search") ?? "Search expenses...",
-                Size = new Size(320, 40),
-                Anchor = AnchorStyles.Left
+                Size = new Size(320, 40)
             };
             txtSearch.TextChanged += (s, e) => LoadData(txtSearch.Text);
-            tlpActions.Controls.Add(txtSearch, 0, 0);
 
             lblTotal = new Label { 
                 Font = new Font("Segoe UI", 22F, FontStyle.Bold), 
                 ForeColor = ThemeConfig.PrimaryColor, 
                 AutoSize = true, 
-                Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleRight
             };
-            tlpActions.Controls.Add(lblTotal, 1, 0);
+
+            var headerControls = new Control[] { lblTotal };
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblExpensesTitle, txtSearch, headerControls);
+            mainLayout.Controls.Add(tlpHeader, 0, 0);
 
             // --- ENTRY SECTION ---
             TableLayoutPanel grid = new TableLayoutPanel { 
@@ -143,18 +119,19 @@ namespace GenericInventorySystem.Forms
             pnlCatContainer.Controls.Add(btnQuickAddCat);
             
             Panel pnlDate = new Panel { Dock = DockStyle.Fill, Margin = new Padding(10, 5, 5, 10) };
-            Label lblDateRef = new Label { 
-                Text = LocalizationManager.GetString("Hist_ColDate") ?? "Date", 
-                Font = ThemeConfig.SmallBoldFont, 
-                ForeColor = ThemeConfig.TextColorDark, 
-                Location = new Point(0, 0), 
-                AutoSize = true 
+            lblDateRef = new Label {
+                Text = LocalizationManager.GetString("Hist_ColDate") ?? "Date",
+                // Match the label font used inside ModernNumericUpDown / ModernComboBox
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                Location = new Point(0, 0),
+                AutoSize = true
             };
             dtpDate = new FlatDateTimePicker { Width = 150 };
             Panel pnlDateInput = ThemeConfig.WrapInStyledInput(dtpDate, 42);
             pnlDateInput.Location = new Point(0, 25);
             pnlDateInput.Width = 170;
-            pnlDate.Controls.Add(pnlDateInput); 
+            pnlDate.Controls.Add(pnlDateInput);
             pnlDate.Controls.Add(lblDateRef);
 
             
@@ -203,9 +180,27 @@ namespace GenericInventorySystem.Forms
             pnlActions.Controls.Add(btnAdd);
             pnlActions.Controls.Add(btnDelete);
             
+            // Wrap numAmount in a centering panel so the TLP cell height doesn't
+            // stretch the control and break the spinner button positions.
+            Panel pnlAmountWrapper = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
+            numAmount = new ModernNumericUpDown
+            {
+                LabelText = LocalizationManager.GetString("Exp_AmountLabel"),
+                DecimalPlaces = 2,
+                Maximum = 1000000,
+                Width = 140
+            };
+            // Position the numAmount vertically centered within the wrapper at its natural height
+            pnlAmountWrapper.Controls.Add(numAmount);
+            pnlAmountWrapper.Resize += (s, e) =>
+            {
+                numAmount.Width = pnlAmountWrapper.Width;
+                numAmount.Location = new Point(0, Math.Max(0, (pnlAmountWrapper.Height - numAmount.Height) / 2));
+            };
+
             grid.Controls.Add(pnlCatContainer, 0, 0);
             grid.Controls.Add(pnlDate, 1, 0);
-            grid.Controls.Add(numAmount, 2, 0);
+            grid.Controls.Add(pnlAmountWrapper, 2, 0);
             grid.Controls.Add(txtDescription, 3, 0);
             grid.Controls.Add(pnlActions, 5, 0);
             grid.Controls.Add(chkRecurring, 0, 1);
@@ -278,8 +273,24 @@ namespace GenericInventorySystem.Forms
             ThemeConfig.ApplyStandardAddButton(btnAdd, "Exp_Add");
             ThemeConfig.ApplyStandardDeleteButton(btnDelete, "Exp_Delete");
             
-            if (txtDescription != null) txtDescription.PlaceholderText = LocalizationManager.GetString("Exp_Description");
-            if (cmbCategory != null) cmbCategory.PlaceholderText = LocalizationManager.GetString("Exp_Category");
+            if (txtDescription != null)
+            {
+                txtDescription.LabelText = LocalizationManager.GetString("Exp_DescriptionLabel");
+                txtDescription.PlaceholderText = LocalizationManager.GetString("Exp_Description");
+            }
+            if (cmbCategory != null)
+            {
+                cmbCategory.LabelText = LocalizationManager.GetString("Exp_CategoryLabel");
+                cmbCategory.PlaceholderText = LocalizationManager.GetString("Exp_Category");
+            }
+            if (numAmount != null)
+            {
+                numAmount.LabelText = LocalizationManager.GetString("Exp_AmountLabel");
+            }
+            if (lblDateRef != null)
+            {
+                lblDateRef.Text = LocalizationManager.GetString("Hist_ColDate") ?? "Date";
+            }
             
             if (dgvExpenses.Columns.Contains("Category")) dgvExpenses.Columns["Category"].HeaderText = LocalizationManager.GetString("Exp_CategoryLabel");
             if (dgvExpenses.Columns.Contains("Date")) dgvExpenses.Columns["Date"].HeaderText = LocalizationManager.GetString("Exp_Date");
@@ -289,7 +300,11 @@ namespace GenericInventorySystem.Forms
             if (dgvExpenses.Columns.Contains("Recurring")) dgvExpenses.Columns["Recurring"].HeaderText = LocalizationManager.GetString("Exp_Auto");
             if (dgvExpenses.Columns.Contains("Action")) dgvExpenses.Columns["Action"].HeaderText = LocalizationManager.GetString("Exp_Action");
             
-            if (chkRecurring != null) chkRecurring.Text = LocalizationManager.GetString("Exp_Recurring");
+            if (chkRecurring != null)
+            {
+                chkRecurring.Text = LocalizationManager.GetString("Exp_Recurring");
+                chkRecurring.Anchor = LocalizationManager.IsArabic ? AnchorStyles.Right : AnchorStyles.Left;
+            }
             
             LoadCategories(); // Refresh categories in dropdown
         }
@@ -407,3 +422,4 @@ namespace GenericInventorySystem.Forms
         }
     }
 }
+

@@ -32,62 +32,29 @@ namespace GenericInventorySystem.Forms
 
             // Main Layout
             TableLayoutPanel mainLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(20) };
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             this.Controls.Add(mainLayout);
 
-            // 1. Header
-            TableLayoutPanel tlpHeader = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 1,
-                RowCount = 2
-            };
-            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); // Title
-            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 65F)); // Actions
-            mainLayout.Controls.Add(tlpHeader, 0, 0);
-            
-            // Title
+            // Header
             lblUsersTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Msg_UserManagement"));
             lblUsersTitle.Name = "lblUsersTitle";
-            tlpHeader.Controls.Add(lblUsersTitle, 0, 0);
-
-            // Actions (Search + Buttons)
-            TableLayoutPanel tlpActions = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 2,
-                RowCount = 1
-            };
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F));
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpHeader.Controls.Add(tlpActions, 0, 1);
 
             txtSearch = new ModernTextBox { 
                 IsSearch = true, 
                 ShowLabel = false, 
                 PlaceholderText = LocalizationManager.GetString("Msg_SearchUsers") ?? "Search users...", 
-                Size = new Size(320, 40),
-                Anchor = AnchorStyles.Left
+                Size = new Size(320, 40)
             };
             txtSearch.TextChanged += (s, e) => LoadData(txtSearch.Text);
-            tlpActions.Controls.Add(txtSearch, 0, 0);
 
-            FlowLayoutPanel panelButtons = new FlowLayoutPanel
-            {
-                FlowDirection = FlowDirection.LeftToRight,
-                AutoSize = true,
-                Anchor = AnchorStyles.Right,
-                WrapContents = false,
-                Padding = new Padding(0),
-                Margin = new Padding(0)
-            };
-            tlpActions.Controls.Add(panelButtons, 1, 0);
-
-            btnAddUser = new Button { Size = new Size(160, 40), Margin = new Padding(0, 0, 10, 0) };
+            btnAddUser = new Button { Size = new Size(160, 40) };
             btnAddUser.Click += btnAddUser_Click;
             ThemeConfig.ApplyStandardAddButton(btnAddUser, "User_AddUser");
-            panelButtons.Controls.Add(btnAddUser);
+
+            var actionButtons = new Control[] { btnAddUser };
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblUsersTitle, txtSearch, actionButtons);
+            mainLayout.Controls.Add(tlpHeader, 0, 0);
 
             // 2. Grid
             dgvUsers = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal, RowHeadersVisible = false, AutoGenerateColumns = false, AllowUserToAddRows = false, ReadOnly = true };
@@ -262,3 +229,4 @@ namespace GenericInventorySystem.Forms
         }
     }
 }
+

@@ -241,8 +241,8 @@ namespace GenericInventorySystem.Helpers
 
             // Skip manual location/anchor mirroring for internal components of ModernTextBox and StatCard
             // as they handle their own internal layout logic.
-            bool isInternalHandled = (control.Parent != null && (control.Parent.GetType().Name == "ModernTextBox" || control.Parent.GetType().Name == "StatCard")) ||
-                                     (control.Parent != null && control.Parent.Parent != null && (control.Parent.Parent.GetType().Name == "ModernTextBox" || control.Parent.Parent.GetType().Name == "StatCard"));
+            bool isInternalHandled = (control.Parent != null && (control.Parent.GetType().Name == "ModernTextBox" || control.Parent.GetType().Name == "StatCard" || control.Parent.GetType().Name == "ModernNumericUpDown" || control.Parent.GetType().Name == "ModernComboBox")) ||
+                                     (control.Parent != null && control.Parent.Parent != null && (control.Parent.Parent.GetType().Name == "ModernTextBox" || control.Parent.Parent.GetType().Name == "StatCard" || control.Parent.Parent.GetType().Name == "ModernNumericUpDown" || control.Parent.Parent.GetType().Name == "ModernComboBox"));
 
             if (!isInternalHandled)
             {

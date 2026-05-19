@@ -64,7 +64,7 @@ namespace GenericInventorySystem.Controls
         public string LabelText 
         { 
             get => lblTitle.Text; 
-            set => lblTitle.Text = value; 
+            set { lblTitle.Text = value; UpdateLayout(); }
         }
 
         private bool _showLabel = true;
@@ -167,9 +167,14 @@ namespace GenericInventorySystem.Controls
             if (pnlContainer == null) return;
 
             int labelHeight = _showLabel ? 25 : 0;
+            int totalHeight = labelHeight + 42;
+
+            // Pin our own height — never let a parent stretch us beyond our natural size
+            this.Height = totalHeight;
+
             pnlContainer.Location = new Point(0, labelHeight);
-            pnlContainer.Size = new Size(this.Width, 42);
-            
+            pnlContainer.Size = new Size(this.Width, 42); // always exactly 42px tall
+
             if (lblTitle != null)
             {
                 if (LocalizationManager.IsArabic)
@@ -178,10 +183,9 @@ namespace GenericInventorySystem.Controls
                     lblTitle.Location = new Point(5, 0);
             }
 
-            if (btnUp != null) btnUp.Location = new Point(LocalizationManager.IsArabic ? 0 : pnlContainer.Width - 32, 0);
+            // Spinner buttons: always relative to the 42px container
+            if (btnUp   != null) btnUp.Location   = new Point(LocalizationManager.IsArabic ? 0 : pnlContainer.Width - 32, 0);
             if (btnDown != null) btnDown.Location = new Point(LocalizationManager.IsArabic ? 0 : pnlContainer.Width - 32, 21);
-            
-            this.Height = labelHeight + 42;
         }
 
         private void UpdateText()

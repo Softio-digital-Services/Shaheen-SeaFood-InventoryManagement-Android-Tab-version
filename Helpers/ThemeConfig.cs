@@ -148,6 +148,103 @@ namespace GenericInventorySystem
             };
         }
 
+        public static TableLayoutPanel CreateGlobalFormHeader(Control titleLabel, Control searchBox = null, Control[] actionButtons = null)
+        {
+            bool hasActions = searchBox != null || (actionButtons != null && actionButtons.Length > 0);
+
+            // Header auto-sizes: title only = 42px, title + actions row = 42+52 = 94px
+            TableLayoutPanel tlpHeader = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = hasActions ? 94 : 42,
+                Margin = new Padding(0, 0, 0, 12),
+                ColumnCount = 1,
+                RowCount = hasActions ? 2 : 1
+            };
+            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 42F)); // Title row
+            if (hasActions)
+                tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 52F)); // Actions row
+
+            if (titleLabel != null)
+            {
+                titleLabel.Dock = DockStyle.Fill;
+                titleLabel.Margin = new Padding(0);
+                tlpHeader.Controls.Add(titleLabel, 0, 0);
+            }
+
+            if (hasActions)
+            {
+                bool isRTL = LocalizationManager.IsArabic;
+
+                TableLayoutPanel tlpActions = new TableLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    Margin = new Padding(0),
+                    ColumnCount = 2,
+                    RowCount = 1
+                };
+
+                // In RTL: col-0 appears on the RIGHT, col-1 on the LEFT.
+                // We always put search in the "outer" column and buttons in the "inner" column
+                // so the search sits flush at the content-start edge.
+                if (isRTL)
+                {
+                    // RTL: search RIGHT (col-0 = rightmost), buttons LEFT (col-1 = leftmost)
+                    tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F)); // col-0 = search (right)
+                    tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));  // col-1 = buttons (left)
+                }
+                else
+                {
+                    // LTR: search LEFT (col-0 = leftmost), buttons RIGHT (col-1 = rightmost)
+                    tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F)); // col-0 = search (left)
+                    tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));  // col-1 = buttons (right)
+                }
+
+                if (searchBox != null)
+                {
+                    // In RTL, anchor RIGHT so the search box hugs the physical right edge of its column
+                    // (which is the outer edge of the form). In LTR, anchor LEFT for the same reason.
+                    searchBox.Anchor = isRTL
+                        ? (AnchorStyles.Right | AnchorStyles.Top)
+                        : (AnchorStyles.Left  | AnchorStyles.Top);
+                    searchBox.Margin = new Padding(0, 6, 0, 0);
+                    tlpActions.Controls.Add(searchBox, 0, 0);
+                }
+
+                if (actionButtons != null && actionButtons.Length > 0)
+                {
+                    FlowLayoutPanel panelButtons = new FlowLayoutPanel
+                    {
+                        FlowDirection = FlowDirection.LeftToRight,
+                        AutoSize = true,
+                        // In RTL, buttons are in col-1 (left side) — anchor LEFT to hug the left edge.
+                        // In LTR, buttons are in col-1 (right side) — anchor RIGHT to hug the right edge.
+                        Anchor = isRTL
+                            ? (AnchorStyles.Left  | AnchorStyles.Top)
+                            : (AnchorStyles.Right | AnchorStyles.Top),
+                        WrapContents = false,
+                        Padding = new Padding(0),
+                        Margin = new Padding(0, 6, 0, 0)
+                    };
+
+                    foreach (var btn in actionButtons)
+                    {
+                        if (btn == null) continue;
+                        btn.Margin = isRTL
+                            ? new Padding(10, 0, 0, 0)  // RTL: gap on left side of each button
+                            : new Padding(0, 0, 10, 0); // LTR: gap on right side
+                        panelButtons.Controls.Add(btn);
+                    }
+                    tlpActions.Controls.Add(panelButtons, 1, 0);
+                }
+
+                tlpHeader.Controls.Add(tlpActions, 0, 1);
+            }
+
+            return tlpHeader;
+        }
+
         public static void ApplyPrimaryButton(Button btn)
         {
             btn.FlatStyle = FlatStyle.Flat;

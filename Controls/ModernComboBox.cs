@@ -20,7 +20,7 @@ namespace GenericInventorySystem.Controls
         public string LabelText
         {
             get => lblTitle.Text;
-            set => lblTitle.Text = value;
+            set { lblTitle.Text = value; UpdateLayout(); }
         }
 
         public object SelectedItem

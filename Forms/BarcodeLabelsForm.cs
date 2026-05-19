@@ -137,48 +137,23 @@ namespace GenericInventorySystem.Forms
             this.lblTitle = new Label();
             
             TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(20) };
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
-            Panel pnlTop = new Panel { Dock = DockStyle.Fill };
             lblTitle = ThemeConfig.CreateStandardHeader("Barcode Labels");
-            pnlTop.Controls.Add(lblTitle);
+            lblTitle.Name = "lblTitle";
 
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.Size = new Size(350, 40);
-            txtSearch.Location = new Point(0, 50);
             txtSearch.TextChanged += (s, e) => { _searchTimer.Stop(); _searchTimer.Start(); };
-            pnlTop.Controls.Add(txtSearch);
-
-            pnlButtons = new FlowLayoutPanel
-            {
-                FlowDirection = FlowDirection.LeftToRight,
-                AutoSize = true,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Location = new Point(400, 50),
-                Height = 40,
-                WrapContents = false
-            };
 
             btnGenerate.Size = new Size(180, 40);
             btnGenerate.Click += btnGenerate_Click;
-            pnlButtons.Controls.Add(btnGenerate);
 
-            pnlTop.Controls.Add(pnlButtons);
-
-            // RTL Awareness for positioning
-            pnlTop.Resize += (s, e) => {
-                if (LocalizationManager.IsArabic) {
-                    txtSearch.Location = new Point(pnlTop.Width - txtSearch.Width, 50);
-                    pnlButtons.Location = new Point(0, 50);
-                } else {
-                    txtSearch.Location = new Point(0, 50);
-                    pnlButtons.Location = new Point(pnlTop.Width - pnlButtons.Width, 50);
-                }
-            };
-
-            tlpMain.Controls.Add(pnlTop, 0, 0);
+            var actionButtons = new Control[] { btnGenerate };
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblTitle, txtSearch, actionButtons);
+            tlpMain.Controls.Add(tlpHeader, 0, 0);
 
             dgvItems = new DataGridView { 
                 Dock = DockStyle.Fill, AllowUserToAddRows = false, SelectionMode = DataGridViewSelectionMode.CellSelect, 
@@ -305,3 +280,4 @@ namespace GenericInventorySystem.Forms
         public int Quantity { get; set; }
     }
 }
+

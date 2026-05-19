@@ -124,22 +124,8 @@ namespace GenericInventorySystem.Forms
             
             this.Controls.Add(_mainLayout);
 
-            // 0. Title row (Refactored to TLP for robust RTL)
-            TableLayoutPanel tlpHeader = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 3,
-                RowCount = 1
-            };
-            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            _mainLayout.Controls.Add(tlpHeader, 0, 0);
-
             lblDashboardTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Dash_Title"));
             lblDashboardTitle.Name = "lblDashboardTitle";
-            lblDashboardTitle.Margin = new Padding(0);
-            tlpHeader.Controls.Add(lblDashboardTitle, 0, 0);
 
             // Live server URL label
             string serverUrl = ScanToConnectForm.GetServerUrl();
@@ -151,8 +137,7 @@ namespace GenericInventorySystem.Forms
                 AutoSize = true,
                 TextAlign = ContentAlignment.MiddleRight,
                 Padding = new Padding(0, 10, 8, 0),
-                Cursor = Cursors.Hand,
-                Anchor = AnchorStyles.Right
+                Cursor = Cursors.Hand
             };
             
             lblServerUrl.Click += (s, e) => {
@@ -170,20 +155,20 @@ namespace GenericInventorySystem.Forms
                 };
                 t.Start();
             };
-            tlpHeader.Controls.Add(lblServerUrl, 1, 0);
 
             // Scan-to-Connect button
             var btnScan = new ModernButton
             {
                 Name = "btnScan", 
                 Text = LocalizationManager.GetString("Dash_ScanToConnect"),
-                Width = 145,
-                Margin = new Padding(10, 6, 10, 6),
-                Anchor = AnchorStyles.Right
+                Width = 145
             };
             ThemeConfig.ApplyPrimaryButton(btnScan);
             btnScan.Click += (s, e) => new ScanToConnectForm().ShowDialog();
-            tlpHeader.Controls.Add(btnScan, 2, 0);
+
+            var headerControls = new Control[] { lblServerUrl, btnScan };
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblDashboardTitle, null, headerControls);
+            _mainLayout.Controls.Add(tlpHeader, 0, 0);
 
             // 1. Cards Layout (Top)
             _cardsLayout = new TableLayoutPanel

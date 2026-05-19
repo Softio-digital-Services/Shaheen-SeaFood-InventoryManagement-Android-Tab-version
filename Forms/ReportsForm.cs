@@ -36,6 +36,10 @@ namespace GenericInventorySystem.Forms
         {
             GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+            bool isRTL = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
+
+            var titleAlign  = isRTL ? ContentAlignment.BottomRight : ContentAlignment.BottomLeft;
+            var valueAlign  = isRTL ? ContentAlignment.TopRight    : ContentAlignment.TopLeft;
 
             var title = this.Controls.Find("lblMainTitle", true);
             if (title.Length > 0) title[0].Text = L("Rep_Title");
@@ -47,15 +51,25 @@ namespace GenericInventorySystem.Forms
             if (pieTitle.Length > 0) pieTitle[0].Text = L("Rep_CategoryTitle");
 
             var kpi1 = this.Controls.Find("kpi1Title", true);
-            if (kpi1.Length > 0) kpi1[0].Text = L("Rep_TotalSales");
+            if (kpi1.Length > 0)
+            {
+                kpi1[0].Text = L("Rep_TotalSales");
+                ((Label)kpi1[0]).TextAlign = titleAlign;
+            }
+            if (lblKPI1Value != null) lblKPI1Value.TextAlign = valueAlign;
 
             var kpi2 = this.Controls.Find("kpi2Title", true);
-            if (kpi2.Length > 0) kpi2[0].Text = L("Rep_AvgOrder");
+            if (kpi2.Length > 0)
+            {
+                kpi2[0].Text = L("Rep_AvgOrder");
+                ((Label)kpi2[0]).TextAlign = titleAlign;
+            }
+            if (lblKPI2Value != null) lblKPI2Value.TextAlign = valueAlign;
 
             var barTitle = this.Controls.Find("lblBarTitle", true);
             if (barTitle.Length > 0) barTitle[0].Text = L("Rep_TopProductsTitle");
 
-            LoadCharts(); // Rebind charts with translated series labels
+            LoadCharts();
         }
 
         public void RefreshData()
@@ -73,19 +87,19 @@ namespace GenericInventorySystem.Forms
             TableLayoutPanel tlpRoot = new TableLayoutPanel();
             tlpRoot.Dock = DockStyle.Fill;
             tlpRoot.ColumnCount = 1;
-            tlpRoot.RowCount = 4;
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); // Header
+            tlpRoot.RowCount = 3;
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Header
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 55F));  // Top Row (Valuation + Pie)
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));  // Bottom Row (KPIs + Bar)
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F)); // Spacer
             tlpRoot.Padding = new Padding(20);
             this.Controls.Add(tlpRoot);
 
             // 1. Header
             Label lblTitle = ThemeConfig.CreateStandardHeader("Analytics & Reports");
             lblTitle.Name = "lblMainTitle";
-            lblTitle.Location = new Point(0, 0); // Override ThemeConfig default to avoid double padding
-            tlpRoot.Controls.Add(lblTitle, 0, 0);
+
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblTitle, null, null);
+            tlpRoot.Controls.Add(tlpHeader, 0, 0);
 
             // 2. Top Row Layout
             TableLayoutPanel tlpTop = new TableLayoutPanel();
@@ -146,25 +160,61 @@ namespace GenericInventorySystem.Forms
             pnlKPIContainer.Controls.Add(tlpKPIs);
 
             // KPI 1
-            Panel pnlKPI1Content = new Panel { Dock = DockStyle.Fill };
-            Label kpi1Title = new Label { Name = "kpi1Title", Text = "Total Sales (YTD):", Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, Location = new Point(0, 5), AutoSize = true };
-            lblKPI1Value = new Label { Text = "$0", Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 35), AutoSize = true };
-            pnlKPI1Content.Controls.Add(kpi1Title);
-            pnlKPI1Content.Controls.Add(lblKPI1Value);
+            TableLayoutPanel tlpKPI1 = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2,
+                Padding = new Padding(14, 10, 14, 10)
+            };
+            tlpKPI1.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));
+            tlpKPI1.RowStyles.Add(new RowStyle(SizeType.Percent, 55F));
 
-            Panel kpi1 = ThemeConfig.CreateCardPanel(pnlKPI1Content);
+            Label kpi1Title = new Label
+            {
+                Name = "kpi1Title", Text = "Total Sales (YTD):",
+                Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor,
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft,
+                AutoSize = false
+            };
+            lblKPI1Value = new Label
+            {
+                Text = "$0", Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.TextColorDark,
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft,
+                AutoSize = false
+            };
+            tlpKPI1.Controls.Add(kpi1Title, 0, 0);
+            tlpKPI1.Controls.Add(lblKPI1Value, 0, 1);
+
+            Panel kpi1 = ThemeConfig.CreateCardPanel(tlpKPI1);
             kpi1.Dock = DockStyle.Fill;
             kpi1.Margin = new Padding(0, 0, 0, 10);
             tlpKPIs.Controls.Add(kpi1, 0, 0);
-            
-            // KPI 2
-            Panel pnlKPI2Content = new Panel { Dock = DockStyle.Fill };
-            Label kpi2Title = new Label { Name = "kpi2Title", Text = "Average Order Value:", Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, Location = new Point(0, 5), AutoSize = true };
-            lblKPI2Value = new Label { Text = "$0", Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.TextColorDark, Location = new Point(0, 35), AutoSize = true };
-            pnlKPI2Content.Controls.Add(kpi2Title);
-            pnlKPI2Content.Controls.Add(lblKPI2Value);
 
-            Panel kpi2 = ThemeConfig.CreateCardPanel(pnlKPI2Content);
+            // KPI 2
+            TableLayoutPanel tlpKPI2 = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2,
+                Padding = new Padding(14, 10, 14, 10)
+            };
+            tlpKPI2.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));
+            tlpKPI2.RowStyles.Add(new RowStyle(SizeType.Percent, 55F));
+
+            Label kpi2Title = new Label
+            {
+                Name = "kpi2Title", Text = "Average Order Value:",
+                Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor,
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft,
+                AutoSize = false
+            };
+            lblKPI2Value = new Label
+            {
+                Text = "$0", Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.TextColorDark,
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft,
+                AutoSize = false
+            };
+            tlpKPI2.Controls.Add(kpi2Title, 0, 0);
+            tlpKPI2.Controls.Add(lblKPI2Value, 0, 1);
+
+            Panel kpi2 = ThemeConfig.CreateCardPanel(tlpKPI2);
             kpi2.Dock = DockStyle.Fill;
             kpi2.Margin = new Padding(0, 10, 0, 0);
             tlpKPIs.Controls.Add(kpi2, 0, 1);
@@ -309,3 +359,4 @@ namespace GenericInventorySystem.Forms
 
     }
 }
+

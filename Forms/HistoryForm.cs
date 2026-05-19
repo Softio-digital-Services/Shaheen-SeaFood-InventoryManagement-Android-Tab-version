@@ -144,174 +144,123 @@ namespace GenericInventorySystem.Forms
             this.SuspendLayout();
             this.Size = new Size(1100, 750);
 
+            // Root container with padding
+            Panel pnlRoot = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
+            this.Controls.Add(pnlRoot);
 
-            // Main Layout
-            // Container
-            TableLayoutPanel mainLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // 0. Title
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));  // 1. Actions (Search/Refresh)
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); // 2. Stats
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));  // 3. Tabs
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // 4. Content
-            this.Controls.Add(mainLayout);
-
-            // 0. Title
+            // --- Header (auto-sizes: title + search/refresh row) ---
             lblHistoryTitle = ThemeConfig.CreateStandardHeader("System History Logs");
             lblHistoryTitle.Name = "lblHistoryTitle";
-            lblHistoryTitle.Margin = new Padding(0);
-            mainLayout.Controls.Add(lblHistoryTitle, 0, 0);
 
-            // 1. Actions Row (Search + Refresh)
-            TableLayoutPanel tlpActions = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 2,
-                RowCount = 1
-            };
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F));
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            mainLayout.Controls.Add(tlpActions, 0, 1);
-            
             txtSearch = new ModernTextBox {
-                IsSearch = true,
-                ShowLabel = false,
+                IsSearch = true, ShowLabel = false,
                 PlaceholderText = LocalizationManager.GetString("Hist_Search") ?? "Search history...",
-                Size = new Size(320, 40),
-                Anchor = AnchorStyles.Left
+                Size = new Size(320, 40)
             };
             txtSearch.TextChanged += (s, e) => ApplyFilter();
-            tlpActions.Controls.Add(txtSearch, 0, 0);
-
-            FlowLayoutPanel panelButtons = new FlowLayoutPanel
-            {
-                FlowDirection = FlowDirection.LeftToRight,
-                AutoSize = true,
-                Anchor = AnchorStyles.Right,
-                WrapContents = false,
-                Padding = new Padding(0),
-                Margin = new Padding(0)
-            };
-            tlpActions.Controls.Add(panelButtons, 1, 0);
 
             Button btnRefresh = new Button();
             btnRefresh.Name = "btnRefresh";
             btnRefresh.Size = new Size(160, 40);
-            btnRefresh.Margin = new Padding(0, 0, 10, 0);
             ThemeConfig.ApplyStandardRefreshButton(btnRefresh, "Hist_Refresh");
-            panelButtons.Controls.Add(btnRefresh);
-            
-            // Animation Timer
-            _refreshTimer = new System.Windows.Forms.Timer { Interval = 30 }; // ~33 FPS
-            _refreshTimer.Tick += (s, e) => {
-                _refreshAngle = (_refreshAngle + 15) % 360;
-                btnRefresh.Invalidate();
-            };
 
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblHistoryTitle, txtSearch, new Control[] { btnRefresh });
+
+            // Animation timer (must wire up after btnRefresh is created)
+            _refreshTimer = new System.Windows.Forms.Timer { Interval = 30 };
+            _refreshTimer.Tick += (s, e) => { _refreshAngle = (_refreshAngle + 15) % 360; btnRefresh.Invalidate(); };
             btnRefresh.Paint += (s, e) => {
-                if (_isRefreshing)
-                {
-                    // Clear background
+                if (_isRefreshing) {
                     using (var pb = new SolidBrush(ThemeConfig.GetParentColor(btnRefresh)))
                         e.Graphics.FillRectangle(pb, -1, -1, btnRefresh.Width + 2, btnRefresh.Height + 2);
                     DrawRotatingRefreshIcon(btnRefresh, e.Graphics);
                 }
             };
-
             btnRefresh.Click += async (s, e) => {
                 if (_isRefreshing) return;
                 StartRefreshAnimation();
                 await System.Threading.Tasks.Task.Run(() => LoadHistory());
                 StopRefreshAnimation();
             };
-            
-            // Stats Panel
-            TableLayoutPanel tlpStats = new TableLayoutPanel();
-            tlpStats.Dock = DockStyle.Fill;
-            tlpStats.ColumnCount = 3;
-            tlpStats.RowCount = 1;
+
+            // --- Stats row ---
+            TableLayoutPanel tlpStats = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top, Height = 120,
+                ColumnCount = 3, RowCount = 1,
+                Margin = new Padding(0, 0, 0, 12)
+            };
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
-            tlpStats.Margin = new Padding(0, 0, 0, 10);
-            
-            cardActions = new StatCard { Title = "Activity Today", Value = "0", IconImage = ThemeConfig.GetNuricon("history_activity"), ThemeColor = ThemeConfig.PrimaryColor, Dock = DockStyle.Fill };
-            cardOrders = new StatCard { Title = "Orders Today", Value = "0", IconImage = ThemeConfig.GetNuricon("orders"), ThemeColor = ThemeConfig.SuccessColor, Dock = DockStyle.Fill };
-            cardPayments = new StatCard { Title = "Payments Today", Value = "0", IconImage = ThemeConfig.GetNuricon("revenue"), ThemeColor = ThemeConfig.WarningColor, Dock = DockStyle.Fill };
-            
-            tlpStats.Controls.Add(cardActions, 0, 0);
-            tlpStats.Controls.Add(cardOrders, 1, 0);
+
+            cardActions  = new StatCard { Title = "Activity Today",  Value = "0", IconImage = ThemeConfig.GetNuricon("history_activity"), ThemeColor = ThemeConfig.PrimaryColor, Dock = DockStyle.Fill };
+            cardOrders   = new StatCard { Title = "Orders Today",    Value = "0", IconImage = ThemeConfig.GetNuricon("orders"),           ThemeColor = ThemeConfig.SuccessColor,  Dock = DockStyle.Fill };
+            cardPayments = new StatCard { Title = "Payments Today",  Value = "0", IconImage = ThemeConfig.GetNuricon("revenue"),          ThemeColor = ThemeConfig.WarningColor,  Dock = DockStyle.Fill };
+            tlpStats.Controls.Add(cardActions,  0, 0);
+            tlpStats.Controls.Add(cardOrders,   1, 0);
             tlpStats.Controls.Add(cardPayments, 2, 0);
-            
-            mainLayout.Controls.Add(tlpStats, 0, 2);
 
-            // 3. Custom Tabs
-            pnlTabs = new Panel();
-            pnlTabs.Dock = DockStyle.Fill;
-            pnlTabs.Height = 50;
-            pnlTabs.Margin = new Padding(0);
-            
-            pnlIndicator = new Panel { Height = 3, Top = 40, Visible = false };
+            // --- Tabs row ---
+            pnlTabs = new Panel { Dock = DockStyle.Top, Height = 55, Margin = new Padding(0, 0, 0, 8) };
+            pnlIndicator = new Panel { Height = 3, Top = 44, Visible = false };
             pnlTabs.Controls.Add(pnlIndicator);
-
-            btnTabInventory = CreateTabButton("Inventory Logs", 0);
-            btnTabCustomers = CreateTabButton("Customer History", 150);
-            btnTabSuppliers = CreateTabButton("Supplier History", 300);
-            btnTabOrders = CreateTabButton("Orders History", 450); 
-            btnTabQuotations = CreateTabButton("Quotation History", 600); // NEW
-
+            btnTabInventory  = CreateTabButton("Inventory Logs",   0);
+            btnTabCustomers  = CreateTabButton("Customer History", 150);
+            btnTabSuppliers  = CreateTabButton("Supplier History", 300);
+            btnTabOrders     = CreateTabButton("Orders History",   450);
+            btnTabQuotations = CreateTabButton("Quotation History",600);
             pnlTabs.Controls.Add(btnTabInventory);
             pnlTabs.Controls.Add(btnTabCustomers);
             pnlTabs.Controls.Add(btnTabSuppliers);
             pnlTabs.Controls.Add(btnTabOrders);
             pnlTabs.Controls.Add(btnTabQuotations);
-            
-            mainLayout.Controls.Add(pnlTabs, 0, 3);
 
-            // 4. Content Area
-            pnlContent = new Panel();
-            pnlContent.Dock = DockStyle.Fill;
-            pnlContent.Margin = new Padding(0, 5, 0, 0);
-            mainLayout.Controls.Add(pnlContent, 0, 4);
-            
+            // --- Content area (Fill) ---
+            pnlContent = new Panel { Dock = DockStyle.Fill };
+
+            // IMPORTANT: WinForms docks in reverse Z-order. Add Fill first, then Top controls bottom-to-top.
+            pnlRoot.Controls.Add(pnlContent);   // Fill — added first, receives space last
+            pnlRoot.Controls.Add(pnlTabs);      // Top — docked 3rd from top
+            pnlRoot.Controls.Add(tlpStats);     // Top — docked 2nd from top
+            pnlRoot.Controls.Add(tlpHeader);    // Top — docked 1st (topmost)
+
             // Grids
             dgvInventory = CreateGrid();
             dgvCustomers = CreateGrid();
-            
+
             dgvSuppliers = CreateGrid();
             dgvSuppliers.AutoGenerateColumns = false;
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", DataPropertyName = "Date", Width = 150 });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Type", DataPropertyName = "Type", Width = 120 });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date",     DataPropertyName = "Date",     Width = 150 });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Type",     DataPropertyName = "Type",     Width = 120 });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Supplier", DataPropertyName = "Supplier", Width = 200 });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Amount", DataPropertyName = "Amount", Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Details", DataPropertyName = "Details", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Amount",   DataPropertyName = "Amount",   Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Details",  DataPropertyName = "Details",  AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
 
-            dgvOrders = CreateGrid(); 
-            dgvOrders.CellFormatting += DgvOrders_CellFormatting;
+            dgvOrders = CreateGrid();
+            dgvOrders.CellFormatting   += DgvOrders_CellFormatting;
             dgvOrders.CellContentClick += DgvOrders_CellContentClick;
-            dgvOrders.CellPainting += DgvOrders_CellPainting;
+            dgvOrders.CellPainting     += DgvOrders_CellPainting;
 
-            dgvQuotations = CreateGrid(); // NEW
-            
-            // Card Wrappers
-            pnlInventoryCard = ThemeConfig.CreateCardPanel(dgvInventory);
-            pnlCustomersCard = ThemeConfig.CreateCardPanel(dgvCustomers);
-            pnlSuppliersCard = ThemeConfig.CreateCardPanel(dgvSuppliers);
-            pnlOrdersCard = ThemeConfig.CreateCardPanel(dgvOrders); 
-            pnlQuotationsCard = ThemeConfig.CreateCardPanel(dgvQuotations); // NEW
-            
-            pnlInventoryCard.Visible = false;
-            pnlCustomersCard.Visible = false;
-            pnlSuppliersCard.Visible = false;
-            pnlOrdersCard.Visible = false;
+            dgvQuotations = CreateGrid();
+
+            pnlInventoryCard  = ThemeConfig.CreateCardPanel(dgvInventory);
+            pnlCustomersCard  = ThemeConfig.CreateCardPanel(dgvCustomers);
+            pnlSuppliersCard  = ThemeConfig.CreateCardPanel(dgvSuppliers);
+            pnlOrdersCard     = ThemeConfig.CreateCardPanel(dgvOrders);
+            pnlQuotationsCard = ThemeConfig.CreateCardPanel(dgvQuotations);
+
+            pnlInventoryCard.Visible  = false;
+            pnlCustomersCard.Visible  = false;
+            pnlSuppliersCard.Visible  = false;
+            pnlOrdersCard.Visible     = false;
             pnlQuotationsCard.Visible = false;
-            
+
             pnlContent.Controls.Add(pnlInventoryCard);
             pnlContent.Controls.Add(pnlCustomersCard);
             pnlContent.Controls.Add(pnlSuppliersCard);
             pnlContent.Controls.Add(pnlOrdersCard);
             pnlContent.Controls.Add(pnlQuotationsCard);
-            
-            mainLayout.Controls.Add(pnlContent, 0, 4);
 
             this.ResumeLayout(false);
         }

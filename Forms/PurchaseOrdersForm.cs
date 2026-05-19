@@ -37,85 +37,41 @@ namespace GenericInventorySystem.Forms
             this.SuspendLayout();
             this.Size = new Size(1100, 750);
 
+            // Root container with padding
+            Panel pnlRoot = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
+            this.Controls.Add(pnlRoot);
 
-            // Main Layout
-            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
-            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // Title
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));  // Search/Actions
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Content
-            this.Controls.Add(tlpMain);
- 
-            // 0. Title
+            // Header
             lblPOTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("PO_Title"));
             lblPOTitle.Name = "lblPOTitle";
-            lblPOTitle.Margin = new Padding(0);
-            tlpMain.Controls.Add(lblPOTitle, 0, 0);
 
-            // 1. Actions Row (Search + Buttons)
-            TableLayoutPanel tlpActions = new TableLayoutPanel { 
-                Dock = DockStyle.Fill, 
-                Margin = new Padding(0),
-                ColumnCount = 2,
-                RowCount = 1
-            };
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F)); // Search box area
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));  // Buttons area
-            
-            // Search Bar
             txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = LocalizationManager.GetString("Msg_SearchPO");
             txtSearch.Size = new Size(320, 40);
-            txtSearch.Anchor = AnchorStyles.Left;
             txtSearch.TextChanged += (s, e) => LoadPurchaseOrders(txtSearch.Text);
-            tlpActions.Controls.Add(txtSearch, 0, 0);
 
-            // Buttons Panel
-            FlowLayoutPanel panelButtons = new FlowLayoutPanel
-            {
-                FlowDirection = FlowDirection.LeftToRight,
-                AutoSize = true,
-                Anchor = AnchorStyles.Right,
-                WrapContents = false,
-                Padding = new Padding(0, 0, 0, 0)
-            };
-
-            // New PO Button
-            Button btnNewPO = new Button
-            {
-                Size = new Size(180, 40),
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand,
-                Margin = new Padding(0, 0, 10, 0)
-            };
+            Button btnNewPO = new Button { Size = new Size(180, 40), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
             btnNewPO.FlatAppearance.BorderSize = 0;
             btnNewPO.Click += BtnNewPO_Click;
             btnNewPO.Paint += (s, e) => ThemeConfig.DrawIconButton(btnNewPO, e.Graphics, "add", "PO_New", Color.White, ThemeConfig.PrimaryColor, false);
-            panelButtons.Controls.Add(btnNewPO);
 
-            // Predictive Buy-List
+            List<Control> buttons = new List<Control> { btnNewPO };
+
             if (UserSession.IsAdmin || UserSession.IsAccountant)
             {
-                Button btnAutoPO = new Button
-                {
-                    Size = new Size(200, 40),
-                    FlatStyle = FlatStyle.Flat,
-                    Cursor = Cursors.Hand,
-                    Margin = new Padding(0, 0, 10, 0)
-                };
+                Button btnAutoPO = new Button { Size = new Size(200, 40), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
                 btnAutoPO.FlatAppearance.BorderSize = 0;
                 btnAutoPO.Click += BtnAutoPO_Click;
                 btnAutoPO.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAutoPO, e.Graphics, "orders", "PO_Predictive", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
-                panelButtons.Controls.Add(btnAutoPO);
+                buttons.Add(btnAutoPO);
             }
 
-            tlpActions.Controls.Add(panelButtons, 1, 0);
-            tlpMain.Controls.Add(tlpActions, 0, 1);
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblPOTitle, txtSearch, buttons.ToArray());
 
-            // Content
-            pnlContent = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0, 10, 0, 0) };
+            // Body — DockStyle.Fill takes all space below the header
+            pnlContent = new Panel { Dock = DockStyle.Fill };
             dgvPO = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, ReadOnly = true, AutoGenerateColumns = false, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None };
             ThemeConfig.ApplyGridTheme(dgvPO);
 
@@ -124,7 +80,7 @@ namespace GenericInventorySystem.Forms
             dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Supplier", DataPropertyName = "supplier_name", HeaderText = LocalizationManager.GetString("PO_Supplier"), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
             dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", DataPropertyName = "total_amount", HeaderText = LocalizationManager.GetString("PO_Amount"), Width = 120 });
             dgvPO.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", DataPropertyName = "status", HeaderText = LocalizationManager.GetString("PO_Status"), Width = 120 });
-            
+
             DataGridViewImageColumn colAction = new DataGridViewImageColumn
             {
                 Name = "colAction",
@@ -140,7 +96,10 @@ namespace GenericInventorySystem.Forms
 
             pnlCard = ThemeConfig.CreateCardPanel(dgvPO);
             pnlContent.Controls.Add(pnlCard);
-            tlpMain.Controls.Add(pnlContent, 0, 2);
+
+            // IMPORTANT: WinForms docks in reverse Z-order. Add Fill first, then Top controls bottom-to-top.
+            pnlRoot.Controls.Add(pnlContent);   // Fill — added first
+            pnlRoot.Controls.Add(tlpHeader);    // Top — docked last = appears at top
 
             this.ResumeLayout(false);
         }

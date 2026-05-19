@@ -175,63 +175,29 @@ namespace GenericInventorySystem.Forms
             tlpMain.ColumnCount = 1;
             tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tlpMain.RowCount = 2;
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             tlpMain.Dock = DockStyle.Fill;
 
             tlpMain.Padding = new Padding(20);
 
-            // Header Panel (TableLayoutPanel for robust RTL)
-            TableLayoutPanel tlpHeader = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 1,
-                RowCount = 2
-            };
-            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); // Title Row
-            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F)); // Actions Row
-            
-            // Row 0: Title
+            // Header Panel
             this.lblCustomersTitle = ThemeConfig.CreateStandardHeader("Customers management");
             this.lblCustomersTitle.Name = "lblCustomersTitle";
-            tlpHeader.Controls.Add(lblCustomersTitle, 0, 0);
 
-            // Row 1: Search + Buttons
-            TableLayoutPanel tlpActions = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 2,
-                RowCount = 1
-            };
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F));
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-
-            // Search Bar
+                        // Search Bar
             this.txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = "Search Customers...";
             txtSearch.Size = new Size(320, 40);
-            txtSearch.Anchor = AnchorStyles.Left;
             txtSearch.TextChanged += txtSearch_TextChanged;
-            tlpActions.Controls.Add(txtSearch, 0, 0);
 
-            // Actions Panel (FlowLayout for Buttons)
-            FlowLayoutPanel panelButtons = new FlowLayoutPanel();
-            panelButtons.FlowDirection = FlowDirection.LeftToRight;
-            panelButtons.AutoSize = true;
-            panelButtons.Anchor = AnchorStyles.Right;
-            panelButtons.WrapContents = false;
-            panelButtons.Padding = new Padding(0);
-            panelButtons.Margin = new Padding(0);
-
-            // Add Customer Button (Primary Solid) - Added first to FLP (RTL)
+            // Add Customer Button
             this.btnAddNew.Size = new System.Drawing.Size(160, 40);
             this.btnAddNew.Name = "btnAddCust";
-            this.btnAddNew.Margin = new Padding(0, 0, 10, 0);
             this.btnAddNew.Click += btnAddNew_Click;
             ThemeConfig.ApplyStandardAddButton(this.btnAddNew, "Cust_AddCustomer");
-            panelButtons.Controls.Add(btnAddNew);
 
             // Details Button
             this.btnCustomerDetails.Size = new System.Drawing.Size(160, 40);
@@ -240,45 +206,37 @@ namespace GenericInventorySystem.Forms
             this.btnCustomerDetails.FlatStyle = FlatStyle.Flat;
             btnCustomerDetails.FlatAppearance.BorderSize = 0;
             btnCustomerDetails.Cursor = Cursors.Hand;
-            btnCustomerDetails.Margin = new Padding(0, 0, 10, 0);
-            btnCustomerDetails.Click += btnCustomerDetails_Click;
-            btnCustomerDetails.Paint += (s, e) => ThemeConfig.DrawIconButton(btnCustomerDetails, e.Graphics, "view", "Cust_Details", ThemeConfig.TextColorLight, ThemeConfig.WarningColor, false);
-            panelButtons.Controls.Add(btnCustomerDetails);
+            this.btnCustomerDetails.Click += btnCustomerDetails_Click;
+            this.btnCustomerDetails.Paint += (s, e) => ThemeConfig.DrawIconButton(btnCustomerDetails, e.Graphics, "view", "Cust_Details", ThemeConfig.TextColorLight, ThemeConfig.WarningColor, false);
 
-            // Delete Selected Button (Red Outline)
+            // Delete Selected Button
             this.btnDeleteBulk.Size = new System.Drawing.Size(130, 40);
             this.btnDeleteBulk.Name = "btnDeleteSelected";
-            this.btnDeleteBulk.Margin = new Padding(0, 0, 10, 0);
             this.btnDeleteBulk.Click += btnDeleteBulk_Click;
             ThemeConfig.ApplyStandardDeleteButton(this.btnDeleteBulk, "Cust_Delete");
-            panelButtons.Controls.Add(btnDeleteBulk);
 
-            // Export Button (Blue Outline)
+            // Export Button
             this.btnExport.Size = new System.Drawing.Size(100, 40);
             this.btnExport.Text = "";
             this.btnExport.Name = "btnExportCust";
             this.btnExport.FlatStyle = FlatStyle.Flat;
             btnExport.FlatAppearance.BorderSize = 0;
             btnExport.Cursor = Cursors.Hand;
-            btnExport.Margin = new Padding(0, 0, 10, 0);
-            btnExport.Click += btnExport_Click;
-            btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Cust_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
-            panelButtons.Controls.Add(btnExport);
+            this.btnExport.Click += btnExport_Click;
+            this.btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Cust_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
 
-            // Import Button (Green Outline)
+            // Import Button
             this.btnImport.Size = new System.Drawing.Size(100, 40);
             this.btnImport.Text = "";
             this.btnImport.Name = "btnImportCust";
             this.btnImport.FlatStyle = FlatStyle.Flat;
             btnImport.FlatAppearance.BorderSize = 0;
             btnImport.Cursor = Cursors.Hand;
-            btnImport.Margin = new Padding(0, 0, 10, 0);
-            btnImport.Click += btnImport_Click;
-            btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Cust_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
-            panelButtons.Controls.Add(btnImport);
+            this.btnImport.Click += btnImport_Click;
+            this.btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Cust_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
 
-            tlpActions.Controls.Add(panelButtons, 1, 0);
-            tlpHeader.Controls.Add(tlpActions, 0, 1);
+            var actionButtons = new Control[] { btnAddNew, btnCustomerDetails, btnDeleteBulk, btnImport, btnExport };
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(this.lblCustomersTitle, this.txtSearch, actionButtons);
 
             tlpMain.Controls.Add(tlpHeader, 0, 0);
 
@@ -663,3 +621,4 @@ namespace GenericInventorySystem.Forms
         }
     }
 }
+

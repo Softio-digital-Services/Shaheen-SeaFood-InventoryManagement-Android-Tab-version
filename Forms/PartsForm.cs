@@ -121,74 +121,34 @@ namespace GenericInventorySystem.Forms
 
             // STANDARD LAYOUT
             TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(20) };
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
             // Header Panel (TableLayoutPanel for robust RTL)
-            TableLayoutPanel tlpHeader = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 1,
-                RowCount = 2
-            };
-            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); // Title
-            tlpHeader.RowStyles.Add(new RowStyle(SizeType.Absolute, 65F)); // Actions
-
-            // 0. Title
             Label lblInventoryTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Parts_Title"));
             lblInventoryTitle.Name = "lblInventoryTitle";
-            tlpHeader.Controls.Add(lblInventoryTitle, 0, 0);
-
-            // 1. Actions (Search + Buttons)
-            TableLayoutPanel tlpActions = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 2,
-                RowCount = 1
-            };
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F));
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-
-            // Search Bar
-            txtSearch = new ModernTextBox { IsSearch = true, ShowLabel = false, PlaceholderText = LocalizationManager.GetString("Parts_Search"), Size = new Size(320, 40), Anchor = AnchorStyles.Left };
+            
+            txtSearch = new ModernTextBox { IsSearch = true, ShowLabel = false, PlaceholderText = LocalizationManager.GetString("Parts_Search"), Size = new Size(320, 40) };
             txtSearch.TextChanged += (s, e) => { if (txtSearch.Text != LocalizationManager.GetString("Parts_Search") && txtSearch.Text != "Search...") LoadData(txtSearch.Text); };
-            tlpActions.Controls.Add(txtSearch, 0, 0);
 
-            // Buttons Panel
-            FlowLayoutPanel panelButtons = new FlowLayoutPanel
-            {
-                FlowDirection = FlowDirection.LeftToRight,
-                AutoSize = true,
-                Anchor = AnchorStyles.Right,
-                WrapContents = false,
-                Padding = new Padding(0),
-                Margin = new Padding(0)
-            };
-
-            // ── Solid-fill primary buttons ──
+            // Buttons Array
             // Add New Service
             btnService.Size = new Size(160, 40);
-            btnService.Margin = new Padding(0, 0, 10, 0);
             btnService.Click += BtnService_Click;
             ThemeConfig.ApplyStandardAddButton(btnService, "Parts_AddService");
-            panelButtons.Controls.Add(btnService);
 
             // Add New Product
             btnAdd.Size = new Size(160, 40);
-            btnAdd.Margin = new Padding(0, 0, 10, 0);
             btnAdd.Click += BtnAdd_Click;
             ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_AddProduct");
-            panelButtons.Controls.Add(btnAdd);
 
-            // ── Outline buttons ──
             // Add Category
-            btnAddCategory = new Button { Size = new Size(140, 40), Margin = new Padding(0, 0, 10, 0) };
+            btnAddCategory = new Button { Size = new Size(140, 40) };
             btnAddCategory.Click += BtnAddCategory_Click;
             ThemeConfig.ApplyStandardAddButton(btnAddCategory, "Parts_AddCategory");
-            panelButtons.Controls.Add(btnAddCategory);
 
             // Delete Selected
-            Button btnDeleteSelected = new Button { Size = new Size(130, 40), Margin = new Padding(0, 0, 10, 0), Name = "btnDeleteSelected" };
+            Button btnDeleteSelected = new Button { Size = new Size(130, 40), Name = "btnDeleteSelected" };
             btnDeleteSelected.Click += (s, e) => {
                 var checkedIds = new List<int>();
                 foreach (DataGridViewRow row in dgvParts.Rows) {
@@ -204,41 +164,34 @@ namespace GenericInventorySystem.Forms
                 }
             };
             ThemeConfig.ApplyStandardDeleteButton(btnDeleteSelected, "Parts_Delete");
-            panelButtons.Controls.Add(btnDeleteSelected);
 
             // Import
             btnImport.Size = new Size(100, 40);
             btnImport.FlatStyle = FlatStyle.Flat;
-            btnImport.Margin = new Padding(0, 0, 10, 0);
             btnImport.FlatAppearance.BorderSize = 0;
             btnImport.Cursor = Cursors.Hand;
             btnImport.Click += BtnImport_Click;
             btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Parts_Import", Color.FromArgb(139, 92, 246), Color.FromArgb(139, 92, 246), true);
-            panelButtons.Controls.Add(btnImport);
 
             // Export
             btnExport.Size = new Size(100, 40);
             btnExport.FlatStyle = FlatStyle.Flat;
-            btnExport.Margin = new Padding(0, 0, 10, 0);
             btnExport.FlatAppearance.BorderSize = 0;
             btnExport.Cursor = Cursors.Hand;
             btnExport.Click += BtnExport_Click;
             btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Parts_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
-            panelButtons.Controls.Add(btnExport);
 
             // Filter
             btnFilter.Size = new Size(110, 40);
             btnFilter.FlatStyle = FlatStyle.Flat;
-            btnFilter.Margin = new Padding(0, 0, 10, 0);
             btnFilter.FlatAppearance.BorderSize = 0;
             btnFilter.Cursor = Cursors.Hand;
             btnFilter.Click += BtnFilter_Click;
             btnFilter.Paint += (s, e) => ThemeConfig.DrawIconButton(btnFilter, e.Graphics, "filter", "Parts_Filter", ThemeConfig.WarningColor, ThemeConfig.WarningColor, true);
-            panelButtons.Controls.Add(btnFilter);
 
-            tlpActions.Controls.Add(panelButtons, 1, 0);
-            tlpHeader.Controls.Add(tlpActions, 0, 1);
+            var actionButtons = new Control[] { btnService, btnAdd, btnAddCategory, btnDeleteSelected, btnImport, btnExport, btnFilter };
 
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblInventoryTitle, txtSearch, actionButtons);
             tlpMain.Controls.Add(tlpHeader, 0, 0);
 
             // DataGridView Configuration
@@ -1118,4 +1071,5 @@ namespace GenericInventorySystem.Forms
         }
     }
 }
+
 

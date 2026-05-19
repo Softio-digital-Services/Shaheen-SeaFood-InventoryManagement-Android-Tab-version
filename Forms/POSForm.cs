@@ -64,14 +64,13 @@ namespace GenericInventorySystem.Forms
         private void InitializeComponent() {
             this.SuspendLayout(); this.Size = new Size(1100, 750); this.BackColor = ThemeConfig.BackgroundColor; 
             TableLayoutPanel tlpRoot = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 320F));
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 320F));
             this.Controls.Add(tlpRoot);
 
-            Panel pnlHeader = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
             Label lblPOSTitle = ThemeConfig.CreateStandardHeader("Create Sales Order");
             lblPOSTitle.Name = "lblPOSTitle";
-            pnlHeader.Controls.Add(lblPOSTitle);
-            tlpRoot.Controls.Add(pnlHeader, 0, 0);
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblPOSTitle, null, null);
+            tlpRoot.Controls.Add(tlpHeader, 0, 0);
 
             // The header panel now only contains the title. Buttons moved to Line Items panel.
 

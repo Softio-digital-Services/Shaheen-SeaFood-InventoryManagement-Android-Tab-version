@@ -52,113 +52,59 @@ namespace GenericInventorySystem.Forms
         private void InitializeComponent()
         {
             this.SuspendLayout();
-            this.Dock     = DockStyle.Fill;
-            TableLayoutPanel tlp = new TableLayoutPanel();
-            tlp.Dock       = DockStyle.Fill;
-            tlp.Padding    = new Padding(20);
-            tlp.ColumnCount = 1;
-            tlp.RowCount   = 3;
-            tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // 0. Title
-            tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));  // 1. Actions (Search/Currency)
-            tlp.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // 2. Content
+            this.Dock = DockStyle.Fill;
 
-            this.Controls.Add(tlp);
+            Panel pnlRoot = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20) };
+            this.Controls.Add(pnlRoot);
 
-            // 0. Title
-            lblQuotationsTitle = ThemeConfig.CreateStandardHeader(
-                LocalizationManager.GetString("Msg_CustomerQuotations"));
+            // Header
+            lblQuotationsTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Msg_CustomerQuotations"));
             lblQuotationsTitle.Name = "lblQuotationsTitle";
-            lblQuotationsTitle.Margin = new Padding(0);
-            tlp.Controls.Add(lblQuotationsTitle, 0, 0);
 
-            // 1. Actions Row
-            TableLayoutPanel tlpActions = new TableLayoutPanel {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0),
-                ColumnCount = 2,
-                RowCount = 1
-            };
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F));
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlp.Controls.Add(tlpActions, 0, 1);
-            
             txtSearch = new ModernTextBox {
-                IsSearch = true,
-                ShowLabel = false,
+                IsSearch = true, ShowLabel = false,
                 PlaceholderText = LocalizationManager.GetString("Msg_SearchQuotations") ?? "Search quotations...",
-                Size = new Size(320, 40),
-                Anchor = AnchorStyles.Left
+                Size = new Size(320, 40)
             };
             txtSearch.TextChanged += (s, e) => LoadQuotations(txtSearch.Text);
-            tlpActions.Controls.Add(txtSearch, 0, 0);
-            
+
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblQuotationsTitle, txtSearch, null);
+
             // Grid
             dgvQuotes = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AutoGenerateColumns = false, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, RowHeadersVisible = false };
             ThemeConfig.ApplyGridTheme(dgvQuotes);
 
-            // Columns (manual so we fully control them)
-            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "order_id", HeaderText = "ID", DataPropertyName = "order_id",
-                Width = 60, ReadOnly = true
-            });
-            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "order_date", HeaderText = "Date", DataPropertyName = "order_date",
-                Width = 160, ReadOnly = true,
-                DefaultCellStyle = new DataGridViewCellStyle { Format = "g" }
-            });
-            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "CustomerName", HeaderText = "Customer", DataPropertyName = "CustomerName",
-                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true
-            });
+            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "order_id", HeaderText = "ID", DataPropertyName = "order_id", Width = 60, ReadOnly = true });
+            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "order_date", HeaderText = "Date", DataPropertyName = "order_date", Width = 160, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "g" } });
+            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "CustomerName", HeaderText = "Customer", DataPropertyName = "CustomerName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
 
             var colTotal = new DataGridViewTextBoxColumn
             {
                 Name = "total_amount", HeaderText = "Total", DataPropertyName = "total_amount",
                 Width = 110, ReadOnly = true,
-                DefaultCellStyle = new DataGridViewCellStyle
-                {
-                    Font   = new Font("Segoe UI", 9.5F, FontStyle.Bold),
-                    ForeColor = ThemeConfig.PrimaryColor,
-                    Alignment = DataGridViewContentAlignment.MiddleCenter
-                }
+                DefaultCellStyle = new DataGridViewCellStyle { Font = new Font("Segoe UI", 9.5F, FontStyle.Bold), ForeColor = ThemeConfig.PrimaryColor, Alignment = DataGridViewContentAlignment.MiddleCenter }
             };
             dgvQuotes.Columns.Add(colTotal);
             dgvQuotes.CellFormatting += DgvQuotes_CellFormatting;
 
-            // Hidden columns for IDs that come from DataSource
-            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "customer_id", DataPropertyName = "customer_id", Visible = false 
-            });
+            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "customer_id", DataPropertyName = "customer_id", Visible = false });
             dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = "Actions", Width = 200, ReadOnly = true });
 
-            // Events
-            dgvQuotes.CellPainting     += DgvQuotes_CellPainting;
-            dgvQuotes.CellClick        += DgvQuotes_CellClick;
-            dgvQuotes.CellMouseMove    += (s, e) =>
+            dgvQuotes.CellPainting  += DgvQuotes_CellPainting;
+            dgvQuotes.CellClick     += DgvQuotes_CellClick;
+            dgvQuotes.CellMouseMove += (s, e) =>
             {
-                if (e.RowIndex != _hoveredRow && e.RowIndex >= 0 &&
-                    dgvQuotes.Columns[e.ColumnIndex].Name == "colActions")
-                {
-                    _hoveredRow = e.RowIndex;
-                    dgvQuotes.InvalidateRow(e.RowIndex);
-                    dgvQuotes.Cursor = Cursors.Hand;
-                }
-                else if (dgvQuotes.Columns[e.ColumnIndex].Name != "colActions")
-                    dgvQuotes.Cursor = Cursors.Default;
+                if (e.RowIndex != _hoveredRow && e.RowIndex >= 0 && dgvQuotes.Columns[e.ColumnIndex].Name == "colActions")
+                { _hoveredRow = e.RowIndex; dgvQuotes.InvalidateRow(e.RowIndex); dgvQuotes.Cursor = Cursors.Hand; }
+                else if (dgvQuotes.Columns[e.ColumnIndex].Name != "colActions") dgvQuotes.Cursor = Cursors.Default;
             };
-            dgvQuotes.CellMouseLeave   += (s, e) =>
-            {
-                _hoveredRow = -1;
-                dgvQuotes.Cursor = Cursors.Default;
-            };
+            dgvQuotes.CellMouseLeave += (s, e) => { _hoveredRow = -1; dgvQuotes.Cursor = Cursors.Default; };
 
-            // Card Wrapper
             Panel pnlCard = ThemeConfig.CreateCardPanel(dgvQuotes);
-            tlp.Controls.Add(pnlCard, 0, 2);
+
+            // IMPORTANT: WinForms docks in reverse Z-order. Add Fill first, then Top controls bottom-to-top.
+            pnlRoot.Controls.Add(pnlCard);      // Fill — added first
+            pnlRoot.Controls.Add(tlpHeader);    // Top — docked last = appears at top
 
             this.ResumeLayout(false);
         }
