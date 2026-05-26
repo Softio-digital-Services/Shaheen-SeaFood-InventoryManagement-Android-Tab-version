@@ -2,19 +2,19 @@ using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Linq;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Services;
+using butcherPOS.Controls;
+using butcherPOS.Helpers;
+using butcherPOS.Services;
 
-namespace GenericInventorySystem
+namespace butcherPOS
 {
     public partial class MainForm : Form
     {
         private Forms.PartsForm partsForm;
         private Forms.UsersForm usersForm;
-        private GenericInventorySystem.Forms.DashboardForm dashboardForm;
-        private GenericInventorySystem.Forms.ReportsForm reportsForm;
-        private GenericInventorySystem.Forms.HistoryForm historyForm;
+        private butcherPOS.Forms.DashboardForm dashboardForm;
+        private butcherPOS.Forms.ReportsForm reportsForm;
+        private butcherPOS.Forms.HistoryForm historyForm;
         private Forms.POSForm posForm;
 
         // Header Controls
@@ -191,7 +191,7 @@ namespace GenericInventorySystem
                 BackColor = Color.Transparent
             };
             try { 
-                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png"); 
+                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "logo.png"); 
                 if(System.IO.File.Exists(logoPath)) pbSidebarLogo.Image = Image.FromFile(logoPath); 
             } catch { }
             pnlLogoContainer.Controls.Add(pbSidebarLogo);
@@ -208,13 +208,13 @@ namespace GenericInventorySystem
             // Dashboard - wrapped in try/catch so a DB error never crashes MainForm
             try
             {
-                dashboardForm = new GenericInventorySystem.Forms.DashboardForm { Dock = DockStyle.Fill };
+                dashboardForm = new butcherPOS.Forms.DashboardForm { Dock = DockStyle.Fill };
                 ThemeConfig.ApplyGlobalTheme(dashboardForm);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("Dashboard init error: " + ex.Message);
-                dashboardForm = new GenericInventorySystem.Forms.DashboardForm();
+                dashboardForm = new butcherPOS.Forms.DashboardForm();
                 dashboardForm.Dock = DockStyle.Fill;
             }
             panel3.Controls.Add(dashboardForm);
@@ -540,7 +540,7 @@ namespace GenericInventorySystem
             label1.Font = ThemeConfig.SmallBoldFont;
             label1.ForeColor = Color.FromArgb(180, 255, 255, 255); // Subtle white
 
-            panel1.BackColor = Color.FromArgb(25, 118, 210); // Deep Blue Header
+            panel1.BackColor = ThemeConfig.HeaderColor; // Theme Red Header
             panel1.Paint += (s, e) => {
                 // No border needed for deep blue header
             };
@@ -602,7 +602,7 @@ namespace GenericInventorySystem
             foreach(Control c in panel3.Controls) if(c is UserControl) c.Visible = false;
             form.Visible = true; form.BringToFront();
             form.Focus();
-            if (form is GenericInventorySystem.Forms.DashboardForm dash) dash.RefreshDashboard();
+            if (form is butcherPOS.Forms.DashboardForm dash) dash.RefreshDashboard();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

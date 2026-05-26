@@ -1,8 +1,8 @@
 using System;
 using System.Data;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem.Services
+namespace butcherPOS.Services
 {
     public class HistoryService
     {

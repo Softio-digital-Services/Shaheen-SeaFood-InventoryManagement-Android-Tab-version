@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem.Services
+namespace butcherPOS.Services
 {
     public class ReturnService
     {

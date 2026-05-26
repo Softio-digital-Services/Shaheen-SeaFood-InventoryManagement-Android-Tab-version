@@ -2,9 +2,9 @@ using System;
 using Microsoft.Data.Sqlite;
 using System.Windows.Forms;
 using System.Drawing;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem
+namespace butcherPOS
 {
     public partial class LoginForm : Form
     {
@@ -115,7 +115,7 @@ namespace GenericInventorySystem
             pbLogo.Anchor = AnchorStyles.Top; 
             try 
             { 
-                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png");
+                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "logo.png");
                 if(System.IO.File.Exists(logoPath))
                     pbLogo.Image = Image.FromFile(logoPath);
             } catch { }

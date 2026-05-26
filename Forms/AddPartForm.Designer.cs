@@ -1,4 +1,4 @@
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     partial class AddPartForm
     {
@@ -17,16 +17,16 @@ namespace GenericInventorySystem.Forms
         {
             this.components = new System.ComponentModel.Container();
             
-            this.txtBarcode = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
-            this.btnScan = new GenericInventorySystem.Controls.ModernButton { Text = "Scan", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
-            this.txtPartName = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsRequired = true };
-            this.txtPartNumber = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
-            this.txtLocation = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
-            this.txtShelf = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(5, 0, 0, 0) };
+            this.txtBarcode = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
+            this.btnScan = new butcherPOS.Controls.ModernButton { Text = "Scan", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
+            this.txtPartName = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsRequired = true };
+            this.txtPartNumber = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
+            this.txtLocation = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
+            this.txtShelf = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(5, 0, 0, 0) };
             
-            this.numQuantity = new GenericInventorySystem.Controls.ModernNumericUpDown { Maximum = 10000, Dock = DockStyle.Fill };
-            this.numMinStock = new GenericInventorySystem.Controls.ModernNumericUpDown { Maximum = 10000, Dock = DockStyle.Fill };
-            this.numPrice = new GenericInventorySystem.Controls.ModernNumericUpDown { DecimalPlaces = 2, Maximum = 10000, Dock = DockStyle.Fill };
+            this.numQuantity = new butcherPOS.Controls.ModernNumericUpDown { Maximum = 10000, Dock = DockStyle.Fill };
+            this.numMinStock = new butcherPOS.Controls.ModernNumericUpDown { Maximum = 10000, Dock = DockStyle.Fill };
+            this.numPrice = new butcherPOS.Controls.ModernNumericUpDown { DecimalPlaces = 2, Maximum = 10000, Dock = DockStyle.Fill };
             
             this.lblCategory = new System.Windows.Forms.Label { AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
             this.cmbCategory = new System.Windows.Forms.ComboBox { Font = new Font("Segoe UI", 10F), Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDown, AutoCompleteMode = AutoCompleteMode.SuggestAppend, AutoCompleteSource = AutoCompleteSource.ListItems };
@@ -34,7 +34,7 @@ namespace GenericInventorySystem.Forms
             this.cmbStatus = new System.Windows.Forms.ComboBox { Font = new Font("Segoe UI", 10F), Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
             
             this.pbImage = new System.Windows.Forms.PictureBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke };
-            this.btnUpload = new GenericInventorySystem.Controls.ModernButton { Text = "Upload Image", Dock = DockStyle.Top, Height = 35, Margin = new Padding(0) };
+            this.btnUpload = new butcherPOS.Controls.ModernButton { Text = "Upload Image", Dock = DockStyle.Top, Height = 35, Margin = new Padding(0) };
 
             ((System.ComponentModel.ISupportInitialize)(this.pbImage)).BeginInit();
             this.SuspendLayout();
@@ -62,7 +62,7 @@ namespace GenericInventorySystem.Forms
             pnlSKU.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             pnlSKU.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
             pnlSKU.Controls.Add(txtPartNumber, 0, 0);
-            this.btnAutoSKU = new GenericInventorySystem.Controls.ModernButton { Text = " Auto", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
+            this.btnAutoSKU = new butcherPOS.Controls.ModernButton { Text = " Auto", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
             pnlSKU.Controls.Add(btnAutoSKU, 1, 0);
             tlpFields.Controls.Add(pnlSKU, 0, 2);
 
@@ -123,23 +123,23 @@ namespace GenericInventorySystem.Forms
         }
 
         // Controls
-        private GenericInventorySystem.Controls.ModernTextBox txtBarcode;
-        private GenericInventorySystem.Controls.ModernButton btnScan;
-        private GenericInventorySystem.Controls.ModernTextBox txtPartName;
-        private GenericInventorySystem.Controls.ModernTextBox txtPartNumber;
-        private GenericInventorySystem.Controls.ModernButton btnAutoSKU;
-        private GenericInventorySystem.Controls.ModernTextBox txtLocation;
-        private GenericInventorySystem.Controls.ModernTextBox txtShelf;
+        private butcherPOS.Controls.ModernTextBox txtBarcode;
+        private butcherPOS.Controls.ModernButton btnScan;
+        private butcherPOS.Controls.ModernTextBox txtPartName;
+        private butcherPOS.Controls.ModernTextBox txtPartNumber;
+        private butcherPOS.Controls.ModernButton btnAutoSKU;
+        private butcherPOS.Controls.ModernTextBox txtLocation;
+        private butcherPOS.Controls.ModernTextBox txtShelf;
         
-        private GenericInventorySystem.Controls.ModernNumericUpDown numQuantity;
-        private GenericInventorySystem.Controls.ModernNumericUpDown numMinStock;
-        private GenericInventorySystem.Controls.ModernNumericUpDown numPrice;
+        private butcherPOS.Controls.ModernNumericUpDown numQuantity;
+        private butcherPOS.Controls.ModernNumericUpDown numMinStock;
+        private butcherPOS.Controls.ModernNumericUpDown numPrice;
         private System.Windows.Forms.Label lblCategory;
         private System.Windows.Forms.ComboBox cmbCategory;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.ComboBox cmbStatus;
         
         private System.Windows.Forms.PictureBox pbImage;
-        private GenericInventorySystem.Controls.ModernButton btnUpload;
+        private butcherPOS.Controls.ModernButton btnUpload;
     }
 }

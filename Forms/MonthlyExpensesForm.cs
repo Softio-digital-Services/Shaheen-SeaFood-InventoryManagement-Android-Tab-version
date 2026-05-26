@@ -4,12 +4,12 @@ using Microsoft.Data.Sqlite;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Data;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Services;
+using butcherPOS.Controls;
+using butcherPOS.Data;
+using butcherPOS.Helpers;
+using butcherPOS.Services;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public class MonthlyExpensesForm : UserControl
     {

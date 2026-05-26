@@ -2,10 +2,10 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Helpers.Plugins;
+using butcherPOS.Helpers;
+using butcherPOS.Helpers.Plugins;
 
-namespace GenericInventorySystem.Plugins
+namespace butcherPOS.Plugins
 {
     /// <summary>
     /// Free built-in plugin -- adds Database Backup &amp; Restore via the sidebar.

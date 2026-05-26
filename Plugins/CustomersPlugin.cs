@@ -1,9 +1,9 @@
 using System;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers.Plugins;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Helpers.Plugins;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem.Plugins
+namespace butcherPOS.Plugins
 {
     public class CustomersPlugin : ITabPlugin
     {
@@ -34,7 +34,7 @@ namespace GenericInventorySystem.Plugins
             // Worker can see Customers, Admins can see Customers, Accountants can see Customers
             if (_context.UserRole == "Staff" || _context.UserRole == "Accountant" || _context.IsAdmin)
             {
-                return new GenericInventorySystem.Forms.CustomersForm();
+                return new butcherPOS.Forms.CustomersForm();
             }
             
             // Return an empty access denied control or null.

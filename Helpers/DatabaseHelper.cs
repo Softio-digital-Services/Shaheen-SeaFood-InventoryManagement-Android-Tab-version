@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.Sqlite;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem
+namespace butcherPOS
 {
     /// <summary>
     /// Centralized database operations helper -- SQLite backend.

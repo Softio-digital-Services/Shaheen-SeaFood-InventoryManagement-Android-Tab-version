@@ -1,6 +1,6 @@
 using System.Windows.Forms;
 
-namespace GenericInventorySystem.Helpers.Plugins
+namespace butcherPOS.Helpers.Plugins
 {
     /// <summary>
     /// Implement this on top of IPlugin to add a tab to the main sidebar navigation.

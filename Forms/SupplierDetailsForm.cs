@@ -2,11 +2,11 @@ using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
-using GenericInventorySystem.Data;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Controls;
+using butcherPOS.Data;
+using butcherPOS.Helpers;
+using butcherPOS.Controls;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class SupplierDetailsForm : BaseModalForm
     {
@@ -248,7 +248,7 @@ namespace GenericInventorySystem.Forms
              string balStr = lblBalance.Text.Replace("$", "").Trim();
              decimal.TryParse(balStr, out currentBalance);
 
-             Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+             Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
              TransactionEntryForm form = new TransactionEntryForm(L("Sup_PaySupplier"), string.Format(L("Prompt_PaySupplier"), _supplierName));
              if(form.ShowDialog() == DialogResult.OK)
              {
@@ -282,7 +282,7 @@ namespace GenericInventorySystem.Forms
 
         private void BtnAddBill_Click(object sender, EventArgs e)
         {
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
             TransactionEntryForm form = new TransactionEntryForm(
                 L("Sup_AddBill") ?? "Record Sale",
                 string.Format(L("Prompt_AddBill") ?? "Enter bill amount from {0}:", _supplierName),

@@ -4,9 +4,9 @@ using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.ComponentModel;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public class BaseModalForm : Form
     {

@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Windows.Forms;
-using GenericInventorySystem.Services;
-using GenericInventorySystem.Forms;
+using butcherPOS.Services;
+using butcherPOS.Forms;
 using System.IO;
 
-namespace GenericInventorySystem.Helpers
+namespace butcherPOS.Helpers
 {
     public class LabelPrintItem
     {

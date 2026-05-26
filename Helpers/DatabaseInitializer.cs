@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Windows.Forms;
 using Microsoft.Data.Sqlite;
 
-namespace GenericInventorySystem.Helpers
+namespace butcherPOS.Helpers
 {
     public static class DatabaseInitializer
     {

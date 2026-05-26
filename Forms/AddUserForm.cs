@@ -3,11 +3,11 @@ using System.Data;
 using Microsoft.Data.Sqlite;
 using System.Drawing;
 using System.Windows.Forms;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Data;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Controls;
+using butcherPOS.Data;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class AddUserForm : BaseModalForm
     {

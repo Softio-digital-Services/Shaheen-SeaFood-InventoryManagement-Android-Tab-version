@@ -2,9 +2,9 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using GenericInventorySystem; // Correct namespace for ThemeConfig
+using butcherPOS; // Correct namespace for ThemeConfig
 
-namespace GenericInventorySystem.Controls
+namespace butcherPOS.Controls
 {
     public class ModernPanel : Panel
     {

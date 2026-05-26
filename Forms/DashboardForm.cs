@@ -2,13 +2,13 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting; // Standard Charting
-using GenericInventorySystem.Services;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Services;
+using butcherPOS.Controls;
+using butcherPOS.Helpers;
 using System.Collections.Generic;
 using System.Data;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class DashboardForm : UserControl
     {
@@ -58,13 +58,13 @@ namespace GenericInventorySystem.Forms
             this.Size = new System.Drawing.Size(1200, 800);
 
             
-            GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            butcherPOS.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
         }
 
         private void ApplyLocalization()
         {
-            GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+            butcherPOS.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
 
             if (this.lblDashboardTitle != null) this.lblDashboardTitle.Text = L("Dash_Title");
             
@@ -306,7 +306,7 @@ namespace GenericInventorySystem.Forms
                 int lowStock = _dashboardService.GetLowStockCount();
                 int orders = _dashboardService.GetOrdersCount(); // Default today
 
-                Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+                Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
 
                 if (_cardInventory != null)
                 {

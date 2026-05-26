@@ -1,18 +1,18 @@
 using System.Drawing;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     partial class AddCurrencyForm
     {
         private void InitializeComponent()
         {
-            this.txtCode = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
-            this.txtName = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
-            this.txtSymbol = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
-            this.numRate = new GenericInventorySystem.Controls.ModernNumericUpDown { DecimalPlaces = 4, Maximum = 1000000, Dock = DockStyle.Fill, Margin = new Padding(0) };
-            this.btnFetch = new GenericInventorySystem.Controls.ModernButton { Text = "Fetch", Width = 110, Height = 42, Anchor = AnchorStyles.Bottom | AnchorStyles.Right, Margin = new Padding(0, 0, 0, 0) };
+            this.txtCode = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
+            this.txtName = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
+            this.txtSymbol = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
+            this.numRate = new butcherPOS.Controls.ModernNumericUpDown { DecimalPlaces = 4, Maximum = 1000000, Dock = DockStyle.Fill, Margin = new Padding(0) };
+            this.btnFetch = new butcherPOS.Controls.ModernButton { Text = "Fetch", Width = 110, Height = 42, Anchor = AnchorStyles.Bottom | AnchorStyles.Right, Margin = new Padding(0, 0, 0, 0) };
             ThemeConfig.ApplyPrimaryButton(btnFetch);
             
             this.SuspendLayout();
@@ -46,10 +46,10 @@ namespace GenericInventorySystem.Forms
             this.PerformLayout();
         }
 
-        private GenericInventorySystem.Controls.ModernTextBox txtCode;
-        private GenericInventorySystem.Controls.ModernTextBox txtName;
-        private GenericInventorySystem.Controls.ModernTextBox txtSymbol;
-        private GenericInventorySystem.Controls.ModernNumericUpDown numRate;
-        private GenericInventorySystem.Controls.ModernButton btnFetch;
+        private butcherPOS.Controls.ModernTextBox txtCode;
+        private butcherPOS.Controls.ModernTextBox txtName;
+        private butcherPOS.Controls.ModernTextBox txtSymbol;
+        private butcherPOS.Controls.ModernNumericUpDown numRate;
+        private butcherPOS.Controls.ModernButton btnFetch;
     }
 }

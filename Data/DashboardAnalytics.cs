@@ -2,7 +2,7 @@ using System;
 using System.Data;
 using System.Collections.Generic;
 
-namespace GenericInventorySystem.Data
+namespace butcherPOS.Data
 {
     public static class DashboardAnalytics
     {

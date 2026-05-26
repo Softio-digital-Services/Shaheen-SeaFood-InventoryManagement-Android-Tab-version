@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace GenericInventorySystem.Helpers
+namespace butcherPOS.Helpers
 {
     /// <summary>
     /// Helper class for importing and exporting data to CSV and Excel formats

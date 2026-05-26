@@ -2,10 +2,10 @@ using System;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Helpers.Plugins;
+using butcherPOS.Helpers;
+using butcherPOS.Helpers.Plugins;
 
-namespace GenericInventorySystem.Plugins
+namespace butcherPOS.Plugins
 {
     /// <summary>
     /// Free built-in plugin -- adds a full-featured calculator to the sidebar.

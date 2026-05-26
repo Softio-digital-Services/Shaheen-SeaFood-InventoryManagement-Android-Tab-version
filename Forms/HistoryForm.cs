@@ -3,12 +3,12 @@ using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using GenericInventorySystem.Data;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Services;
+using butcherPOS.Data;
+using butcherPOS.Controls;
+using butcherPOS.Helpers;
+using butcherPOS.Services;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class HistoryForm : UserControl
     {
@@ -55,7 +55,7 @@ namespace GenericInventorySystem.Forms
             _historyService = new HistoryService(); // Ideally injected
             ApplyTheme();
             
-            GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            butcherPOS.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
 
             // Default Tab
@@ -69,8 +69,8 @@ namespace GenericInventorySystem.Forms
 
         private void ApplyLocalization()
         {
-            GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+            butcherPOS.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
 
             if (lblHistoryTitle != null) lblHistoryTitle.Text = L("Hist_Title");
 
@@ -98,7 +98,7 @@ namespace GenericInventorySystem.Forms
 
         private void ApplyColumnHeaders()
         {
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
 
             foreach (DataGridViewColumn col in dgvInventory.Columns) {
                 if (col.Name == "Date") col.HeaderText = L("Hist_ColDate");
@@ -313,7 +313,7 @@ namespace GenericInventorySystem.Forms
                 if (col.Name == "Status" && e.Value != null)
                 {
                     string statusStr = e.Value.ToString();
-                    if (statusStr == "Completed" && GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
+                    if (statusStr == "Completed" && butcherPOS.Helpers.LocalizationManager.IsArabic)
                     {
                         e.Value = "\u0645\u0643\u062A\u0645\u0644";
                         e.FormattingApplied = true;

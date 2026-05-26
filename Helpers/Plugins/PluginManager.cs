@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 
-namespace GenericInventorySystem.Helpers.Plugins
+namespace butcherPOS.Helpers.Plugins
 {
     /// <summary>
     /// Scans the /Plugins folder, loads qualifying DLLs, and registers them
@@ -93,16 +93,16 @@ namespace GenericInventorySystem.Helpers.Plugins
         private static void LoadInternalPlugins()
         {
             // Free built-in plugins -- always visible
-            TryRegister(new GenericInventorySystem.Plugins.CalculatorPlugin());
-            TryRegister(new GenericInventorySystem.Plugins.BackupPlugin());
+            TryRegister(new butcherPOS.Plugins.CalculatorPlugin());
+            TryRegister(new butcherPOS.Plugins.BackupPlugin());
 
             // Paid internal plugins (visibility toggled via license)
-            TryRegister(new GenericInventorySystem.Plugins.CustomersPlugin());
-            TryRegister(new GenericInventorySystem.Plugins.SuppliersPlugin());
-            TryRegister(new GenericInventorySystem.Plugins.QuotationsPlugin());
-            TryRegister(new GenericInventorySystem.Plugins.PurchaseOrdersPlugin());
-            TryRegister(new GenericInventorySystem.Plugins.MonthlyExpensesPlugin());
-            TryRegister(new GenericInventorySystem.Plugins.BarcodeLabelsPlugin());
+            TryRegister(new butcherPOS.Plugins.CustomersPlugin());
+            TryRegister(new butcherPOS.Plugins.SuppliersPlugin());
+            TryRegister(new butcherPOS.Plugins.QuotationsPlugin());
+            TryRegister(new butcherPOS.Plugins.PurchaseOrdersPlugin());
+            TryRegister(new butcherPOS.Plugins.MonthlyExpensesPlugin());
+            TryRegister(new butcherPOS.Plugins.BarcodeLabelsPlugin());
         }
 
         private static void LoadAssembly(string path)

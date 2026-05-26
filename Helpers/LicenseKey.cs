@@ -1,6 +1,6 @@
 using System;
 
-namespace GenericInventorySystem.Helpers
+namespace butcherPOS.Helpers
 {
     /// <summary>
     /// Represents a software license

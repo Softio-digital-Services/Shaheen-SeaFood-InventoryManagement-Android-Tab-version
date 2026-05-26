@@ -3,12 +3,12 @@ using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using GenericInventorySystem.Data;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Services;
+using butcherPOS.Data;
+using butcherPOS.Helpers;
+using butcherPOS.Controls;
+using butcherPOS.Services;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     /// <summary>
     /// Inventory Management Screen.
@@ -35,8 +35,8 @@ namespace GenericInventorySystem.Forms
             EventHandler langHandler = (s, e) => ApplyLocalization();
             EventHandler currHandler = (s, e) => { dgvParts.Invalidate(); };
 
-            GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += langHandler;
-            GenericInventorySystem.Services.CurrencyService.CurrencyChanged += currHandler;
+            butcherPOS.Helpers.LocalizationManager.LanguageChanged += langHandler;
+            butcherPOS.Services.CurrencyService.CurrencyChanged += currHandler;
 
             ApplyLocalization();
             ApplyPermissions();
@@ -50,15 +50,15 @@ namespace GenericInventorySystem.Forms
             {
                 syncTimer.Stop();
                 syncTimer.Dispose();
-                GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged -= langHandler;
-                GenericInventorySystem.Services.CurrencyService.CurrencyChanged -= currHandler;
+                butcherPOS.Helpers.LocalizationManager.LanguageChanged -= langHandler;
+                butcherPOS.Services.CurrencyService.CurrencyChanged -= currHandler;
             };
         }
 
         private void ApplyLocalization()
         {
-            GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+            butcherPOS.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
 
             var ctrlTitle = this.Controls.Find("lblInventoryTitle", true);
             if (ctrlTitle.Length > 0) ctrlTitle[0].Text = L("Parts_Title");
@@ -78,7 +78,7 @@ namespace GenericInventorySystem.Forms
             if (btnExport != null) btnExport.Invalidate();
             if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Parts_Delete");
 
-            GenericInventorySystem.Helpers.LocalizationManager.TranslateControl(this);
+            butcherPOS.Helpers.LocalizationManager.TranslateControl(this);
 
             // Translate DataGridView columns
             if (dgvParts != null && dgvParts.Columns.Count > 0)
@@ -366,7 +366,7 @@ namespace GenericInventorySystem.Forms
             {
                 if (decimal.TryParse(e.Value.ToString(), out decimal usdPrice))
                 {
-                    e.Value = GenericInventorySystem.Services.CurrencyService.Format(usdPrice);
+                    e.Value = butcherPOS.Services.CurrencyService.Format(usdPrice);
                     e.FormattingApplied = true;
                 }
             }
@@ -541,7 +541,7 @@ namespace GenericInventorySystem.Forms
                 // Check Edit (X=10-40)
                 if (e.X >= 10 && e.X <= 40)
                 {
-                    if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
+                    if (!butcherPOS.Helpers.UserSession.IsAdmin)
                     {
                         MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionEdit") ?? "You do not have permission to edit items.");
                         return;
@@ -601,7 +601,7 @@ namespace GenericInventorySystem.Forms
                     string id = dgvParts.Rows[e.RowIndex].Cells["part_id"].Value?.ToString();
                     if (string.IsNullOrEmpty(id)) return;
 
-                    if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
+                    if (!butcherPOS.Helpers.UserSession.IsAdmin)
                     {
                         MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionDelete") ?? "You do not have permission to delete items.");
                         return;
@@ -741,7 +741,7 @@ namespace GenericInventorySystem.Forms
 
             try
             {
-                var catList = GenericInventorySystem.Data.CategoryData.GetAllCategories();
+                var catList = butcherPOS.Data.CategoryData.GetAllCategories();
                 foreach (var cat in catList)
                 {
                     ToolStripMenuItem catItem = new ToolStripMenuItem(cat.CategoryName);
@@ -1059,7 +1059,7 @@ namespace GenericInventorySystem.Forms
         }
         private void ApplyPermissions()
         {
-            if (!GenericInventorySystem.Helpers.UserSession.IsAdmin)
+            if (!butcherPOS.Helpers.UserSession.IsAdmin)
             {
                 if (btnAdd != null) btnAdd.Visible = false;
                 if (btnAddCategory != null) btnAddCategory.Visible = false;

@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Services;
+using butcherPOS.Controls;
+using butcherPOS.Helpers;
+using butcherPOS.Services;
 using System.Drawing.Printing;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public class QuotationPreviewForm : BaseModalForm
     {
@@ -103,7 +103,7 @@ namespace GenericInventorySystem.Forms
                     PictureBox pbLogo = new PictureBox { Size = new Size(70, 70), Location = new Point(40, hy), SizeMode = PictureBoxSizeMode.Zoom };
                     pbLogo.Image = ThemeConfig.GetNuricon("pos");
                     try {
-                        string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "inventory_logo.png");
+                        string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "logo.png");
                         if (System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath);
                     } catch { }
                     page.Controls.Add(pbLogo);

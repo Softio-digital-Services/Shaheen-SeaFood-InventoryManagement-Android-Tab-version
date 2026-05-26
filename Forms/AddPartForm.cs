@@ -1,11 +1,11 @@
 using System;
 using System.Windows.Forms;
-using GenericInventorySystem.Data;
-using GenericInventorySystem;
-using GenericInventorySystem.Services;
-using GenericInventorySystem.Helpers; // Also good to have explicit
+using butcherPOS.Data;
+using butcherPOS;
+using butcherPOS.Services;
+using butcherPOS.Helpers; // Also good to have explicit
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class AddPartForm : BaseModalForm
     {
@@ -355,7 +355,7 @@ namespace GenericInventorySystem.Forms
             btnAutoSKU.Text = isArabic ? "\u2728 \u062A\u0644\u0642\u0627\u0626\u064A" : "\u2728 Auto";
 
             // Modern Numeric Inputs
-            string currSymbol = GenericInventorySystem.Services.CurrencyService.GetSymbol("USD");
+            string currSymbol = butcherPOS.Services.CurrencyService.GetSymbol("USD");
             numQuantity.LabelText = LocalizationManager.GetString("AddPart_Stock");
             numMinStock.LabelText = LocalizationManager.GetString("AddPart_MinStock");
             numPrice.LabelText = string.Format(LocalizationManager.GetString("AddPart_Price"), "USD", currSymbol);

@@ -1,476 +1,68 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Windows.Forms;
-using GenericInventorySystem.Data;
-using System.Collections.Generic;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Services;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Controls;
+using butcherPOS.Data;
+using butcherPOS.Helpers;
+using butcherPOS.Services;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class POSForm : UserControl
     {
-        private DataGridView dgvCart;
-        private ComboBox cmbCustomers;
-        private FlatDateTimePicker dtOrderDate;
-        private FlatDateTimePicker dtDeliveryDate;
-        private FlatDateTimePicker dtDueDate;
-        private TextBox txtShippingAddress;
-        private Label lblSubtotalVal, lblTaxVal, lblShippingVal, lblTotalVal;
-        private CheckBox chkApplyVAT, chkApplyShipping;
+        // ── LEFT PANEL CONTROLS ──────────────────────────────────────────────
+        private FlowLayoutPanel pnlProducts;   // product card grid
+        private FlowLayoutPanel pnlChips;      // category chip strip
+        private TextBox         txtProductSearch;
+
+        // ── RIGHT PANEL CONTROLS ─────────────────────────────────────────────
+        private Panel     pnlCartItems;        // scrollable cart rows
+        private ComboBox  cmbCustomers;
+        private Label     lblOrderNum;
+        private Label     lblSubtotalVal, lblTaxVal, lblShippingVal, lblTotalVal;
+        private CheckBox  chkApplyVAT, chkApplyShipping;
         private NumericUpDown numShipping;
-        private Button btnCheckout, btnAddItem, btnManageDrafts, btnClearCart, btnQuotation, btnPayLater, btnReturnItems;
-        private StatCard cardTodayOrders, cardTodaySales, cardPending;
-        private DataTable cartTable;
+        private Button    btnCheckout, btnClearCart, btnPrintReceipt;
+        private StatCard  cardTodayOrders, cardTodaySales, cardPending;
+
+        // ── STATE ─────────────────────────────────────────────────────────────
+        private DataTable        cartTable;
         private DashboardService _dashboardService;
-        
-        // Barcode Scanner Buffer
-        private DateTime _lastScanTime = DateTime.Now;
-        private string _scanBuffer = "";
-        
-        public POSForm() { InitializeComponent(); _dashboardService = new DashboardService(); LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization(); ApplyLocalization(); ApplyPermissions(); }
+        private string           _activeCategory   = null; // null = "All"
+        private int              _sessionOrderCount = 0;
+        private DateTime         _lastScanTime      = DateTime.Now;
+        private string           _scanBuffer        = "";
 
-        private void ApplyLocalization() {
-            LocalizationManager.ApplyRTL(this); LocalizationManager.TranslateControl(this);
-            Func<string, string> L = LocalizationManager.GetString;
-            Action<string, string> setText = (name, key) => { var ctrls = this.Controls.Find(name, true); if (ctrls.Length > 0) ctrls[0].Text = L(key); };
-            setText("lblPOSTitle", "POS_Title"); setText("lblCustTitle", "POS_Customer"); setText("lblDateTitle", "POS_OrderDate"); setText("lblDelTitle", "POS_DeliveryDate");
-            setText("lblDueTitle", "Tran_DueDateLabel");
-            setText("lblAddrTitle", "POS_ShippingTo"); setText("lblLineItems", "POS_LineItems"); setText("lblTotalsTitle", "POS_OrderSummary"); setText("btnDraft", "POS_SaveDraft");
-            if(btnQuotation != null) btnQuotation.Text = L("POS_SaveQuotation");
-            if(btnAddItem != null) btnAddItem.Text = L("POS_AddItem");
-            if(btnCheckout != null) btnCheckout.Text = L("POS_Checkout");
-            if(btnPayLater != null) btnPayLater.Text = L("POS_PayLater");
-            if(btnReturnItems != null) btnReturnItems.Text = L("Return_Action") ?? ("Return Items");
-            setText("lblTotal_Subtotal", "POS_Subtotal"); setText("lblTotal_VAT (11%)", "POS_Tax"); setText("lblTotal_Shipping", "POS_Shipping"); setText("lblTotal_Grand Total", "POS_GrandTotal");
-            if(btnManageDrafts != null) btnManageDrafts.Text = L("POS_ManageDrafts"); if(btnClearCart != null) btnClearCart.Text = L("POS_ClearCart");
-            if(cardTodayOrders != null) cardTodayOrders.Title = L("POS_Orders"); if(cardTodaySales != null) cardTodaySales.Title = L("POS_Sales"); if(cardPending != null) cardPending.Title = L("POS_Pending");
-            var btnPR = this.Controls.Find("btnPrintReceipt", true); if (btnPR.Length > 0) btnPR[0].Text = L("POS_PrintReceipt");
-            if(dgvCart != null && dgvCart.Columns.Count > 0) {
-                if(dgvCart.Columns.Contains("PartName")) dgvCart.Columns["PartName"].HeaderText = L("POS_GridProduct");
-                if(dgvCart.Columns.Contains("Quantity")) dgvCart.Columns["Quantity"].HeaderText = L("POS_GridQty");
-                if(dgvCart.Columns.Contains("Stock")) dgvCart.Columns["Stock"].HeaderText = L("POS_GridStock");
-                if(dgvCart.Columns.Contains("SellingPrice")) dgvCart.Columns["SellingPrice"].HeaderText = L("POS_GridPrice");
-                if(dgvCart.Columns.Contains("Total")) dgvCart.Columns["Total"].HeaderText = L("POS_GridTotal");
-            }
+        // ─────────────────────────────────────────────────────────────────────
+        // CONSTRUCTOR
+        // ─────────────────────────────────────────────────────────────────────
+        public POSForm()
+        {
+            InitializeComponent();
+            _dashboardService = new DashboardService();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
+            ApplyPermissions();
         }
 
-        protected override void OnVisibleChanged(EventArgs e) { base.OnVisibleChanged(e); if (this.Visible && !this.DesignMode) { if (cartTable == null) InitializeCart(); RefreshStats(); LoadCustomers(); } }
-
-        public void RefreshStats() { try { cardTodayOrders.Value = _dashboardService.GetOrdersCount("Today").ToString(); cardTodaySales.Value = "$" + _dashboardService.GetSales("Today").ToString("N0"); cardPending.Value = _dashboardService.GetPendingOrdersCount().ToString(); } catch (Exception ex) { Console.WriteLine("Stats Error: " + ex.Message); } }
-
-        private void InitializeComponent() {
-            this.SuspendLayout(); this.Size = new Size(1100, 750); this.BackColor = ThemeConfig.BackgroundColor; 
-            TableLayoutPanel tlpRoot = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(20), BackColor = ThemeConfig.BackgroundColor };
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 320F));
-            this.Controls.Add(tlpRoot);
-
-            Label lblPOSTitle = ThemeConfig.CreateStandardHeader("Create Sales Order");
-            lblPOSTitle.Name = "lblPOSTitle";
-            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblPOSTitle, null, null);
-            tlpRoot.Controls.Add(tlpHeader, 0, 0);
-
-            // The header panel now only contains the title. Buttons moved to Line Items panel.
-
-            TableLayoutPanel tlpStats = new TableLayoutPanel { Dock = DockStyle.Top, Height = 110, ColumnCount = 3, Margin = new Padding(0, 5, 0, 10) };
-            tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
-            cardTodayOrders = new StatCard { Title = "Orders", Value = "0", IconImage = ThemeConfig.GetNuricon("orders"), ThemeColor = ThemeConfig.PrimaryColor, Dock = DockStyle.Fill };
-            cardTodaySales = new StatCard { Title = "Sales", Value = "$0", IconImage = ThemeConfig.GetNuricon("revenue"), ThemeColor = ThemeConfig.SuccessColor, Dock = DockStyle.Fill };
-            cardPending = new StatCard { Title = "Pending", Value = "0", IconImage = ThemeConfig.GetNuricon("pending"), IconPadding = 12, ThemeColor = ThemeConfig.WarningColor, Dock = DockStyle.Fill };
-            tlpStats.Controls.Add(cardTodayOrders, 0, 0); tlpStats.Controls.Add(cardTodaySales, 1, 0); tlpStats.Controls.Add(cardPending, 2, 0);
-            tlpRoot.Controls.Add(tlpStats, 0, 1);
-
-            Panel pnlInfo = CreateCardPanel(); pnlInfo.Padding = new Padding(0, 0, 0, 10); pnlInfo.Dock = DockStyle.Fill;
-            TableLayoutPanel tblInfo = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, Padding = new Padding(15) };
-            tblInfo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55F)); tblInfo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
-            tblInfo.RowStyles.Add(new RowStyle(SizeType.Absolute, 85F)); tblInfo.RowStyles.Add(new RowStyle(SizeType.Absolute, 85F)); tblInfo.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            pnlInfo.Controls.Add(tblInfo);
-
-            Panel pnlCol1 = new Panel { Dock = DockStyle.Top, AutoSize = true, BackColor = Color.Transparent, Padding = new Padding(0,0,10,0) }; 
-            pnlCol1.Controls.Add(new Label { Text = "Customer", Name = "lblCustTitle", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
-            cmbCustomers = new ComboBox(); ThemeConfig.ApplyComboBoxStyle(cmbCustomers);
-            cmbCustomers.SelectedIndexChanged += (s, e) => {
-                if (btnPayLater != null) {
-                    int custId = -1;
-                    if (cmbCustomers.SelectedValue is int id) custId = id;
-                    else if (cmbCustomers.SelectedValue != null) int.TryParse(cmbCustomers.SelectedValue.ToString(), out custId);
-                    btnPayLater.Enabled = custId != -1;
-                }
-            };
-            Panel pnlCustWrapper = ThemeConfig.WrapInStyledInput(cmbCustomers, 42); pnlCustWrapper.Location = new Point(0, 26); pnlCustWrapper.Width = 160; pnlCustWrapper.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            Button btnAddCust = new ModernButton { Name = "btnAddCust", Text = "", Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.Overlay, ImageAlign = ContentAlignment.MiddleCenter, Size = new Size(35, 42), Location = new Point(pnlCustWrapper.Right + 5, 26), Anchor = AnchorStyles.Top | AnchorStyles.Right };
-            btnAddCust.Click += (s, e) => { var form = new AddCustomerForm(); if(form.ShowDialog() == DialogResult.OK) { CustomerService svc = new CustomerService(); int newId = svc.AddCustomer(form.CustomerName, form.Phone, form.Email, form.Address, form.CustomerType, form.CreditLimit); LoadCustomers(); if(newId > 0) cmbCustomers.SelectedValue = newId; } };
-            ThemeConfig.ApplyPrimaryButton(btnAddCust);
-            pnlCol1.Controls.Add(pnlCustWrapper); pnlCol1.Controls.Add(btnAddCust);
-            tblInfo.Controls.Add(pnlCol1, 0, 0);
-
-            Panel pnlDate1 = new Panel { Dock = DockStyle.Top, Height = 75, Margin = new Padding(0,0,10,5) };
-            pnlDate1.Controls.Add(new Label { Text = "Order Date", Name = "lblDateTitle", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
-            dtOrderDate = new FlatDateTimePicker { Width = 150 };
-            Panel pnlDate1Input = ThemeConfig.WrapInStyledInput(dtOrderDate, 42);
-            pnlDate1Input.Dock = DockStyle.Top;
-            pnlDate1.Controls.Add(pnlDate1Input); pnlDate1Input.BringToFront(); 
-            tblInfo.Controls.Add(pnlDate1, 0, 1);
-
-            Panel pnlDate2 = new Panel { Dock = DockStyle.Top, Height = 75, Margin = new Padding(0,0,10,0) };
-            pnlDate2.Controls.Add(new Label { Text = "Delivery", Name = "lblDelTitle", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
-            dtDeliveryDate = new FlatDateTimePicker { Width = 150, Value = null, MinDate = DateTime.Today };
-            Panel pnlDate2Input = ThemeConfig.WrapInStyledInput(dtDeliveryDate, 42);
-            pnlDate2Input.Dock = DockStyle.Top;
-            pnlDate2.Controls.Add(pnlDate2Input); pnlDate2Input.BringToFront(); 
-            tblInfo.Controls.Add(pnlDate2, 0, 2);
-
-            Panel pnlDate3 = new Panel { Dock = DockStyle.Top, Height = 75, Margin = new Padding(0, 0, 10, 0) };
-            pnlDate3.Controls.Add(new Label { Text = "Due Date", Name = "lblDueTitle", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
-            dtDueDate = new FlatDateTimePicker { Width = 150, Value = DateTime.Today.AddDays(30) };
-            Panel pnlDate3Input = ThemeConfig.WrapInStyledInput(dtDueDate, 42);
-            pnlDate3Input.Dock = DockStyle.Top;
-            pnlDate3.Controls.Add(pnlDate3Input); pnlDate3Input.BringToFront(); 
-            tblInfo.Controls.Add(pnlDate3, 1, 2);
-
-            Panel pnlCol3 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
-            pnlCol3.Controls.Add(new Label { Text = "Shipping To", Name = "lblAddrTitle", AutoSize = false, Height = 25, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Top });
-            txtShippingAddress = new TextBox { Multiline = true, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, BorderStyle = BorderStyle.None };
-            Panel pnlAddrWrapper = ThemeConfig.WrapInStyledInput(txtShippingAddress, 210, true); pnlAddrWrapper.Dock = DockStyle.Fill;
-            pnlCol3.Controls.Add(pnlAddrWrapper); pnlAddrWrapper.BringToFront(); tblInfo.Controls.Add(pnlCol3, 1, 0); tblInfo.SetRowSpan(pnlCol3, 2);
-
-            Panel pnlItems = CreateCardPanel(); pnlItems.Dock = DockStyle.Fill; pnlItems.Margin = new Padding(0, 0, 0, 10);
-            TableLayoutPanel tlpGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(20) };
-            tlpGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F)); tlpGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            pnlItems.Controls.Add(tlpGrid);
-
-            Panel pnlGridHeader = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
-            pnlGridHeader.Controls.Add(new Label { Text = "Line Items", Name = "lblLineItems", Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Location = new Point(0, 15) });
-            
-            FlowLayoutPanel gridButtonsPanel = new FlowLayoutPanel
+        // ─────────────────────────────────────────────────────────────────────
+        // LIFECYCLE
+        // ─────────────────────────────────────────────────────────────────────
+        protected override void OnVisibleChanged(EventArgs e)
+        {
+            base.OnVisibleChanged(e);
+            if (this.Visible && !this.DesignMode)
             {
-                FlowDirection = FlowDirection.RightToLeft,
-                AutoSize = true,
-                WrapContents = false,
-                Height = 50,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                BackColor = ThemeConfig.SurfaceColor // Fix corners
-            };
-
-            btnAddItem = new ModernButton { Size = new Size(135, 36), Text = LocalizationManager.GetString("POS_AddItem"), Image = ThemeConfig.GetNuricon("add"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0), Margin = new Padding(5, 7, 0, 0) };
-            btnAddItem.Click += BtnAddItem_Click; ThemeConfig.ApplyPrimaryButton(btnAddItem); 
-
-            ModernButton btnBlindReturn = new ModernButton { Text = LocalizationManager.GetString("POS_ItemReturn"), Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
-            btnBlindReturn.Click += (s, e) => { var form = new BlindReturnForm(); form.ShowDialog(); };
-            ThemeConfig.ApplyPaletteButton(btnBlindReturn, ThemeConfig.WarningColor);
-
-            btnReturnItems = new ModernButton { Text = LocalizationManager.GetString("POS_ReturnItems"), Size = new Size(120, 36), Margin = new Padding(5, 7, 0, 0) };
-            btnReturnItems.Click += BtnReturnItems_Click; ThemeConfig.ApplyPaletteButton(btnReturnItems, ThemeConfig.SecondaryColor);
-
-            btnManageDrafts = new ModernButton { Text = LocalizationManager.GetString("POS_ManageDrafts"), Size = new Size(130, 36), Margin = new Padding(5, 7, 0, 0) };
-            btnManageDrafts.Click += BtnLoadDraft_Click; ThemeConfig.ApplyPaletteButton(btnManageDrafts, ThemeConfig.WarningColor);
-
-            btnClearCart = new ModernButton { Text = LocalizationManager.GetString("POS_ClearCart"), Size = new Size(110, 36), Margin = new Padding(0, 7, 0, 0) };
-            btnClearCart.Click += (s, e) => { if(cartTable.Rows.Count > 0 && MessageHelper.ConfirmAction(LocalizationManager.GetString("POS_ClearCartConfirm"))) { cartTable.Rows.Clear(); UpdateTotal(); MessageHelper.ShowSuccess(LocalizationManager.GetString("POS_ClearCartSuccess")); } };
-            ThemeConfig.ApplyPaletteButton(btnClearCart, ThemeConfig.DangerColor);
-
-            gridButtonsPanel.Controls.Add(btnAddItem);
-            gridButtonsPanel.Controls.Add(btnBlindReturn);
-            gridButtonsPanel.Controls.Add(btnReturnItems);
-            gridButtonsPanel.Controls.Add(btnManageDrafts);
-            gridButtonsPanel.Controls.Add(btnClearCart);
-
-            pnlGridHeader.Controls.Add(gridButtonsPanel);
-            tlpGrid.Controls.Add(pnlGridHeader, 0, 0);
-
-            dgvCart = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AutoGenerateColumns = false, BorderStyle = BorderStyle.None, BackgroundColor = ThemeConfig.SurfaceColor };
-            dgvCart.CellContentClick += DgvCart_CellContentClick; dgvCart.CellValueChanged += DgvCart_CellValueChanged; dgvCart.CellPainting += DgvCart_CellPainting; 
-            ThemeConfig.ApplyGridTheme(dgvCart); tlpGrid.Controls.Add(dgvCart, 0, 1); tlpRoot.Controls.Add(pnlItems, 0, 2);
-
-            TableLayoutPanel tlpBottomArea = new TableLayoutPanel { Dock = DockStyle.Top, Height = 310, ColumnCount = 2, Margin = new Padding(0, 10, 0, 0), BackColor = Color.Transparent };
-            tlpBottomArea.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F)); tlpBottomArea.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55F));
-            tlpBottomArea.Controls.Add(pnlInfo, 0, 0);
-            
-            Panel pnlTotals = CreateCardPanel(); pnlTotals.Dock = DockStyle.Fill;
-            pnlTotals.Controls.Add(new Label { Text = LocalizationManager.GetString("POS_OrderSummary"), Name = "lblTotalsTitle", Location = new Point(20, 15), AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.TextColorDark });
-            ComboBox cboCurrency = new ComboBox();
-            cboCurrency.DropDownStyle = ComboBoxStyle.DropDownList;
-            ThemeConfig.ApplyComboBoxStyle(cboCurrency);
-            Panel currPanel = ThemeConfig.WrapInStyledInput(cboCurrency, 42); 
-            currPanel.Width = 110; 
-            currPanel.Location = new Point(pnlTotals.Width - currPanel.Width - 25, 15);
-            currPanel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            foreach (var c in CurrencyService.SupportedCurrencies) cboCurrency.Items.Add(c);
-            // Select USD by default
-            for(int i=0; i<cboCurrency.Items.Count; i++) if((cboCurrency.Items[i] as CurrencyInfo)?.Code == "USD") { cboCurrency.SelectedIndex = i; break; }
-            cboCurrency.SelectedIndexChanged += (s, e) => { if (cboCurrency.SelectedItem is CurrencyInfo selected) { CurrencyService.ActiveCurrency = selected.Code; UpdateTotal(); } };
-            pnlTotals.Controls.Add(currPanel);
-
-            Action<string, string, int, bool> addTotalRow = (l, v, y, b) => {
-                 string safeName = l;
-                 if (l.Contains("Grand") || b) safeName = "Grand Total";
-                 else if (l.Contains("VAT")) safeName = "VAT (11%)";
-                 else if (l.Contains("Sub")) safeName = "Subtotal";
-                 else if (l.Contains("Ship")) safeName = "Shipping";
-                 
-                 Label lblTitle = new Label { Text = l, Name = "lblTotal_" + safeName, Location = new Point(20, b ? y - 2 : y), AutoSize = true, Font = b ? new Font("Segoe UI", 12F, FontStyle.Bold) : ThemeConfig.StandardFont, ForeColor = b ? ThemeConfig.PrimaryColor : ThemeConfig.SecondaryColor };
-                 pnlTotals.Controls.Add(lblTitle);
-                 Label val = new Label { Text = v, Name = "lblVal_" + safeName, Size = new Size(150, 25), Location = new Point(pnlTotals.Width - 150 - 25, b ? y - 2 : y), TextAlign = ContentAlignment.MiddleRight, Font = b ? new Font("Segoe UI", 12.5F, FontStyle.Bold) : ThemeConfig.StandardFont, ForeColor = b ? ThemeConfig.PrimaryColor : ThemeConfig.TextColorDark, Anchor = AnchorStyles.Top | AnchorStyles.Right };
-                 pnlTotals.Controls.Add(val);
-                 if(safeName == "Subtotal") lblSubtotalVal = val; else if(safeName.Contains("VAT")) lblTaxVal = val; else if(safeName == "Shipping") lblShippingVal = val; else if(safeName.Contains("Grand")) lblTotalVal = val;
-             };
-             addTotalRow(LocalizationManager.GetString("POS_Subtotal"), "$0.00", 78, false); 
-             
-             // Add VAT Checkbox
-             chkApplyVAT = new CheckBox { Text = "", Checked = false, AutoSize = true, Location = new Point(20, 105), Cursor = Cursors.Hand };
-             chkApplyVAT.CheckedChanged += (s, e) => UpdateTotal();
-             pnlTotals.Controls.Add(chkApplyVAT);
-             
-             addTotalRow(LocalizationManager.GetString("POS_VAT"), "$0.00", 103, false); 
-             var lblTax = pnlTotals.Controls.Find("lblTotal_" + LocalizationManager.GetString("POS_VAT"), true)[0];
-             lblTax.Location = new Point(45, 103); 
-             
-             // Add Shipping Toggle and Input
-             chkApplyShipping = new CheckBox { Text = "", Checked = false, AutoSize = true, Location = new Point(20, 130), Cursor = Cursors.Hand };
-             chkApplyShipping.CheckedChanged += (s, e) => { numShipping.Visible = chkApplyShipping.Checked; UpdateTotal(); };
-             pnlTotals.Controls.Add(chkApplyShipping);
-
-             addTotalRow(LocalizationManager.GetString("POS_Shipping"), "$0.00", 128, false);
-             var lblShip = pnlTotals.Controls.Find("lblTotal_" + LocalizationManager.GetString("POS_Shipping"), true)[0];
-             lblShip.Location = new Point(45, 128);
-
-             numShipping = new NumericUpDown { DecimalPlaces = 2, Width = 80, Location = new Point(pnlTotals.Width - 80 - 25, 126), Visible = false, Font = ThemeConfig.StandardFont, Anchor = AnchorStyles.Top | AnchorStyles.Right };
-             numShipping.ValueChanged += (s, e) => UpdateTotal();
-             pnlTotals.Controls.Add(numShipping); numShipping.BringToFront();
-
-             addTotalRow(LocalizationManager.GetString("POS_GrandTotal"), "$0.00", 168, true);
-                 FlowLayoutPanel pnlButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 60, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 10, 10, 10), BackColor = ThemeConfig.SurfaceColor };
-              
-              btnCheckout = new ModernButton { Text = LocalizationManager.GetString("POS_Checkout"), Size = new Size(140, 40), Image = ThemeConfig.GetNuricon("pos"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0) };
-              btnCheckout.Click += BtnCheckout_Click; ThemeConfig.ApplyPrimaryButton(btnCheckout); 
-
-              btnPayLater = new ModernButton { Name = "btnPayLater", Size = new Size(150, 40), Text = LocalizationManager.GetString("POS_PayLater"), Image = ThemeConfig.GetNuricon("history"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
-              btnPayLater.Enabled = false; btnPayLater.Click += BtnPayLater_Click; ThemeConfig.ApplyPaletteButton(btnPayLater, Color.FromArgb(255, 152, 0));
-
-              Button btnDraft = new ModernButton { Name = "btnDraft", Size = new Size(140, 40), Text = LocalizationManager.GetString("POS_Draft"), Image = ThemeConfig.GetNuricon("export"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
-              btnDraft.Click += BtnSaveDraft_Click; ThemeConfig.ApplySecondaryButton(btnDraft); 
-
-              Button btnPrintReceipt = new ModernButton { Name = "btnPrintReceipt", Size = new Size(160, 40), Text = LocalizationManager.GetString("POS_Receipt"), Image = ThemeConfig.GetNuricon("print"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(5, 0, 0, 0), Cursor = Cursors.Hand };
-              btnPrintReceipt.Click += BtnPrintReceipt_Click; ThemeConfig.ApplyPaletteButton(btnPrintReceipt, ThemeConfig.SecondaryColor);
-
-              btnQuotation = new ModernButton { Name = "btnQuotation", Size = new Size(180, 40), Text = LocalizationManager.GetString("POS_Quotation"), Image = ThemeConfig.GetNuricon("quotations"), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft, Margin = new Padding(0), Cursor = Cursors.Hand };
-              btnQuotation.Click += BtnSaveQuotation_Click; ThemeConfig.ApplyPaletteButton(btnQuotation, ThemeConfig.PrimaryColor);
-
-              pnlButtons.Controls.Add(btnCheckout);
-              pnlButtons.Controls.Add(btnPayLater);
-              pnlButtons.Controls.Add(btnDraft);
-              pnlButtons.Controls.Add(btnPrintReceipt);
-              pnlButtons.Controls.Add(btnQuotation);
-              pnlTotals.Controls.Add(pnlButtons);
-             tlpBottomArea.Controls.Add(pnlTotals, 1, 0); tlpRoot.Controls.Add(tlpBottomArea, 0, 3);
-            this.ResumeLayout(false);
-        }
-
-        private Panel CreateCardPanel()
-        {
-            Panel p = new Panel(); 
-            p.BackColor = ThemeConfig.SurfaceColor; 
-            p.BorderStyle = BorderStyle.None;
-            p.Padding = new Padding(15);
-            
-            p.Paint += (s, e) => {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-                
-                // 1. Clear corners with PARENT background color
-                Color parentColor = ThemeConfig.GetParentColor(p);
-                using (var brush = new SolidBrush(parentColor))
-                {
-                    e.Graphics.FillRectangle(brush, -1, -1, p.Width + 2, p.Height + 2);
-                }
-
-                // 2. Draw Rounded Surface (White)
-                Rectangle r = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
-                using (var path = GetRoundedRect(r, 15))
-                {
-                    using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                    {
-                        e.Graphics.FillPath(brush, path);
-                    }
-                    // Border
-                    using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                    {
-                        e.Graphics.DrawPath(pen, path);
-                    }
-                }
-            };
-            return p;
-        }
-
-        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRect(Rectangle rect, int radius)
-        {
-            var path = new System.Drawing.Drawing2D.GraphicsPath(); int d = radius * 2;
-            path.AddArc(rect.X, rect.Y, d, d, 180, 90); path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90); path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90); path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
-            path.CloseFigure(); return path;
-        }
-
-        private void InitializeCart()
-        {
-            try
-            {
-                cartTable = new DataTable();
-                cartTable.Columns.Add("PartID", typeof(int)); cartTable.Columns.Add("PartName", typeof(string)); cartTable.Columns.Add("Quantity", typeof(int)); cartTable.Columns.Add("PrivatePrice", typeof(decimal)); cartTable.Columns.Add("SellingPrice", typeof(decimal)); cartTable.Columns.Add("Total", typeof(decimal), "Quantity * SellingPrice");
-                
-                dgvCart.Columns.Clear();
-                dgvCart.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartID", DataPropertyName = "PartID", Visible = false });
-                dgvCart.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", DataPropertyName = "PartName", HeaderText = LocalizationManager.GetString("POS_GridProduct"), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
-                dgvCart.Columns.Add(new DataGridViewTextBoxColumn { Name = "Quantity", DataPropertyName = "Quantity", HeaderText = LocalizationManager.GetString("POS_GridQty"), Width = 80, ReadOnly = false });
-                DataGridViewTextBoxColumn colPrice = new DataGridViewTextBoxColumn { Name = "SellingPrice", DataPropertyName = "SellingPrice", HeaderText = LocalizationManager.GetString("POS_GridUnitCost"), Width = 100, ReadOnly = true };
-                colPrice.DefaultCellStyle.Format = "c2"; colPrice.DefaultCellStyle.FormatProvider = System.Globalization.CultureInfo.GetCultureInfo("en-US"); dgvCart.Columns.Add(colPrice);
-                DataGridViewTextBoxColumn colTotal = new DataGridViewTextBoxColumn { Name = "Total", DataPropertyName = "Total", HeaderText = LocalizationManager.GetString("POS_GridTotal"), Width = 100, ReadOnly = true };
-                colTotal.DefaultCellStyle.Format = "c2"; colTotal.DefaultCellStyle.FormatProvider = System.Globalization.CultureInfo.GetCultureInfo("en-US"); dgvCart.Columns.Add(colTotal);
-                DataGridViewButtonColumn btnDelete = new DataGridViewButtonColumn { Name = "colDelete", HeaderText = "", Text = "", UseColumnTextForButtonValue = true, FlatStyle = FlatStyle.Flat, Width = 60 }; dgvCart.Columns.Add(btnDelete);
-                dgvCart.DataSource = cartTable; LoadCustomers(); ThemeConfig.ApplyGridTheme(dgvCart);
+                if (cartTable == null) InitializeCart();
+                RefreshStats();
+                LoadCustomers();
+                LoadProducts();
             }
-            catch (Exception ex) { MessageHelper.ShowError("Error initializing POS: " + ex.Message); }
         }
-
-        private void LoadCustomers()
-        {
-            try {
-                DataTable dt = DatabaseHelper.ExecuteDataTable("SELECT customer_id, full_name FROM customers ORDER BY full_name");
-                DataRow row = dt.NewRow(); row["customer_id"] = -1; row["full_name"] = LocalizationManager.GetString("POS_WalkIn"); dt.Rows.InsertAt(row, 0);
-                cmbCustomers.ValueMember = "customer_id";
-                cmbCustomers.DisplayMember = "full_name";
-                cmbCustomers.DataSource = dt;
-            } catch { }
-        }
-
-        private void ApplyPermissions() { }
-
-        private void BtnCheckout_Click(object sender, EventArgs e)
-        {
-            if (cartTable.Rows.Count == 0)
-            {
-                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.GetString("CartEmpty")));
-                return;
-            }
-            
-            decimal total = 0; foreach(DataRow row in cartTable.Rows) total += (decimal)row["Total"];
-            
-            if(ModernMessageBox.Show(string.Format(LocalizationManager.GetString("ConfirmSale"), $"{total:N2}"), "Confirm", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
-
-            try {
-                List<OrderItem> items = new List<OrderItem>();
-                foreach(DataRow row in cartTable.Rows) items.Add(new OrderItem { PartId = (int)row["PartID"], Quantity = (int)row["Quantity"], UnitPrice = (decimal)row["SellingPrice"] });
-                int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
-                int orderId = new OrderService().PlaceOrder(customerId, items, total, true); // true = Paid
-                DatabaseHelper.LogTransaction("SALE", "Order #" + orderId, "Paid Total: $" + total);
-                // Notify all connected web POS tablets in real-time
-                InventoryBroadcaster.BroadcastStockChange("desktop-sale");
-                MessageHelper.ShowSuccess("Order Sent! Order #" + orderId); cartTable.Rows.Clear(); UpdateTotal(); RefreshStats(); 
-            } catch(Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
-        }
-
-        private void BtnPayLater_Click(object sender, EventArgs e)
-        {
-            if (cartTable.Rows.Count == 0)
-            {
-                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.GetString("CartEmpty")));
-                return;
-            }
-            
-            int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
-            if (customerId == -1)
-            {
-                string msg = LocalizationManager.GetString("Msg_SelectCustomer");
-                MessageHelper.ShowWarning(msg);
-                return;
-            }
-            
-            decimal total = 0; foreach(DataRow row in cartTable.Rows) total += (decimal)row["Total"];
-            
-            // Credit Limit Validation
-            try {
-                DataTable dt = DatabaseHelper.ExecuteDataTable($"SELECT current_balance, credit_limit FROM customers WHERE customer_id = {customerId}");
-                if (dt.Rows.Count > 0) {
-                    decimal currentBalance = (decimal)dt.Rows[0]["current_balance"];
-                    decimal creditLimit = (decimal)dt.Rows[0]["credit_limit"];
-                    if (currentBalance + total > creditLimit) {
-                        string title = LocalizationManager.GetString("POS_CreditLimitExceeded");
-                        if (string.IsNullOrEmpty(title)) title = "Credit Limit Exceeded";
-                        
-                        string msgFormat = LocalizationManager.GetString("POS_CreditLimitExceededMsg");
-                        string msg;
-                        if (string.IsNullOrEmpty(msgFormat)) {
-                            msg = $"Customer has exceeded their credit limit.\nCurrent Balance: {currentBalance:C2}\nNew Amount: {total:C2}\nLimit: {creditLimit:C2}";
-                        } else {
-                            msg = string.Format(msgFormat, currentBalance, total, creditLimit);
-                        }
-                        
-                        MessageHelper.ShowWarning(msg);
-                        return;
-                    }
-                }
-            } catch { }
-
-            string confirmMsg = LocalizationManager.GetString("POS_ConfirmAddBill");
-            if (string.IsNullOrEmpty(confirmMsg)) confirmMsg = "Confirm adding ${0} to customer balance?";
-            if(ModernMessageBox.Show(string.Format(confirmMsg, $"{total:N2}"), "Confirm", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
-
-            try {
-                List<OrderItem> items = new List<OrderItem>();
-                foreach(DataRow row in cartTable.Rows) items.Add(new OrderItem { PartId = (int)row["PartID"], Quantity = (int)row["Quantity"], UnitPrice = (decimal)row["SellingPrice"] });
-                int orderId = new OrderService().PlaceOrder(customerId, items, total, false, "Completed", dtDueDate.Value); // false = Unpaid
-                DatabaseHelper.LogTransaction("SALE_DEBT", "Order #" + orderId, "Unpaid Total: $" + total);
-                // Notify all connected web POS tablets in real-time
-                InventoryBroadcaster.BroadcastStockChange("desktop-pay-later");
-                MessageHelper.ShowSuccess("Order Billed! Order #" + orderId); cartTable.Rows.Clear(); UpdateTotal(); RefreshStats(); 
-            } catch(Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
-        }
-
-        private void BtnPrintReceipt_Click(object sender, EventArgs e)
-        {
-            if (cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
-            System.Drawing.Printing.PrintDocument pd = new System.Drawing.Printing.PrintDocument();
-            try { pd.DefaultPageSettings.PaperSize = new System.Drawing.Printing.PaperSize("Receipt", 315, 700); } catch { }
-            pd.PrintPage += PrintReceiptPage;
-            var preview = new PrintPreviewDialog { 
-                Document = pd, 
-                Text = LocalizationManager.GetString("POS_PrintReceipt") 
-            };
-            ThemeConfig.ApplyPrintPreviewTheme(preview);
-            preview.ShowDialog();
-        }
-
-        private void PrintReceiptPage(object sender, System.Drawing.Printing.PrintPageEventArgs e)
-        {
-            Graphics g = e.Graphics; Font fH = new Font("Segoe UI", 12, FontStyle.Bold), fS = new Font("Segoe UI", 9), fI = new Font("Consolas", 9);
-            int y = 20, m = 10, w = Math.Min(e.PageBounds.Width, 300) - (m * 2);
-            StringFormat cA = new StringFormat { Alignment = StringAlignment.Center }, rA = new StringFormat { Alignment = StringAlignment.Far };
-            g.DrawString(ThemeConfig.CompanyName.ToUpper(), fH, Brushes.Black, new Rectangle(m, y, w, 25), cA); y += 30;
-            g.DrawString("SALES RECEIPT", fS, Brushes.Black, new Rectangle(m, y, w, 20), cA); y += 20;
-            g.DrawString(DateTime.Now.ToString("g"), fS, Brushes.Black, new Rectangle(m, y, w, 20), cA); y += 25;
-            g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
-            g.DrawString("QTY", fI, Brushes.Black, m, y); g.DrawString("ITEM", fI, Brushes.Black, m + 40, y); g.DrawString("PRICE", fI, Brushes.Black, new Rectangle(m, y, w, 20), rA);
-            y += 20; g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
-            foreach (DataRow r in cartTable.Rows) {
-                string n = r["PartName"].ToString(); if (n.Length > 18) n = n.Substring(0, 15) + "...";
-                g.DrawString(r["Quantity"].ToString(), fI, Brushes.Black, m, y); g.DrawString(n, fI, Brushes.Black, m + 40, y);
-                g.DrawString(CurrencyService.Format((decimal)r["Total"]), fI, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20;
-            }
-            y += 10; g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
-            
-            decimal s = 0; foreach (DataRow r in cartTable.Rows) if (r.RowState != DataRowState.Deleted) s += (decimal)r["Total"];
-            decimal t = chkApplyVAT.Checked ? (s * 0.11m) : 0;
-            decimal ship = chkApplyShipping.Checked ? numShipping.Value : 0;
-
-            g.DrawString("Subtotal:", fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(s), fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20;
-            if (t > 0) { g.DrawString("VAT (11%):", fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(t), fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20; }
-            if (ship > 0) { g.DrawString("Shipping:", fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(ship), fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20; }
-            y += 5; g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
-
-            g.DrawString("GRAND TOTAL:", fH, Brushes.Black, m, y); g.DrawString(lblTotalVal.Text, fH, Brushes.Black, new Rectangle(m, y, w, 25), rA);
-            y += 40; g.DrawString("Thank you!", fS, Brushes.Black, new Rectangle(m, y, w, 20), cA); e.HasMorePages = false;
-        }
-        private void BtnAddItem_Click(object sender, EventArgs e) { ProductSelectorForm s = new ProductSelectorForm(); if (s.ShowDialog() == DialogResult.OK) AddToCart(s.SelectedPartId, s.SelectedPartName, s.SelectedPrice, s.SelectedStock); }
 
         protected override void OnLoad(EventArgs e)
         {
@@ -479,26 +71,2011 @@ namespace GenericInventorySystem.Forms
             if (parent != null)
             {
                 parent.KeyPreview = true;
-                parent.KeyPress -= POSForm_KeyPress;
-                parent.KeyPress += POSForm_KeyPress;
+                parent.KeyPress  -= POSForm_KeyPress;
+                parent.KeyPress  += POSForm_KeyPress;
             }
         }
 
+        // ─────────────────────────────────────────────────────────────────────
+        // INITIALIZE COMPONENT  (layout)
+        // ─────────────────────────────────────────────────────────────────────
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            this.Size      = new Size(1200, 800);
+            this.BackColor = ThemeConfig.BackgroundColor;
+
+            // ══ Root split: 70% left | 30% right ═══════════════════════════════
+            TableLayoutPanel tlpRoot = new TableLayoutPanel
+            {
+                Dock        = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount    = 1,
+                Padding     = new Padding(0),
+                BackColor   = ThemeConfig.BackgroundColor
+            };
+            tlpRoot.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
+            tlpRoot.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            this.Controls.Add(tlpRoot);
+
+            // ══════════════════════════════════════════════════════════════════
+            // LEFT PANEL — product browser
+            // ══════════════════════════════════════════════════════════════════
+            // LEFT PANEL — product browser
+            // ══════════════════════════════════════════════════════════════════
+            TableLayoutPanel tlpLeft = new TableLayoutPanel
+            {
+                Dock        = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount    = 4,
+                BackColor   = ThemeConfig.BackgroundColor,
+                Padding     = new Padding(16, 16, 8, 16)
+            };
+            // Row 0 – Page title "Products Menu"
+            tlpLeft.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));
+            // Row 1 – Search bar
+            tlpLeft.RowStyles.Add(new RowStyle(SizeType.Absolute, 48F));
+            // Row 2 – Category section (title + cards)
+            tlpLeft.RowStyles.Add(new RowStyle(SizeType.Absolute, 136F));
+            // Row 3 – Product grid
+            tlpLeft.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            tlpRoot.Controls.Add(tlpLeft, 0, 0);
+
+            // ── Row 0: Page title ────────────────────────────────────────────
+            Label lblPageTitle = new Label
+            {
+                Text      = LocalizationManager.GetString("POS_PageTitle") ?? "Products Menu",
+                Font      = new Font("Segoe UI", 16F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                Dock      = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                BackColor = Color.Transparent,
+                Margin    = new Padding(0, 0, 0, 2)
+            };
+            tlpLeft.Controls.Add(lblPageTitle, 0, 0);
+
+            // ── Search bar ──────────────────────────────────────────────────
+            Panel pnlSearchBar = new Panel
+            {
+                Dock      = DockStyle.Fill,
+                BackColor = ThemeConfig.SurfaceColor,
+                Margin    = new Padding(0, 0, 0, 8)
+            };
+            pnlSearchBar.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = RoundedPath(new Rectangle(0, 0, pnlSearchBar.Width - 1, pnlSearchBar.Height - 1), 12))
+                {
+                    using (var br = new SolidBrush(ThemeConfig.SurfaceColor))
+                        pe.Graphics.FillPath(br, path);
+                    using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                        pe.Graphics.DrawPath(pen, path);
+                }
+            };
+            pnlSearchBar.Resize += (s, ev) =>
+            {
+                using (var path = RoundedPath(new Rectangle(0, 0, pnlSearchBar.Width, pnlSearchBar.Height), 12))
+                {
+                    var old = pnlSearchBar.Region;
+                    pnlSearchBar.Region = new Region(path);
+                    old?.Dispose();
+                }
+            };
+
+            txtProductSearch = new TextBox
+            {
+                BorderStyle  = BorderStyle.None,
+                Font         = ThemeConfig.StandardFont,
+                ForeColor    = ThemeConfig.TextColorDark,
+                BackColor    = ThemeConfig.SurfaceColor,
+                PlaceholderText = "Search products...",
+                Dock         = DockStyle.None
+            };
+            txtProductSearch.TextChanged += (s, ev) => LoadProducts(txtProductSearch.Text);
+            pnlSearchBar.Controls.Add(txtProductSearch);
+            pnlSearchBar.Resize += (s, ev) =>
+            {
+                txtProductSearch.Width    = pnlSearchBar.Width - 32;
+                txtProductSearch.Location = new Point(16, (pnlSearchBar.Height - txtProductSearch.Height) / 2);
+            };
+            tlpLeft.Controls.Add(pnlSearchBar, 0, 1);
+
+            // ── Category section (title bar + scrollable cards) ─────────────
+            Panel pnlCategorySection = new Panel
+            {
+                Dock      = DockStyle.Fill,
+                BackColor = Color.Transparent,
+                Margin    = new Padding(0, 0, 0, 6)
+            };
+            tlpLeft.Controls.Add(pnlCategorySection, 0, 2);
+
+            // Title row — "Menu" label + prev/next arrows
+            Panel pnlCatHeader = new Panel
+            {
+                Height    = 30,
+                Dock      = DockStyle.Top,
+                BackColor = Color.Transparent
+            };
+            Label lblCatTitle = new Label
+            {
+                Text      = LocalizationManager.GetString("POS_MenuTitle") ?? "Products Menu",
+                Font      = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                AutoSize  = true,
+                Location  = new Point(2, 4),
+                BackColor = Color.Transparent
+            };
+            // Prev / Next scroll nav buttons
+            Button btnCatNext = new Button
+            {
+                Text      = ">",
+                FlatStyle = FlatStyle.Flat,
+                Size      = new Size(26, 26),
+                Cursor    = Cursors.Hand,
+                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
+                BackColor = ThemeConfig.SurfaceColor,
+                ForeColor = ThemeConfig.TextColorDark,
+                TabStop   = false
+            };
+            btnCatNext.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
+            btnCatNext.FlatAppearance.BorderSize  = 1;
+            Button btnCatPrev = new Button
+            {
+                Text      = "<",
+                FlatStyle = FlatStyle.Flat,
+                Size      = new Size(26, 26),
+                Cursor    = Cursors.Hand,
+                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
+                BackColor = ThemeConfig.SurfaceColor,
+                ForeColor = ThemeConfig.TextColorDark,
+                TabStop   = false
+            };
+            btnCatPrev.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
+            btnCatPrev.FlatAppearance.BorderSize  = 1;
+            pnlCatHeader.Resize += (s, ev) =>
+            {
+                btnCatNext.Location = new Point(pnlCatHeader.Width - 26, 2);
+                btnCatPrev.Location = new Point(pnlCatHeader.Width - 56, 2);
+            };
+            pnlCatHeader.Controls.AddRange(new Control[] { lblCatTitle, btnCatPrev, btnCatNext });
+            pnlCategorySection.Controls.Add(pnlCatHeader);
+
+            // Scrollable chips row
+            pnlChips = new FlowLayoutPanel
+            {
+                Dock          = DockStyle.Fill,
+                AutoScroll    = false,
+                WrapContents  = false,
+                Padding       = new Padding(0, 2, 0, 0),  // no vertical squeeze
+                BackColor     = Color.Transparent,
+                FlowDirection = FlowDirection.LeftToRight
+            };
+            // Prevent FlowLayoutPanel from adding a vertical scrollbar that clips content
+            pnlChips.HorizontalScroll.Visible = false;
+            pnlChips.VerticalScroll.Visible   = false;
+            pnlCategorySection.Controls.Add(pnlChips);
+
+            // Wire nav buttons to scroll the chip panel
+            btnCatNext.Click += (s, e) =>
+            {
+                pnlChips.AutoScrollPosition = new Point(
+                    Math.Min(-pnlChips.AutoScrollPosition.X + 180,
+                             pnlChips.HorizontalScroll.Maximum), 0);
+            };
+            btnCatPrev.Click += (s, e) =>
+            {
+                pnlChips.AutoScrollPosition = new Point(
+                    Math.Max(-pnlChips.AutoScrollPosition.X - 180, 0), 0);
+            };
+            // Enable horizontal-only scroll
+            pnlChips.HorizontalScroll.Enabled = true;
+            pnlChips.VerticalScroll.Enabled   = false;
+            pnlChips.AutoScroll = true;
+
+            // ── Product grid ────────────────────────────────────────────────
+            pnlProducts = new FlowLayoutPanel
+            {
+                Dock          = DockStyle.Fill,
+                AutoScroll    = true,
+                WrapContents  = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                Padding       = new Padding(0, 8, 0, 0),
+                Margin        = new Padding(0),
+                BackColor     = Color.Transparent
+            };
+            tlpLeft.Controls.Add(pnlProducts, 0, 3);
+
+            // ══════════════════════════════════════════════════════════════════
+            // RIGHT PANEL — cart & summary
+            // ══════════════════════════════════════════════════════════════════
+            Panel pnlRight = new Panel
+            {
+                Dock      = DockStyle.Fill,
+                BackColor = Color.White,
+                Padding   = new Padding(0)
+            };
+            pnlRight.Paint += (s, pe) =>
+            {
+                using (var pen = new Pen(ThemeConfig.POS_SeparatorColor, 1.5f))
+                    pe.Graphics.DrawLine(pen, 0, 0, 0, pnlRight.Height);
+            };
+            tlpRoot.Controls.Add(pnlRight, 1, 0);
+
+            // Use a TableLayoutPanel inside right panel for structured rows
+            TableLayoutPanel tlpRight = new TableLayoutPanel
+            {
+                Dock        = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount    = 10,
+                BackColor   = Color.Transparent,
+                Padding     = new Padding(0)
+            };
+            // Row 0  – Order header (New Order + customer)
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 80F));
+            // Row 1  – separator
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 1F));
+            // Row 2  – "Ordered Items" section header
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
+            // Row 3  – cart items (fills remaining)
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            // Row 4  – separator
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 1F));
+            // Row 5  – Payment Summary section
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 185F));
+            // Row 6  – separator
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 1F));
+            // Row 7  – "Payment Method" section header
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
+            // Row 8  – Cash / Card / Scan pills
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 48F));
+            // Row 9  – Print + Place Order footer
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
+            pnlRight.Controls.Add(tlpRight);
+
+            // ── Row 0: Order header ─────────────────────────────────────────
+            Panel pnlOrderHeader = new Panel
+            {
+                Dock      = DockStyle.Fill,
+                BackColor = Color.Transparent,
+                Padding   = new Padding(16, 10, 16, 0)
+            };
+
+            Label lblNewOrder = new Label
+            {
+                Text      = "New Order",
+                Font      = ThemeConfig.SubHeaderFont,
+                ForeColor = ThemeConfig.TextColorDark,
+                AutoSize  = true,
+                Location  = new Point(16, 12)
+            };
+            pnlOrderHeader.Controls.Add(lblNewOrder);
+
+            lblOrderNum = new Label
+            {
+                Text      = "#001",
+                Font      = ThemeConfig.SmallFont ?? new Font("Segoe UI", 8F),
+                ForeColor = ThemeConfig.SecondaryColor,
+                AutoSize  = true,
+                Location  = new Point(16, 32)
+            };
+            pnlOrderHeader.Controls.Add(lblOrderNum);
+            
+            btnClearCart = new ModernButton
+            {
+                Text   = LocalizationManager.GetString("POS_ClearCart") ?? "Clear",
+                Cursor = Cursors.Hand,
+                Font   = new Font("Segoe UI", 8.5F, FontStyle.Bold)
+            };
+            btnClearCart.Click += (s, e) =>
+            {
+                if (cartTable.Rows.Count > 0 && MessageHelper.ConfirmAction(LocalizationManager.GetString("POS_ClearCartConfirm") ?? "Clear cart?"))
+                {
+                    cartTable.Rows.Clear();
+                    RefreshCartDisplay();
+                }
+            };
+            ThemeConfig.ApplySecondaryButton(btnClearCart);
+            pnlOrderHeader.Controls.Add(btnClearCart);
+
+            // Customer ComboBox in header
+            Label lblCustTitle = new Label
+            {
+                Text      = "Customer",
+                Font      = ThemeConfig.SmallFont ?? new Font("Segoe UI", 8F),
+                ForeColor = ThemeConfig.SecondaryColor,
+                AutoSize  = true,
+                Location  = new Point(16, 50)
+            };
+            pnlOrderHeader.Controls.Add(lblCustTitle);
+
+            cmbCustomers = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
+            ThemeConfig.ApplyComboBoxStyle(cmbCustomers);
+            cmbCustomers.Size     = new Size(pnlOrderHeader.Width - 32, 26);
+            cmbCustomers.Location = new Point(16, 50);
+            cmbCustomers.Anchor   = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+
+            // Layout header using absolute coords via Resize
+            pnlOrderHeader.Resize += (s, ev) =>
+            {
+                int w = pnlOrderHeader.Width - 32;
+                
+                btnClearCart.Size = new Size(80, 26);
+                if (LocalizationManager.IsArabic)
+                {
+                    btnClearCart.Location = new Point(16, 10);
+                    lblNewOrder.Location = new Point(pnlOrderHeader.Width - lblNewOrder.Width - 16, 8);
+                    lblOrderNum.Location = new Point(pnlOrderHeader.Width - lblOrderNum.Width - 16, 28);
+                }
+                else
+                {
+                    btnClearCart.Location = new Point(pnlOrderHeader.Width - 96, 10);
+                    lblNewOrder.Location = new Point(16, 8);
+                    lblOrderNum.Location = new Point(16, 28);
+                }
+                
+                lblCustTitle.Location = new Point(16, 46);
+                cmbCustomers.Width    = w;
+                cmbCustomers.Location = new Point(16, 46);
+                lblCustTitle.Visible  = false; // hide title, show placeholder via combo
+            };
+            pnlOrderHeader.Controls.Add(cmbCustomers);
+            tlpRight.Controls.Add(pnlOrderHeader, 0, 0);
+
+            // ── Row 1: separator ────────────────────────────────────────────
+            Panel sep1 = CreateSeparator();
+            tlpRight.Controls.Add(sep1, 0, 1);
+
+            // ── Row 2: "Ordered Items" section header ────────────────────────
+            Panel pnlOrderedItemsHeader = new Panel
+            {
+                Dock      = DockStyle.Fill,
+                BackColor = Color.Transparent,
+                Padding   = new Padding(16, 0, 16, 0)
+            };
+            BuildOrderedItemsHeader(pnlOrderedItemsHeader);
+            tlpRight.Controls.Add(pnlOrderedItemsHeader, 0, 2);
+
+            // ── Row 3: Cart items ────────────────────────────────────────────
+            pnlCartItems = new Panel
+            {
+                Dock       = DockStyle.Fill,
+                AutoScroll = true,
+                BackColor  = Color.Transparent,
+                Padding    = new Padding(0)
+            };
+            tlpRight.Controls.Add(pnlCartItems, 0, 3);
+
+            // ── Row 4: separator ────────────────────────────────────────────
+            Panel sep2 = CreateSeparator();
+            tlpRight.Controls.Add(sep2, 0, 4);
+
+            // ── Row 5: Payment Summary ───────────────────────────────────────
+            Panel pnlSummary = new Panel
+            {
+                Dock      = DockStyle.Fill,
+                BackColor = Color.Transparent,
+                Padding   = new Padding(16, 8, 16, 4)
+            };
+            BuildSummaryPanel(pnlSummary);
+            tlpRight.Controls.Add(pnlSummary, 0, 5);
+
+            // ── Row 6: separator ────────────────────────────────────────────
+            Panel sep3 = CreateSeparator();
+            tlpRight.Controls.Add(sep3, 0, 6);
+
+            // ── Row 7: "Payment Method" section header ───────────────────────
+            Panel pnlPayMethodHeader = new Panel
+            {
+                Dock      = DockStyle.Fill,
+                BackColor = Color.Transparent,
+                Padding   = new Padding(16, 0, 16, 0)
+            };
+            Label lblPayMethodTitle = new Label
+            {
+                Text      = "Payment Method",
+                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                Dock      = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                BackColor = Color.Transparent
+            };
+            pnlPayMethodHeader.Controls.Add(lblPayMethodTitle);
+            tlpRight.Controls.Add(pnlPayMethodHeader, 0, 7);
+
+            // ── Row 8: Cash / Card / Scan pills ─────────────────────────────
+            Panel pnlPayPills = new Panel
+            {
+                Dock      = DockStyle.Fill,
+                BackColor = Color.Transparent,
+                Padding   = new Padding(16, 4, 16, 8)
+            };
+            BuildPaymentPillsPanel(pnlPayPills);
+            tlpRight.Controls.Add(pnlPayPills, 0, 8);
+
+            // ── Row 9: Print + Place Order footer ───────────────────────────
+            Panel pnlFooter = new Panel
+            {
+                Dock      = DockStyle.Fill,
+                BackColor = Color.Transparent,
+                Padding   = new Padding(16, 6, 16, 10)
+            };
+            BuildFooterButtons(pnlFooter);
+            tlpRight.Controls.Add(pnlFooter, 0, 9);
+
+            this.ResumeLayout(false);
+
+            // Build chips after layout
+            this.Load += (s, ev) => BuildCategoryChips();
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // "Ordered Items" SECTION HEADER
+        // ─────────────────────────────────────────────────────────────────────
+        private Label _lblCartCount; // updated by RefreshCartDisplay
+
+        private void BuildOrderedItemsHeader(Panel pnl)
+        {
+            // "Ordered Items" bold label on the left
+            Label lblOrderedItems = new Label
+            {
+                Text      = LocalizationManager.GetString("POS_OrderedItems") ?? "Ordered Items",
+                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                AutoSize  = true,
+                BackColor = Color.Transparent
+            };
+
+            // Grey count badge on the right (e.g. "05")
+            _lblCartCount = new Label
+            {
+                Text      = "00",
+                Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                ForeColor = ThemeConfig.SecondaryColor,
+                AutoSize  = true,
+                BackColor = Color.Transparent
+            };
+
+            pnl.Resize += (s, ev) =>
+            {
+                lblOrderedItems.Location = new Point(0, (pnl.Height - lblOrderedItems.Height) / 2);
+                _lblCartCount.Location   = new Point(pnl.Width - _lblCartCount.Width, (pnl.Height - _lblCartCount.Height) / 2);
+                _lblCartCount.Anchor     = AnchorStyles.Top | AnchorStyles.Right;
+            };
+            pnl.Controls.AddRange(new Control[] { lblOrderedItems, _lblCartCount });
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // PAYMENT PILLS PANEL  — Cash / Card / Scan + currency dropdown
+        // ─────────────────────────────────────────────────────────────────────
+        private void BuildPaymentPillsPanel(Panel pnl)
+        {
+            Button btnCash  = CreatePayPillButton("💵  Cash");
+            Button btnCard  = CreatePayPillButton("💳  Card");
+            Button btnScan  = CreatePayPillButton("🔠  Scan");
+
+            // Default: Cash active
+            SetPayPillActive(btnCash, true);
+            SetPayPillActive(btnCard, false);
+            SetPayPillActive(btnScan, false);
+
+            void SelectPill(Button selected)
+            {
+                SetPayPillActive(btnCash, selected == btnCash);
+                SetPayPillActive(btnCard, selected == btnCard);
+                SetPayPillActive(btnScan, selected == btnScan);
+            }
+
+            btnCash.Click += (s, e) => SelectPill(btnCash);
+            btnCard.Click += (s, e) => SelectPill(btnCard);
+            btnScan.Click += (s, e) => SelectPill(btnScan);
+
+            pnl.Resize += (s, ev) =>
+            {
+                int h   = pnl.Height - 12;
+                int gap = 6;
+                int totalW = pnl.Width;
+                // 3 equal pills
+                int pillW = (totalW - gap * 2) / 3;
+                int y = (pnl.Height - h) / 2;
+                btnCash.SetBounds(0,             y, pillW, h);
+                btnCard.SetBounds(pillW + gap,   y, pillW, h);
+                btnScan.SetBounds(pillW * 2 + gap * 2, y, pillW, h);
+            };
+            pnl.Controls.AddRange(new Control[] { btnCash, btnCard, btnScan });
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // SUMMARY PANEL BUILD
+        // ─────────────────────────────────────────────────────────────────────
+        private void BuildSummaryPanel(Panel pnl)
+        {
+            // "Payment Summary" section header
+            Label lblSummaryHeader = new Label
+            {
+                Text      = LocalizationManager.GetString("POS_PaymentSummary") ?? "Payment Summary",
+                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                AutoSize  = true,
+                BackColor = Color.Transparent
+            };
+
+            // Subtotal row
+            Label lblSubtotalTitle = MakeSummaryLabel("Subtotal", false);
+            lblSubtotalVal = MakeSummaryValueLabel("$0.00", false);
+
+            // VAT row
+            chkApplyVAT = new CheckBox
+            {
+                Text    = "",
+                Checked = false,
+                AutoSize = true,
+                Cursor  = Cursors.Hand,
+                BackColor = Color.Transparent
+            };
+            chkApplyVAT.CheckedChanged += (s, e) => UpdateTotal();
+
+            Label lblVATTitle = MakeSummaryLabel("VAT (11%)", false);
+            lblTaxVal = MakeSummaryValueLabel("$0.00", false);
+
+            // Shipping row
+            chkApplyShipping = new CheckBox
+            {
+                Text    = "",
+                Checked = false,
+                AutoSize = true,
+                Cursor  = Cursors.Hand,
+                BackColor = Color.Transparent
+            };
+            chkApplyShipping.CheckedChanged += (s, e) =>
+            {
+                numShipping.Visible = chkApplyShipping.Checked;
+                UpdateTotal();
+            };
+
+            Label lblShipTitle = MakeSummaryLabel("Shipping", false);
+            lblShippingVal = MakeSummaryValueLabel("$0.00", false);
+            numShipping = new NumericUpDown
+            {
+                DecimalPlaces = 2,
+                Minimum       = 0,
+                Maximum       = 99999,
+                Font          = ThemeConfig.StandardFont,
+                Visible       = false,
+                Width         = 80,
+                BorderStyle   = BorderStyle.FixedSingle
+            };
+            numShipping.ValueChanged += (s, e) => UpdateTotal();
+
+            // Total Payable row
+            Label lblTotalTitle = MakeSummaryLabel("Total Payable", true);
+            lblTotalVal = MakeSummaryValueLabel("$0.00", true);
+
+            // Use Resize to do absolute layout
+            pnl.Resize += (s, ev) =>
+            {
+                int w = pnl.Width - 32;
+                int rightX = pnl.Width - 16;
+
+                int y0 = 4;   // header
+                int y1 = 28;  // subtotal
+                int y2 = 52;  // vat
+                int y3 = 76;  // shipping
+                int y4 = 108; // total
+
+                lblSummaryHeader.Location = new Point(16, y0);
+
+                lblSubtotalTitle.Location = new Point(16, y1);
+                lblSubtotalVal.Location   = new Point(rightX - lblSubtotalVal.Width, y1);
+                lblSubtotalVal.Anchor     = AnchorStyles.Top | AnchorStyles.Right;
+
+                chkApplyVAT.Location  = new Point(16, y2);
+                lblVATTitle.Location  = new Point(36, y2);
+                lblTaxVal.Location    = new Point(rightX - lblTaxVal.Width, y2);
+                lblTaxVal.Anchor      = AnchorStyles.Top | AnchorStyles.Right;
+
+                chkApplyShipping.Location = new Point(16, y3);
+                lblShipTitle.Location     = new Point(36, y3);
+                lblShippingVal.Location   = new Point(rightX - lblShippingVal.Width, y3);
+                lblShippingVal.Anchor     = AnchorStyles.Top | AnchorStyles.Right;
+                numShipping.Location      = new Point(rightX - numShipping.Width - 2, y3 - 2);
+                numShipping.Anchor        = AnchorStyles.Top | AnchorStyles.Right;
+
+                lblTotalTitle.Location = new Point(16, y4);
+                lblTotalVal.Location   = new Point(rightX - lblTotalVal.Width, y4);
+                lblTotalVal.Anchor     = AnchorStyles.Top | AnchorStyles.Right;
+            };
+
+            pnl.Controls.AddRange(new Control[]
+            {
+                lblSummaryHeader,
+                lblSubtotalTitle, lblSubtotalVal,
+                chkApplyVAT, lblVATTitle, lblTaxVal,
+                chkApplyShipping, lblShipTitle, lblShippingVal, numShipping,
+                lblTotalTitle, lblTotalVal
+            });
+
+            // Draw separator before Total Payable
+            pnl.Paint += (s, pe) =>
+            {
+                int sepY = 100;
+                using (var pen = new Pen(ThemeConfig.POS_SeparatorColor, 1f))
+                    pe.Graphics.DrawLine(pen, 16, sepY, pnl.Width - 16, sepY);
+            };
+        }
+
+        private Label MakeSummaryLabel(string text, bool bold)
+        {
+            return new Label
+            {
+                Text      = text,
+                AutoSize  = true,
+                Font      = bold ? ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold) : ThemeConfig.StandardFont,
+                ForeColor = bold ? ThemeConfig.TextColorDark : ThemeConfig.SecondaryColor,
+                BackColor = Color.Transparent
+            };
+        }
+
+        private Label MakeSummaryValueLabel(string text, bool bold)
+        {
+            return new Label
+            {
+                Text      = text,
+                AutoSize  = false,
+                Width     = 120,
+                Height    = 22,
+                TextAlign = ContentAlignment.MiddleRight,
+                Font      = bold ? new Font("Segoe UI", 12F, FontStyle.Bold) : ThemeConfig.StandardFont,
+                ForeColor = bold ? ThemeConfig.PrimaryColor : ThemeConfig.TextColorDark,
+                BackColor = Color.Transparent
+            };
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // CURRENCY SELECTOR PANEL — ComboBox dropdown
+        // ─────────────────────────────────────────────────────────────────────
+        private void BuildCurrencySelectorPanel(Panel pnl)
+        {
+            var currencies = butcherPOS.Services.CurrencyService.SupportedCurrencies;
+
+            Label lblCurrLabel = new Label
+            {
+                Text      = LocalizationManager.GetString("POS_Currency") ?? "Currency",
+                Font      = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = ThemeConfig.SecondaryColor,
+                AutoSize  = true,
+                BackColor = Color.Transparent
+            };
+
+            ComboBox cmbCurrency = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font          = ThemeConfig.StandardFont,
+                Cursor        = Cursors.Hand
+            };
+            ThemeConfig.ApplyComboBoxStyle(cmbCurrency);
+
+            foreach (var curr in currencies)
+                cmbCurrency.Items.Add(curr.Code);
+
+            // Select current active
+            string active = butcherPOS.Services.CurrencyService.ActiveCurrency;
+            int idx = cmbCurrency.Items.IndexOf(active);
+            cmbCurrency.SelectedIndex = idx >= 0 ? idx : 0;
+
+            cmbCurrency.SelectedIndexChanged += (s, e) =>
+            {
+                string selected = cmbCurrency.SelectedItem?.ToString();
+                if (!string.IsNullOrEmpty(selected))
+                {
+                    butcherPOS.Services.CurrencyService.ActiveCurrency = selected;
+                    if (cartTable != null)
+                    {
+                        LoadProducts(_activeCategory);
+                        RefreshCartDisplay();
+                        RefreshStats();
+                    }
+                }
+            };
+
+            butcherPOS.Services.CurrencyService.CurrencyChanged += (s, e) =>
+            {
+                string cur = butcherPOS.Services.CurrencyService.ActiveCurrency;
+                int i = cmbCurrency.Items.IndexOf(cur);
+                if (i >= 0 && cmbCurrency.SelectedIndex != i)
+                    cmbCurrency.SelectedIndex = i;
+                if (cartTable != null)
+                {
+                    LoadProducts(_activeCategory);
+                    RefreshCartDisplay();
+                    RefreshStats();
+                }
+            };
+
+            pnl.Resize += (s, ev) =>
+            {
+                int labelW = 70;
+                int gap    = 8;
+                int h      = pnl.Height - 10;
+                int cy     = (pnl.Height - h) / 2;
+                lblCurrLabel.Location  = new Point(16, cy + (h - lblCurrLabel.Height) / 2);
+                cmbCurrency.SetBounds(16 + labelW + gap, cy, pnl.Width - 32 - labelW - gap, h);
+            };
+
+            pnl.Controls.AddRange(new Control[] { lblCurrLabel, cmbCurrency });
+        }
+
+        private Button CreatePayPillButton(string text)
+        {
+            var btn = new Button
+            {
+                Text      = text,
+                FlatStyle = FlatStyle.Flat,
+                Font      = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold),
+                Cursor    = Cursors.Hand,
+                BackColor = ThemeConfig.SurfaceColor,
+                ForeColor = ThemeConfig.TextColorDark
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var parentBrush = new SolidBrush(ThemeConfig.GetParentColor(btn)))
+                    pe.Graphics.FillRectangle(parentBrush, -1, -1, btn.Width + 2, btn.Height + 2);
+                var r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (var path = RoundedPath(r, 16))
+                {
+                    using (var br = new SolidBrush(btn.BackColor))
+                        pe.Graphics.FillPath(br, path);
+                    if (btn.BackColor == ThemeConfig.SurfaceColor)
+                    {
+                        using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                            pe.Graphics.DrawPath(pen, path);
+                    }
+                }
+                TextRenderer.DrawText(pe.Graphics, btn.Text, btn.Font,
+                    new Rectangle(0, 0, btn.Width, btn.Height), btn.ForeColor,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+            };
+            return btn;
+        }
+
+        private void SetPayPillActive(Button btn, bool active)
+        {
+            btn.BackColor = active ? ThemeConfig.POS_ChipActive   : ThemeConfig.SurfaceColor;
+            btn.ForeColor = active ? Color.White                   : ThemeConfig.TextColorDark;
+            btn.FlatAppearance.BorderColor = active ? ThemeConfig.POS_ChipActiveBorder : ThemeConfig.BorderColor;
+            btn.Invalidate();
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // FOOTER BUTTONS
+        // ─────────────────────────────────────────────────────────────────────
+        private void BuildFooterButtons(Panel pnl)
+        {
+            Button btnPrintReceipt = new ModernButton
+            {
+                Name   = "btnPrintReceipt",
+                Text   = LocalizationManager.GetString("POS_Receipt") ?? "Print Receipt",
+                Image  = ThemeConfig.GetNuricon("print"),
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                ImageAlign        = ContentAlignment.MiddleLeft,
+                Cursor = Cursors.Hand
+            };
+            btnPrintReceipt.Click += BtnPrintReceipt_Click;
+            ThemeConfig.ApplySecondaryButton(btnPrintReceipt);
+
+            btnCheckout = new ModernButton
+            {
+                Text   = LocalizationManager.GetString("POS_PlaceOrder") ?? "Place Order",
+                Image  = ThemeConfig.GetNuricon("pos"),
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                ImageAlign        = ContentAlignment.MiddleLeft,
+                Cursor = Cursors.Hand
+            };
+            btnCheckout.Click += BtnCheckout_Click;
+            ThemeConfig.ApplyPrimaryButton(btnCheckout);
+
+            pnl.Resize += (s, ev) =>
+            {
+                int h = pnl.Height - 12;
+                int gap = 8;
+                int totalW = pnl.Width - 32 - gap;
+                int printW = (int)(totalW * 0.3);
+                int checkoutW = totalW - printW;
+                btnPrintReceipt.SetBounds(16, 6, printW, h);
+                btnCheckout.SetBounds(16 + printW + gap, 6, checkoutW, h);
+            };
+
+            pnl.Controls.AddRange(new Control[] { btnPrintReceipt, btnCheckout });
+        }
+
+
+        // ─────────────────────────────────────────────────────────────────────
+        // CATEGORY CHIPS  — reference card style
+        // ─────────────────────────────────────────────────────────────────────
+        private void BuildCategoryChips()
+        {
+            pnlChips.SuspendLayout();
+            pnlChips.Controls.Clear();
+
+            bool isRTL = LocalizationManager.IsArabic;
+            pnlChips.FlowDirection = isRTL ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+
+            AddCategoryChip(LocalizationManager.GetString("POS_AllCategories") ?? "All Menu", null);
+
+            try
+            {
+                var categories = CategoryData.GetAllCategories();
+                foreach (var cat in categories)
+                    AddCategoryChip(cat.CategoryName, cat.CategoryName);
+            }
+            catch { }
+
+            pnlChips.ResumeLayout();
+        }
+
+        private void AddCategoryChip(string label, string categoryKey)
+        {
+            bool isActive = (_activeCategory == categoryKey) ||
+                            (_activeCategory == null && categoryKey == null);
+
+            // Count items in this category
+            int itemCount = 0;
+            try
+            {
+                var allParts = PartData.GetAllParts();
+                itemCount = categoryKey == null
+                    ? allParts.Count
+                    : allParts.FindAll(p => string.Equals(p.CategoryName, categoryKey, StringComparison.OrdinalIgnoreCase)).Count;
+            }
+            catch { }
+
+            string countText = $"{itemCount} items";
+
+            // Get emoji
+            string emoji = "🛒";
+            if (categoryKey == null) emoji = "🍽️";
+            else
+            {
+                try
+                {
+                    var cats = CategoryData.GetAllCategories();
+                    var cat  = cats.Find(c => string.Equals(c.CategoryName, categoryKey, StringComparison.OrdinalIgnoreCase));
+                    if (!string.IsNullOrEmpty(cat?.CategoryImage)) emoji = cat.CategoryImage;
+                }
+                catch { }
+            }
+
+            // Card dimensions — wider to accommodate icon + text
+            var nameFont  = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold);
+            var countFont = new Font("Segoe UI", 7.5F);
+            int nameW = TextRenderer.MeasureText(label, nameFont).Width;
+            int cntW  = TextRenderer.MeasureText(countText, countFont).Width;
+            int cardW = Math.Max(nameW, cntW) + 52;  // icon(28) + gap(8) + text + right-pad(16)
+            cardW = Math.Max(cardW, 100);
+            const int CARD_H = 64;
+            const int ICON_AREA = 32; // width reserved for the emoji circle
+
+            // Active border color — teal/primary on top edge (like reference)
+            Color activeBorder = ThemeConfig.POS_ChipActiveBorder;
+            Color inactiveBg   = ThemeConfig.SurfaceColor;
+
+            var chip = new Button
+            {
+                Text      = "",
+                FlatStyle = FlatStyle.Flat,
+                AutoSize  = false,
+                Width     = cardW,
+                Height    = CARD_H,
+                Cursor    = Cursors.Hand,
+                Margin    = new Padding(0, 0, 10, 0),
+                BackColor = inactiveBg,
+                ForeColor = ThemeConfig.TextColorDark,
+                Tag       = categoryKey
+            };
+            chip.FlatAppearance.BorderSize = 0; // drawn manually
+
+            chip.Paint += (s, pe) =>
+            {
+                var g = pe.Graphics;
+                g.SmoothingMode    = SmoothingMode.AntiAlias;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+                // Clear background with parent colour
+                using (var parentBrush = new SolidBrush(ThemeConfig.GetParentColor(chip)))
+                    g.FillRectangle(parentBrush, -1, -1, chip.Width + 2, chip.Height + 2);
+
+                var r = new Rectangle(0, 0, chip.Width - 1, chip.Height - 1);
+
+                // Card fill
+                using (var path = RoundedPath(r, 14))
+                using (var br   = new SolidBrush(inactiveBg))
+                    g.FillPath(br, path);
+
+                // Border: thin grey normally; active → draw a prominent coloured outline
+                if (isActive)
+                {
+                    using (var path = RoundedPath(r, 14))
+                    using (var pen  = new Pen(activeBorder, 2f))
+                        g.DrawPath(pen, path);
+                }
+                else
+                {
+                    using (var path = RoundedPath(r, 14))
+                    using (var pen  = new Pen(ThemeConfig.BorderColor, 1f))
+                        g.DrawPath(pen, path);
+                }
+
+                // ── Emoji circle (left side) ──────────────────────────────────
+                int cx = 12;
+                int cy = (CARD_H - ICON_AREA) / 2;
+                using (var circleBr = new SolidBrush(Color.FromArgb(20, ThemeConfig.PrimaryColor)))
+                    g.FillEllipse(circleBr, cx, cy, ICON_AREA, ICON_AREA);
+
+                using (var emojiFont = new Font("Segoe UI Emoji", 11F))
+                    TextRenderer.DrawText(g, emoji, emojiFont,
+                        new Rectangle(cx, cy, ICON_AREA, ICON_AREA),
+                        ThemeConfig.TextColorDark,
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+
+                // ── Text block (right of icon) ────────────────────────────────
+                int textX = cx + ICON_AREA + 8;
+                int textW = chip.Width - textX - 8;
+
+                // Category name — bold
+                Color nameColor = isActive ? activeBorder : ThemeConfig.TextColorDark;
+                TextRenderer.DrawText(g, label, nameFont,
+                    new Rectangle(textX, cy, textW, 18), nameColor,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+
+                // Item count — small grey below name
+                Color subColor = isActive ? Color.FromArgb(180, activeBorder.R, activeBorder.G, activeBorder.B)
+                                          : ThemeConfig.SecondaryColor;
+                using (var cf = new Font("Segoe UI", 7.5F))
+                    TextRenderer.DrawText(g, countText, cf,
+                        new Rectangle(textX, cy + 20, textW, 16), subColor,
+                        TextFormatFlags.Left | TextFormatFlags.NoPadding);
+
+                countFont.Dispose();
+            };
+
+            chip.Click += (s, e) =>
+            {
+                _activeCategory = categoryKey;
+                BuildCategoryChips();
+                LoadProducts(txtProductSearch?.Text);
+            };
+
+            pnlChips.Controls.Add(chip);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // PRODUCT LOADING
+        // ─────────────────────────────────────────────────────────────────────
+        public void LoadProducts(string search = null)
+        {
+            pnlProducts.SuspendLayout();
+            pnlProducts.Controls.Clear();
+
+            List<PartData> all;
+            try
+            {
+                all = string.IsNullOrWhiteSpace(search)
+                    ? PartData.GetAllParts()
+                    : PartData.SearchParts(search.Trim());
+            }
+            catch
+            {
+                all = new List<PartData>();
+            }
+
+            // Filter by active category
+            if (!string.IsNullOrEmpty(_activeCategory))
+                all = all.FindAll(p => string.Equals(p.CategoryName, _activeCategory, StringComparison.OrdinalIgnoreCase));
+
+            if (all.Count == 0)
+            {
+                Label noResults = new Label
+                {
+                    Text      = "No products found.",
+                    Font      = ThemeConfig.StandardFont,
+                    ForeColor = ThemeConfig.SecondaryColor,
+                    AutoSize  = true,
+                    Margin    = new Padding(16)
+                };
+                pnlProducts.Controls.Add(noResults);
+            }
+            else
+            {
+                foreach (var part in all)
+                {
+                    var card = CreateProductCard(part);
+                    pnlProducts.Controls.Add(card);
+                }
+            }
+
+            pnlProducts.ResumeLayout();
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // PRODUCT CARD
+        // ─────────────────────────────────────────────────────────────────────
+        private Panel CreateProductCard(PartData part)
+        {
+            bool outOfStock = part.QuantityInStock <= 0;
+            // cartQty is read live in Paint/layout so the border updates instantly
+            int GetLiveQty() => GetCartQty(part.Id);
+
+            // ── Card shell ──────────────────────────────────────────────────
+            // Matches the green reference: compact, rounded, white bg, subtle border
+            const int CARD_W   = 170;
+            const int CARD_H   = 215;
+            const int IMG_SIZE = 110;  // larger image circle like reference
+            const int RADIUS   = 16;
+            const int BTN_SIZE = 26;
+
+            Panel card = new Panel
+            {
+                Size         = new Size(CARD_W, CARD_H),
+                BackColor    = ThemeConfig.SurfaceColor,
+                Margin       = new Padding(0, 0, 12, 12),
+                Cursor       = outOfStock ? Cursors.No : Cursors.Hand,
+                Tag          = part.Id,
+                DoubleBuffered = false   // Paint is owner-drawn; transparency via parent-chain
+            };
+
+            bool hovered = false;
+            card.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                // erase parent color first so rounded corners show correctly
+                using (var parentBrush = new SolidBrush(ThemeConfig.GetParentColor(card)))
+                    pe.Graphics.FillRectangle(parentBrush, -1, -1, card.Width + 2, card.Height + 2);
+
+                var r = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
+                int liveQty = GetLiveQty();
+                Color borderColor;
+                if (liveQty > 0)             borderColor = ThemeConfig.PrimaryColor;   // in-cart: teal accent
+                else if (hovered && !outOfStock) borderColor = ThemeConfig.PrimaryColor;
+                else                         borderColor = ThemeConfig.BorderColor;
+
+                using (var path = RoundedPath(r, RADIUS))
+                {
+                    Color fillColor = outOfStock
+                        ? Color.FromArgb(248, 248, 250)
+                        : ThemeConfig.SurfaceColor;
+                    using (var br = new SolidBrush(fillColor))
+                        pe.Graphics.FillPath(br, path);
+                    float borderW = (liveQty > 0 || (hovered && !outOfStock)) ? 1.8f : 1f;
+                    using (var pen = new Pen(borderColor, borderW))
+                        pe.Graphics.DrawPath(pen, path);
+                }
+                if (outOfStock)
+                {
+                    using (var dimBrush = new SolidBrush(Color.FromArgb(40, 200, 200, 200)))
+                    using (var path = RoundedPath(r, RADIUS))
+                        pe.Graphics.FillPath(dimBrush, path);
+                }
+            };
+            // Hover wiring deferred — applied after all children are built (see PropagateHover below)
+
+            // ══════════════════════════════════════════════════════════════════
+            // SECTION 1 — Image container  (div.card-image)
+            // A transparent panel that centres the circular image
+            // ══════════════════════════════════════════════════════════════════
+            const int IMG_SECTION_H = 128; // height of image zone
+            Panel pnlImageSection = new Panel
+            {
+                Location  = new Point(0, 0),
+                Size      = new Size(CARD_W, IMG_SECTION_H),
+                BackColor = Color.Transparent
+            };
+            card.Controls.Add(pnlImageSection);
+
+            // Circular background disc — centred in the image section
+            int circleDiameter = IMG_SIZE + 6;
+            int circleX = (CARD_W - circleDiameter) / 2;
+            int circleY = (IMG_SECTION_H - circleDiameter) / 2;
+
+            Panel pnlImgBg = new Panel
+            {
+                Location  = new Point(circleX, circleY),
+                Size      = new Size(circleDiameter, circleDiameter),
+                BackColor = Color.Transparent   // parent handles clearing
+            };
+
+            // Load image once — drawn directly in Paint (no PictureBox needed)
+            var bmp = LoadProductImage(part.PartImage, part.CategoryName, IMG_SIZE);
+
+            pnlImgBg.Paint += (s, pe) =>
+            {
+                var g  = pe.Graphics;
+                int w  = pnlImgBg.Width;
+                int h  = pnlImgBg.Height;
+
+                g.SmoothingMode     = SmoothingMode.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode   = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+
+                // ── Step 1: fill the background circle ──────────────────────
+                using (var br = new SolidBrush(ThemeConfig.BackgroundColor))
+                    g.FillEllipse(br, 0, 0, w - 1, h - 1);
+
+                // ── Step 2: clip to circle, then draw the image centred/zoomed ─
+                if (bmp != null)
+                {
+                    // Inset by 6 px so the image sits inside the circle with breathing room
+                    const int PAD = 6;
+                    int imgW = w - PAD * 2;
+                    int imgH = h - PAD * 2;
+
+                    // Zoom-fit: keep aspect ratio, centre inside the inset square
+                    float scale = Math.Min((float)imgW / bmp.Width, (float)imgH / bmp.Height);
+                    int   dw    = (int)(bmp.Width  * scale);
+                    int   dh    = (int)(bmp.Height * scale);
+                    int   dx    = PAD + (imgW - dw) / 2;
+                    int   dy    = PAD + (imgH - dh) / 2;
+
+                    using (var clipPath = new GraphicsPath())
+                    {
+                        clipPath.AddEllipse(1, 1, w - 3, h - 3);
+                        g.SetClip(clipPath);
+                        g.DrawImage(bmp, dx, dy, dw, dh);
+                        g.ResetClip();
+                    }
+                }
+            };
+            pnlImageSection.Controls.Add(pnlImgBg);
+
+            // ══════════════════════════════════════════════════════════════════
+            // SECTION 2 — Text container  (div.card-body)
+            // Category italic label + bold product name, both centred
+            // ══════════════════════════════════════════════════════════════════
+            const int TEXT_SECTION_H = 46;
+            int textSectionY = IMG_SECTION_H;  // sits directly under the image section
+            Panel pnlTextSection = new Panel
+            {
+                Location  = new Point(0, textSectionY),
+                Size      = new Size(CARD_W, TEXT_SECTION_H),
+                BackColor = Color.Transparent,
+                Padding   = new Padding(10, 0, 10, 0)
+            };
+            card.Controls.Add(pnlTextSection);
+
+            // Category — small italic grey (like reference)
+            Label lblCat = new Label
+            {
+                Text      = part.CategoryName,
+                Font      = new Font("Segoe UI", 7.5F, FontStyle.Italic),
+                ForeColor = ThemeConfig.SecondaryColor,
+                AutoSize  = false,
+                Width     = CARD_W - 20,
+                Height    = 16,
+                Location  = new Point(10, 2),
+                TextAlign = ContentAlignment.MiddleCenter,
+                BackColor = Color.Transparent
+            };
+            pnlTextSection.Controls.Add(lblCat);
+
+            // Product name — bold, dark, 2-line wrap
+            Label lblName = new Label
+            {
+                Text      = part.PartName,
+                Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                AutoSize  = false,
+                Width     = CARD_W - 20,
+                Height    = 28,
+                Location  = new Point(10, 18),
+                TextAlign = ContentAlignment.TopCenter,
+                BackColor = Color.Transparent
+            };
+            pnlTextSection.Controls.Add(lblName);
+
+            // ══════════════════════════════════════════════════════════════════
+            // SECTION 3 — Footer row  (div.card-footer)
+            // Price (left) | — qty + (right), all vertically centred
+            // ══════════════════════════════════════════════════════════════════
+            int footerY = textSectionY + TEXT_SECTION_H;
+            const int FOOTER_H = CARD_H - IMG_SECTION_H - TEXT_SECTION_H;
+            Panel pnlFooterRow = new Panel
+            {
+                Location  = new Point(0, footerY),
+                Size      = new Size(CARD_W, FOOTER_H),
+                BackColor = Color.Transparent,  // transparent keeps card rounded corners intact
+                Padding   = new Padding(10, 0, 10, 0)
+            };
+            card.Controls.Add(pnlFooterRow);
+
+            // ── Price label (left side of footer) ──────────────────────────
+            Label lblPrice = new Label
+            {
+                Text      = CurrencyService.Format(part.SellingPrice),
+                Font      = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                ForeColor = ThemeConfig.PrimaryColor,
+                AutoSize  = false,          // fixed size so DoFooterLayout() can centre it immediately
+                Width     = 80,
+                Height    = BTN_SIZE,
+                TextAlign = ContentAlignment.MiddleLeft,
+                BackColor = Color.Transparent
+            };
+
+            // ── − button (outlined rounded rectangle, not filled circle) ────
+            Button btnMinus = new Button
+            {
+                Text      = "−",
+                Size      = new Size(BTN_SIZE, BTN_SIZE),
+                FlatStyle = FlatStyle.Flat,
+                Font      = new Font("Segoe UI", 10F),
+                Cursor    = Cursors.Hand,
+                BackColor = ThemeConfig.SurfaceColor,
+                ForeColor = ThemeConfig.TextColorDark,
+                TabStop   = false
+            };
+            btnMinus.FlatAppearance.BorderSize  = 0;
+            btnMinus.Paint += (s, pe) =>
+            {
+                // WinForms paints BackColor (SurfaceColor) before this fires — no manual clear needed.
+                // 2px inset ensures the full 1.5f stroke is visible on every edge.
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                var rect = new Rectangle(2, 2, btnMinus.Width - 4, btnMinus.Height - 4);
+                using (var path = RoundedPath(rect, 7))
+                {
+                    using (var fillBr = new SolidBrush(ThemeConfig.SurfaceColor))
+                        pe.Graphics.FillPath(fillBr, path);
+                    using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f))
+                        pe.Graphics.DrawPath(pen, path);
+                }
+                TextRenderer.DrawText(pe.Graphics, "−", btnMinus.Font,
+                    new Rectangle(0, 0, btnMinus.Width, btnMinus.Height),
+                    ThemeConfig.TextColorDark,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+            };
+
+            // ── Qty label (centred between buttons) ─────────────────────────
+            Label lblQty = new Label
+            {
+                Text      = GetLiveQty() > 0 ? GetLiveQty().ToString() : "0",
+                Size      = new Size(22, BTN_SIZE),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                BackColor = Color.Transparent,
+                Tag       = "qtyLabel_" + part.Id
+            };
+
+            // ── + button (filled circle, primary color) ─────────────────────
+            Button btnPlus = new Button
+            {
+                Text      = "+",
+                Size      = new Size(BTN_SIZE, BTN_SIZE),
+                FlatStyle = FlatStyle.Flat,
+                Font      = new Font("Segoe UI", 11F, FontStyle.Bold),
+                Cursor    = Cursors.Hand,
+                BackColor = ThemeConfig.PrimaryColor,
+                ForeColor = Color.White,
+                TabStop   = false
+            };
+            btnPlus.FlatAppearance.BorderSize = 0;
+            btnPlus.Paint += (s, pe) =>
+            {
+                // WinForms paints BackColor before this fires — no manual clear needed.
+                // 2px inset gives a small margin so the circle sits cleanly inside the button area.
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                Color circleColor = outOfStock ? ThemeConfig.SecondaryColor : ThemeConfig.PrimaryColor;
+                using (var br = new SolidBrush(circleColor))
+                    pe.Graphics.FillEllipse(br, 2, 2, btnPlus.Width - 4, btnPlus.Height - 4);
+                // NoPadding removes internal font leading so the glyph centres exactly in the ellipse
+                TextRenderer.DrawText(pe.Graphics, "+", btnPlus.Font,
+                    new Rectangle(0, 0, btnPlus.Width, btnPlus.Height), Color.White,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+            };
+
+            // Disable qty controls when out of stock
+            if (outOfStock)
+            {
+                btnPlus.Enabled  = false;
+                btnMinus.Enabled = false;
+            }
+
+            // ── Layout helper — called immediately AND on every resize ────────
+            void DoFooterLayout()
+            {
+                int fy    = (FOOTER_H - BTN_SIZE) / 2;   // vertical centre
+                int rEdge = CARD_W - 10;                  // right edge with 10px padding
+
+                // Right → Left: [●+] [qty] [—]
+                btnPlus.Location  = new Point(rEdge - BTN_SIZE,                             fy);
+                lblQty.Location   = new Point(rEdge - BTN_SIZE - 22,                        fy);
+                btnMinus.Location = new Point(rEdge - BTN_SIZE - 22 - BTN_SIZE,             fy);
+
+                // Price: same vertical centre, left-aligned
+                lblPrice.Location = new Point(10, fy);
+            }
+
+            pnlFooterRow.Controls.AddRange(new Control[] { lblPrice, btnMinus, lblQty, btnPlus });
+
+            // Position controls right now (before Resize ever fires)
+            DoFooterLayout();
+
+            // Also re-layout if the panel is ever resized at runtime
+            pnlFooterRow.Resize += (s, ev) => DoFooterLayout();
+
+            // ══════════════════════════════════════════════════════════════════
+            // BADGES / OVERLAYS
+            // ══════════════════════════════════════════════════════════════════
+            if (outOfStock)
+            {
+                Label lblBadge = new Label
+                {
+                    Text      = "Out of Stock",
+                    Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                    ForeColor = Color.White,
+                    AutoSize  = false,
+                    Width     = CARD_W - 20,
+                    Height    = 18,
+                    Location  = new Point(10, textSectionY + 2),
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+                lblBadge.Paint += (s, pe) =>
+                {
+                    pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    using (var path = RoundedPath(new Rectangle(0, 0, lblBadge.Width - 1, lblBadge.Height - 1), 6))
+                    using (var br = new SolidBrush(ThemeConfig.DangerColor))
+                        pe.Graphics.FillPath(br, path);
+                    TextRenderer.DrawText(pe.Graphics, lblBadge.Text, lblBadge.Font,
+                        new Rectangle(0, 0, lblBadge.Width, lblBadge.Height), Color.White,
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                };
+                card.Controls.Add(lblBadge);
+            }
+            else if (part.QuantityInStock <= part.MinimumStockLevel && part.MinimumStockLevel > 0)
+            {
+                // "Low stock" hint shown as a small tinted label inside footer (above price)
+                Label lblStock = new Label
+                {
+                    Text      = $"Low: {part.QuantityInStock}",
+                    Font      = new Font("Segoe UI", 7F),
+                    ForeColor = ThemeConfig.WarningColor,
+                    AutoSize  = true,
+                    Location  = new Point(10, footerY - 14),
+                    BackColor = Color.Transparent
+                };
+                card.Controls.Add(lblStock);
+            }
+
+            // ══════════════════════════════════════════════════════════════════
+            // HOVER PROPAGATION
+            // WinForms fires MouseLeave on 'card' the instant the cursor enters
+            // any child control, so we must attach Enter/Leave to every
+            // descendant as well.  We use a recursive helper called AFTER all
+            // children have been added.
+            // ══════════════════════════════════════════════════════════════════
+            void SetHover(bool value)
+            {
+                hovered = value;
+                card.Invalidate();
+            }
+
+            void PropagateHover(Control parent)
+            {
+                parent.MouseEnter += (s, e) => SetHover(true);
+                parent.MouseLeave += (s, e) =>
+                {
+                    // Only clear hover if the cursor is truly outside the card
+                    Point cursor = card.PointToClient(Control.MousePosition);
+                    if (!card.ClientRectangle.Contains(cursor))
+                        SetHover(false);
+                };
+                foreach (Control child in parent.Controls)
+                    PropagateHover(child);
+            }
+            PropagateHover(card);
+
+            // ══════════════════════════════════════════════════════════════════
+            // CLICK HANDLERS — clicking image/text/card body adds to cart
+            // ══════════════════════════════════════════════════════════════════
+            Action addToCart = () => { if (!outOfStock) AddToCart(part.Id, part.PartName, part.SellingPrice, part.QuantityInStock); };
+
+            card.Click          += (s, e) => addToCart();
+            pnlImageSection.Click += (s, e) => addToCart();
+            pnlImgBg.Click      += (s, e) => addToCart();
+
+            pnlTextSection.Click += (s, e) => addToCart();
+            lblCat.Click        += (s, e) => addToCart();
+            lblName.Click       += (s, e) => addToCart();
+            lblPrice.Click      += (s, e) => addToCart();
+
+            btnPlus.Click  += (s, e) => { if (!outOfStock) AddToCart(part.Id, part.PartName, part.SellingPrice, part.QuantityInStock); };
+            btnMinus.Click += (s, e) => RemoveOneFromCart(part.Id);
+
+            return card;
+        }
+
+
+
+
+        // ─────────────────────────────────────────────────────────────────────
+        // CART DISPLAY — simple text rows matching reference design
+        // ─────────────────────────────────────────────────────────────────────
+        public void RefreshCartDisplay()
+        {
+            if (cartTable == null) return;
+            pnlCartItems.SuspendLayout();
+            foreach (Control c in pnlCartItems.Controls)
+                c.Dispose();
+            pnlCartItems.Controls.Clear();
+
+            // Count total items for header
+            int totalItems = 0;
+            foreach (DataRow dr in cartTable.Rows)
+                if (dr.RowState != DataRowState.Deleted) totalItems += (int)dr["Quantity"];
+
+            // "Ordered Items" header with count — matches reference
+            Panel hdrPanel = new Panel
+            {
+                Height    = 30,
+                Dock      = DockStyle.Top,
+                BackColor = Color.Transparent,
+                Padding   = new Padding(16, 6, 16, 2)
+            };
+            Label lblOrderedTitle = new Label
+            {
+                Text      = LocalizationManager.GetString("POS_OrderedItems") ?? "Ordered Items",
+                Font      = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                AutoSize  = true,
+                Location  = new Point(16, 6),
+                BackColor = Color.Transparent
+            };
+            Label lblItemCount = new Label
+            {
+                Text      = totalItems.ToString("D2"),
+                Font      = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                ForeColor = ThemeConfig.SecondaryColor,
+                AutoSize  = true,
+                BackColor = Color.Transparent
+            };
+            hdrPanel.Resize += (s2, e2) =>
+            {
+                lblItemCount.Location = new Point(hdrPanel.Width - lblItemCount.Width - 16, 6);
+            };
+            hdrPanel.Controls.AddRange(new Control[] { lblOrderedTitle, lblItemCount });
+            pnlCartItems.Controls.Add(hdrPanel);
+
+            // Cart rows — simple text: "qty×  Name    $Total"  with – qty + controls
+            foreach (DataRow row in cartTable.Rows)
+            {
+                if (row.RowState == DataRowState.Deleted) continue;
+
+                int     partId   = (int)row["PartID"];
+                string  partName = row["PartName"].ToString();
+                int     qty      = (int)row["Quantity"];
+                decimal price    = (decimal)row["SellingPrice"];
+                decimal total    = (decimal)row["Total"];
+
+                Panel rowPanel = new Panel
+                {
+                    Height    = 46,
+                    Dock      = DockStyle.Top,
+                    BackColor = Color.Transparent,
+                    Tag       = partId
+                };
+
+                // Bottom separator line
+                rowPanel.Paint += (s, pe) =>
+                {
+                    using (var pen = new Pen(ThemeConfig.POS_SeparatorColor, 1f))
+                        pe.Graphics.DrawLine(pen, 16, rowPanel.Height - 1, rowPanel.Width - 16, rowPanel.Height - 1);
+                };
+
+                // Product name — bold
+                Label lblName = new Label
+                {
+                    Text      = partName,
+                    Font      = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold),
+                    ForeColor = ThemeConfig.TextColorDark,
+                    AutoSize  = false,
+                    Height    = 18,
+                    Location  = new Point(16, 4),
+                    BackColor = Color.Transparent,
+                    TextAlign = ContentAlignment.MiddleLeft
+                };
+                rowPanel.Controls.Add(lblName);
+
+                // qty × price detail — small gray
+                Label lblDetail = new Label
+                {
+                    Text      = $"{qty} × {CurrencyService.Format(price)}",
+                    Font      = ThemeConfig.SmallFont ?? new Font("Segoe UI", 8F),
+                    ForeColor = ThemeConfig.SecondaryColor,
+                    AutoSize  = false,
+                    Height    = 16,
+                    Location  = new Point(16, 22),
+                    BackColor = Color.Transparent,
+                    TextAlign = ContentAlignment.MiddleLeft
+                };
+                rowPanel.Controls.Add(lblDetail);
+
+                // Row total — right aligned
+                Label lblRowTotal = new Label
+                {
+                    Text      = CurrencyService.Format(total),
+                    Font      = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold),
+                    ForeColor = ThemeConfig.TextColorDark,
+                    AutoSize  = false,
+                    Width     = 80,
+                    Height    = 18,
+                    TextAlign = ContentAlignment.MiddleRight,
+                    BackColor = Color.Transparent
+                };
+                rowPanel.Controls.Add(lblRowTotal);
+
+                // Inline – qty + controls (small, right side)
+                int capId = partId;
+                int bSz   = 22;
+
+                Button btnMinus = new Button
+                {
+                    Text = "−", Size = new Size(bSz, bSz), FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F), Cursor = Cursors.Hand,
+                    BackColor = ThemeConfig.SurfaceColor, ForeColor = ThemeConfig.TextColorDark, TabStop = false
+                };
+                btnMinus.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
+                btnMinus.FlatAppearance.BorderSize  = 1;
+                btnMinus.Click += (s, e) => RemoveOneFromCart(capId);
+
+                Label lblQty = new Label
+                {
+                    Text = qty.ToString(), Size = new Size(20, bSz),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Font = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                    ForeColor = ThemeConfig.TextColorDark, BackColor = Color.Transparent
+                };
+
+                Button btnPlus = new Button
+                {
+                    Text = "+", Size = new Size(bSz, bSz), FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold), Cursor = Cursors.Hand,
+                    BackColor = ThemeConfig.PrimaryColor, ForeColor = Color.White, TabStop = false
+                };
+                btnPlus.FlatAppearance.BorderSize = 0;
+                // Circular + button
+                btnPlus.Paint += (s2, pe2) =>
+                {
+                    pe2.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    using (var parentBrush = new SolidBrush(ThemeConfig.GetParentColor(btnPlus)))
+                        pe2.Graphics.FillRectangle(parentBrush, -1, -1, btnPlus.Width + 2, btnPlus.Height + 2);
+                    using (var br = new SolidBrush(btnPlus.BackColor))
+                        pe2.Graphics.FillEllipse(br, 0, 0, btnPlus.Width - 1, btnPlus.Height - 1);
+                    TextRenderer.DrawText(pe2.Graphics, "+", btnPlus.Font,
+                        new Rectangle(0, 0, btnPlus.Width, btnPlus.Height), Color.White,
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                };
+                btnPlus.Click += (s, e) =>
+                {
+                    int stock = 0;
+                    try { stock = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id={capId}"); } catch { stock = 999; }
+                    foreach (DataRow dr in cartTable.Rows)
+                    {
+                        if (dr.RowState != DataRowState.Deleted && (int)dr["PartID"] == capId)
+                        {
+                            int curQty = (int)dr["Quantity"];
+                            if (curQty + 1 > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock")); return; }
+                            dr["Quantity"] = curQty + 1;
+                            break;
+                        }
+                    }
+                    RefreshCartDisplay();
+                };
+
+                // Resize handler — positions elements
+                rowPanel.Resize += (s, ev) =>
+                {
+                    int rX = rowPanel.Width - 16;
+                    lblName.Width     = rX - 100;
+                    lblDetail.Width   = rX - 100;
+                    lblRowTotal.Location = new Point(rX - 80, 4);
+                    btnPlus.Location     = new Point(rX - bSz, 22);
+                    lblQty.Location      = new Point(rX - bSz - 20, 22);
+                    btnMinus.Location    = new Point(rX - bSz - 20 - bSz, 22);
+                };
+
+                rowPanel.Controls.AddRange(new Control[] { lblRowTotal, btnMinus, lblQty, btnPlus });
+                pnlCartItems.Controls.Add(rowPanel);
+            }
+
+            pnlCartItems.ResumeLayout();
+            UpdateTotal();
+            UpdateProductCardQtyAll();
+
+            // Update "Ordered Items" count badge
+            if (_lblCartCount != null)
+                _lblCartCount.Text = (cartTable?.Rows.Count ?? 0).ToString("D2");
+        }
+
+
+
+        // ─────────────────────────────────────────────────────────────────────
+        // HELPERS
+        // ─────────────────────────────────────────────────────────────────────
+        private int GetCartQty(int partId)
+        {
+            if (cartTable == null) return 0;
+            foreach (DataRow r in cartTable.Rows)
+                if (r.RowState != DataRowState.Deleted && (int)r["PartID"] == partId)
+                    return (int)r["Quantity"];
+            return 0;
+        }
+
+        private void UpdateProductCardQtyAll()
+        {
+            foreach (Control c in pnlProducts.Controls)
+            {
+                if (c is Panel card && card.Tag is int pid)
+                {
+                    int qty = GetCartQty(pid);
+                    foreach (Control child in card.Controls)
+                        if (child is Label lbl && lbl.Tag is string t && t == "qtyLabel_" + pid)
+                            lbl.Text = qty.ToString();
+                }
+            }
+        }
+
+        private void RemoveOneFromCart(int partId)
+        {
+            foreach (DataRow r in cartTable.Rows)
+            {
+                if (r.RowState != DataRowState.Deleted && (int)r["PartID"] == partId)
+                {
+                    int q = (int)r["Quantity"];
+                    if (q <= 1)
+                        cartTable.Rows.Remove(r);
+                    else
+                        r["Quantity"] = q - 1;
+                    break;
+                }
+            }
+            RefreshCartDisplay();
+        }
+
+        private void RemoveFromCart(int partId)
+        {
+            DataRow toRemove = null;
+            foreach (DataRow r in cartTable.Rows)
+                if (r.RowState != DataRowState.Deleted && (int)r["PartID"] == partId)
+                { toRemove = r; break; }
+            if (toRemove != null) cartTable.Rows.Remove(toRemove);
+            RefreshCartDisplay();
+        }
+
+        private Panel CreateSeparator()
+        {
+            Panel sep = new Panel { Dock = DockStyle.Fill, BackColor = ThemeConfig.POS_SeparatorColor, Height = 1 };
+            return sep;
+        }
+
+        // Shared rounded path helper
+        private static GraphicsPath RoundedPath(Rectangle rect, int radius)
+        {
+            var path = new GraphicsPath();
+            int d = radius * 2;
+            if (d > rect.Width)  d = rect.Width;
+            if (d > rect.Height) d = rect.Height;
+            path.AddArc(rect.X, rect.Y, d, d, 180, 90);
+            path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
+            path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
+            path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // IMAGE LOADING
+        // ─────────────────────────────────────────────────────────────────────
+        private static Bitmap LoadProductImage(string imagePath, string categoryName, int size = 80)
+        {
+            if (!string.IsNullOrEmpty(imagePath))
+            {
+                try
+                {
+                    string full = System.IO.Path.Combine(Application.StartupPath, imagePath);
+                    if (!System.IO.File.Exists(full))
+                        full = System.IO.Path.Combine(Application.StartupPath, "Assets", "Products", System.IO.Path.GetFileName(imagePath));
+                    if (System.IO.File.Exists(full))
+                    {
+                        byte[] bytes = System.IO.File.ReadAllBytes(full);
+                        using (var ms = new System.IO.MemoryStream(bytes))
+                        using (var src = Image.FromStream(ms))
+                        {
+                            var bmp = new Bitmap(size, size);
+                            using (var g = Graphics.FromImage(bmp))
+                            {
+                                g.SmoothingMode = SmoothingMode.AntiAlias;
+                                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                                g.Clear(Color.Transparent);
+                                using (var gpath = new GraphicsPath())
+                                {
+                                    gpath.AddEllipse(1, 1, size - 2, size - 2);
+                                    g.SetClip(gpath);
+                                    g.DrawImage(src, 0, 0, size, size);
+                                }
+                            }
+                            return bmp;
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            // Emoji / icon fallback
+            var fallback = new Bitmap(size, size);
+            using (var g = Graphics.FromImage(fallback))
+            {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+                using (var br = new SolidBrush(Color.FromArgb(241, 245, 249)))
+                    g.FillEllipse(br, 1, 1, size - 2, size - 2);
+                try
+                {
+                    var cats = CategoryData.GetAllCategories();
+                    var cat = cats.Find(c => c.CategoryName?.Equals(categoryName, StringComparison.OrdinalIgnoreCase) == true);
+                    string emoji = cat?.CategoryImage ?? "📦";
+                    if (!string.IsNullOrEmpty(emoji))
+                        TextRenderer.DrawText(g, emoji, new Font("Segoe UI Emoji", size * 0.4f), new Rectangle(0, 0, size, size), ThemeConfig.TextColorDark, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+                catch { }
+            }
+            return fallback;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // INITIALIZE CART  (business logic — preserved)
+        // ─────────────────────────────────────────────────────────────────────
+        private void InitializeCart()
+        {
+            try
+            {
+                cartTable = new DataTable();
+                cartTable.Columns.Add("PartID",       typeof(int));
+                cartTable.Columns.Add("PartName",     typeof(string));
+                cartTable.Columns.Add("Quantity",     typeof(int));
+                cartTable.Columns.Add("PrivatePrice", typeof(decimal));
+                cartTable.Columns.Add("SellingPrice", typeof(decimal));
+                cartTable.Columns.Add("Total",        typeof(decimal), "Quantity * SellingPrice");
+                LoadCustomers();
+            }
+            catch (Exception ex) { MessageHelper.ShowError("Error initializing POS: " + ex.Message); }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // LOAD CUSTOMERS  (preserved)
+        // ─────────────────────────────────────────────────────────────────────
+        private void LoadCustomers()
+        {
+            try
+            {
+                DataTable dt = DatabaseHelper.ExecuteDataTable("SELECT customer_id, full_name FROM customers ORDER BY full_name");
+                DataRow   row = dt.NewRow();
+                row["customer_id"] = -1;
+                row["full_name"]   = LocalizationManager.GetString("POS_WalkIn");
+                dt.Rows.InsertAt(row, 0);
+                cmbCustomers.ValueMember   = "customer_id";
+                cmbCustomers.DisplayMember = "full_name";
+                cmbCustomers.DataSource    = dt;
+            }
+            catch { }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // APPLY PERMISSIONS  (preserved)
+        // ─────────────────────────────────────────────────────────────────────
+        private void ApplyPermissions() { }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // REFRESH STATS  (preserved)
+        // ─────────────────────────────────────────────────────────────────────
+        public void RefreshStats()
+        {
+            try
+            {
+                if (cardTodayOrders != null)
+                    cardTodayOrders.Value = _dashboardService.GetOrdersCount("Today").ToString();
+                if (cardTodaySales != null)
+                    cardTodaySales.Value  = "$" + _dashboardService.GetSales("Today").ToString("N0");
+                if (cardPending != null)
+                    cardPending.Value     = _dashboardService.GetPendingOrdersCount().ToString();
+            }
+            catch (Exception ex) { Console.WriteLine("Stats Error: " + ex.Message); }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // APPLY LOCALIZATION  (preserved + new controls)
+        // ─────────────────────────────────────────────────────────────────────
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            LocalizationManager.TranslateControl(this);
+            Func<string, string> L = LocalizationManager.GetString;
+
+            if (btnCheckout    != null) btnCheckout.Text    = L("POS_Checkout");
+            if (btnClearCart   != null) btnClearCart.Text   = L("POS_ClearCart");
+
+            if (cardTodayOrders != null) cardTodayOrders.Title = L("POS_Orders");
+            if (cardTodaySales  != null) cardTodaySales.Title  = L("POS_Sales");
+            if (cardPending     != null) cardPending.Title     = L("POS_Pending");
+
+            // Rebuild chips for language change
+            if (pnlChips != null)
+            {
+                pnlChips.FlowDirection = LocalizationManager.IsArabic ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+                BuildCategoryChips();
+            }
+            if (pnlProducts != null)
+                pnlProducts.FlowDirection = LocalizationManager.IsArabic ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // ADD TO CART  (preserved logic + RefreshCartDisplay)
+        // ─────────────────────────────────────────────────────────────────────
+        private void AddToCart(int id, string name, decimal price, int stock)
+        {
+            if (stock <= 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Error_OutOfStock")); return; }
+            foreach (DataRow r in cartTable.Rows)
+            {
+                if (r.RowState == DataRowState.Deleted) continue;
+                if ((int)r["PartID"] == id)
+                {
+                    int q = (int)r["Quantity"];
+                    if (q + 1 > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock")); return; }
+                    r["Quantity"] = q + 1;
+                    RefreshCartDisplay();
+                    return;
+                }
+            }
+            cartTable.Rows.Add(id, name, 1, 0, price);
+            RefreshCartDisplay();
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // UPDATE TOTAL  (preserved — works with lblSubtotalVal, lblTaxVal, etc.)
+        // ─────────────────────────────────────────────────────────────────────
+        private void UpdateTotal()
+        {
+            if (cartTable == null) return;
+            decimal s = 0;
+            foreach (DataRow r in cartTable.Rows)
+                if (r.RowState != DataRowState.Deleted) s += (decimal)r["Total"];
+
+            decimal t    = chkApplyVAT.Checked ? (s * 0.11m) : 0;
+            decimal ship = chkApplyShipping.Checked ? numShipping.Value : 0;
+            decimal g    = s + t + ship;
+
+            if (lblSubtotalVal != null) lblSubtotalVal.Text = CurrencyService.Format(s);
+
+            if (lblTaxVal != null)
+            {
+                lblTaxVal.Text      = CurrencyService.Format(t);
+                lblTaxVal.ForeColor = chkApplyVAT.Checked ? ThemeConfig.TextColorDark : Color.Gray;
+            }
+
+            if (lblShippingVal != null)
+            {
+                lblShippingVal.Text    = CurrencyService.Format(ship);
+                lblShippingVal.Visible = !chkApplyShipping.Checked;
+            }
+
+            if (lblTotalVal != null) lblTotalVal.Text = CurrencyService.Format(g);
+
+            // Update order counter
+            _sessionOrderCount++;
+            if (lblOrderNum != null) lblOrderNum.Text = "#" + _sessionOrderCount.ToString("D3");
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // CHECKOUT  (preserved exactly)
+        // ─────────────────────────────────────────────────────────────────────
+        private void BtnCheckout_Click(object sender, EventArgs e)
+        {
+            if (cartTable.Rows.Count == 0)
+            {
+                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.GetString("CartEmpty")));
+                return;
+            }
+
+            decimal total = 0;
+            foreach (DataRow row in cartTable.Rows) total += (decimal)row["Total"];
+
+            if (ModernMessageBox.Show(string.Format(LocalizationManager.GetString("ConfirmSale"), $"{total:N2}"), "Confirm", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
+
+            try
+            {
+                List<OrderItem> items = new List<OrderItem>();
+                foreach (DataRow row in cartTable.Rows)
+                    items.Add(new OrderItem { PartId = (int)row["PartID"], Quantity = (int)row["Quantity"], UnitPrice = (decimal)row["SellingPrice"] });
+                int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
+                int orderId = new OrderService().PlaceOrder(customerId, items, total, true); // true = Paid
+                DatabaseHelper.LogTransaction("SALE", "Order #" + orderId, "Paid Total: $" + total);
+                // Notify all connected web POS tablets in real-time
+                InventoryBroadcaster.BroadcastStockChange("desktop-sale");
+                MessageHelper.ShowSuccess("Order Sent! Order #" + orderId);
+                cartTable.Rows.Clear();
+                RefreshCartDisplay();
+                RefreshStats();
+            }
+            catch (Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
+        }
+
+
+
+        // ─────────────────────────────────────────────────────────────────────
+        // PRINT RECEIPT  (preserved exactly)
+        // ─────────────────────────────────────────────────────────────────────
+        private void BtnPrintReceipt_Click(object sender, EventArgs e)
+        {
+            if (cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
+            System.Drawing.Printing.PrintDocument pd = new System.Drawing.Printing.PrintDocument();
+            try { pd.DefaultPageSettings.PaperSize = new System.Drawing.Printing.PaperSize("Receipt", 315, 700); } catch { }
+            pd.PrintPage += PrintReceiptPage;
+            var preview = new PrintPreviewDialog
+            {
+                Document = pd,
+                Text     = LocalizationManager.GetString("POS_PrintReceipt")
+            };
+            ThemeConfig.ApplyPrintPreviewTheme(preview);
+            preview.ShowDialog();
+        }
+
+        private void PrintReceiptPage(object sender, System.Drawing.Printing.PrintPageEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Font fH = new Font("Segoe UI", 12, FontStyle.Bold), fS = new Font("Segoe UI", 9), fI = new Font("Consolas", 9);
+            int y = 20, m = 10, w = Math.Min(e.PageBounds.Width, 300) - (m * 2);
+            StringFormat cA = new StringFormat { Alignment = StringAlignment.Center }, rA = new StringFormat { Alignment = StringAlignment.Far };
+            g.DrawString(ThemeConfig.CompanyName.ToUpper(), fH, Brushes.Black, new Rectangle(m, y, w, 25), cA); y += 30;
+            g.DrawString("SALES RECEIPT", fS, Brushes.Black, new Rectangle(m, y, w, 20), cA); y += 20;
+            g.DrawString(DateTime.Now.ToString("g"), fS, Brushes.Black, new Rectangle(m, y, w, 20), cA); y += 25;
+            g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
+            g.DrawString("QTY", fI, Brushes.Black, m, y); g.DrawString("ITEM", fI, Brushes.Black, m + 40, y); g.DrawString("PRICE", fI, Brushes.Black, new Rectangle(m, y, w, 20), rA);
+            y += 20; g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
+            foreach (DataRow r in cartTable.Rows)
+            {
+                string n = r["PartName"].ToString(); if (n.Length > 18) n = n.Substring(0, 15) + "...";
+                g.DrawString(r["Quantity"].ToString(), fI, Brushes.Black, m, y); g.DrawString(n, fI, Brushes.Black, m + 40, y);
+                g.DrawString(CurrencyService.Format((decimal)r["Total"]), fI, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20;
+            }
+            y += 10; g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
+
+            decimal s = 0; foreach (DataRow r in cartTable.Rows) if (r.RowState != DataRowState.Deleted) s += (decimal)r["Total"];
+            decimal t    = chkApplyVAT.Checked ? (s * 0.11m) : 0;
+            decimal ship = chkApplyShipping.Checked ? numShipping.Value : 0;
+
+            g.DrawString("Subtotal:", fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(s), fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20;
+            if (t    > 0) { g.DrawString("VAT (11%):", fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(t),    fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20; }
+            if (ship > 0) { g.DrawString("Shipping:",  fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(ship), fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20; }
+            y += 5; g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
+
+            g.DrawString("GRAND TOTAL:", fH, Brushes.Black, m, y); g.DrawString(lblTotalVal.Text, fH, Brushes.Black, new Rectangle(m, y, w, 25), rA);
+            y += 40; g.DrawString("Thank you!", fS, Brushes.Black, new Rectangle(m, y, w, 20), cA); e.HasMorePages = false;
+        }
+
+
+
+        // ─────────────────────────────────────────────────────────────────────
+        // BARCODE SCANNER  (preserved exactly)
+        // ─────────────────────────────────────────────────────────────────────
         private void POSForm_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (!this.Visible) return;
 
             TimeSpan elapsed = DateTime.Now - _lastScanTime;
-            if (elapsed.TotalMilliseconds > 100) 
-            {
+            if (elapsed.TotalMilliseconds > 100)
                 _scanBuffer = "";
-            }
             _lastScanTime = DateTime.Now;
 
             if (e.KeyChar != (char)Keys.Enter)
-            {
                 _scanBuffer += e.KeyChar;
-            }
         }
 
         public bool HandleKeyPress(Keys keyData)
@@ -512,15 +2089,15 @@ namespace GenericInventorySystem.Forms
                     _scanBuffer = "";
 
                     DataTable dt = DatabaseHelper.ExecuteDataTable($"SELECT id,part_name,selling_price,quantity_in_stock FROM parts WHERE (barcode='{barcode}' OR part_number='{barcode}') AND date_deleted IS NULL");
-                    if(dt.Rows.Count > 0) 
-                    { 
-                        DataRow r = dt.Rows[0]; 
-                        AddToCart(Convert.ToInt32(r["id"]), r["part_name"].ToString(), Convert.ToDecimal(r["selling_price"]), Convert.ToInt32(r["quantity_in_stock"])); 
+                    if (dt.Rows.Count > 0)
+                    {
+                        DataRow r = dt.Rows[0];
+                        AddToCart(Convert.ToInt32(r["id"]), r["part_name"].ToString(), Convert.ToDecimal(r["selling_price"]), Convert.ToInt32(r["quantity_in_stock"]));
                     }
-                    else 
-                    { 
+                    else
+                    {
                         string notFoundMsg = LocalizationManager.GetString("POS_ProductNotFound") ?? $"Item not found for barcode: {barcode}";
-                        MessageHelper.ShowInfo(notFoundMsg); // Use Info (non-blocking notification) instead of Warning (modal)
+                        MessageHelper.ShowInfo(notFoundMsg);
                     }
 
                     return true; // Suppress Enter key so it doesn't click focused buttons
@@ -529,221 +2106,37 @@ namespace GenericInventorySystem.Forms
             return false;
         }
 
-        private void AddToCart(int id, string name, decimal price, int stock)
+        // ─────────────────────────────────────────────────────────────────────
+        // LOCAL GetRoundedRect alias  (kept for CreateCardPanel compatibility)
+        // ─────────────────────────────────────────────────────────────────────
+        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRect(Rectangle rect, int radius)
         {
-            if (stock <= 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Error_OutOfStock")); return; }
-            foreach(DataRow r in cartTable.Rows) if((int)r["PartID"] == id) { int q = (int)r["Quantity"]; if(q + 1 > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock")); return; } r["Quantity"] = q + 1; UpdateTotal(); return; }
-            cartTable.Rows.Add(id, name, 1, 0, price); UpdateTotal();
+            return RoundedPath(rect, radius);
         }
 
-        private void DgvCart_CellContentClick(object sender, DataGridViewCellEventArgs e) { if(e.RowIndex >= 0 && dgvCart.Columns[e.ColumnIndex].Name == "colDelete") { dgvCart.Rows.RemoveAt(e.RowIndex); UpdateTotal(); } }
-
-        private bool _isUpdatingCart = false;
-        private void DgvCart_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        private Panel CreateCardPanel()
         {
-             if (_isUpdatingCart) return;
-             if(e.RowIndex >= 0 && dgvCart.Columns[e.ColumnIndex].Name == "Quantity") {
-                 try {
-                     _isUpdatingCart = true; int n = Convert.ToInt32(dgvCart.Rows[e.RowIndex].Cells["Quantity"].Value); int id = (int)dgvCart.Rows[e.RowIndex].Cells["PartID"].Value;
-                     int s = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id={id}");
-                     if (n > s) { this.BeginInvoke(new Action(()=> { MessageHelper.ShowWarning(string.Format(LocalizationManager.GetString("POS_NotEnoughStockQty"), s)); })); dgvCart.Rows[e.RowIndex].Cells["Quantity"].Value = Math.Max(1, s); }
-                     else if (n < 1) dgvCart.Rows[e.RowIndex].Cells["Quantity"].Value = 1;
-                     dgvCart.EndEdit(); if (dgvCart.BindingContext != null && dgvCart.BindingContext[cartTable] != null) dgvCart.BindingContext[cartTable].EndCurrentEdit();
-                     UpdateTotal(); 
-                 } catch { dgvCart.Rows[e.RowIndex].Cells["Quantity"].Value = 1; UpdateTotal(); } finally { _isUpdatingCart = false; }
-             }
-        }
-
-        private void DgvCart_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
-        {
-            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
-            if (dgvCart.Columns[e.ColumnIndex].Name == "colDelete") {
-                e.Handled = true; e.PaintBackground(e.CellBounds, true);
-                Rectangle r = new Rectangle(e.CellBounds.X + (e.CellBounds.Width-32)/2, e.CellBounds.Y + (e.CellBounds.Height-32)/2, 32, 32);
-                using (var path = GetRoundedRect(r, 8)) using (var brush = new SolidBrush(ThemeConfig.SurfaceColor)) e.Graphics.FillPath(brush, path);
-                Image img = ThemeConfig.GetNuricon("delete"); if (img != null) e.Graphics.DrawImage(img, new Rectangle(r.X + 6, r.Y + 6, 20, 20));
-            }
-        }
-
-        private void UpdateTotal()
-        {
-            decimal s = 0; foreach(DataRow r in cartTable.Rows) if (r.RowState != DataRowState.Deleted) s += (decimal)r["Total"];
-            decimal t = chkApplyVAT.Checked ? (s * 0.11m) : 0; 
-            decimal ship = chkApplyShipping.Checked ? numShipping.Value : 0;
-            decimal g = s + t + ship;
-            
-            lblSubtotalVal.Text = CurrencyService.Format(s); 
-            lblTaxVal.Text = CurrencyService.Format(t);
-            lblTaxVal.ForeColor = chkApplyVAT.Checked ? ThemeConfig.TextColorDark : Color.Gray;
-            
-            lblShippingVal.Text = CurrencyService.Format(ship);
-            lblShippingVal.Visible = !chkApplyShipping.Checked; // Hide static label if input is visible
-            
-            lblTotalVal.Text = CurrencyService.Format(g);
-        }
-
-        private void BtnSaveDraft_Click(object sender, EventArgs e)
-        {
-             if (cartTable.Rows.Count == 0)
-             {
-                 MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.GetString("CartEmpty")));
-                 return;
-             }
-             try {
-                 List<OrderItem> items = new List<OrderItem>(); decimal total = 0;
-                 foreach(DataRow r in cartTable.Rows) { total += (decimal)r["Total"]; items.Add(new OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] }); }
-                 new OrderService().PlaceOrder(Convert.ToInt32(cmbCustomers.SelectedValue), items, total, false, "Draft"); 
-                 MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_DraftSaved")); cartTable.Rows.Clear(); UpdateTotal();
-             } catch(Exception ex) { MessageHelper.ShowError("Failed: " + ex.Message); }
-        }
-
-        private void BtnSaveQuotation_Click(object sender, EventArgs e)
-        {
-            if (cartTable.Rows.Count == 0)
+            Panel p = new Panel();
+            p.BackColor   = ThemeConfig.SurfaceColor;
+            p.BorderStyle = BorderStyle.None;
+            p.Padding     = new Padding(15);
+            p.Paint += (s, e) =>
             {
-                MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty") ?? (LocalizationManager.GetString("CartEmpty")));
-                return;
-            }
-            try {
-                List<OrderItem> items = new List<OrderItem>(); decimal total = 0;
-                foreach(DataRow r in cartTable.Rows) { total += (decimal)r["Total"]; items.Add(new OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] }); }
-                new OrderService().PlaceOrder(Convert.ToInt32(cmbCustomers.SelectedValue), items, total, false, "Quotation"); 
-                MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_Saved")); cartTable.Rows.Clear(); UpdateTotal(); GlobalEvents.RaiseOrdersUpdated();
-            } catch(Exception ex) { MessageHelper.ShowError("Failed: " + ex.Message); }
-        }
-
-        private void BtnLoadDraft_Click(object sender, EventArgs e)
-        {
-             DataTable ds = new OrderService().GetDrafts(); if(ds.Rows.Count == 0) { MessageHelper.ShowInfo(LocalizationManager.GetString("POS_NoDrafts")); return; }
-             BaseModalForm f = new BaseModalForm { TitleText = LocalizationManager.GetString("Title_SelectDraft"), Size = new Size(750, 450) };
-             
-             TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(10) };
-             tlp.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-             tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
-
-             DataGridView dgv = new DataGridView { Dock = DockStyle.Fill, AutoGenerateColumns = false, DataSource = ds, ReadOnly = true, SelectionMode = DataGridViewSelectionMode.FullRowSelect, AllowUserToAddRows = false, RowHeadersVisible = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
-             
-             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "order_id", HeaderText = "ID", DataPropertyName = "order_id", Width = 60 });
-             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "order_date", HeaderText = LocalizationManager.GetString("Hist_ColDate") ?? "Date", DataPropertyName = "order_date", Width = 150 });
-             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "CustomerName", HeaderText = LocalizationManager.GetString("Cust_Title") ?? "Customer", DataPropertyName = "CustomerName" });
-             
-             var colTotal = new DataGridViewTextBoxColumn { Name = "total_amount", HeaderText = LocalizationManager.GetString("Msg_Total") ?? "Total", DataPropertyName = "total_amount", Width = 110 };
-             colTotal.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-             colTotal.DefaultCellStyle.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
-             colTotal.DefaultCellStyle.ForeColor = ThemeConfig.PrimaryColor;
-             dgv.Columns.Add(colTotal);
-             
-             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "customer_id", DataPropertyName = "customer_id", Visible = false });
-
-             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = LocalizationManager.GetString("Parts_GridActions") ?? "Actions", Width = 80 });
-
-             dgv.CellFormatting += (sGrid, eGrid) => {
-                 if (eGrid.RowIndex >= 0 && dgv.Columns[eGrid.ColumnIndex].Name == "total_amount" && eGrid.Value != null) {
-                     if (decimal.TryParse(eGrid.Value.ToString(), out decimal usdTotal)) {
-                         eGrid.Value = GenericInventorySystem.Services.CurrencyService.Format(usdTotal);
-                         eGrid.FormattingApplied = true;
-                     }
-                 }
-             };
-
-             int hoveredDraftRow = -1;
-             dgv.CellPainting += (sGrid, eGrid) => {
-                 if (eGrid.RowIndex >= 0 && dgv.Columns[eGrid.ColumnIndex].Name == "colActions") {
-                     eGrid.Handled = true;
-                     eGrid.PaintBackground(eGrid.CellBounds, true);
-                     Image imgDel = ThemeConfig.GetNuricon("delete");
-                     if (imgDel != null) {
-                         int startX = eGrid.CellBounds.X + (eGrid.CellBounds.Width - 32) / 2;
-                         int startY = eGrid.CellBounds.Y + (eGrid.CellBounds.Height - 32) / 2;
-                         eGrid.Graphics.DrawImage(imgDel, new Rectangle(startX, startY, 32, 32));
-                     }
-                 }
-             };
-
-             dgv.CellClick += (sGrid, eGrid) => {
-                 if (eGrid.RowIndex >= 0 && dgv.Columns[eGrid.ColumnIndex].Name == "colActions") {
-                     int oid = Convert.ToInt32(dgv.Rows[eGrid.RowIndex].Cells["order_id"].Value);
-                     if (MessageHelper.ConfirmAction(LocalizationManager.GetString("Exp_ConfirmDelete") ?? "Are you sure you want to delete this draft?")) {
-                         new OrderService().DeleteOrder(oid);
-                         DataTable freshDs = new OrderService().GetDrafts();
-                         dgv.DataSource = freshDs;
-                         if (freshDs.Rows.Count == 0) {
-                             f.DialogResult = DialogResult.Cancel;
-                             f.Close();
-                         }
-                     }
-                 }
-             };
-
-             dgv.CellMouseMove += (sGrid, eGrid) => {
-                 if (eGrid.RowIndex >= 0 && dgv.Columns[eGrid.ColumnIndex].Name == "colActions") {
-                     if (hoveredDraftRow != eGrid.RowIndex) {
-                         hoveredDraftRow = eGrid.RowIndex;
-                         dgv.InvalidateCell(eGrid.ColumnIndex, eGrid.RowIndex);
-                     }
-                     dgv.Cursor = Cursors.Hand;
-                 } else {
-                     dgv.Cursor = Cursors.Default;
-                 }
-             };
-
-             dgv.CellMouseLeave += (sGrid, eGrid) => {
-                 hoveredDraftRow = -1;
-                 dgv.Cursor = Cursors.Default;
-             };
-
-             ThemeConfig.ApplyGridTheme(dgv); dgv.ColumnHeadersVisible = true;
-             
-             Button bl = new ModernButton { Text = LocalizationManager.GetString("POS_Load") ?? "Load", Size = new Size(120, 45), Anchor = AnchorStyles.Right }; 
-             ThemeConfig.ApplyPrimaryButton(bl);
-             
-             bl.Click += (s2, e2) => { if(dgv.SelectedRows.Count > 0) {
-                 int oid = Convert.ToInt32(dgv.SelectedRows[0].Cells["order_id"].Value);
-                 object cid = dgv.SelectedRows[0].Cells["customer_id"].Value; LoadDraftIntoCart(oid, (cid == DBNull.Value || cid == null) ? -1 : Convert.ToInt32(cid)); f.DialogResult = DialogResult.OK; f.Close();
-             }};
-             
-             tlp.Controls.Add(dgv, 0, 0);
-             tlp.Controls.Add(bl, 0, 1);
-             
-             f.ContentPanel.Controls.Add(tlp);
-             LocalizationManager.ApplyRTL(f);
-             f.ShowDialog();
-         }
-
-        private void LoadDraftIntoCart(int draftOrderId, int customerId)
-        {
-             try {
-                 OrderService svc = new OrderService(); List<OrderItem> items = svc.GetOrderItems(draftOrderId);
-                 if (items.Count == 0) { MessageHelper.ShowWarning("Empty draft."); return; }
-                 cartTable.Rows.Clear();
-                 foreach(var i in items) { int s = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id={i.PartId}"); cartTable.Rows.Add(i.PartId, i.PartName, Math.Min(i.Quantity, s), 0, i.UnitPrice); }
-                 UpdateTotal(); cmbCustomers.SelectedValue = customerId; svc.DeleteOrder(draftOrderId); MessageHelper.ShowSuccess("Loaded!");
-             } catch(Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
-        }
-
-        private void BtnReturnItems_Click(object sender, EventArgs e)
-        {
-             bool ar = LocalizationManager.IsArabic;
-             
-             OrderIdPromptForm promptForm = new OrderIdPromptForm();
-             if (promptForm.ShowDialog() != DialogResult.OK) return;
-
-             int orderId = promptForm.OrderId;
-             
-             try {
-                 var check = DatabaseHelper.ExecuteScalar<int>($"SELECT COUNT(*) FROM orders WHERE order_id = {orderId}");
-                 if (check > 0)
-                 {
-                     var status = DatabaseHelper.ExecuteScalar<object>($"SELECT status FROM orders WHERE order_id = {orderId}")?.ToString();
-                     if (status == "Quotation" || status == "Draft") {
-                         MessageHelper.ShowWarning(ar ? "لا يمكن إرجاع طلبات الاقتباس أو المسودات." : "Cannot return Quotation or Draft orders.");
-                         return;
-                     }
-                     ReturnEntryForm form = new ReturnEntryForm(orderId);
-                     form.ShowDialog();
-                 }
-                 else MessageHelper.ShowWarning(ar ? "رقم الطلب غير موجود." : "Order ID not found.");
-             } catch (Exception ex) { MessageHelper.ShowError(ex.Message); }
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                Color parentColor = ThemeConfig.GetParentColor(p);
+                using (var brush = new SolidBrush(parentColor))
+                    e.Graphics.FillRectangle(brush, -1, -1, p.Width + 2, p.Height + 2);
+                Rectangle r = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
+                using (var path = GetRoundedRect(r, 15))
+                {
+                    using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
+                        e.Graphics.FillPath(brush, path);
+                    using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                        e.Graphics.DrawPath(pen, path);
+                }
+            };
+            return p;
         }
     }
 }

@@ -2,11 +2,11 @@ using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
-using GenericInventorySystem.Data;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Data;
+using butcherPOS.Controls;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public class ProductSelectorForm : BaseModalForm
     {

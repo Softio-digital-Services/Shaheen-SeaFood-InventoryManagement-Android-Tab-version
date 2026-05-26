@@ -1,10 +1,10 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Controls;
+using butcherPOS.Helpers;
+using butcherPOS.Controls;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public class AboutUsForm : BaseModalForm
     {
@@ -34,7 +34,7 @@ namespace GenericInventorySystem.Forms
 
             // App Name
             Label lblName = new Label {
-                Text = "Generic Inventory System",
+                Text = "butcherPOS",
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 ForeColor = ThemeConfig.PrimaryColor,
                 TextAlign = ContentAlignment.MiddleCenter,

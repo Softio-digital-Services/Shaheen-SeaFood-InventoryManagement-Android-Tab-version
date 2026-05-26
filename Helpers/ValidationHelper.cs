@@ -1,9 +1,9 @@
 using System;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Controls;
+using butcherPOS.Helpers;
+using butcherPOS.Controls;
 
-namespace GenericInventorySystem
+namespace butcherPOS
 {
     /// <summary>
     /// Centralized validation helper

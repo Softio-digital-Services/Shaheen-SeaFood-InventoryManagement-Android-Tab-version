@@ -1,6 +1,6 @@
-﻿using System.Windows.Forms;
+using System.Windows.Forms;
 
-namespace GenericInventorySystem.Helpers.Plugins
+namespace butcherPOS.Helpers.Plugins
 {
     /// <summary>
     /// Base interface that every plugin must implement.

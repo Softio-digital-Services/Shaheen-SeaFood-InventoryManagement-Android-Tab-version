@@ -1,9 +1,9 @@
 using System;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers.Plugins;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Helpers.Plugins;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem.Plugins
+namespace butcherPOS.Plugins
 {
     public class PurchaseOrdersPlugin : ITabPlugin
     {
@@ -37,7 +37,7 @@ namespace GenericInventorySystem.Plugins
 
             if (allowed)
             {
-                var form = new GenericInventorySystem.Forms.PurchaseOrdersForm();
+                var form = new butcherPOS.Forms.PurchaseOrdersForm();
                 var loadMethod = form.GetType().GetMethod("LoadData") ?? form.GetType().GetMethod("LoadQuotations");
                 if (loadMethod != null) { if (loadMethod.GetParameters().Length == 1) loadMethod.Invoke(form, new object[] { "" }); else loadMethod.Invoke(form, null); }
                 return form;

@@ -3,9 +3,9 @@ using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
-using GenericInventorySystem.Data;
+using butcherPOS.Data;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class ReportsForm : UserControl
     {
@@ -15,14 +15,14 @@ namespace GenericInventorySystem.Forms
         private Panel pnlKPIContainer;
         private Label lblKPI1Value;
         private Label lblKPI2Value;
-        private GenericInventorySystem.Services.DashboardService _dashboardService;
+        private butcherPOS.Services.DashboardService _dashboardService;
 
         public ReportsForm()
         {
-            _dashboardService = new GenericInventorySystem.Services.DashboardService();
+            _dashboardService = new butcherPOS.Services.DashboardService();
             InitializeComponent();
             ApplyTheme();
-            GenericInventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            butcherPOS.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -34,9 +34,9 @@ namespace GenericInventorySystem.Forms
 
         private void ApplyLocalization()
         {
-            GenericInventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
-            bool isRTL = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
+            butcherPOS.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
+            bool isRTL = butcherPOS.Helpers.LocalizationManager.IsArabic;
 
             var titleAlign  = isRTL ? ContentAlignment.BottomRight : ContentAlignment.BottomLeft;
             var valueAlign  = isRTL ? ContentAlignment.TopRight    : ContentAlignment.TopLeft;
@@ -251,7 +251,7 @@ namespace GenericInventorySystem.Forms
         private void ApplyTheme()
         {
             // Adding Titles before applying theme
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
             
             chartValuation.Titles.Clear();
             ThemeConfig.ApplyChartTheme(chartValuation);
@@ -290,7 +290,7 @@ namespace GenericInventorySystem.Forms
 
         private void LoadValuationChart()
         {
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
             chartValuation.Series.Clear();
             var s = new Series(L("Rep_ChartValuation"));
             s.ChartArea = "Default";
@@ -339,7 +339,7 @@ namespace GenericInventorySystem.Forms
 
         private void LoadTopProductsChart()
         {
-            Func<string, string> L = GenericInventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
             chartBar.Series.Clear();
             var s = new Series(L("Rep_ChartSales"));
             s.ChartArea = "Default";

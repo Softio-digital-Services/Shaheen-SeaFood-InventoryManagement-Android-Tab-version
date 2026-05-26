@@ -3,10 +3,10 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem;
+using butcherPOS.Helpers;
+using butcherPOS;
 
-namespace GenericInventorySystem.Controls
+namespace butcherPOS.Controls
 {
     public class ModernComboBox : UserControl
     {

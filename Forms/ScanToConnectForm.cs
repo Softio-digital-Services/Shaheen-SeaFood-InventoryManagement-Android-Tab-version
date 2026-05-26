@@ -5,9 +5,9 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Windows.Forms;
 using QRCoder;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     /// <summary>
     /// Displays a QR code the tablet user can scan to open the Web POS instantly.

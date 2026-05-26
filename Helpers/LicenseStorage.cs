@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Globalization;
 
-namespace GenericInventorySystem.Helpers
+namespace butcherPOS.Helpers
 {
     /// <summary>
     /// Handles secure storage and retrieval of license information

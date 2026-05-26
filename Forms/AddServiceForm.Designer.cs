@@ -1,7 +1,7 @@
 using System.Windows.Forms;
 using System.Drawing;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     partial class AddServiceForm
     {
@@ -18,14 +18,14 @@ namespace GenericInventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.txtName = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
-            this.txtCode = new GenericInventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
-            this.btnAutoSKU = new GenericInventorySystem.Controls.ModernButton { Text = " Auto", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
-            this.numPrice = new GenericInventorySystem.Controls.ModernNumericUpDown { DecimalPlaces = 2, Maximum = 10000, Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
+            this.txtName = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
+            this.txtCode = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
+            this.btnAutoSKU = new butcherPOS.Controls.ModernButton { Text = " Auto", Dock = DockStyle.Bottom, Height = 42, Margin = new Padding(0) };
+            this.numPrice = new butcherPOS.Controls.ModernNumericUpDown { DecimalPlaces = 2, Maximum = 10000, Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
             this.lblStatus = new System.Windows.Forms.Label { AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Margin = new Padding(0, 0, 0, 5) };
             this.cmbStatus = new System.Windows.Forms.ComboBox { Font = new Font("Segoe UI", 10F), Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
             this.pbImage = new System.Windows.Forms.PictureBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke };
-            this.btnUpload = new GenericInventorySystem.Controls.ModernButton { Text = "Upload Image", Dock = DockStyle.Top, Height = 35, Margin = new Padding(0) };
+            this.btnUpload = new butcherPOS.Controls.ModernButton { Text = "Upload Image", Dock = DockStyle.Top, Height = 35, Margin = new Padding(0) };
 
             this.SuspendLayout();
 
@@ -71,13 +71,13 @@ namespace GenericInventorySystem.Forms
             this.PerformLayout();
         }
 
-        private GenericInventorySystem.Controls.ModernTextBox txtName;
-        private GenericInventorySystem.Controls.ModernTextBox txtCode;
-        private GenericInventorySystem.Controls.ModernButton btnAutoSKU;
-        private GenericInventorySystem.Controls.ModernNumericUpDown numPrice;
+        private butcherPOS.Controls.ModernTextBox txtName;
+        private butcherPOS.Controls.ModernTextBox txtCode;
+        private butcherPOS.Controls.ModernButton btnAutoSKU;
+        private butcherPOS.Controls.ModernNumericUpDown numPrice;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.ComboBox cmbStatus;
         private System.Windows.Forms.PictureBox pbImage;
-        private GenericInventorySystem.Controls.ModernButton btnUpload;
+        private butcherPOS.Controls.ModernButton btnUpload;
     }
 }

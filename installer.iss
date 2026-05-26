@@ -1,6 +1,6 @@
 [Setup]
 ; App Information
-AppName=Generic Inventory System
+AppName=butcherPOS
 AppVersion=1.0
 AppPublisher=Softio
 AppPublisherURL=https://softio.com
@@ -8,12 +8,12 @@ AppSupportURL=https://softio.com
 AppUpdatesURL=https://softio.com
 
 ; Default installation folder
-DefaultDirName={autopf}\Generic Inventory System
-DefaultGroupName=Generic Inventory System
+DefaultDirName={autopf}\butcherPOS
+DefaultGroupName=butcherPOS
 
 ; Output settings
 OutputDir=.\InstallerOutput
-OutputBaseFilename=GenericInventorySystem_Setup_v1.0
+OutputBaseFilename=butcherPOS_Setup_v1.0
 
 ; Compression
 Compression=lzma
@@ -23,14 +23,14 @@ SolidCompression=yes
 PrivilegesRequired=admin
 
 ; Setup Icon (Optional - will use default if not specified)
-SetupIconFile=Assets\inventory_ico.ico
+SetupIconFile=Assets\icon.ico
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
 ; Main executable
-Source: "publish-output\GenericInventorySystem.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "publish-output\butcherPOS.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Configuration file
 Source: "publish-output\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion
@@ -40,7 +40,7 @@ Source: "publish-output\Assets\*"; DestDir: "{app}\Assets"; Flags: ignoreversion
 Source: "publish-output\wwwroot\*"; DestDir: "{app}\wwwroot"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Catch any other files in publish-output (like sqlite dlls if any exist outside single-file)
-Source: "publish-output\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "GenericInventorySystem.exe,appsettings.json,Assets,wwwroot,Plugins"
+Source: "publish-output\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "butcherPOS.exe,appsettings.json,Assets,wwwroot,Plugins"
 
 [Dirs]
 Name: "{app}"; Permissions: users-modify
@@ -48,10 +48,10 @@ Name: "{app}\Plugins"; Permissions: users-modify
 
 [Icons]
 ; Start Menu Icon
-Name: "{group}\Generic Inventory System"; Filename: "{app}\GenericInventorySystem.exe"; IconFilename: "{app}\Assets\inventory_ico.ico"
+Name: "{group}\butcherPOS"; Filename: "{app}\butcherPOS.exe"; IconFilename: "{app}\Assets\icon.ico"
 ; Desktop Icon
-Name: "{autodesktop}\Generic Inventory System"; Filename: "{app}\GenericInventorySystem.exe"; IconFilename: "{app}\Assets\inventory_ico.ico"; Tasks: desktopicon
+Name: "{autodesktop}\butcherPOS"; Filename: "{app}\butcherPOS.exe"; IconFilename: "{app}\Assets\icon.ico"; Tasks: desktopicon
 
 [Run]
 ; Launch application after installation
-Filename: "{app}\GenericInventorySystem.exe"; Description: "{cm:LaunchProgram,Generic Inventory System}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\butcherPOS.exe"; Description: "{cm:LaunchProgram,butcherPOS}"; Flags: nowait postinstall skipifsilent

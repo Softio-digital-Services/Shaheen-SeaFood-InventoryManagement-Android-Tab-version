@@ -4,12 +4,12 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Data;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Services;
+using butcherPOS.Helpers;
+using butcherPOS.Data;
+using butcherPOS.Controls;
+using butcherPOS.Services;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class BarcodeLabelsForm : UserControl
     {
@@ -248,12 +248,12 @@ namespace GenericInventorySystem.Forms
         private void btnGenerate_Click(object sender, EventArgs e)
         {
             dgvItems.EndEdit();
-            var selectedItems = new List<GenericInventorySystem.Helpers.LabelPrintItem>();
+            var selectedItems = new List<butcherPOS.Helpers.LabelPrintItem>();
             foreach (DataGridViewRow row in dgvItems.Rows)
             {
                 if (Convert.ToBoolean(row.Cells["colSelect"].Value))
                 {
-                    selectedItems.Add(new GenericInventorySystem.Helpers.LabelPrintItem {
+                    selectedItems.Add(new butcherPOS.Helpers.LabelPrintItem {
                         Name = row.Cells["colName"].Value.ToString(),
                         SKU = row.Cells["colSku"].Value?.ToString() ?? "",
                         Price = row.Cells["colPrice"].Value != null ? Convert.ToDecimal(row.Cells["colPrice"].Value) : 0m,

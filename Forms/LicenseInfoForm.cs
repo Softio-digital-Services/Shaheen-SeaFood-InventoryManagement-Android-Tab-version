@@ -1,10 +1,10 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Controls;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class LicenseInfoForm : BaseModalForm
     {

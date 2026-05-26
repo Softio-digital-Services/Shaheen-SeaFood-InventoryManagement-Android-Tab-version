@@ -1,11 +1,11 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Services;
-using GenericInventorySystem.Controls;
+using butcherPOS.Helpers;
+using butcherPOS.Services;
+using butcherPOS.Controls;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class LockScreenForm : Form
     {

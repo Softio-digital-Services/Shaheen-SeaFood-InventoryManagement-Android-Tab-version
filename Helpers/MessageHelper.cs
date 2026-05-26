@@ -1,7 +1,7 @@
 using System.Windows.Forms;
-using GenericInventorySystem.Forms;
+using butcherPOS.Forms;
 
-namespace GenericInventorySystem
+namespace butcherPOS
 {
     /// <summary>
     /// Standardized message display helper
@@ -11,22 +11,22 @@ namespace GenericInventorySystem
     {
         public static void ShowSuccess(string message)
         {
-            ModernMessageBox.Show(message, GenericInventorySystem.Helpers.LocalizationManager.GetString("Msg_Success"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            ModernMessageBox.Show(message, butcherPOS.Helpers.LocalizationManager.GetString("Msg_Success"), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         public static void ShowError(string message)
         {
-            ModernMessageBox.Show(message, GenericInventorySystem.Helpers.LocalizationManager.GetString("Msg_Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+            ModernMessageBox.Show(message, butcherPOS.Helpers.LocalizationManager.GetString("Msg_Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         public static void ShowWarning(string message)
         {
-            ModernMessageBox.Show(message, GenericInventorySystem.Helpers.LocalizationManager.GetString("Msg_Warning"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            ModernMessageBox.Show(message, butcherPOS.Helpers.LocalizationManager.GetString("Msg_Warning"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
         }
 
         public static void ShowInfo(string message)
         {
-            ModernMessageBox.Show(message, GenericInventorySystem.Helpers.LocalizationManager.GetString("Msg_Info"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            ModernMessageBox.Show(message, butcherPOS.Helpers.LocalizationManager.GetString("Msg_Info"), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         public static bool ShowConfirmation(string message)
@@ -36,7 +36,7 @@ namespace GenericInventorySystem
 
         public static bool ConfirmAction(string message)
         {
-            DialogResult result = ModernMessageBox.Show(message, GenericInventorySystem.Helpers.LocalizationManager.GetString("Msg_Confirm"), 
+            DialogResult result = ModernMessageBox.Show(message, butcherPOS.Helpers.LocalizationManager.GetString("Msg_Confirm"), 
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             return result == DialogResult.Yes;
         }
@@ -48,7 +48,7 @@ namespace GenericInventorySystem
 
         public static void ShowDatabaseError(string context)
         {
-            string template = GenericInventorySystem.Helpers.LocalizationManager.GetString("Msg_DbError");
+            string template = butcherPOS.Helpers.LocalizationManager.GetString("Msg_DbError");
             ShowError(string.Format(template, context));
         }
     }

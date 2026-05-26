@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Controls;
-using GenericInventorySystem.Services;
+using butcherPOS.Helpers;
+using butcherPOS.Controls;
+using butcherPOS.Services;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class PurchaseOrdersForm : UserControl
     {

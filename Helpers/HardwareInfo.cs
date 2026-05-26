@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Net.NetworkInformation;
 
-namespace GenericInventorySystem.Helpers
+namespace butcherPOS.Helpers
 {
     /// <summary>
     /// Retrieves unique hardware information for license binding

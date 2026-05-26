@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using GenericInventorySystem;
+using butcherPOS;
 
-namespace GenericInventorySystem.Services
+namespace butcherPOS.Services
 {
     /// <summary>
     /// Manages supported currencies and exchange-rate conversions.

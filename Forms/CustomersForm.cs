@@ -5,11 +5,11 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Data;
-using GenericInventorySystem.Controls;
+using butcherPOS.Helpers;
+using butcherPOS.Data;
+using butcherPOS.Controls;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class CustomersForm : UserControl
     {

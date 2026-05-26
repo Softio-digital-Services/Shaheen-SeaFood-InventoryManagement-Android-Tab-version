@@ -1,4 +1,4 @@
-﻿namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     partial class UsersForm
     {

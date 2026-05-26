@@ -7,10 +7,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using GenericInventorySystem.Services;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Services;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem
+namespace butcherPOS
 {
     static class Program
     {
@@ -24,10 +24,10 @@ namespace GenericInventorySystem
             Application.SetCompatibleTextRenderingDefault(false);
 
             // Set initial language to Arabic for testing
-            GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("en-US");
+            butcherPOS.Helpers.LocalizationManager.SetLanguage("en-US");
 
             // Set initial language to English
-            //GenericInventorySystem.Helpers.LocalizationManager.SetLanguage("ar");
+            //butcherPOS.Helpers.LocalizationManager.SetLanguage("ar");
 
             // Expose background task for server hosting without blocking UI thread
             _ = Task.Run(() => StartApiServer());
@@ -44,19 +44,19 @@ namespace GenericInventorySystem
             try
             {
                 // Initialize Database (Create if missing)
-                GenericInventorySystem.Helpers.DatabaseInitializer.Initialize();
+                butcherPOS.Helpers.DatabaseInitializer.Initialize();
 
                 // Ensure schema is up to date (add missing columns)
                 DatabaseHelper.EnsureSchema();
 
                 // Initialize currency tables and load cached rates
-                GenericInventorySystem.Services.CurrencyService.EnsureTable();
+                butcherPOS.Services.CurrencyService.EnsureTable();
 
                 // Check License
-                if (!GenericInventorySystem.Helpers.LicenseManager.HasValidLicense())
+                if (!butcherPOS.Helpers.LicenseManager.HasValidLicense())
                 {
                     // Show activation form
-                    GenericInventorySystem.Forms.LicenseActivationForm activationForm = new GenericInventorySystem.Forms.LicenseActivationForm();
+                    butcherPOS.Forms.LicenseActivationForm activationForm = new butcherPOS.Forms.LicenseActivationForm();
                     if (activationForm.ShowDialog() != System.Windows.Forms.DialogResult.OK)
                     {
                         // User cancelled activation - exit application
@@ -65,11 +65,11 @@ namespace GenericInventorySystem
                 }
 
                 // Check for expiring license and show warning
-                var license = GenericInventorySystem.Helpers.LicenseManager.GetCurrentLicense();
+                var license = butcherPOS.Helpers.LicenseManager.GetCurrentLicense();
                 if (license != null && license.IsExpiringSoon() && !license.IsTrial())
                 {
                     int daysLeft = license.DaysRemaining();
-                    GenericInventorySystem.Forms.ModernMessageBox.Show(
+                    butcherPOS.Forms.ModernMessageBox.Show(
                         string.Format(LocalizationManager.GetString("Msg_LicExpiringSoonBody"), daysLeft),
                         LocalizationManager.GetString("Msg_LicExpiringSoon"),
                         MessageBoxButtons.OK,
@@ -81,7 +81,7 @@ namespace GenericInventorySystem
             }
             catch (Exception ex)
             {
-                GenericInventorySystem.Forms.ModernMessageBox.Show(
+                butcherPOS.Forms.ModernMessageBox.Show(
                     string.Format(LocalizationManager.GetString("Msg_CriticalError"), ex.Message) + $"\n\n{LocalizationManager.GetString("Msg_StackTrace")}\n{ex.StackTrace}",
                     LocalizationManager.GetString("Error_AppCrash"),
                     MessageBoxButtons.OK,
@@ -603,7 +603,7 @@ namespace GenericInventorySystem
 // ============================================================
 //  SignalR Hub -- manages real-time WebSocket connections
 // ============================================================
-namespace GenericInventorySystem
+namespace butcherPOS
 {
     using Microsoft.AspNetCore.SignalR;
 

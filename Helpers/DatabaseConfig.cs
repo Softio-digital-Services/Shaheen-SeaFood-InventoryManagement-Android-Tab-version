@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows.Forms;
 using System.Text.Json;
 
-namespace GenericInventorySystem
+namespace butcherPOS
 {
     /// <summary>
     /// Centralized database and file path configuration (SQLite)

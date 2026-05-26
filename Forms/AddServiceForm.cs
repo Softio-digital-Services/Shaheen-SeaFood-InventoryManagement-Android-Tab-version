@@ -1,9 +1,9 @@
 using System;
 using System.Windows.Forms;
-using GenericInventorySystem.Helpers;
-using GenericInventorySystem.Services;
+using butcherPOS.Helpers;
+using butcherPOS.Services;
 
-namespace GenericInventorySystem.Forms
+namespace butcherPOS.Forms
 {
     public partial class AddServiceForm : BaseModalForm
     {
@@ -132,7 +132,7 @@ namespace GenericInventorySystem.Forms
             btnAutoSKU.Text = isArabic ? "\u2728 \u062A\u0644\u0642\u0627\u0626\u064A" : "\u2728 Auto";
             btnUpload.Text = LocalizationManager.GetString("AddPart_Upload");
 
-            string currSymbol = GenericInventorySystem.Services.CurrencyService.GetSymbol("USD");
+            string currSymbol = butcherPOS.Services.CurrencyService.GetSymbol("USD");
             numPrice.LabelText = string.Format(LocalizationManager.GetString("AddPart_Price"), "USD", currSymbol);
             lblStatus.Text = LocalizationManager.GetString("AddPart_Status");
 

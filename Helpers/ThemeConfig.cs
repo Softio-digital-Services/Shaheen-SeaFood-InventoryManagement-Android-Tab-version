@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.IO;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
-using GenericInventorySystem.Helpers;
+using butcherPOS.Helpers;
 
-namespace GenericInventorySystem
+namespace butcherPOS
 {
     /// <summary>
     /// Centralized configuration for UI Theming and Branding.
@@ -21,7 +21,7 @@ namespace GenericInventorySystem
         // BRANDING
         // ==========================================
         public static string CompanyName { get; set; } = "Generic Solutions";
-        public static string AppTitle { get; set; } = "Generic POS Engine";
+        public static string AppTitle { get; set; } = "butcherPOS";
 
         static ThemeConfig()
         {
@@ -51,13 +51,13 @@ namespace GenericInventorySystem
         // COLOR PALETTE (Light / Horizon Blue)
         // ==========================================
         
-        // Primary Brand Color (Royal Blue)
-        public static Color PrimaryColor { get; } = Color.FromArgb(25, 118, 210); // Deep Blue
-        public static Color PrimaryHoverColor { get; } = Color.FromArgb(13, 71, 161);
+        // Primary Brand Color (Butcher Crimson Red)
+        public static Color PrimaryColor { get; } = Color.FromArgb(168, 30, 46); // Rich Red
+        public static Color PrimaryHoverColor { get; } = Color.FromArgb(136, 19, 32);
 
         // Gradient Colors for Primary Buttons
-        public static Color GradientStart { get; } = Color.FromArgb(25, 118, 210); 
-        public static Color GradientEnd { get; } = Color.FromArgb(13, 71, 161);   
+        public static Color GradientStart { get; } = Color.FromArgb(185, 28, 28); 
+        public static Color GradientEnd { get; } = Color.FromArgb(136, 19, 32);   
 
         // Secondary / Text Colors
         public static Color SecondaryColor { get; } = Color.FromArgb(100, 116, 139); // Slate Gray
@@ -69,8 +69,9 @@ namespace GenericInventorySystem
         // Backgrounds
         public static Color BackgroundColor { get; } = Color.FromArgb(241, 245, 249); 
         public static Color SidebarColor { get; } = Color.FromArgb(248, 250, 252);     
-        public static Color HeaderColor { get; } = Color.FromArgb(25, 118, 210);      
-        public static Color ActiveBackColor { get; } = Color.FromArgb(232, 240, 254); 
+        public static Color HeaderColor { get; } = Color.FromArgb(168, 30, 46);      
+        public static Color ActiveBackColor { get; } = Color.FromArgb(254, 242, 242); 
+
         
         // Semantic Token Mapping
         public static Color SelectionBackColor { get; } = Color.FromArgb(237, 242, 247); // Light Gray-Blue selection
@@ -112,6 +113,13 @@ namespace GenericInventorySystem
 
         // Card Surface
         public static Color SurfaceColor { get; } = Color.White;
+
+        // POS-specific tokens
+        public static Color POS_SidebarBg { get; } = Color.FromArgb(248, 249, 251);
+        public static Color POS_CartItemBg { get; } = Color.FromArgb(248, 250, 252);
+        public static Color POS_SeparatorColor { get; } = Color.FromArgb(235, 237, 240);
+        public static Color POS_ChipActive { get; } = Color.FromArgb(168, 30, 46);
+        public static Color POS_ChipActiveBorder { get; } = Color.FromArgb(136, 19, 32);
 
 
         // ==========================================
@@ -399,8 +407,8 @@ namespace GenericInventorySystem
         public static void DrawIconButton(Button btn, Graphics g, string iconName, string localizationKey, Color textColor, Color accentColor, bool isOutline)
         {
             if (btn == null) return;
-            bool isArabic = GenericInventorySystem.Helpers.LocalizationManager.IsArabic;
-            string text = GenericInventorySystem.Helpers.LocalizationManager.GetString(localizationKey);
+            bool isArabic = butcherPOS.Helpers.LocalizationManager.IsArabic;
+            string text = butcherPOS.Helpers.LocalizationManager.GetString(localizationKey);
             if (string.IsNullOrEmpty(text) || text == localizationKey)
             {
                 if (!string.IsNullOrEmpty(btn.Text)) text = btn.Text;
@@ -871,7 +879,7 @@ namespace GenericInventorySystem
                 int textX = startX + iconSize + gap;
                 Rectangle textRect = new Rectangle(textX, 0, textSize.Width + 4, btn.Height);
                 TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.NoPadding | TextFormatFlags.EndEllipsis;
-                if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
+                if (butcherPOS.Helpers.LocalizationManager.IsArabic)
                     flags |= TextFormatFlags.RightToLeft;
                 TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor, flags);
             }
@@ -886,7 +894,7 @@ namespace GenericInventorySystem
                 }
 
                 TextFormatFlags flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
-                if (GenericInventorySystem.Helpers.LocalizationManager.IsArabic)
+                if (butcherPOS.Helpers.LocalizationManager.IsArabic)
                     flags |= TextFormatFlags.RightToLeft;
                 TextRenderer.DrawText(g, btn.Text, btn.Font, Rectangle.Round(r), btn.ForeColor, flags);
             }
@@ -1561,7 +1569,7 @@ namespace GenericInventorySystem
         {
             try
             {
-                string iconPath = Path.Combine(Application.StartupPath, "Assets", "inventory_ico.ico");
+                string iconPath = Path.Combine(Application.StartupPath, "Assets", "icon.ico");
                 if (File.Exists(iconPath)) form.Icon = new Icon(iconPath);
             }
             catch { }
@@ -1860,6 +1868,49 @@ namespace GenericInventorySystem
         public override Color MenuItemSelected => ThemeConfig.ActiveBackColor;
         public override Color MenuItemBorder => Color.Transparent;
         public override Color ToolStripDropDownBackground => Color.White;
+    }
+
+    // ────────────────────────────────────────────────────────
+    // POS HELPER UTILITIES
+    // ────────────────────────────────────────────────────────
+    internal static class POSThemeHelpers
+    {
+        /// <summary>Creates a rounded card Panel that paints its own border and clears corners.</summary>
+        public static Panel CreateRoundedCard(int radius = 12, Color? bg = null, Color? border = null)
+        {
+            Color bgColor   = bg     ?? ThemeConfig.SurfaceColor;
+            Color bdColor   = border ?? ThemeConfig.BorderColor;
+            Panel p = new Panel { BackColor = bgColor, BorderStyle = BorderStyle.None, Padding = new Padding(0) };
+            p.Paint += (s, e) =>
+            {
+                var g = e.Graphics;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                Color parentBg = ThemeConfig.GetParentColor(p);
+                using (var brush = new System.Drawing.SolidBrush(parentBg))
+                    g.FillRectangle(brush, -1, -1, p.Width + 2, p.Height + 2);
+                var rect = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
+                using (var path = RoundedPath(rect, radius))
+                {
+                    using (var fill = new System.Drawing.SolidBrush(bgColor))
+                        g.FillPath(fill, path);
+                    using (var pen = new System.Drawing.Pen(bdColor, 1f))
+                        g.DrawPath(pen, path);
+                }
+            };
+            return p;
+        }
+
+        public static System.Drawing.Drawing2D.GraphicsPath RoundedPath(Rectangle r, int radius)
+        {
+            var path = new System.Drawing.Drawing2D.GraphicsPath();
+            int d = radius * 2;
+            path.AddArc(r.X,         r.Y,          d, d, 180, 90);
+            path.AddArc(r.Right - d, r.Y,          d, d, 270, 90);
+            path.AddArc(r.Right - d, r.Bottom - d, d, d,   0, 90);
+            path.AddArc(r.X,         r.Bottom - d, d, d,  90, 90);
+            path.CloseFigure();
+            return path;
+        }
     }
 }
 

@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Windows.Forms;
 
-namespace GenericInventorySystem
+namespace butcherPOS
 {
     /// <summary>
     /// Centralized error logging utility
