@@ -14,12 +14,12 @@ namespace butcherPOS.Forms
 {
     public partial class POSForm : UserControl
     {
-        // ── LEFT PANEL CONTROLS ──────────────────────────────────────────────
+        // -- LEFT PANEL CONTROLS ----------------------------------------------
         private FlowLayoutPanel pnlProducts;   // product card grid
         private FlowLayoutPanel pnlChips;      // category chip strip
         private TextBox         txtProductSearch;
 
-        // ── RIGHT PANEL CONTROLS ─────────────────────────────────────────────
+        // -- RIGHT PANEL CONTROLS ---------------------------------------------
         private Panel     pnlCartItems;        // scrollable cart rows
         private ComboBox  cmbCustomers;
         private Label     lblOrderNum;
@@ -29,7 +29,7 @@ namespace butcherPOS.Forms
         private Button    btnCheckout, btnClearCart, btnPrintReceipt;
         private StatCard  cardTodayOrders, cardTodaySales, cardPending;
 
-        // ── STATE ─────────────────────────────────────────────────────────────
+        // -- STATE -------------------------------------------------------------
         private DataTable        cartTable;
         private DashboardService _dashboardService;
         private string           _activeCategory   = null; // null = "All"
@@ -37,9 +37,9 @@ namespace butcherPOS.Forms
         private DateTime         _lastScanTime      = DateTime.Now;
         private string           _scanBuffer        = "";
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // CONSTRUCTOR
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         public POSForm()
         {
             InitializeComponent();
@@ -49,9 +49,9 @@ namespace butcherPOS.Forms
             ApplyPermissions();
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // LIFECYCLE
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         protected override void OnVisibleChanged(EventArgs e)
         {
             base.OnVisibleChanged(e);
@@ -76,16 +76,16 @@ namespace butcherPOS.Forms
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // INITIALIZE COMPONENT  (layout)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private void InitializeComponent()
         {
             this.SuspendLayout();
             this.Size      = new Size(1200, 800);
             this.BackColor = ThemeConfig.BackgroundColor;
 
-            // ══ Root split: 70% left | 30% right ═══════════════════════════════
+            // -- Root split: 70% left | 30% right -------------------------------
             TableLayoutPanel tlpRoot = new TableLayoutPanel
             {
                 Dock        = DockStyle.Fill,
@@ -99,11 +99,11 @@ namespace butcherPOS.Forms
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             this.Controls.Add(tlpRoot);
 
-            // ══════════════════════════════════════════════════════════════════
-            // LEFT PANEL — product browser
-            // ══════════════════════════════════════════════════════════════════
-            // LEFT PANEL — product browser
-            // ══════════════════════════════════════════════════════════════════
+            // ------------------------------------------------------------------
+            // LEFT PANEL � product browser
+            // ------------------------------------------------------------------
+            // LEFT PANEL � product browser
+            // ------------------------------------------------------------------
             TableLayoutPanel tlpLeft = new TableLayoutPanel
             {
                 Dock        = DockStyle.Fill,
@@ -112,20 +112,21 @@ namespace butcherPOS.Forms
                 BackColor   = ThemeConfig.BackgroundColor,
                 Padding     = new Padding(16, 16, 8, 16)
             };
-            // Row 0 – Page title "Products Menu"
+            // Row 0 � Page title "Products Menu"
             tlpLeft.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));
-            // Row 1 – Search bar
+            // Row 1 � Search bar
             tlpLeft.RowStyles.Add(new RowStyle(SizeType.Absolute, 48F));
-            // Row 2 – Category section (title + cards)
+            // Row 2 � Category section (title + cards)
             tlpLeft.RowStyles.Add(new RowStyle(SizeType.Absolute, 136F));
-            // Row 3 – Product grid
+            // Row 3 � Product grid
             tlpLeft.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             tlpRoot.Controls.Add(tlpLeft, 0, 0);
 
-            // ── Row 0: Page title ────────────────────────────────────────────
+            // -- Row 0: Page title --------------------------------------------
+            string pageTitle = LocalizationManager.GetString("POS_PageTitle");
             Label lblPageTitle = new Label
             {
-                Text      = LocalizationManager.GetString("POS_PageTitle") ?? "Products Menu",
+                Text      = pageTitle == "POS_PageTitle" ? "Products Menu" : pageTitle,
                 Font      = new Font("Segoe UI", 16F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
                 Dock      = DockStyle.Fill,
@@ -135,7 +136,7 @@ namespace butcherPOS.Forms
             };
             tlpLeft.Controls.Add(lblPageTitle, 0, 0);
 
-            // ── Search bar ──────────────────────────────────────────────────
+            // -- Search bar --------------------------------------------------
             Panel pnlSearchBar = new Panel
             {
                 Dock      = DockStyle.Fill,
@@ -181,7 +182,7 @@ namespace butcherPOS.Forms
             };
             tlpLeft.Controls.Add(pnlSearchBar, 0, 1);
 
-            // ── Category section (title bar + scrollable cards) ─────────────
+            // -- Category section (title bar + scrollable cards) -------------
             Panel pnlCategorySection = new Panel
             {
                 Dock      = DockStyle.Fill,
@@ -190,16 +191,17 @@ namespace butcherPOS.Forms
             };
             tlpLeft.Controls.Add(pnlCategorySection, 0, 2);
 
-            // Title row — "Menu" label + prev/next arrows
+            // Title row � "Menu" label + prev/next arrows
             Panel pnlCatHeader = new Panel
             {
                 Height    = 30,
                 Dock      = DockStyle.Top,
                 BackColor = Color.Transparent
             };
+            string menuTitleTrans = LocalizationManager.GetString("POS_MenuTitle");
             Label lblCatTitle = new Label
             {
-                Text      = LocalizationManager.GetString("POS_MenuTitle") ?? "Products Menu",
+                Text      = menuTitleTrans == "POS_MenuTitle" ? "Products Menu" : menuTitleTrans,
                 Font      = new Font("Segoe UI", 11F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize  = true,
@@ -207,54 +209,66 @@ namespace butcherPOS.Forms
                 BackColor = Color.Transparent
             };
             // Prev / Next scroll nav buttons
-            Button btnCatNext = new Button
+            Label btnCatNext = new Label
             {
                 Text      = ">",
-                FlatStyle = FlatStyle.Flat,
-                Size      = new Size(26, 26),
+                AutoSize  = false,
+                Size      = new Size(30, 30),
                 Cursor    = Cursors.Hand,
-                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
-                BackColor = ThemeConfig.SurfaceColor,
-                ForeColor = ThemeConfig.TextColorDark,
-                TabStop   = false
+                Font      = new Font("Segoe UI Light", 14F),
+                BackColor = Color.Transparent,
+                ForeColor = ThemeConfig.SecondaryColor,
+                Margin    = new Padding(0),
+                TextAlign = ContentAlignment.MiddleCenter
             };
-            btnCatNext.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
-            btnCatNext.FlatAppearance.BorderSize  = 1;
-            Button btnCatPrev = new Button
+
+            Label btnCatPrev = new Label
             {
                 Text      = "<",
-                FlatStyle = FlatStyle.Flat,
-                Size      = new Size(26, 26),
+                AutoSize  = false,
+                Size      = new Size(30, 30),
                 Cursor    = Cursors.Hand,
-                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
-                BackColor = ThemeConfig.SurfaceColor,
-                ForeColor = ThemeConfig.TextColorDark,
-                TabStop   = false
+                Font      = new Font("Segoe UI Light", 14F),
+                BackColor = Color.Transparent,
+                ForeColor = ThemeConfig.SecondaryColor,
+                Margin    = new Padding(0),
+                TextAlign = ContentAlignment.MiddleCenter
             };
-            btnCatPrev.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
-            btnCatPrev.FlatAppearance.BorderSize  = 1;
+
             pnlCatHeader.Resize += (s, ev) =>
             {
-                btnCatNext.Location = new Point(pnlCatHeader.Width - 26, 2);
-                btnCatPrev.Location = new Point(pnlCatHeader.Width - 56, 2);
+                // Align to the right edge with a small margin
+                btnCatNext.Location = new Point(pnlCatHeader.Width - 30, 0);
+                btnCatPrev.Location = new Point(pnlCatHeader.Width - 60, 0);
             };
             pnlCatHeader.Controls.AddRange(new Control[] { lblCatTitle, btnCatPrev, btnCatNext });
             pnlCategorySection.Controls.Add(pnlCatHeader);
 
-            // Scrollable chips row
+            Panel pnlChipsWrapper = new Panel
+            {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                BackColor = Color.Transparent
+            };
+            pnlCategorySection.Controls.Add(pnlChipsWrapper);
+            pnlChipsWrapper.BringToFront();
+
             pnlChips = new FlowLayoutPanel
             {
-                Dock          = DockStyle.Fill,
-                AutoScroll    = false,
                 WrapContents  = false,
-                Padding       = new Padding(0, 2, 0, 0),  // no vertical squeeze
+                AutoScroll    = true,
+                Padding       = new Padding(0, 2, 0, 0),
                 BackColor     = Color.Transparent,
-                FlowDirection = FlowDirection.LeftToRight
+                FlowDirection = FlowDirection.LeftToRight,
+                Anchor        = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
-            // Prevent FlowLayoutPanel from adding a vertical scrollbar that clips content
-            pnlChips.HorizontalScroll.Visible = false;
-            pnlChips.VerticalScroll.Visible   = false;
-            pnlCategorySection.Controls.Add(pnlChips);
+            pnlChipsWrapper.Controls.Add(pnlChips);
+
+            pnlChipsWrapper.Resize += (s, e) =>
+            {
+                // Make pnlChips taller than wrapper to push horizontal scrollbar out of view
+                pnlChips.SetBounds(0, 0, pnlChipsWrapper.Width, pnlChipsWrapper.Height + SystemInformation.HorizontalScrollBarHeight + 10);
+            };
 
             // Wire nav buttons to scroll the chip panel
             btnCatNext.Click += (s, e) =>
@@ -273,7 +287,7 @@ namespace butcherPOS.Forms
             pnlChips.VerticalScroll.Enabled   = false;
             pnlChips.AutoScroll = true;
 
-            // ── Product grid ────────────────────────────────────────────────
+            // -- Product grid ------------------------------------------------
             pnlProducts = new FlowLayoutPanel
             {
                 Dock          = DockStyle.Fill,
@@ -286,222 +300,143 @@ namespace butcherPOS.Forms
             };
             tlpLeft.Controls.Add(pnlProducts, 0, 3);
 
-            // ══════════════════════════════════════════════════════════════════
-            // RIGHT PANEL — cart & summary
-            // ══════════════════════════════════════════════════════════════════
+            // ------------------------------------------------------------------
+            // RIGHT PANEL � cart & summary
+            // ------------------------------------------------------------------
+                        // RIGHT PANEL - cards layout
+            // ------------------------------------------------------------------
             Panel pnlRight = new Panel
             {
                 Dock      = DockStyle.Fill,
-                BackColor = Color.White,
-                Padding   = new Padding(0)
-            };
-            pnlRight.Paint += (s, pe) =>
-            {
-                using (var pen = new Pen(ThemeConfig.POS_SeparatorColor, 1.5f))
-                    pe.Graphics.DrawLine(pen, 0, 0, 0, pnlRight.Height);
+                BackColor = Color.Transparent, // matches form background
+                Padding   = new Padding(12)
             };
             tlpRoot.Controls.Add(pnlRight, 1, 0);
 
-            // Use a TableLayoutPanel inside right panel for structured rows
+            // Container for 3 cards
             TableLayoutPanel tlpRight = new TableLayoutPanel
             {
                 Dock        = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount    = 10,
+                RowCount    = 5,
                 BackColor   = Color.Transparent,
                 Padding     = new Padding(0)
             };
-            // Row 0  – Order header (New Order + customer)
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 80F));
-            // Row 1  – separator
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 1F));
-            // Row 2  – "Ordered Items" section header
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
-            // Row 3  – cart items (fills remaining)
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            // Row 4  – separator
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 1F));
-            // Row 5  – Payment Summary section
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 185F));
-            // Row 6  – separator
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 1F));
-            // Row 7  – "Payment Method" section header
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
-            // Row 8  – Cash / Card / Scan pills
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 48F));
-            // Row 9  – Print + Place Order footer
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
+            tlpRight.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            // Card 1: Order details and cart
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); 
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 16F)); // Gap
+            // Card 2: Actions
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); 
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 16F)); // Gap
+            // Card 3: Footer
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 80F)); 
             pnlRight.Controls.Add(tlpRight);
 
-            // ── Row 0: Order header ─────────────────────────────────────────
-            Panel pnlOrderHeader = new Panel
+            // Paint handler for drawing white rounded cards
+            PaintEventHandler cardPaint = (s, pe) =>
             {
-                Dock      = DockStyle.Fill,
-                BackColor = Color.Transparent,
-                Padding   = new Padding(16, 10, 16, 0)
+                pe.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var pathCard = ThemeConfig.GetRoundedPathPublic(((Control)s).ClientRectangle, 12))
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    pe.Graphics.FillPath(brush, pathCard);
+                }
             };
 
-            Label lblNewOrder = new Label
-            {
-                Text      = "New Order",
-                Font      = ThemeConfig.SubHeaderFont,
-                ForeColor = ThemeConfig.TextColorDark,
-                AutoSize  = true,
-                Location  = new Point(16, 12)
+            // -- Card 1: Order Details & Cart ---------------------------------
+            Panel pnlCard1 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0) };
+            pnlCard1.Paint += cardPaint;
+            tlpRight.Controls.Add(pnlCard1, 0, 0);
+
+            TableLayoutPanel tlpCard1 = new TableLayoutPanel 
+            { 
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = Color.Transparent, Margin = new Padding(0) 
             };
+            tlpCard1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 80F));  // Header
+            tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));  // Ordered Items Title
+            tlpCard1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Cart items
+            tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 175F)); // Payment Summary
+            pnlCard1.Controls.Add(tlpCard1);
+
+            // -- Order Header
+            Panel pnlOrderHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 16, 16, 0) };
+            
+            Label lblNewOrder = new Label { Text = "New Order", Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Location = new Point(16, 16) };
             pnlOrderHeader.Controls.Add(lblNewOrder);
 
-            lblOrderNum = new Label
-            {
-                Text      = "#001",
-                Font      = ThemeConfig.SmallFont ?? new Font("Segoe UI", 8F),
-                ForeColor = ThemeConfig.SecondaryColor,
-                AutoSize  = true,
-                Location  = new Point(16, 32)
-            };
+            lblOrderNum = new Label { Text = "#001", Font = new Font("Segoe UI", 9F), ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Location = new Point(16, 42) };
             pnlOrderHeader.Controls.Add(lblOrderNum);
-            
-            btnClearCart = new ModernButton
-            {
-                Text   = LocalizationManager.GetString("POS_ClearCart") ?? "Clear",
-                Cursor = Cursors.Hand,
-                Font   = new Font("Segoe UI", 8.5F, FontStyle.Bold)
-            };
-            btnClearCart.Click += (s, e) =>
-            {
-                if (cartTable.Rows.Count > 0 && MessageHelper.ConfirmAction(LocalizationManager.GetString("POS_ClearCartConfirm") ?? "Clear cart?"))
-                {
+
+            PictureBox btnEdit = new PictureBox { Image = ThemeConfig.GetNuricon("edit"), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(20, 20), Cursor = Cursors.Hand };
+            PictureBox btnTrash = new PictureBox { Image = ThemeConfig.GetNuricon("delete"), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(20, 20), Cursor = Cursors.Hand };
+            btnTrash.Click += (s, e) => {
+                if (cartTable.Rows.Count > 0 && MessageHelper.ConfirmAction(LocalizationManager.GetString("POS_ClearCartConfirm") ?? "Clear cart?")) {
                     cartTable.Rows.Clear();
                     RefreshCartDisplay();
                 }
             };
-            ThemeConfig.ApplySecondaryButton(btnClearCart);
-            pnlOrderHeader.Controls.Add(btnClearCart);
-
-            // Customer ComboBox in header
-            Label lblCustTitle = new Label
-            {
-                Text      = "Customer",
-                Font      = ThemeConfig.SmallFont ?? new Font("Segoe UI", 8F),
-                ForeColor = ThemeConfig.SecondaryColor,
-                AutoSize  = true,
-                Location  = new Point(16, 50)
-            };
-            pnlOrderHeader.Controls.Add(lblCustTitle);
+            pnlOrderHeader.Controls.Add(btnEdit);
+            pnlOrderHeader.Controls.Add(btnTrash);
 
             cmbCustomers = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
             ThemeConfig.ApplyComboBoxStyle(cmbCustomers);
-            cmbCustomers.Size     = new Size(pnlOrderHeader.Width - 32, 26);
-            cmbCustomers.Location = new Point(16, 50);
-            cmbCustomers.Anchor   = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-
-            // Layout header using absolute coords via Resize
-            pnlOrderHeader.Resize += (s, ev) =>
-            {
-                int w = pnlOrderHeader.Width - 32;
-                
-                btnClearCart.Size = new Size(80, 26);
-                if (LocalizationManager.IsArabic)
-                {
-                    btnClearCart.Location = new Point(16, 10);
-                    lblNewOrder.Location = new Point(pnlOrderHeader.Width - lblNewOrder.Width - 16, 8);
-                    lblOrderNum.Location = new Point(pnlOrderHeader.Width - lblOrderNum.Width - 16, 28);
-                }
-                else
-                {
-                    btnClearCart.Location = new Point(pnlOrderHeader.Width - 96, 10);
-                    lblNewOrder.Location = new Point(16, 8);
-                    lblOrderNum.Location = new Point(16, 28);
-                }
-                
-                lblCustTitle.Location = new Point(16, 46);
-                cmbCustomers.Width    = w;
-                cmbCustomers.Location = new Point(16, 46);
-                lblCustTitle.Visible  = false; // hide title, show placeholder via combo
-            };
             pnlOrderHeader.Controls.Add(cmbCustomers);
-            tlpRight.Controls.Add(pnlOrderHeader, 0, 0);
 
-            // ── Row 1: separator ────────────────────────────────────────────
-            Panel sep1 = CreateSeparator();
-            tlpRight.Controls.Add(sep1, 0, 1);
-
-            // ── Row 2: "Ordered Items" section header ────────────────────────
-            Panel pnlOrderedItemsHeader = new Panel
-            {
-                Dock      = DockStyle.Fill,
-                BackColor = Color.Transparent,
-                Padding   = new Padding(16, 0, 16, 0)
+            pnlOrderHeader.Resize += (s, ev) => {
+                int w = pnlOrderHeader.Width;
+                btnTrash.Location = new Point(w - 32, 16);
+                btnEdit.Location = new Point(w - 60, 16);
+                lblNewOrder.Location = new Point(16, 16);
+                lblOrderNum.Location = new Point(16, 42);
+                cmbCustomers.Width = 140;
+                cmbCustomers.Location = new Point(w - 156, 38);
             };
+            tlpCard1.Controls.Add(pnlOrderHeader, 0, 0);
+
+            // -- Ordered Items Title
+            Panel pnlOrderedItemsHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 0, 16, 0) };
             BuildOrderedItemsHeader(pnlOrderedItemsHeader);
-            tlpRight.Controls.Add(pnlOrderedItemsHeader, 0, 2);
+            tlpCard1.Controls.Add(pnlOrderedItemsHeader, 0, 1);
 
-            // ── Row 3: Cart items ────────────────────────────────────────────
-            pnlCartItems = new Panel
-            {
-                Dock       = DockStyle.Fill,
-                AutoScroll = true,
-                BackColor  = Color.Transparent,
-                Padding    = new Padding(0)
-            };
-            tlpRight.Controls.Add(pnlCartItems, 0, 3);
+            // -- Cart items
+            pnlCartItems = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.Transparent, Padding = new Padding(0) };
+            tlpCard1.Controls.Add(pnlCartItems, 0, 2);
 
-            // ── Row 4: separator ────────────────────────────────────────────
-            Panel sep2 = CreateSeparator();
-            tlpRight.Controls.Add(sep2, 0, 4);
-
-            // ── Row 5: Payment Summary ───────────────────────────────────────
-            Panel pnlSummary = new Panel
-            {
-                Dock      = DockStyle.Fill,
-                BackColor = Color.Transparent,
-                Padding   = new Padding(16, 8, 16, 4)
-            };
+            // -- Payment Summary
+            Panel pnlSummary = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 8, 16, 4) };
             BuildSummaryPanel(pnlSummary);
-            tlpRight.Controls.Add(pnlSummary, 0, 5);
+            tlpCard1.Controls.Add(pnlSummary, 0, 3);
 
-            // ── Row 6: separator ────────────────────────────────────────────
-            Panel sep3 = CreateSeparator();
-            tlpRight.Controls.Add(sep3, 0, 6);
+            // -- Card 2: Actions ---------------------------------------
+            Panel pnlCard2 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0) };
+            pnlCard2.Paint += cardPaint;
+            tlpRight.Controls.Add(pnlCard2, 0, 2);
 
-            // ── Row 7: "Payment Method" section header ───────────────────────
-            Panel pnlPayMethodHeader = new Panel
-            {
-                Dock      = DockStyle.Fill,
-                BackColor = Color.Transparent,
-                Padding   = new Padding(16, 0, 16, 0)
-            };
-            Label lblPayMethodTitle = new Label
-            {
-                Text      = "Payment Method",
-                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
-                ForeColor = ThemeConfig.TextColorDark,
-                Dock      = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                BackColor = Color.Transparent
-            };
-            pnlPayMethodHeader.Controls.Add(lblPayMethodTitle);
-            tlpRight.Controls.Add(pnlPayMethodHeader, 0, 7);
+            TableLayoutPanel tlpCard2 = new TableLayoutPanel { Dock = DockStyle.Fill, Margin = new Padding(0) };
+            tlpCard2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpCard2.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F)); // Header height
+            tlpCard2.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Buttons height
+            pnlCard2.Controls.Add(tlpCard2);
 
-            // ── Row 8: Cash / Card / Scan pills ─────────────────────────────
-            Panel pnlPayPills = new Panel
-            {
-                Dock      = DockStyle.Fill,
-                BackColor = Color.Transparent,
-                Padding   = new Padding(16, 4, 16, 8)
-            };
-            BuildPaymentPillsPanel(pnlPayPills);
-            tlpRight.Controls.Add(pnlPayPills, 0, 8);
+            Panel pnlActionsHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 8, 16, 0) };
+            Label lblActionsTitle = new Label { Text = LocalizationManager.GetString("POS_Actions") ?? "Actions", Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft, BackColor = Color.Transparent };
+            pnlActionsHeader.Controls.Add(lblActionsTitle);
+            tlpCard2.Controls.Add(pnlActionsHeader, 0, 0);
 
-            // ── Row 9: Print + Place Order footer ───────────────────────────
-            Panel pnlFooter = new Panel
-            {
-                Dock      = DockStyle.Fill,
-                BackColor = Color.Transparent,
-                Padding   = new Padding(16, 6, 16, 10)
-            };
+            Panel pnlActions = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 4, 16, 12) };
+            BuildActionsPanel(pnlActions);
+            tlpCard2.Controls.Add(pnlActions, 0, 1);
+
+            // -- Card 3: Footer Buttons ---------------------------------------
+            Panel pnlCard3 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0) };
+            pnlCard3.Paint += cardPaint;
+            tlpRight.Controls.Add(pnlCard3, 0, 4);
+
+            Panel pnlFooter = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 12, 16, 12) };
             BuildFooterButtons(pnlFooter);
-            tlpRight.Controls.Add(pnlFooter, 0, 9);
+            pnlCard3.Controls.Add(pnlFooter);
 
             this.ResumeLayout(false);
 
@@ -509,17 +444,18 @@ namespace butcherPOS.Forms
             this.Load += (s, ev) => BuildCategoryChips();
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // "Ordered Items" SECTION HEADER
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private Label _lblCartCount; // updated by RefreshCartDisplay
 
         private void BuildOrderedItemsHeader(Panel pnl)
         {
             // "Ordered Items" bold label on the left
+            string orderedItemsTrans = LocalizationManager.GetString("POS_OrderedItems");
             Label lblOrderedItems = new Label
             {
-                Text      = LocalizationManager.GetString("POS_OrderedItems") ?? "Ordered Items",
+                Text      = orderedItemsTrans == "POS_OrderedItems" ? "Current Order" : orderedItemsTrans,
                 Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize  = true,
@@ -545,55 +481,60 @@ namespace butcherPOS.Forms
             pnl.Controls.AddRange(new Control[] { lblOrderedItems, _lblCartCount });
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // PAYMENT PILLS PANEL  — Cash / Card / Scan + currency dropdown
-        // ─────────────────────────────────────────────────────────────────────
-        private void BuildPaymentPillsPanel(Panel pnl)
+        // ---------------------------------------------------------------------
+        // ACTIONS PANEL
+        // ---------------------------------------------------------------------
+        private void BuildActionsPanel(Panel pnl)
         {
-            Button btnCash  = CreatePayPillButton("💵  Cash");
-            Button btnCard  = CreatePayPillButton("💳  Card");
-            Button btnScan  = CreatePayPillButton("🔠  Scan");
+            Button btnReturn = CreatePayPillButton("Return");
+            Button btnDraft  = CreatePayPillButton("Save Draft");
+            Button btnQuote  = CreatePayPillButton("Quotation");
+            Button btnBill   = CreatePayPillButton("Customer Bill");
 
-            // Default: Cash active
-            SetPayPillActive(btnCash, true);
-            SetPayPillActive(btnCard, false);
-            SetPayPillActive(btnScan, false);
-
-            void SelectPill(Button selected)
-            {
-                SetPayPillActive(btnCash, selected == btnCash);
-                SetPayPillActive(btnCard, selected == btnCard);
-                SetPayPillActive(btnScan, selected == btnScan);
-            }
-
-            btnCash.Click += (s, e) => SelectPill(btnCash);
-            btnCard.Click += (s, e) => SelectPill(btnCard);
-            btnScan.Click += (s, e) => SelectPill(btnScan);
+            // Wire up placeholders
+            btnReturn.Click += (s, e) => {
+                var frm = new BlindReturnForm();
+                frm.ShowDialog();
+            };
+            btnDraft.Click += (s, e) => {
+                MessageHelper.ShowInfo("Draft functionality will be implemented soon.");
+            };
+            btnQuote.Click += (s, e) => {
+                if (cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
+                MessageHelper.ShowInfo("Quotation functionality will be implemented soon.");
+            };
+            btnBill.Click += (s, e) => {
+                if (cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
+                MessageHelper.ShowInfo("Add to Customer Bill functionality will be implemented soon.");
+            };
 
             pnl.Resize += (s, ev) =>
             {
-                int h   = pnl.Height - 12;
                 int gap = 6;
                 int totalW = pnl.Width;
-                // 3 equal pills
-                int pillW = (totalW - gap * 2) / 3;
-                int y = (pnl.Height - h) / 2;
-                btnCash.SetBounds(0,             y, pillW, h);
-                btnCard.SetBounds(pillW + gap,   y, pillW, h);
-                btnScan.SetBounds(pillW * 2 + gap * 2, y, pillW, h);
+                int totalH = pnl.Height;
+                
+                int btnW = (totalW - gap) / 2;
+                int btnH = (totalH - gap) / 2;
+
+                btnReturn.SetBounds(0, 0, btnW, btnH);
+                btnDraft.SetBounds(btnW + gap, 0, btnW, btnH);
+                btnQuote.SetBounds(0, btnH + gap, btnW, btnH);
+                btnBill.SetBounds(btnW + gap, btnH + gap, btnW, btnH);
             };
-            pnl.Controls.AddRange(new Control[] { btnCash, btnCard, btnScan });
+            pnl.Controls.AddRange(new Control[] { btnReturn, btnDraft, btnQuote, btnBill });
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // SUMMARY PANEL BUILD
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private void BuildSummaryPanel(Panel pnl)
         {
             // "Payment Summary" section header
+            string paymentSummaryTrans = LocalizationManager.GetString("POS_PaymentSummary");
             Label lblSummaryHeader = new Label
             {
-                Text      = LocalizationManager.GetString("POS_PaymentSummary") ?? "Payment Summary",
+                Text      = paymentSummaryTrans == "POS_PaymentSummary" ? "Payment Summary" : paymentSummaryTrans,
                 Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize  = true,
@@ -731,9 +672,9 @@ namespace butcherPOS.Forms
             };
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // CURRENCY SELECTOR PANEL — ComboBox dropdown
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
+        // CURRENCY SELECTOR PANEL � ComboBox dropdown
+        // ---------------------------------------------------------------------
         private void BuildCurrencySelectorPanel(Panel pnl)
         {
             var currencies = butcherPOS.Services.CurrencyService.SupportedCurrencies;
@@ -805,72 +746,71 @@ namespace butcherPOS.Forms
             pnl.Controls.AddRange(new Control[] { lblCurrLabel, cmbCurrency });
         }
 
-        private Button CreatePayPillButton(string text)
+                private Button CreatePayPillButton(string text)
         {
             var btn = new Button
             {
                 Text      = text,
+                Tag       = "standard_",
                 FlatStyle = FlatStyle.Flat,
                 Font      = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold),
                 Cursor    = Cursors.Hand,
-                BackColor = ThemeConfig.SurfaceColor,
+                BackColor = Color.White,
                 ForeColor = ThemeConfig.TextColorDark
             };
             btn.FlatAppearance.BorderSize = 0;
             btn.Paint += (s, pe) =>
             {
-                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (var parentBrush = new SolidBrush(ThemeConfig.GetParentColor(btn)))
-                    pe.Graphics.FillRectangle(parentBrush, -1, -1, btn.Width + 2, btn.Height + 2);
+                pe.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 var r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
-                using (var path = RoundedPath(r, 16))
+                using (var path = ThemeConfig.GetRoundedPathPublic(r, 12))
                 {
                     using (var br = new SolidBrush(btn.BackColor))
                         pe.Graphics.FillPath(br, path);
-                    if (btn.BackColor == ThemeConfig.SurfaceColor)
-                    {
-                        using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                            pe.Graphics.DrawPath(pen, path);
-                    }
+                    using (var pen = new Pen(btn.FlatAppearance.BorderColor, 1.5f))
+                        pe.Graphics.DrawPath(pen, path);
+                    
+                    TextRenderer.DrawText(pe.Graphics, btn.Text, btn.Font, 
+                        new Rectangle(0, 0, btn.Width, btn.Height), btn.ForeColor, 
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                 }
-                TextRenderer.DrawText(pe.Graphics, btn.Text, btn.Font,
-                    new Rectangle(0, 0, btn.Width, btn.Height), btn.ForeColor,
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
             };
             return btn;
         }
 
         private void SetPayPillActive(Button btn, bool active)
         {
-            btn.BackColor = active ? ThemeConfig.POS_ChipActive   : ThemeConfig.SurfaceColor;
-            btn.ForeColor = active ? Color.White                   : ThemeConfig.TextColorDark;
-            btn.FlatAppearance.BorderColor = active ? ThemeConfig.POS_ChipActiveBorder : ThemeConfig.BorderColor;
+            btn.BackColor = Color.White;
+            btn.ForeColor = active ? ThemeConfig.PrimaryColor : ThemeConfig.TextColorDark;
+            btn.FlatAppearance.BorderColor = active ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor;
             btn.Invalidate();
         }
-
-        // ─────────────────────────────────────────────────────────────────────
+        // 
         // FOOTER BUTTONS
-        // ─────────────────────────────────────────────────────────────────────
-        private void BuildFooterButtons(Panel pnl)
+        // ---------------------------------------------------------------------
+                private void BuildFooterButtons(Panel pnl)
         {
             Button btnPrintReceipt = new ModernButton
             {
                 Name   = "btnPrintReceipt",
-                Text   = LocalizationManager.GetString("POS_Receipt") ?? "Print Receipt",
+                Text   = LocalizationManager.GetString("POS_Print") ?? "Print",
                 Image  = ThemeConfig.GetNuricon("print"),
                 TextImageRelation = TextImageRelation.ImageBeforeText,
-                ImageAlign        = ContentAlignment.MiddleLeft,
+                ImageAlign        = ContentAlignment.MiddleCenter,
                 Cursor = Cursors.Hand
             };
             btnPrintReceipt.Click += BtnPrintReceipt_Click;
-            ThemeConfig.ApplySecondaryButton(btnPrintReceipt);
+            btnPrintReceipt.BackColor = Color.White;
+            btnPrintReceipt.ForeColor = ThemeConfig.TextColorDark;
+            btnPrintReceipt.FlatAppearance.BorderSize = 1;
+            btnPrintReceipt.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
 
             btnCheckout = new ModernButton
             {
                 Text   = LocalizationManager.GetString("POS_PlaceOrder") ?? "Place Order",
                 Image  = ThemeConfig.GetNuricon("pos"),
                 TextImageRelation = TextImageRelation.ImageBeforeText,
-                ImageAlign        = ContentAlignment.MiddleLeft,
+                ImageAlign        = ContentAlignment.MiddleCenter,
                 Cursor = Cursors.Hand
             };
             btnCheckout.Click += BtnCheckout_Click;
@@ -890,10 +830,9 @@ namespace butcherPOS.Forms
             pnl.Controls.AddRange(new Control[] { btnPrintReceipt, btnCheckout });
         }
 
-
-        // ─────────────────────────────────────────────────────────────────────
-        // CATEGORY CHIPS  — reference card style
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
+        // CATEGORY CHIPS  � reference card style
+        // ---------------------------------------------------------------------
         private void BuildCategoryChips()
         {
             pnlChips.SuspendLayout();
@@ -902,7 +841,8 @@ namespace butcherPOS.Forms
             bool isRTL = LocalizationManager.IsArabic;
             pnlChips.FlowDirection = isRTL ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
 
-            AddCategoryChip(LocalizationManager.GetString("POS_AllCategories") ?? "All Menu", null);
+            string allCatTrans = LocalizationManager.GetString("POS_AllCategories");
+            AddCategoryChip(allCatTrans == "POS_AllCategories" ? "All Categories" : allCatTrans, null);
 
             try
             {
@@ -934,8 +874,8 @@ namespace butcherPOS.Forms
             string countText = $"{itemCount} items";
 
             // Get emoji
-            string emoji = "🛒";
-            if (categoryKey == null) emoji = "🍽️";
+            string emoji = "??";
+            if (categoryKey == null) emoji = "???";
             else
             {
                 try
@@ -947,34 +887,32 @@ namespace butcherPOS.Forms
                 catch { }
             }
 
-            // Card dimensions — wider to accommodate icon + text
+            // Card dimensions � wider to accommodate icon + text
             var nameFont  = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold);
             var countFont = new Font("Segoe UI", 7.5F);
             int nameW = TextRenderer.MeasureText(label, nameFont).Width;
             int cntW  = TextRenderer.MeasureText(countText, countFont).Width;
-            int cardW = Math.Max(nameW, cntW) + 52;  // icon(28) + gap(8) + text + right-pad(16)
-            cardW = Math.Max(cardW, 100);
+            int cardW = Math.Max(nameW, cntW) + 72;  // icon + padding + textWidth + right-pad
+            cardW = Math.Max(cardW, 140);
             const int CARD_H = 64;
             const int ICON_AREA = 32; // width reserved for the emoji circle
 
-            // Active border color — teal/primary on top edge (like reference)
+            // Active border color � teal/primary on top edge (like reference)
             Color activeBorder = ThemeConfig.POS_ChipActiveBorder;
             Color inactiveBg   = ThemeConfig.SurfaceColor;
 
-            var chip = new Button
+            var chip = new Panel
             {
-                Text      = "",
-                FlatStyle = FlatStyle.Flat,
                 AutoSize  = false,
                 Width     = cardW,
                 Height    = CARD_H,
                 Cursor    = Cursors.Hand,
                 Margin    = new Padding(0, 0, 10, 0),
-                BackColor = inactiveBg,
+                BackColor = Color.Transparent,
                 ForeColor = ThemeConfig.TextColorDark,
                 Tag       = categoryKey
             };
-            chip.FlatAppearance.BorderSize = 0; // drawn manually
+            // drawn manually
 
             chip.Paint += (s, pe) =>
             {
@@ -987,55 +925,64 @@ namespace butcherPOS.Forms
                     g.FillRectangle(parentBrush, -1, -1, chip.Width + 2, chip.Height + 2);
 
                 var r = new Rectangle(0, 0, chip.Width - 1, chip.Height - 1);
+                int cardRadius = 8; // Less rounded than before, matching reference
 
                 // Card fill
-                using (var path = RoundedPath(r, 14))
-                using (var br   = new SolidBrush(inactiveBg))
+                Color bgFill = isActive 
+                    ? Color.FromArgb(12, activeBorder.R, activeBorder.G, activeBorder.B) 
+                    : inactiveBg;
+                
+                using (var path = RoundedPath(r, cardRadius))
+                using (var br   = new SolidBrush(bgFill))
                     g.FillPath(br, path);
 
-                // Border: thin grey normally; active → draw a prominent coloured outline
+                // Border
                 if (isActive)
                 {
-                    using (var path = RoundedPath(r, 14))
-                    using (var pen  = new Pen(activeBorder, 2f))
+                    using (var path = RoundedPath(r, cardRadius))
+                    using (var pen  = new Pen(activeBorder, 1.5f)) // Prominent border for active
                         g.DrawPath(pen, path);
                 }
                 else
                 {
-                    using (var path = RoundedPath(r, 14))
-                    using (var pen  = new Pen(ThemeConfig.BorderColor, 1f))
+                    using (var path = RoundedPath(r, cardRadius))
+                    using (var pen  = new Pen(ThemeConfig.BorderColor, 1f)) // Faint border for inactive
                         g.DrawPath(pen, path);
                 }
 
-                // ── Emoji circle (left side) ──────────────────────────────────
-                int cx = 12;
-                int cy = (CARD_H - ICON_AREA) / 2;
-                using (var circleBr = new SolidBrush(Color.FromArgb(20, ThemeConfig.PrimaryColor)))
-                    g.FillEllipse(circleBr, cx, cy, ICON_AREA, ICON_AREA);
+                // -- Icon squircle (left side) ----------------------------------
+                int cx = 10;
+                int iconSize = 36;
+                int cy = (CARD_H - iconSize) / 2;
+                
+                // Light grey background for the icon area
+                using (var iconBgPath = RoundedPath(new Rectangle(cx, cy, iconSize, iconSize), 6))
+                using (var iconBr = new SolidBrush(Color.FromArgb(242, 244, 246))) // Very light grey
+                    g.FillPath(iconBr, iconBgPath);
 
-                using (var emojiFont = new Font("Segoe UI Emoji", 11F))
+                using (var emojiFont = new Font("Segoe UI Emoji", 12F))
                     TextRenderer.DrawText(g, emoji, emojiFont,
-                        new Rectangle(cx, cy, ICON_AREA, ICON_AREA),
+                        new Rectangle(cx, cy, iconSize, iconSize),
                         ThemeConfig.TextColorDark,
                         TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
 
-                // ── Text block (right of icon) ────────────────────────────────
-                int textX = cx + ICON_AREA + 8;
+                // -- Text block (right of icon) --------------------------------
+                int textX = cx + iconSize + 10;
                 int textW = chip.Width - textX - 8;
 
-                // Category name — bold
-                Color nameColor = isActive ? activeBorder : ThemeConfig.TextColorDark;
+                // Title and Subtitle block is vertically centered together
+                int textBlockY = cy + 2; 
+
+                // Category name � always dark, bold
                 TextRenderer.DrawText(g, label, nameFont,
-                    new Rectangle(textX, cy, textW, 18), nameColor,
+                    new Rectangle(textX, textBlockY, textW, 16), ThemeConfig.TextColorDark,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
 
-                // Item count — small grey below name
-                Color subColor = isActive ? Color.FromArgb(180, activeBorder.R, activeBorder.G, activeBorder.B)
-                                          : ThemeConfig.SecondaryColor;
+                // Item count � always small grey below name
                 using (var cf = new Font("Segoe UI", 7.5F))
                     TextRenderer.DrawText(g, countText, cf,
-                        new Rectangle(textX, cy + 20, textW, 16), subColor,
-                        TextFormatFlags.Left | TextFormatFlags.NoPadding);
+                        new Rectangle(textX, textBlockY + 18, textW, 16), ThemeConfig.SecondaryColor,
+                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
 
                 countFont.Dispose();
             };
@@ -1050,9 +997,9 @@ namespace butcherPOS.Forms
             pnlChips.Controls.Add(chip);
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // PRODUCT LOADING
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         public void LoadProducts(string search = null)
         {
             pnlProducts.SuspendLayout();
@@ -1098,16 +1045,16 @@ namespace butcherPOS.Forms
             pnlProducts.ResumeLayout();
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // PRODUCT CARD
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private Panel CreateProductCard(PartData part)
         {
             bool outOfStock = part.QuantityInStock <= 0;
             // cartQty is read live in Paint/layout so the border updates instantly
             int GetLiveQty() => GetCartQty(part.Id);
 
-            // ── Card shell ──────────────────────────────────────────────────
+            // -- Card shell --------------------------------------------------
             // Matches the green reference: compact, rounded, white bg, subtle border
             const int CARD_W   = 170;
             const int CARD_H   = 215;
@@ -1117,13 +1064,17 @@ namespace butcherPOS.Forms
 
             Panel card = new Panel
             {
-                Size         = new Size(CARD_W, CARD_H),
-                BackColor    = ThemeConfig.SurfaceColor,
-                Margin       = new Padding(0, 0, 12, 12),
-                Cursor       = outOfStock ? Cursors.No : Cursors.Hand,
-                Tag          = part.Id,
-                DoubleBuffered = false   // Paint is owner-drawn; transparency via parent-chain
+                Size      = new Size(CARD_W, CARD_H),
+                BackColor = ThemeConfig.SurfaceColor,
+                Margin    = new Padding(0, 0, 12, 12),
+                Cursor    = outOfStock ? Cursors.No : Cursors.Hand,
+                Tag       = part.Id,
             };
+            // Enable double-buffering via reflection (DoubleBuffered is protected on Panel)
+            typeof(Panel).GetProperty("DoubleBuffered",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                ?.SetValue(card, true);
+
 
             bool hovered = false;
             card.Paint += (s, pe) =>
@@ -1158,12 +1109,12 @@ namespace butcherPOS.Forms
                         pe.Graphics.FillPath(dimBrush, path);
                 }
             };
-            // Hover wiring deferred — applied after all children are built (see PropagateHover below)
+            // Hover wiring deferred � applied after all children are built (see PropagateHover below)
 
-            // ══════════════════════════════════════════════════════════════════
-            // SECTION 1 — Image container  (div.card-image)
+            // ------------------------------------------------------------------
+            // SECTION 1 � Image container  (div.card-image)
             // A transparent panel that centres the circular image
-            // ══════════════════════════════════════════════════════════════════
+            // ------------------------------------------------------------------
             const int IMG_SECTION_H = 128; // height of image zone
             Panel pnlImageSection = new Panel
             {
@@ -1173,7 +1124,7 @@ namespace butcherPOS.Forms
             };
             card.Controls.Add(pnlImageSection);
 
-            // Circular background disc — centred in the image section
+            // Circular background disc � centred in the image section
             int circleDiameter = IMG_SIZE + 6;
             int circleX = (CARD_W - circleDiameter) / 2;
             int circleY = (IMG_SECTION_H - circleDiameter) / 2;
@@ -1185,7 +1136,7 @@ namespace butcherPOS.Forms
                 BackColor = Color.Transparent   // parent handles clearing
             };
 
-            // Load image once — drawn directly in Paint (no PictureBox needed)
+            // Load image once � drawn directly in Paint (no PictureBox needed)
             var bmp = LoadProductImage(part.PartImage, part.CategoryName, IMG_SIZE);
 
             pnlImgBg.Paint += (s, pe) =>
@@ -1198,40 +1149,41 @@ namespace butcherPOS.Forms
                 g.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 g.PixelOffsetMode   = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
 
-                // ── Step 1: fill the background circle ──────────────────────
+                // -- Step 1: fill the background circle ----------------------
                 using (var br = new SolidBrush(ThemeConfig.BackgroundColor))
                     g.FillEllipse(br, 0, 0, w - 1, h - 1);
 
-                // ── Step 2: clip to circle, then draw the image centred/zoomed ─
+                // -- Step 2: clip to circle, then draw the image perfectly centred -
                 if (bmp != null)
                 {
-                    // Inset by 6 px so the image sits inside the circle with breathing room
-                    const int PAD = 6;
-                    int imgW = w - PAD * 2;
-                    int imgH = h - PAD * 2;
+                    // Scale to fit inside a PAD-inset square, preserving aspect ratio
+                    const int PAD   = 6;
+                    float     avail = Math.Min(w, h) - PAD * 2f;   // usable diameter
+                    float     scale = Math.Min(avail / bmp.Width, avail / bmp.Height);
 
-                    // Zoom-fit: keep aspect ratio, centre inside the inset square
-                    float scale = Math.Min((float)imgW / bmp.Width, (float)imgH / bmp.Height);
-                    int   dw    = (int)(bmp.Width  * scale);
-                    int   dh    = (int)(bmp.Height * scale);
-                    int   dx    = PAD + (imgW - dw) / 2;
-                    int   dy    = PAD + (imgH - dh) / 2;
+                    // Use float throughout � integer truncation causes systematic 1px error
+                    float scaledW = bmp.Width  * scale;
+                    float scaledH = bmp.Height * scale;
+
+                    // Centre image exactly at (w/2, h/2) regardless of bitmap dimensions
+                    float dx = (w - scaledW) / 2f;
+                    float dy = (h - scaledH) / 2f;
 
                     using (var clipPath = new GraphicsPath())
                     {
                         clipPath.AddEllipse(1, 1, w - 3, h - 3);
                         g.SetClip(clipPath);
-                        g.DrawImage(bmp, dx, dy, dw, dh);
+                        g.DrawImage(bmp, new RectangleF(dx, dy, scaledW, scaledH));
                         g.ResetClip();
                     }
                 }
             };
             pnlImageSection.Controls.Add(pnlImgBg);
 
-            // ══════════════════════════════════════════════════════════════════
-            // SECTION 2 — Text container  (div.card-body)
+            // ------------------------------------------------------------------
+            // SECTION 2 � Text container  (div.card-body)
             // Category italic label + bold product name, both centred
-            // ══════════════════════════════════════════════════════════════════
+            // ------------------------------------------------------------------
             const int TEXT_SECTION_H = 46;
             int textSectionY = IMG_SECTION_H;  // sits directly under the image section
             Panel pnlTextSection = new Panel
@@ -1243,7 +1195,7 @@ namespace butcherPOS.Forms
             };
             card.Controls.Add(pnlTextSection);
 
-            // Category — small italic grey (like reference)
+            // Category � small italic grey (like reference)
             Label lblCat = new Label
             {
                 Text      = part.CategoryName,
@@ -1258,7 +1210,7 @@ namespace butcherPOS.Forms
             };
             pnlTextSection.Controls.Add(lblCat);
 
-            // Product name — bold, dark, 2-line wrap
+            // Product name � bold, dark, 2-line wrap
             Label lblName = new Label
             {
                 Text      = part.PartName,
@@ -1273,10 +1225,10 @@ namespace butcherPOS.Forms
             };
             pnlTextSection.Controls.Add(lblName);
 
-            // ══════════════════════════════════════════════════════════════════
-            // SECTION 3 — Footer row  (div.card-footer)
-            // Price (left) | — qty + (right), all vertically centred
-            // ══════════════════════════════════════════════════════════════════
+            // ------------------------------------------------------------------
+            // SECTION 3 � Footer row  (div.card-footer)
+            // Price (left) | � qty + (right), all vertically centred
+            // ------------------------------------------------------------------
             int footerY = textSectionY + TEXT_SECTION_H;
             const int FOOTER_H = CARD_H - IMG_SECTION_H - TEXT_SECTION_H;
             Panel pnlFooterRow = new Panel
@@ -1288,7 +1240,7 @@ namespace butcherPOS.Forms
             };
             card.Controls.Add(pnlFooterRow);
 
-            // ── Price label (left side of footer) ──────────────────────────
+            // -- Price label (left side of footer) --------------------------
             Label lblPrice = new Label
             {
                 Text      = CurrencyService.Format(part.SellingPrice),
@@ -1301,39 +1253,33 @@ namespace butcherPOS.Forms
                 BackColor = Color.Transparent
             };
 
-            // ── − button (outlined rounded rectangle, not filled circle) ────
-            Button btnMinus = new Button
+            // -- - panel button (outlined rounded rectangle) -----------------
+            // Using Panel instead of Button: Panels have no ButtonBase clip insets.
+            // BackColor=SurfaceColor gives a solid white base before Paint fires.
+            Panel btnMinus = new Panel
             {
-                Text      = "−",
                 Size      = new Size(BTN_SIZE, BTN_SIZE),
-                FlatStyle = FlatStyle.Flat,
-                Font      = new Font("Segoe UI", 10F),
                 Cursor    = Cursors.Hand,
                 BackColor = ThemeConfig.SurfaceColor,
-                ForeColor = ThemeConfig.TextColorDark,
-                TabStop   = false
             };
-            btnMinus.FlatAppearance.BorderSize  = 0;
             btnMinus.Paint += (s, pe) =>
             {
-                // WinForms paints BackColor (SurfaceColor) before this fires — no manual clear needed.
-                // 2px inset ensures the full 1.5f stroke is visible on every edge.
                 pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                var rect = new Rectangle(2, 2, btnMinus.Width - 4, btnMinus.Height - 4);
+                // BackColor already fills the rect � just draw the rounded border
+                var rect = new Rectangle(1, 1, btnMinus.Width - 2, btnMinus.Height - 2);
                 using (var path = RoundedPath(rect, 7))
-                {
-                    using (var fillBr = new SolidBrush(ThemeConfig.SurfaceColor))
-                        pe.Graphics.FillPath(fillBr, path);
-                    using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f))
-                        pe.Graphics.DrawPath(pen, path);
-                }
-                TextRenderer.DrawText(pe.Graphics, "−", btnMinus.Font,
+                using (var pen  = new Pen(btnMinus.Enabled ? ThemeConfig.BorderColor : ThemeConfig.SecondaryColor, 1.5f))
+                    pe.Graphics.DrawPath(pen, path);
+                // - glyph centred
+                Color textCol = btnMinus.Enabled ? ThemeConfig.TextColorDark : ThemeConfig.SecondaryColor;
+                TextRenderer.DrawText(pe.Graphics, "-",
+                    new Font("Segoe UI", 10F),
                     new Rectangle(0, 0, btnMinus.Width, btnMinus.Height),
-                    ThemeConfig.TextColorDark,
+                    textCol,
                     TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
             };
 
-            // ── Qty label (centred between buttons) ─────────────────────────
+            // -- Qty label (centred between buttons) -------------------------
             Label lblQty = new Label
             {
                 Text      = GetLiveQty() > 0 ? GetLiveQty().ToString() : "0",
@@ -1345,31 +1291,33 @@ namespace butcherPOS.Forms
                 Tag       = "qtyLabel_" + part.Id
             };
 
-            // ── + button (filled circle, primary color) ─────────────────────
-            Button btnPlus = new Button
+            // -- + panel button (filled circle, primary color) -----------------
+            Panel btnPlus = new Panel
             {
-                Text      = "+",
                 Size      = new Size(BTN_SIZE, BTN_SIZE),
-                FlatStyle = FlatStyle.Flat,
-                Font      = new Font("Segoe UI", 11F, FontStyle.Bold),
                 Cursor    = Cursors.Hand,
-                BackColor = ThemeConfig.PrimaryColor,
-                ForeColor = Color.White,
-                TabStop   = false
+                BackColor = ThemeConfig.SurfaceColor,
             };
-            btnPlus.FlatAppearance.BorderSize = 0;
             btnPlus.Paint += (s, pe) =>
             {
-                // WinForms paints BackColor before this fires — no manual clear needed.
-                // 2px inset gives a small margin so the circle sits cleanly inside the button area.
-                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                pe.Graphics.SmoothingMode     = SmoothingMode.AntiAlias;
+                pe.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
                 Color circleColor = outOfStock ? ThemeConfig.SecondaryColor : ThemeConfig.PrimaryColor;
+                // Draw perfect circle: diameter = BTN_SIZE-2, centred 1px from each edge
+                int d  = BTN_SIZE - 2;
+                int cx = 1;
+                int cy = 1;
                 using (var br = new SolidBrush(circleColor))
-                    pe.Graphics.FillEllipse(br, 2, 2, btnPlus.Width - 4, btnPlus.Height - 4);
-                // NoPadding removes internal font leading so the glyph centres exactly in the ellipse
-                TextRenderer.DrawText(pe.Graphics, "+", btnPlus.Font,
-                    new Rectangle(0, 0, btnPlus.Width, btnPlus.Height), Color.White,
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+                    pe.Graphics.FillEllipse(br, cx, cy, d, d);
+                // + glyph centred exactly inside the circle bounding rect
+                using (var sf = new StringFormat())
+                {
+                    sf.Alignment     = StringAlignment.Center;
+                    sf.LineAlignment = StringAlignment.Center;
+                    using (var wb = new SolidBrush(Color.White))
+                        pe.Graphics.DrawString("+", new Font("Segoe UI", 11F, FontStyle.Bold), wb,
+                            new RectangleF(cx, cy, d, d), sf);
+                }
             };
 
             // Disable qty controls when out of stock
@@ -1379,22 +1327,27 @@ namespace butcherPOS.Forms
                 btnMinus.Enabled = false;
             }
 
-            // ── Layout helper — called immediately AND on every resize ────────
+            // -- Layout helper � called immediately AND on every resize --------
             void DoFooterLayout()
             {
                 int fy    = (FOOTER_H - BTN_SIZE) / 2;   // vertical centre
                 int rEdge = CARD_W - 10;                  // right edge with 10px padding
 
-                // Right → Left: [●+] [qty] [—]
-                btnPlus.Location  = new Point(rEdge - BTN_SIZE,                             fy);
-                lblQty.Location   = new Point(rEdge - BTN_SIZE - 22,                        fy);
-                btnMinus.Location = new Point(rEdge - BTN_SIZE - 22 - BTN_SIZE,             fy);
+                // Right ? Left: [?+] [qty] [�]
+                btnPlus.Location  = new Point(rEdge - BTN_SIZE,                   fy);
+                lblQty.Location   = new Point(rEdge - BTN_SIZE - 22,              fy);
+                btnMinus.Location = new Point(rEdge - BTN_SIZE - 22 - BTN_SIZE,   fy);
 
-                // Price: same vertical centre, left-aligned
+                // Price: left-aligned, width capped so it never overlaps btnMinus
                 lblPrice.Location = new Point(10, fy);
+                lblPrice.Width    = btnMinus.Location.X - 10 - 4;  // 4px safety gap
             }
 
-            pnlFooterRow.Controls.AddRange(new Control[] { lblPrice, btnMinus, lblQty, btnPlus });
+            // CRITICAL z-order: add lblPrice LAST so it becomes Controls[n-1] = BACK.
+            // Controls[0] = FRONT (painted last/on top). If lblPrice were FRONT and its right
+            // edge overlapped btnMinus, its transparent repaint would erase btnMinus's left border.
+            // By being BACK, Windows clips lblPrice's DC to EXCLUDE the area of front controls.
+            pnlFooterRow.Controls.AddRange(new Control[] { btnPlus, lblQty, btnMinus, lblPrice });
 
             // Position controls right now (before Resize ever fires)
             DoFooterLayout();
@@ -1402,9 +1355,9 @@ namespace butcherPOS.Forms
             // Also re-layout if the panel is ever resized at runtime
             pnlFooterRow.Resize += (s, ev) => DoFooterLayout();
 
-            // ══════════════════════════════════════════════════════════════════
+            // ------------------------------------------------------------------
             // BADGES / OVERLAYS
-            // ══════════════════════════════════════════════════════════════════
+            // ------------------------------------------------------------------
             if (outOfStock)
             {
                 Label lblBadge = new Label
@@ -1445,13 +1398,13 @@ namespace butcherPOS.Forms
                 card.Controls.Add(lblStock);
             }
 
-            // ══════════════════════════════════════════════════════════════════
+            // ------------------------------------------------------------------
             // HOVER PROPAGATION
             // WinForms fires MouseLeave on 'card' the instant the cursor enters
             // any child control, so we must attach Enter/Leave to every
             // descendant as well.  We use a recursive helper called AFTER all
             // children have been added.
-            // ══════════════════════════════════════════════════════════════════
+            // ------------------------------------------------------------------
             void SetHover(bool value)
             {
                 hovered = value;
@@ -1473,9 +1426,9 @@ namespace butcherPOS.Forms
             }
             PropagateHover(card);
 
-            // ══════════════════════════════════════════════════════════════════
-            // CLICK HANDLERS — clicking image/text/card body adds to cart
-            // ══════════════════════════════════════════════════════════════════
+            // ------------------------------------------------------------------
+            // CLICK HANDLERS � clicking image/text/card body adds to cart
+            // ------------------------------------------------------------------
             Action addToCart = () => { if (!outOfStock) AddToCart(part.Id, part.PartName, part.SellingPrice, part.QuantityInStock); };
 
             card.Click          += (s, e) => addToCart();
@@ -1496,9 +1449,9 @@ namespace butcherPOS.Forms
 
 
 
-        // ─────────────────────────────────────────────────────────────────────
-        // CART DISPLAY — simple text rows matching reference design
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
+        // CART DISPLAY � simple text rows matching reference design
+        // ---------------------------------------------------------------------
         public void RefreshCartDisplay()
         {
             if (cartTable == null) return;
@@ -1512,39 +1465,12 @@ namespace butcherPOS.Forms
             foreach (DataRow dr in cartTable.Rows)
                 if (dr.RowState != DataRowState.Deleted) totalItems += (int)dr["Quantity"];
 
-            // "Ordered Items" header with count — matches reference
-            Panel hdrPanel = new Panel
+            if (_lblCartCount != null)
             {
-                Height    = 30,
-                Dock      = DockStyle.Top,
-                BackColor = Color.Transparent,
-                Padding   = new Padding(16, 6, 16, 2)
-            };
-            Label lblOrderedTitle = new Label
-            {
-                Text      = LocalizationManager.GetString("POS_OrderedItems") ?? "Ordered Items",
-                Font      = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9.5F, FontStyle.Bold),
-                ForeColor = ThemeConfig.TextColorDark,
-                AutoSize  = true,
-                Location  = new Point(16, 6),
-                BackColor = Color.Transparent
-            };
-            Label lblItemCount = new Label
-            {
-                Text      = totalItems.ToString("D2"),
-                Font      = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9.5F, FontStyle.Bold),
-                ForeColor = ThemeConfig.SecondaryColor,
-                AutoSize  = true,
-                BackColor = Color.Transparent
-            };
-            hdrPanel.Resize += (s2, e2) =>
-            {
-                lblItemCount.Location = new Point(hdrPanel.Width - lblItemCount.Width - 16, 6);
-            };
-            hdrPanel.Controls.AddRange(new Control[] { lblOrderedTitle, lblItemCount });
-            pnlCartItems.Controls.Add(hdrPanel);
+                _lblCartCount.Text = totalItems.ToString("D2");
+            }
 
-            // Cart rows — simple text: "qty×  Name    $Total"  with – qty + controls
+            // Cart rows
             foreach (DataRow row in cartTable.Rows)
             {
                 if (row.RowState == DataRowState.Deleted) continue;
@@ -1570,7 +1496,7 @@ namespace butcherPOS.Forms
                         pe.Graphics.DrawLine(pen, 16, rowPanel.Height - 1, rowPanel.Width - 16, rowPanel.Height - 1);
                 };
 
-                // Product name — bold
+                // Product name - bold
                 Label lblName = new Label
                 {
                     Text      = partName,
@@ -1584,10 +1510,10 @@ namespace butcherPOS.Forms
                 };
                 rowPanel.Controls.Add(lblName);
 
-                // qty × price detail — small gray
+                // qty � price detail � small gray
                 Label lblDetail = new Label
                 {
-                    Text      = $"{qty} × {CurrencyService.Format(price)}",
+                    Text      = $"{qty} � {CurrencyService.Format(price)}",
                     Font      = ThemeConfig.SmallFont ?? new Font("Segoe UI", 8F),
                     ForeColor = ThemeConfig.SecondaryColor,
                     AutoSize  = false,
@@ -1598,7 +1524,7 @@ namespace butcherPOS.Forms
                 };
                 rowPanel.Controls.Add(lblDetail);
 
-                // Row total — right aligned
+                // Row total � right aligned
                 Label lblRowTotal = new Label
                 {
                     Text      = CurrencyService.Format(total),
@@ -1612,13 +1538,13 @@ namespace butcherPOS.Forms
                 };
                 rowPanel.Controls.Add(lblRowTotal);
 
-                // Inline – qty + controls (small, right side)
+                // Inline � qty + controls (small, right side)
                 int capId = partId;
                 int bSz   = 22;
 
                 Button btnMinus = new Button
                 {
-                    Text = "−", Size = new Size(bSz, bSz), FlatStyle = FlatStyle.Flat,
+                    Text = "-", Size = new Size(bSz, bSz), FlatStyle = FlatStyle.Flat,
                     Font = new Font("Segoe UI", 9F), Cursor = Cursors.Hand,
                     BackColor = ThemeConfig.SurfaceColor, ForeColor = ThemeConfig.TextColorDark, TabStop = false
                 };
@@ -1670,7 +1596,7 @@ namespace butcherPOS.Forms
                     RefreshCartDisplay();
                 };
 
-                // Resize handler — positions elements
+                // Resize handler � positions elements
                 rowPanel.Resize += (s, ev) =>
                 {
                     int rX = rowPanel.Width - 16;
@@ -1697,9 +1623,9 @@ namespace butcherPOS.Forms
 
 
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // HELPERS
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private int GetCartQty(int partId)
         {
             if (cartTable == null) return 0;
@@ -1771,9 +1697,9 @@ namespace butcherPOS.Forms
             return path;
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // IMAGE LOADING
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private static Bitmap LoadProductImage(string imagePath, string categoryName, int size = 80)
         {
             if (!string.IsNullOrEmpty(imagePath))
@@ -1821,7 +1747,7 @@ namespace butcherPOS.Forms
                 {
                     var cats = CategoryData.GetAllCategories();
                     var cat = cats.Find(c => c.CategoryName?.Equals(categoryName, StringComparison.OrdinalIgnoreCase) == true);
-                    string emoji = cat?.CategoryImage ?? "📦";
+                    string emoji = cat?.CategoryImage ?? "??";
                     if (!string.IsNullOrEmpty(emoji))
                         TextRenderer.DrawText(g, emoji, new Font("Segoe UI Emoji", size * 0.4f), new Rectangle(0, 0, size, size), ThemeConfig.TextColorDark, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                 }
@@ -1830,9 +1756,9 @@ namespace butcherPOS.Forms
             return fallback;
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // INITIALIZE CART  (business logic — preserved)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
+        // INITIALIZE CART  (business logic � preserved)
+        // ---------------------------------------------------------------------
         private void InitializeCart()
         {
             try
@@ -1849,9 +1775,9 @@ namespace butcherPOS.Forms
             catch (Exception ex) { MessageHelper.ShowError("Error initializing POS: " + ex.Message); }
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // LOAD CUSTOMERS  (preserved)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private void LoadCustomers()
         {
             try
@@ -1868,14 +1794,14 @@ namespace butcherPOS.Forms
             catch { }
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // APPLY PERMISSIONS  (preserved)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private void ApplyPermissions() { }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // REFRESH STATS  (preserved)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         public void RefreshStats()
         {
             try
@@ -1890,9 +1816,9 @@ namespace butcherPOS.Forms
             catch (Exception ex) { Console.WriteLine("Stats Error: " + ex.Message); }
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // APPLY LOCALIZATION  (preserved + new controls)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private void ApplyLocalization()
         {
             LocalizationManager.ApplyRTL(this);
@@ -1916,9 +1842,9 @@ namespace butcherPOS.Forms
                 pnlProducts.FlowDirection = LocalizationManager.IsArabic ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // ADD TO CART  (preserved logic + RefreshCartDisplay)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private void AddToCart(int id, string name, decimal price, int stock)
         {
             if (stock <= 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Error_OutOfStock")); return; }
@@ -1938,9 +1864,9 @@ namespace butcherPOS.Forms
             RefreshCartDisplay();
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // UPDATE TOTAL  (preserved — works with lblSubtotalVal, lblTaxVal, etc.)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
+        // UPDATE TOTAL  (preserved � works with lblSubtotalVal, lblTaxVal, etc.)
+        // ---------------------------------------------------------------------
         private void UpdateTotal()
         {
             if (cartTable == null) return;
@@ -1973,9 +1899,9 @@ namespace butcherPOS.Forms
             if (lblOrderNum != null) lblOrderNum.Text = "#" + _sessionOrderCount.ToString("D3");
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // CHECKOUT  (preserved exactly)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private void BtnCheckout_Click(object sender, EventArgs e)
         {
             if (cartTable.Rows.Count == 0)
@@ -2009,9 +1935,9 @@ namespace butcherPOS.Forms
 
 
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // PRINT RECEIPT  (preserved exactly)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private void BtnPrintReceipt_Click(object sender, EventArgs e)
         {
             if (cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
@@ -2062,9 +1988,9 @@ namespace butcherPOS.Forms
 
 
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // BARCODE SCANNER  (preserved exactly)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private void POSForm_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (!this.Visible) return;
@@ -2106,9 +2032,9 @@ namespace butcherPOS.Forms
             return false;
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         // LOCAL GetRoundedRect alias  (kept for CreateCardPanel compatibility)
-        // ─────────────────────────────────────────────────────────────────────
+        // ---------------------------------------------------------------------
         private System.Drawing.Drawing2D.GraphicsPath GetRoundedRect(Rectangle rect, int radius)
         {
             return RoundedPath(rect, radius);
