@@ -20,8 +20,29 @@ namespace butcherPOS.Helpers
             try
             {
                 string machineName = Environment.MachineName;
+                string macAddress = GetMacAddress(); // Uses stable MAC address
+                string osVersion = Environment.OSVersion.ToString();
+
+                string combined = machineName + macAddress + osVersion;
+                return ComputeHash(combined);
+            }
+            catch
+            {
+                // Fallback to machine name if anything fails
+                return ComputeHash(Environment.MachineName);
+            }
+        }
+
+        /// <summary>
+        /// Gets the legacy hardware fingerprint to support older activated licenses
+        /// </summary>
+        public static string GetLegacyMachineFingerprint()
+        {
+            try
+            {
+                string machineName = Environment.MachineName;
                 string userName = Environment.UserName;
-                string macAddress = GetMacAddress();
+                string macAddress = GetLegacyMacAddress();
                 string osVersion = Environment.OSVersion.ToString();
 
                 string combined = machineName + userName + macAddress + osVersion;
@@ -29,7 +50,6 @@ namespace butcherPOS.Helpers
             }
             catch
             {
-                // Fallback to machine name if anything fails
                 return ComputeHash(Environment.MachineName + Environment.UserName);
             }
         }
@@ -44,6 +64,31 @@ namespace butcherPOS.Helpers
         }
 
         private static string GetMacAddress()
+        {
+            try
+            {
+                // Use a deterministic order and don't rely on OperationalStatus.Up
+                // as network disconnections would change the MAC address.
+                var interfaces = System.Linq.Enumerable.OrderBy(
+                    NetworkInterface.GetAllNetworkInterfaces(),
+                    nic => nic.Id);
+
+                foreach (NetworkInterface nic in interfaces)
+                {
+                    if (nic.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+                        nic.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
+                    {
+                        string mac = nic.GetPhysicalAddress().ToString();
+                        if (!string.IsNullOrEmpty(mac))
+                            return mac;
+                    }
+                }
+            }
+            catch { }
+            return "DEFAULT_MAC";
+        }
+
+        private static string GetLegacyMacAddress()
         {
             try
             {

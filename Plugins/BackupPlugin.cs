@@ -52,13 +52,14 @@ namespace butcherPOS.Plugins
         private void Build()
         {
             bool ar = LocalizationManager.IsArabic;
+            bool isAdmin = UserSession.IsAdmin;
 
             // Title removed as it's already in the Modal Header
 
             // Card container
             Panel card = new Panel();
             card.Width     = 480;
-            card.Height    = 340;
+            card.Height    = isAdmin ? 410 : 340;
             card.BackColor = ThemeConfig.SurfaceColor;
             card.Paint += (s, e) =>
             {
@@ -104,8 +105,16 @@ namespace butcherPOS.Plugins
             y += 10;
 
             AddActionButton(card, ref y,
-                ar ? "\u0641\u062a\u062d \u0645\u062c\u0644\u062f \u0627\u0644\u0646\u0633\u062e" : "Open Backup Folder",
+                ar ? "فتح مجلد النسخ" : "Open Backup Folder",
                 "open_backup_folder", ThemeConfig.SecondaryColor, OpenBackupFolder);
+
+            if (isAdmin)
+            {
+                y += 10;
+                AddActionButton(card, ref y,
+                    ar ? "إعادة ضبط قاعدة البيانات (حذف الكل)" : "Reset Database (Wipe All Data)",
+                    "delete", Color.FromArgb(231, 76, 60), DoResetDatabase);
+            }
 
             // Tip note
             Label note = new Label
@@ -232,6 +241,48 @@ namespace butcherPOS.Plugins
             Directory.CreateDirectory(dir);
             System.Diagnostics.Process.Start("explorer.exe", dir);
         }
+
+        private void DoResetDatabase()
+        {
+            bool ar = LocalizationManager.IsArabic;
+            
+            bool confirm1 = MessageHelper.ConfirmAction(ar
+                ? "تحذير: سيتم حذف جميع البيانات (المخزون، المبيعات، العملاء)! هل أنت متأكد؟"
+                : "WARNING: This will permanently delete ALL data (inventory, sales, customers)! Are you sure?");
+                
+            if (!confirm1) return;
+
+            bool confirm2 = MessageHelper.ConfirmAction(ar
+                ? "تأكيد نهائي: لا يمكن التراجع عن هذه العملية. هل تريد مسح قاعدة البيانات حقاً؟"
+                : "FINAL WARNING: This cannot be undone. Are you absolutely sure you want to wipe the database?");
+
+            if (!confirm2) return;
+
+            try
+            {
+                // Drop all tables
+                string[] tables = { "categories", "suppliers", "customers", "parts", "transactions", 
+                                    "users", "orders", "order_items", "payments", "purchase_orders", 
+                                    "purchase_order_items", "returns", "return_items", "expenses" };
+
+                foreach (string table in tables)
+                {
+                    DatabaseHelper.ExecuteNonQuery($"DROP TABLE IF EXISTS {table};");
+                }
+
+                // Re-initialize
+                butcherPOS.Helpers.DatabaseInitializer.Initialize();
+
+                MessageHelper.ShowSuccess(ar
+                    ? "تم إعادة ضبط قاعدة البيانات بنجاح. يرجى إعادة تشغيل التطبيق."
+                    : "Database reset successfully. Please restart the application.");
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.ShowError("Reset failed: " + ex.Message);
+            }
+        }
+
 
         private static string GetBackupDirectory()
             => Path.Combine(Application.StartupPath, "Backups");

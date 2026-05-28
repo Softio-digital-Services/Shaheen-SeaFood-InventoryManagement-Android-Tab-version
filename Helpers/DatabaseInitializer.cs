@@ -12,7 +12,7 @@ namespace butcherPOS.Helpers
             // SQLite creates the file automatically -- no CreateDatabase() needed
             DatabaseHelper.EnsureSchema();
             UpdateSchema();
-            SeedIfEmpty();
+            // SeedIfEmpty(); // Disabled to provide a fresh start for clients
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace butcherPOS.Helpers
             DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Interior', '💺');");
             DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Accessories', '💎');");
             DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Services', '🛠️');");
-            
+
             // Update existing categories if they have no image
             DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '⚙️' WHERE category_name = 'Engine' AND category_image IS NULL;");
             DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '🛑' WHERE category_name = 'Brakes' AND category_image IS NULL;");

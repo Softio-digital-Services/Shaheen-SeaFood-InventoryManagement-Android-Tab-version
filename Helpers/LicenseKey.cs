@@ -36,8 +36,14 @@ namespace butcherPOS.Helpers
 
             // Verify hardware binding
             string currentHardwareId = HardwareInfo.GetMachineFingerprint();
+            
             if (!string.IsNullOrEmpty(HardwareId) && HardwareId != currentHardwareId)
-                return false;
+            {
+                // Fallback to legacy fingerprint to prevent breaking existing valid licenses
+                string legacyHardwareId = HardwareInfo.GetLegacyMachineFingerprint();
+                if (HardwareId != legacyHardwareId)
+                    return false;
+            }
 
             return true;
         }

@@ -418,16 +418,16 @@ namespace butcherPOS.Forms
             tlpCard2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tlpCard2.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F)); // Header height
             tlpCard2.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Buttons height
-            pnlCard2.Controls.Add(tlpCard2);
-
             Panel pnlActionsHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 8, 16, 0) };
-            Label lblActionsTitle = new Label { Text = LocalizationManager.GetString("POS_Actions") ?? "Actions", Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft, BackColor = Color.Transparent };
+            string actStr = LocalizationManager.GetString("POS_Actions");
+            Label lblActionsTitle = new Label { Text = (string.IsNullOrEmpty(actStr) || actStr == "POS_Actions") ? "Actions" : actStr, Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft, BackColor = Color.Transparent };
             pnlActionsHeader.Controls.Add(lblActionsTitle);
             tlpCard2.Controls.Add(pnlActionsHeader, 0, 0);
 
             Panel pnlActions = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 4, 16, 12) };
             BuildActionsPanel(pnlActions);
             tlpCard2.Controls.Add(pnlActions, 0, 1);
+            pnlCard2.Controls.Add(tlpCard2);
 
             // -- Card 3: Footer Buttons ---------------------------------------
             Panel pnlCard3 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0) };
@@ -486,10 +486,15 @@ namespace butcherPOS.Forms
         // ---------------------------------------------------------------------
         private void BuildActionsPanel(Panel pnl)
         {
-            Button btnReturn = CreatePayPillButton("Return");
-            Button btnDraft  = CreatePayPillButton("Save Draft");
-            Button btnQuote  = CreatePayPillButton("Quotation");
-            Button btnBill   = CreatePayPillButton("Customer Bill");
+            Button btnReturn = new ModernButton { Text = "Return", Cursor = Cursors.Hand };
+            Button btnDraft  = new ModernButton { Text = "Save Draft", Cursor = Cursors.Hand };
+            Button btnQuote  = new ModernButton { Text = "Quotation", Cursor = Cursors.Hand };
+            Button btnBill   = new ModernButton { Text = "Customer Bill", Cursor = Cursors.Hand };
+
+            ThemeConfig.ApplyPrimaryButton(btnReturn);
+            ThemeConfig.ApplyPrimaryButton(btnDraft);
+            ThemeConfig.ApplyPrimaryButton(btnQuote);
+            ThemeConfig.ApplyPrimaryButton(btnBill);
 
             // Wire up placeholders
             btnReturn.Click += (s, e) => {
@@ -510,17 +515,18 @@ namespace butcherPOS.Forms
 
             pnl.Resize += (s, ev) =>
             {
-                int gap = 6;
+                int gap = 8;
+                int btnH = 40; // Standard button height
                 int totalW = pnl.Width;
-                int totalH = pnl.Height;
-                
                 int btnW = (totalW - gap) / 2;
-                int btnH = (totalH - gap) / 2;
 
-                btnReturn.SetBounds(0, 0, btnW, btnH);
-                btnDraft.SetBounds(btnW + gap, 0, btnW, btnH);
-                btnQuote.SetBounds(0, btnH + gap, btnW, btnH);
-                btnBill.SetBounds(btnW + gap, btnH + gap, btnW, btnH);
+                int y1 = 0;
+                int y2 = y1 + btnH + gap;
+
+                btnReturn.SetBounds(0, y1, btnW, btnH);
+                btnDraft.SetBounds(btnW + gap, y1, btnW, btnH);
+                btnQuote.SetBounds(0, y2, btnW, btnH);
+                btnBill.SetBounds(btnW + gap, y2, btnW, btnH);
             };
             pnl.Controls.AddRange(new Control[] { btnReturn, btnDraft, btnQuote, btnBill });
         }
@@ -790,24 +796,25 @@ namespace butcherPOS.Forms
         // ---------------------------------------------------------------------
                 private void BuildFooterButtons(Panel pnl)
         {
+            string prnStr = LocalizationManager.GetString("POS_Print");
+            string plOrd = LocalizationManager.GetString("POS_PlaceOrder");
+            
             Button btnPrintReceipt = new ModernButton
             {
                 Name   = "btnPrintReceipt",
-                Text   = LocalizationManager.GetString("POS_Print") ?? "Print",
+                Text   = (string.IsNullOrEmpty(prnStr) || prnStr == "POS_Print") ? "Print" : prnStr,
                 Image  = ThemeConfig.GetNuricon("print"),
                 TextImageRelation = TextImageRelation.ImageBeforeText,
                 ImageAlign        = ContentAlignment.MiddleCenter,
                 Cursor = Cursors.Hand
             };
             btnPrintReceipt.Click += BtnPrintReceipt_Click;
-            btnPrintReceipt.BackColor = Color.White;
-            btnPrintReceipt.ForeColor = ThemeConfig.TextColorDark;
-            btnPrintReceipt.FlatAppearance.BorderSize = 1;
-            btnPrintReceipt.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
+            ThemeConfig.ApplySecondaryButton(btnPrintReceipt);
 
             btnCheckout = new ModernButton
             {
-                Text   = LocalizationManager.GetString("POS_PlaceOrder") ?? "Place Order",
+                Name   = "btnCheckout",
+                Text   = (string.IsNullOrEmpty(plOrd) || plOrd == "POS_PlaceOrder") ? "Place Order" : plOrd,
                 Image  = ThemeConfig.GetNuricon("pos"),
                 TextImageRelation = TextImageRelation.ImageBeforeText,
                 ImageAlign        = ContentAlignment.MiddleCenter,

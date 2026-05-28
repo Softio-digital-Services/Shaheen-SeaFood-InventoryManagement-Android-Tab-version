@@ -9,7 +9,7 @@ namespace butcherPOS.Helpers
     /// </summary>
     public static class LicenseManager
     {
-        private const string ProductCode = "CPIMS"; // Car Parts Inventory Management System
+        private const string ProductCode = "BIPOS"; // Butcher Inventory Point of Sale
         private const int TrialDays = 30;
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace butcherPOS.Helpers
             // Verify checksum. Try universal first, then legacy bound to customer name
             string dataToHashUniversal = productCode + typeCode + hwHash + dateCode;
             string computedChecksumUniversal = ComputeChecksum(dataToHashUniversal);
-            
+
             string dataToHashBound = productCode + typeCode + hwHash + dateCode + customerName.Trim().ToUpper();
             string computedChecksumBound = ComputeChecksum(dataToHashBound);
 
@@ -87,8 +87,9 @@ namespace butcherPOS.Helpers
                 // Verify hardware binding (Strict validation)
                 string hwHash = licenseKey.Substring(10, 5);
                 string currentHwHash = HardwareInfo.GetShortHardwareId().Substring(0, 5);
+                string legacyHwHash = HardwareInfo.GetLegacyMachineFingerprint().Substring(0, 5);
 
-                if (hwHash != currentHwHash && hwHash != "00000")
+                if (hwHash != currentHwHash && hwHash != legacyHwHash && hwHash != "00000")
                     return null;
 
                 // Save license

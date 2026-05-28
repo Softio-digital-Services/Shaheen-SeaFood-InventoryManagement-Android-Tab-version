@@ -215,6 +215,13 @@ namespace butcherPOS.Forms
         {
             base.OnLoad(e);
             LoadCategories();
+            // Apply pre-selected category from sidebar if requested
+            if (!string.IsNullOrEmpty(_pendingCategory))
+            {
+                int idx = cmbCategory.FindStringExact(_pendingCategory);
+                if (idx >= 0) cmbCategory.SelectedIndex = idx;
+                _pendingCategory = null;
+            }
         }
 
         public void SetBarcode(string barcode)
@@ -223,6 +230,20 @@ namespace butcherPOS.Forms
             // Focus part name so user can start typing name immediately after scan
             this.ActiveControl = txtPartName;
         }
+
+        /// <summary>
+        /// Pre-selects a category in the dropdown (called from card view "+Add" button).
+        /// </summary>
+        public void PreSelectCategory(string categoryName)
+        {
+            if (string.IsNullOrEmpty(categoryName)) return;
+            // If categories haven't loaded yet, store for after OnLoad
+            _pendingCategory = categoryName;
+            // Try immediately in case OnLoad already ran
+            int idx = cmbCategory.FindStringExact(categoryName);
+            if (idx >= 0) cmbCategory.SelectedIndex = idx;
+        }
+        private string _pendingCategory = null;
 
         private void btnSave_Click(object sender, EventArgs e)
         {

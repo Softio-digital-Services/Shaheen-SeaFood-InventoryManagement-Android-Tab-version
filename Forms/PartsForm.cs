@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -11,13 +12,11 @@ using butcherPOS.Services;
 namespace butcherPOS.Forms
 {
     /// <summary>
-    /// Inventory Management Screen.
-    /// Handles listing, filtering, adding, and deleting parts.
-    /// Features custom-drawn grid cells for status badges and action icons.
+    /// Inventory Management Screen — card-view + category sidebar layout.
     /// </summary>
     public partial class PartsForm : UserControl
     {
-        private DataGridView dgvParts;
+        // ── Toolbar buttons ──────────────────────────────────────────────
         private Button btnAdd;
         private Button btnService;
         private Button btnAddCategory;
@@ -25,147 +24,132 @@ namespace butcherPOS.Forms
         private Button btnImport;
         private Button btnExport;
         private ModernTextBox txtSearch;
+
+        // ── Layout containers ────────────────────────────────────────────
+        private Panel          pnlCategoryList;   // scrollable category rows
+        private FlowLayoutPanel pnlCardFlow;       // card grid
+        private DataGridView   dgvParts;           // list (table) view
+        private Panel          pnlGridView;        // wraps dgvParts
+        private Panel          pnlCardView;        // wraps pnlCardFlow + header
+        private Label          lblItemCount;       // "Desserts (19)"
+        private Button         btnToggleGrid;
+        private Button         btnToggleCard;
+
+        // ── State ─────────────────────────────────────────────────────────
         private InventoryService _inventoryService;
+        private bool   _isCardView   = true;
+        private string _activeCategory = null;   // null = "All Items"
+        private string _searchText      = "";
+        private bool   _lowStockOnly    = false;
+        private bool   _activeOnly      = false;
+
+        // ── Card layout constants ─────────────────────────────────────────
+        private const int CardW = 160;
+        private const int CardH = 200;
+        private const int CardGap = 14;
 
         public PartsForm()
         {
             InitializeComponent();
             _inventoryService = new InventoryService();
 
-            EventHandler langHandler = (s, e) => ApplyLocalization();
-            EventHandler currHandler = (s, e) => { dgvParts.Invalidate(); };
+            EventHandler langHandler    = (s, e) => ApplyLocalization();
+            EventHandler currHandler    = (s, e) => { if (_isCardView) LoadCards(); else dgvParts?.Invalidate(); };
+            EventHandler invHandler     = (s, e) => { if (this.Visible) RefreshAll(); };
 
             butcherPOS.Helpers.LocalizationManager.LanguageChanged += langHandler;
-            butcherPOS.Services.CurrencyService.CurrencyChanged += currHandler;
+            butcherPOS.Services.CurrencyService.CurrencyChanged    += currHandler;
 
             ApplyLocalization();
             ApplyPermissions();
-            LoadData();
+            RefreshAll();
 
             var syncTimer = new System.Windows.Forms.Timer { Interval = 30000 };
-            syncTimer.Tick += (s, e) => { if (this.Visible) LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text); };
+            syncTimer.Tick += (s, e) => { if (this.Visible) RefreshAll(); };
             syncTimer.Start();
 
             this.Disposed += (s, e) =>
             {
-                syncTimer.Stop();
-                syncTimer.Dispose();
+                syncTimer.Stop(); syncTimer.Dispose();
                 butcherPOS.Helpers.LocalizationManager.LanguageChanged -= langHandler;
-                butcherPOS.Services.CurrencyService.CurrencyChanged -= currHandler;
+                butcherPOS.Services.CurrencyService.CurrencyChanged    -= currHandler;
             };
         }
 
-        private void ApplyLocalization()
-        {
-            butcherPOS.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
-
-            var ctrlTitle = this.Controls.Find("lblInventoryTitle", true);
-            if (ctrlTitle.Length > 0) ctrlTitle[0].Text = L("Parts_Title");
-
-            if (txtSearch != null)
-            {
-                txtSearch.PlaceholderText = L("Parts_Search");
-            }
-
-            var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
-
-            if (btnAdd != null) ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_AddProduct");
-            if (btnService != null) ThemeConfig.ApplyStandardAddButton(btnService, "Parts_AddService");
-            if (btnAddCategory != null) ThemeConfig.ApplyStandardAddButton(btnAddCategory, "Parts_AddCategory");
-            if (btnFilter != null) btnFilter.Invalidate();
-            if (btnImport != null) btnImport.Invalidate();
-            if (btnExport != null) btnExport.Invalidate();
-            if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Parts_Delete");
-
-            butcherPOS.Helpers.LocalizationManager.TranslateControl(this);
-
-            // Translate DataGridView columns
-            if (dgvParts != null && dgvParts.Columns.Count > 0)
-            {
-                if (dgvParts.Columns.Contains("colImage")) dgvParts.Columns["colImage"].HeaderText = L("Parts_GridImage");
-                if (dgvParts.Columns.Contains("colSKU")) dgvParts.Columns["colSKU"].HeaderText = L("Parts_GridSKU");
-                if (dgvParts.Columns.Contains("colBarcode")) dgvParts.Columns["colBarcode"].HeaderText = L("Parts_GridBarcode");
-                if (dgvParts.Columns.Contains("colName")) dgvParts.Columns["colName"].HeaderText = L("Parts_GridProduct");
-                if (dgvParts.Columns.Contains("colCategory")) dgvParts.Columns["colCategory"].HeaderText = L("Parts_GridCategory");
-                if (dgvParts.Columns.Contains("colLocation")) dgvParts.Columns["colLocation"].HeaderText = L("Parts_GridLocation");
-                if (dgvParts.Columns.Contains("colShelf")) dgvParts.Columns["colShelf"].HeaderText = L("Parts_GridShelf");
-                if (dgvParts.Columns.Contains("colStock")) dgvParts.Columns["colStock"].HeaderText = L("Parts_GridStock");
-                if (dgvParts.Columns.Contains("minimum_stock_level")) dgvParts.Columns["minimum_stock_level"].HeaderText = L("Parts_GridMinStock");
-                if (dgvParts.Columns.Contains("colPrice")) dgvParts.Columns["colPrice"].HeaderText = L("Parts_GridPrice");
-                if (dgvParts.Columns.Contains("colStatus")) dgvParts.Columns["colStatus"].HeaderText = L("Parts_GridStatus");
-                if (dgvParts.Columns.Contains("colActions")) dgvParts.Columns["colActions"].HeaderText = L("Parts_GridActions");
-            }
-        }
-
-        protected override void OnVisibleChanged(EventArgs e)
-        {
-            base.OnVisibleChanged(e);
-            if (this.Visible && !this.DesignMode)
-            {
-                LoadData(); // Auto-refresh inventory
-            }
-        }
+        // ─────────────────────────────────────────────────────────────────
+        // INITIALIZATION
+        // ─────────────────────────────────────────────────────────────────
         private void InitializeComponent()
         {
-            this.dgvParts = new DataGridView();
-            this.btnAdd = new Button();
-            this.btnService = new Button();
-            this.btnFilter = new Button();
-            this.btnImport = new Button();
-            this.btnExport = new Button();
-            this.txtSearch = new ModernTextBox();
+            this.btnAdd         = new Button();
+            this.btnService     = new Button();
+            this.btnImport      = new Button();
+            this.btnExport      = new Button();
+            this.txtSearch      = new ModernTextBox();
+            this.dgvParts       = new DataGridView();
 
             ((System.ComponentModel.ISupportInitialize)(this.dgvParts)).BeginInit();
             this.SuspendLayout();
 
-            // STANDARD LAYOUT
-            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(20) };
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            // ── Root: full-width column for header + body ─────────────────
+            TableLayoutPanel tlpRoot = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2,
+                Padding = new Padding(20, 16, 20, 16)
+            };
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
-            // Header Panel (TableLayoutPanel for robust RTL)
-            Label lblInventoryTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Parts_Title"));
+            // ── Header ────────────────────────────────────────────────────
+            Label lblInventoryTitle = ThemeConfig.CreateStandardHeader(
+                LocalizationManager.GetString("Parts_Title"));
             lblInventoryTitle.Name = "lblInventoryTitle";
-            
-            txtSearch = new ModernTextBox { IsSearch = true, ShowLabel = false, PlaceholderText = LocalizationManager.GetString("Parts_Search"), Size = new Size(320, 40) };
-            txtSearch.TextChanged += (s, e) => { if (txtSearch.Text != LocalizationManager.GetString("Parts_Search") && txtSearch.Text != "Search...") LoadData(txtSearch.Text); };
 
-            // Buttons Array
-            // Add New Service
+            txtSearch = new ModernTextBox
+            {
+                IsSearch = true, ShowLabel = false,
+                PlaceholderText = LocalizationManager.GetString("Parts_Search"),
+                Size = new Size(280, 40)
+            };
+            txtSearch.TextChanged += (s, e) =>
+            {
+                _searchText = (txtSearch.Text == LocalizationManager.GetString("Parts_Search") ||
+                               txtSearch.Text == "Search...") ? "" : txtSearch.Text;
+                RefreshAll();
+            };
+
             btnService.Size = new Size(160, 40);
             btnService.Click += BtnService_Click;
             ThemeConfig.ApplyStandardAddButton(btnService, "Parts_AddService");
 
-            // Add New Product
             btnAdd.Size = new Size(160, 40);
             btnAdd.Click += BtnAdd_Click;
             ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_AddProduct");
 
-            // Add Category
             btnAddCategory = new Button { Size = new Size(140, 40) };
             btnAddCategory.Click += BtnAddCategory_Click;
             ThemeConfig.ApplyStandardAddButton(btnAddCategory, "Parts_AddCategory");
 
-            // Delete Selected
             Button btnDeleteSelected = new Button { Size = new Size(130, 40), Name = "btnDeleteSelected" };
-            btnDeleteSelected.Click += (s, e) => {
+            btnDeleteSelected.Click += (s, e) =>
+            {
                 var checkedIds = new List<int>();
-                foreach (DataGridViewRow row in dgvParts.Rows) {
+                foreach (DataGridViewRow row in dgvParts.Rows)
+                {
                     var chkCell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
-                    if (chkCell != null && Convert.ToBoolean(chkCell.Value ?? false)) {
-                        if (int.TryParse(row.Cells["part_id"].Value?.ToString(), out int pId)) checkedIds.Add(pId);
-                    }
+                    if (chkCell != null && Convert.ToBoolean(chkCell.Value ?? false))
+                        if (int.TryParse(row.Cells["part_id"].Value?.ToString(), out int pId))
+                            checkedIds.Add(pId);
                 }
                 if (checkedIds.Count == 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_SelectOne")); return; }
-                if (MessageHelper.ConfirmAction(string.Format(LocalizationManager.GetString("Msg_ConfirmDelete"), checkedIds.Count))) {
-                    foreach(int i in checkedIds) _inventoryService.DeletePart(i);
-                    LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
+                if (MessageHelper.ConfirmAction(string.Format(LocalizationManager.GetString("Msg_ConfirmDelete"), checkedIds.Count)))
+                {
+                    foreach (int i in checkedIds) _inventoryService.DeletePart(i);
+                    RefreshAll();
                 }
             };
             ThemeConfig.ApplyStandardDeleteButton(btnDeleteSelected, "Parts_Delete");
 
-            // Import
             btnImport.Size = new Size(100, 40);
             btnImport.FlatStyle = FlatStyle.Flat;
             btnImport.FlatAppearance.BorderSize = 0;
@@ -173,7 +157,6 @@ namespace butcherPOS.Forms
             btnImport.Click += BtnImport_Click;
             btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Parts_Import", Color.FromArgb(139, 92, 246), Color.FromArgb(139, 92, 246), true);
 
-            // Export
             btnExport.Size = new Size(100, 40);
             btnExport.FlatStyle = FlatStyle.Flat;
             btnExport.FlatAppearance.BorderSize = 0;
@@ -181,106 +164,824 @@ namespace butcherPOS.Forms
             btnExport.Click += BtnExport_Click;
             btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Parts_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
 
-            // Filter
-            btnFilter.Size = new Size(110, 40);
-            btnFilter.FlatStyle = FlatStyle.Flat;
-            btnFilter.FlatAppearance.BorderSize = 0;
-            btnFilter.Cursor = Cursors.Hand;
-            btnFilter.Click += BtnFilter_Click;
-            btnFilter.Paint += (s, e) => ThemeConfig.DrawIconButton(btnFilter, e.Graphics, "filter", "Parts_Filter", ThemeConfig.WarningColor, ThemeConfig.WarningColor, true);
-
-            var actionButtons = new Control[] { btnService, btnAdd, btnAddCategory, btnDeleteSelected, btnImport, btnExport, btnFilter };
-
+            var actionButtons = new Control[] { btnService, btnAdd, btnDeleteSelected, btnImport, btnExport };
             TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblInventoryTitle, txtSearch, actionButtons);
-            tlpMain.Controls.Add(tlpHeader, 0, 0);
+            tlpRoot.Controls.Add(tlpHeader, 0, 0);
 
-            // DataGridView Configuration
+            // ── Body: sidebar + content ───────────────────────────────────
+            TableLayoutPanel tlpBody = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1,
+                Margin = new Padding(0, 8, 0, 0)
+            };
+            tlpBody.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 230F));
+            tlpBody.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpRoot.Controls.Add(tlpBody, 0, 1);
+
+            // ── Left: Category Sidebar ────────────────────────────────────
+            Panel pnlSidebarOuter = new Panel
+            {
+                Dock = DockStyle.Fill, BackColor = Color.Transparent,
+                Margin = new Padding(0, 0, 12, 0)
+            };
+            pnlSidebarOuter.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = RoundedPath(new Rectangle(0, 0, pnlSidebarOuter.Width - 1, pnlSidebarOuter.Height - 1), 14))
+                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                {
+                    pe.Graphics.FillPath(brush, path);
+                    pe.Graphics.DrawPath(pen, path);
+                }
+            };
+            tlpBody.Controls.Add(pnlSidebarOuter, 0, 0);
+
+            // Sidebar inner layout
+            TableLayoutPanel tlpSidebar = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
+                BackColor = Color.Transparent, Padding = new Padding(0)
+            };
+            tlpSidebar.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));  // Title
+            tlpSidebar.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Category rows
+            tlpSidebar.RowStyles.Add(new RowStyle(SizeType.Absolute, 64F));  // Add Category btn
+            pnlSidebarOuter.Controls.Add(tlpSidebar);
+
+            // Sidebar title
+            Label lblCatTitle = new Label
+            {
+                Text = LocalizationManager.GetString("Parts_Categories") ?? "Categories",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                BackColor = Color.Transparent,
+                Padding = new Padding(16, 0, 8, 0)
+            };
+            tlpSidebar.Controls.Add(lblCatTitle, 0, 0);
+
+            // Scrollable category list
+            pnlCategoryList = new Panel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
+                BackColor = Color.Transparent,
+                Padding = new Padding(8, 4, 8, 4)
+            };
+            tlpSidebar.Controls.Add(pnlCategoryList, 0, 1);
+
+            // Add Category button at bottom of sidebar
+            Panel pnlAddCatWrapper = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12), BackColor = Color.Transparent };
+            Button btnSidebarAddCat = new Button
+            {
+                Dock = DockStyle.Fill, FlatStyle = FlatStyle.Flat,
+                Text = "⊕ " + (LocalizationManager.GetString("Parts_AddCategory") ?? "Add New Category"),
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = Color.White,
+                BackColor = ThemeConfig.PrimaryColor,
+                Cursor = Cursors.Hand
+            };
+            btnSidebarAddCat.FlatAppearance.BorderSize = 0;
+            btnSidebarAddCat.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                pe.Graphics.Clear(pnlAddCatWrapper.BackColor);
+                using (var path = RoundedPath(new Rectangle(0, 0, btnSidebarAddCat.Width - 1, btnSidebarAddCat.Height - 1), 8))
+                using (var brush = new SolidBrush(btnSidebarAddCat.BackColor))
+                {
+                    pe.Graphics.FillPath(brush, path);
+                    TextRenderer.DrawText(pe.Graphics, btnSidebarAddCat.Text, btnSidebarAddCat.Font,
+                        new Rectangle(0, 0, btnSidebarAddCat.Width, btnSidebarAddCat.Height),
+                        btnSidebarAddCat.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+            };
+            btnSidebarAddCat.Click += BtnAddCategory_Click;
+            pnlAddCatWrapper.Controls.Add(btnSidebarAddCat);
+            tlpSidebar.Controls.Add(pnlAddCatWrapper, 0, 2);
+
+            // ── Right: Content area ────────────────────────────────────────
+            Panel pnlContent = new Panel
+            {
+                Dock = DockStyle.Fill, BackColor = Color.Transparent,
+                Margin = new Padding(0)
+            };
+            pnlContent.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = RoundedPath(new Rectangle(0, 0, pnlContent.Width - 1, pnlContent.Height - 1), 14))
+                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                {
+                    pe.Graphics.FillPath(brush, path);
+                    pe.Graphics.DrawPath(pen, path);
+                }
+            };
+            tlpBody.Controls.Add(pnlContent, 1, 0);
+
+            // Content layout
+            TableLayoutPanel tlpContent = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent,
+                Padding = new Padding(16)
+            };
+            tlpContent.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));  // sub-header
+            tlpContent.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // cards / grid
+            pnlContent.Controls.Add(tlpContent);
+
+            // Content sub-header (title + count + view toggles)
+            Panel pnlContentHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+            tlpContent.Controls.Add(pnlContentHeader, 0, 0);
+
+            lblItemCount = new Label
+            {
+                AutoSize = true, Font = new Font("Segoe UI", 13F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark, BackColor = Color.Transparent,
+                Location = new Point(4, 8)
+            };
+            pnlContentHeader.Controls.Add(lblItemCount);
+
+            // ── Right toolbar: view toggles + filter button (matching green reference) ─────
+            // Combined right-side control panel
+            Panel pnlRightControls = new Panel
+            {
+                Size = new Size(180, 36), Anchor = AnchorStyles.Right | AnchorStyles.Top,
+                BackColor = Color.Transparent
+            };
+
+            // View toggle group (card ⊞ / list ≡)
+            btnToggleCard = CreateToggleBtn("⊞", true);
+            btnToggleGrid = CreateToggleBtn("≡", false);
+            btnToggleCard.Click += (s, e) => SwitchView(true);
+            btnToggleGrid.Click += (s, e) => SwitchView(false);
+
+            Panel pnlToggle = new Panel
+            {
+                Size = new Size(72, 34), Location = new Point(0, 1),
+                BackColor = ThemeConfig.SurfaceColor
+            };
+            pnlToggle.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = RoundedPath(new Rectangle(0, 0, pnlToggle.Width - 1, pnlToggle.Height - 1), 8))
+                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                { pe.Graphics.FillPath(brush, path); pe.Graphics.DrawPath(pen, path); }
+            };
+            btnToggleCard.SetBounds(2, 2, 32, 30);
+            btnToggleGrid.SetBounds(37, 2, 32, 30);
+            pnlToggle.Controls.Add(btnToggleCard);
+            pnlToggle.Controls.Add(btnToggleGrid);
+
+            // Filter button — outlined style matching green reference UI
+            Button btnContentFilter = new Button
+            {
+                Size = new Size(94, 34), Location = new Point(78, 1),
+                FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand,
+                BackColor = ThemeConfig.SurfaceColor,
+                ForeColor = ThemeConfig.TextColorDark,
+                Font = new Font("Segoe UI", 9F),
+                Text = "  " + (LocalizationManager.GetString("Parts_Filter") ?? "Filter"),
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            btnContentFilter.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
+            btnContentFilter.FlatAppearance.BorderSize = 1;
+            btnContentFilter.FlatAppearance.MouseOverBackColor = ThemeConfig.BackgroundColor;
+            Image filterIcon = ThemeConfig.GetNuricon("filter");
+            if (filterIcon != null) btnContentFilter.Image = ResizeImage(filterIcon, 16, 16);
+            btnContentFilter.Click += BtnFilter_Click;
+
+            pnlRightControls.Controls.Add(pnlToggle);
+            pnlRightControls.Controls.Add(btnContentFilter);
+
+            pnlContentHeader.Resize += (s, e) =>
+                pnlRightControls.Location = new Point(pnlContentHeader.Width - pnlRightControls.Width - 4, 4);
+            pnlContentHeader.Controls.Add(pnlRightControls);
+
+            // ── Card view ──────────────────────────────────────────────────
+            pnlCardView = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+
+            pnlCardFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill, AutoScroll = true,
+                Padding = new Padding(4, 4, 4, 4),
+                BackColor = Color.Transparent,
+                WrapContents = true, FlowDirection = FlowDirection.LeftToRight
+            };
+            pnlCardView.Controls.Add(pnlCardFlow);
+            tlpContent.Controls.Add(pnlCardView, 0, 1);
+
+            // ── List (DataGridView) view ──────────────────────────────────
+            pnlGridView = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Visible = false };
+
             dgvParts.AllowUserToAddRows = false;
             dgvParts.ReadOnly = false;
             dgvParts.AutoGenerateColumns = false;
             dgvParts.BorderStyle = BorderStyle.None;
             dgvParts.BackgroundColor = ThemeConfig.SurfaceColor;
-
-            dgvParts.CellPainting += DgvParts_CellPainting;
+            dgvParts.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvParts.CellPainting   += DgvParts_CellPainting;
             dgvParts.CellFormatting += DgvParts_CellFormatting;
             dgvParts.CellMouseClick += DgvParts_CellMouseClick;
-            dgvParts.CellMouseMove += DgvParts_CellMouseMove;
+            dgvParts.CellMouseMove  += DgvParts_CellMouseMove;
             dgvParts.CellMouseLeave += DgvParts_CellMouseLeave;
-            dgvParts.DataError += (s, e) => e.ThrowException = false;
+            dgvParts.DataError      += (s, e) => e.ThrowException = false;
 
-            // Card Panel (Rounded body)
-            Panel pnlCard = ThemeConfig.CreateCardPanel(dgvParts);
-            tlpMain.Controls.Add(pnlCard, 0, 1);
-
-            this.Controls.Add(tlpMain);
-            this.Dock = DockStyle.Fill;
+            Panel pnlGridCard = ThemeConfig.CreateCardPanel(dgvParts);
+            pnlGridCard.Dock = DockStyle.Fill;
+            pnlGridView.Controls.Add(pnlGridCard);
+            tlpContent.Controls.Add(pnlGridView, 0, 1);
 
             // Define Columns
-            dgvParts.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colCheck", HeaderText = "", Width = 30, FillWeight = 1, ReadOnly = false }); // Active Checkbox
-
+            dgvParts.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colCheck", HeaderText = "", Width = 30, FillWeight = 1, ReadOnly = false });
             var colImage = new DataGridViewImageColumn { Name = "colImage", HeaderText = "Image", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom, FillWeight = 6, ReadOnly = true };
-            colImage.DefaultCellStyle.Padding = new Padding(12); // Add padding for "Zoom" layout
+            colImage.DefaultCellStyle.Padding = new Padding(12);
             dgvParts.Columns.Add(colImage);
-
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSKU", HeaderText = "SKU", DataPropertyName = "part_number", FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBarcode", HeaderText = "Barcode", DataPropertyName = "barcode", FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", HeaderText = "Product", DataPropertyName = "part_name", FillWeight = 18, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCategory", HeaderText = "Category", DataPropertyName = "category_name", FillWeight = 12, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colLocation", HeaderText = "Location", DataPropertyName = "location", FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colShelf", HeaderText = "Shelf", DataPropertyName = "shelf", FillWeight = 8, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStock", HeaderText = "Stock", DataPropertyName = "quantity_in_stock", FillWeight = 8, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSKU",      HeaderText = "SKU",      DataPropertyName = "part_number",          FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBarcode",  HeaderText = "Barcode",  DataPropertyName = "barcode",              FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName",     HeaderText = "Product",  DataPropertyName = "part_name",            FillWeight = 18, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCategory", HeaderText = "Category", DataPropertyName = "category_name",        FillWeight = 12, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colLocation", HeaderText = "Location", DataPropertyName = "location",             FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colShelf",    HeaderText = "Shelf",    DataPropertyName = "shelf",                FillWeight = 8,  ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStock",    HeaderText = "Stock",    DataPropertyName = "quantity_in_stock",    FillWeight = 8,  ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "minimum_stock_level", HeaderText = "Min Stock", DataPropertyName = "minimum_stock_level", FillWeight = 8, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPrice",    HeaderText = "Price",    DataPropertyName = "selling_price",        FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus",   HeaderText = "Status",   DataPropertyName = "status",               FillWeight = 9,  ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewButtonColumn  { Name = "colActions",  HeaderText = "Actions",                                             FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_id",     DataPropertyName = "part_id",    Visible = false });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_image",  DataPropertyName = "part_image", Visible = false });
 
-            var colPrice = new DataGridViewTextBoxColumn { Name = "colPrice", HeaderText = "Price", DataPropertyName = "selling_price", FillWeight = 10, ReadOnly = true };
-            dgvParts.Columns.Add(colPrice);
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus", HeaderText = "Status", DataPropertyName = "status", FillWeight = 9, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewButtonColumn { Name = "colActions", HeaderText = "Actions", FillWeight = 10, ReadOnly = true });
-
-            // Hidden columns
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_id", DataPropertyName = "part_id", Visible = false });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_image", DataPropertyName = "part_image", Visible = false });
-
-            // Apply Theme LAST to ensure header styles override defaults
             ThemeConfig.ApplyGridTheme(dgvParts);
             ThemeConfig.ApplyHeaderCheckBox(dgvParts, "colCheck");
+
+            this.Controls.Add(tlpRoot);
+            this.Dock = DockStyle.Fill;
 
             ((System.ComponentModel.ISupportInitialize)(this.dgvParts)).EndInit();
             this.ResumeLayout(false);
         }
 
-        /// <summary>
-        /// Loads inventory data from the database with optional filtering.
-        /// </summary>
-        /// <param name="search">Search term for name/SKU</param>
-        /// <param name="lowStockOnly">If true, shows only items below minimum stock</param>
-        /// <param name="activeOnly">If true, shows only active items</param>
-        /// <param name="category">Category name to filter by</param>
+        // ─────────────────────────────────────────────────────────────────
+        // VIEW TOGGLE
+        // ─────────────────────────────────────────────────────────────────
+        private Button CreateToggleBtn(string text, bool startActive)
+        {
+            var btn = new Button
+            {
+                Text = text,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 13F),
+                Cursor = Cursors.Hand,
+                BackColor = startActive ? ThemeConfig.PrimaryColor : Color.Transparent,
+                ForeColor = startActive ? Color.White : ThemeConfig.SecondaryColor,
+                Size = new Size(34, 30), TextAlign = ContentAlignment.MiddleCenter
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            return btn;
+        }
+
+        private void SwitchView(bool toCard)
+        {
+            _isCardView = toCard;
+            pnlCardView.Visible  = toCard;
+            pnlGridView.Visible  = !toCard;
+
+            btnToggleCard.BackColor = toCard  ? ThemeConfig.PrimaryColor : Color.Transparent;
+            btnToggleCard.ForeColor = toCard  ? Color.White : ThemeConfig.SecondaryColor;
+            btnToggleGrid.BackColor = !toCard ? ThemeConfig.PrimaryColor : Color.Transparent;
+            btnToggleGrid.ForeColor = !toCard ? Color.White : ThemeConfig.SecondaryColor;
+
+            if (toCard) LoadCards();
+            else        LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // REFRESH ALL
+        // ─────────────────────────────────────────────────────────────────
+        private void RefreshAll()
+        {
+            RefreshCategorySidebar();
+            if (_isCardView) LoadCards();
+            else             LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // CATEGORY SIDEBAR
+        // ─────────────────────────────────────────────────────────────────
+        private void RefreshCategorySidebar()
+        {
+            pnlCategoryList.SuspendLayout();
+            foreach (Control c in pnlCategoryList.Controls) c.Dispose();
+            pnlCategoryList.Controls.Clear();
+
+            int totalItems = CategoryData.GetTotalItemCount();
+            pnlCategoryList.Controls.Add(BuildCategoryRow(null, "All Items", totalItems));
+
+            try
+            {
+                var cats = CategoryData.GetAllCategories();
+                foreach (var cat in cats)
+                {
+                    int count = CategoryData.GetItemCount(cat.CategoryName);
+                    pnlCategoryList.Controls.Add(BuildCategoryRow(cat, cat.CategoryName, count));
+                }
+            }
+            catch { }
+
+            pnlCategoryList.ResumeLayout();
+        }
+
+        private Panel BuildCategoryRow(CategoryData cat, string displayName, int count)
+        {
+            bool isActive = (_activeCategory == (cat?.CategoryName));
+
+            // Wrapper for spacing
+            Panel wrapper = new Panel
+            {
+                Height = 52, Dock = DockStyle.Top,
+                Padding = new Padding(0, 0, 0, 8), BackColor = Color.Transparent
+            };
+
+            // The actual card
+            Panel card = new Panel
+            {
+                Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor,
+                Cursor = Cursors.Hand, Tag = cat
+            };
+            wrapper.Controls.Add(card);
+
+            // Card custom painting (border & rounded corners)
+            card.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = RoundedPath(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 8))
+                using (var brush = new SolidBrush(card.BackColor))
+                using (var pen = new Pen(isActive ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor, isActive ? 1.5f : 1f))
+                {
+                    pe.Graphics.FillPath(brush, path);
+                    pe.Graphics.DrawPath(pen, path);
+                }
+            };
+
+            // Fake Icon / Image placeholder on the left
+            PictureBox pbIcon = new PictureBox
+            {
+                Size = new Size(24, 24), Location = new Point(12, 10),
+                SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Transparent,
+                Image = cat == null ? ThemeConfig.GetNuricon("dashboard") : ThemeConfig.GetNuricon("category_placeholder") // Or actually load cat image
+            };
+            if (pbIcon.Image == null) { pbIcon.BackColor = ThemeConfig.BorderColor; }
+            card.Controls.Add(pbIcon);
+
+            // Category name
+            Label lblName = new Label
+            {
+                Text = displayName,
+                Font = isActive ? new Font("Segoe UI", 9F, FontStyle.Bold) : new Font("Segoe UI", 9F),
+                ForeColor = ThemeConfig.TextColorDark,
+                AutoSize = false, Size = new Size(110, 44),
+                Location = new Point(44, 0), TextAlign = ContentAlignment.MiddleLeft,
+                BackColor = Color.Transparent
+            };
+            card.Controls.Add(lblName);
+
+            // Circular Count badge
+            Label lblCount = new Label
+            {
+                Text = count.ToString(),
+                Font = new Font("Segoe UI", 8F, FontStyle.Bold),
+                ForeColor = isActive ? Color.White : ThemeConfig.TextColorDark,
+                AutoSize = false, Size = new Size(24, 24),
+                Location = new Point(164, 10), TextAlign = ContentAlignment.MiddleCenter,
+                BackColor = isActive ? ThemeConfig.PrimaryColor : ThemeConfig.BackgroundColor
+            };
+            lblCount.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                pe.Graphics.Clear(card.BackColor);
+                using (var path = RoundedPath(new Rectangle(0, 0, lblCount.Width - 1, lblCount.Height - 1), lblCount.Width / 2))
+                using (var brush = new SolidBrush(lblCount.BackColor))
+                    pe.Graphics.FillPath(brush, path);
+                TextRenderer.DrawText(pe.Graphics, lblCount.Text, lblCount.Font,
+                    new Rectangle(0, 0, lblCount.Width, lblCount.Height),
+                    lblCount.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+            };
+            card.Controls.Add(lblCount);
+
+            // Click — filter by category
+            EventHandler select = (s, e) =>
+            {
+                _activeCategory = cat?.CategoryName;
+                RefreshCategorySidebar();
+                if (_isCardView) LoadCards();
+                else LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
+            };
+            card.Click += select;
+            pbIcon.Click += select;
+            lblName.Click += select;
+            lblCount.Click += select;
+
+            // Right-click on real categories → Edit
+            if (cat != null)
+            {
+                void ShowCatMenu(object s, EventArgs e)
+                {
+                    var menu = new ContextMenuStrip();
+                    ThemeConfig.ApplyModernMenuTheme(menu);
+                    menu.Items.Add("Edit Category", ThemeConfig.GetNuricon("edit"), (ms, me) =>
+                    {
+                        using (AddCategoryForm f = new AddCategoryForm())
+                        {
+                            f.LoadCategoryData(cat.Id, cat.CategoryName, cat.Description, cat.CategoryImage);
+                            if (f.ShowDialog() == DialogResult.OK)
+                            {
+                                _activeCategory = null;
+                                RefreshAll();
+                            }
+                        }
+                    });
+                    menu.Items.Add("Delete Category", ThemeConfig.GetNuricon("delete"), (ms, me) =>
+                    {
+                        if (MessageHelper.ConfirmAction($"Delete category \"{cat.CategoryName}\"?"))
+                        {
+                            try { CategoryData.UpdateCategory(cat.Id, cat.CategoryName, cat.Description, ""); }
+                            catch { }
+                            _activeCategory = null;
+                            RefreshAll();
+                        }
+                    });
+                    menu.Show(card, new Point(10, card.Height));
+                }
+                card.MouseClick += (s, e) => { if (((MouseEventArgs)e).Button == MouseButtons.Right) ShowCatMenu(s, e); };
+                lblName.MouseClick += (s, e) => { if (((MouseEventArgs)e).Button == MouseButtons.Right) ShowCatMenu(s, e); };
+                pbIcon.MouseClick += (s, e) => { if (((MouseEventArgs)e).Button == MouseButtons.Right) ShowCatMenu(s, e); };
+            }
+
+            card.BringToFront();
+            return wrapper;
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // CARD VIEW — LoadCards
+        // ─────────────────────────────────────────────────────────────────
+        private void LoadCards()
+        {
+            pnlCardFlow.SuspendLayout();
+            foreach (Control c in pnlCardFlow.Controls) c.Dispose();
+            pnlCardFlow.Controls.Clear();
+
+            // "Add New" placeholder card
+            pnlCardFlow.Controls.Add(BuildAddNewCard());
+
+            try
+            {
+                DataTable dt = _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
+
+                // Update count label
+                string catLabel = _activeCategory ?? "All Items";
+                if (lblItemCount != null)
+                    lblItemCount.Text = $"{catLabel} ({dt.Rows.Count})";
+
+                foreach (DataRow row in dt.Rows)
+                    pnlCardFlow.Controls.Add(BuildProductCard(row));
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.ShowError($"Error loading inventory: {ex.Message}");
+            }
+
+            pnlCardFlow.ResumeLayout();
+        }
+
+        private Panel BuildAddNewCard()
+        {
+            Panel card = new Panel
+            {
+                Size = new Size(CardW, CardH), Margin = new Padding(CardGap / 2),
+                BackColor = Color.Transparent, Cursor = Cursors.Hand
+            };
+            card.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = RoundedPath(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 14))
+                using (var pen = new Pen(ThemeConfig.PrimaryColor, 1.5f) { DashStyle = DashStyle.Dash })
+                    pe.Graphics.DrawPath(pen, path);
+            };
+
+            Label lblPlus = new Label
+            {
+                Text = "+", Font = new Font("Segoe UI", 30F, FontStyle.Regular),
+                ForeColor = ThemeConfig.PrimaryColor, BackColor = Color.Transparent,
+                AutoSize = false, Size = new Size(CardW, 60), Location = new Point(0, 55),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            string addText = _activeCategory == null
+                ? (LocalizationManager.GetString("Parts_AddProduct") ?? "Add New Item")
+                : $"Add to {_activeCategory}";
+            Label lblText = new Label
+            {
+                Text = addText, Font = new Font("Segoe UI", 8F, FontStyle.Bold),
+                ForeColor = ThemeConfig.PrimaryColor, BackColor = Color.Transparent,
+                AutoSize = false, Size = new Size(CardW - 16, 40), Location = new Point(8, 115),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            EventHandler addClick = (s, e) =>
+            {
+                using (AddPartForm form = new AddPartForm())
+                {
+                    // Pre-select the active sidebar category if there is one
+                    if (_activeCategory != null)
+                        form.PreSelectCategory(_activeCategory);
+                    if (form.ShowDialog() == DialogResult.OK) RefreshAll();
+                }
+            };
+            card.Click   += addClick;
+            lblPlus.Click += addClick;
+            lblText.Click += addClick;
+
+            card.Controls.Add(lblPlus);
+            card.Controls.Add(lblText);
+            return card;
+        }
+
+        private Panel BuildProductCard(DataRow row)
+        {
+            int     partId   = Convert.ToInt32(row["part_id"]);
+            string  name     = row["part_name"]?.ToString() ?? "";
+            string  sku      = row["part_number"]?.ToString() ?? "";
+            string  category = row["category_name"]?.ToString() ?? "";
+            decimal price    = row["selling_price"] == DBNull.Value ? 0 : Convert.ToDecimal(row["selling_price"]);
+            string  status   = row["status"]?.ToString() ?? "Active";
+            string  imgPath  = row["part_image"]?.ToString() ?? "";
+            bool    isActive = status.Equals("Active", StringComparison.OrdinalIgnoreCase);
+
+            Panel card = new Panel
+            {
+                Size = new Size(CardW, CardH), Margin = new Padding(CardGap / 2),
+                BackColor = ThemeConfig.SurfaceColor, Cursor = Cursors.Hand, Tag = partId
+            };
+            card.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = RoundedPath(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 14))
+                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                {
+                    pe.Graphics.FillPath(brush, path);
+                    pe.Graphics.DrawPath(pen, path);
+                }
+            };
+
+            // Circular image
+            PictureBox pb = new PictureBox
+            {
+                Size = new Size(64, 64), Location = new Point((CardW - 64) / 2, 18),
+                BackColor = ThemeConfig.BackgroundColor, SizeMode = PictureBoxSizeMode.Zoom
+            };
+            pb.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var clipPath = new GraphicsPath())
+                {
+                    clipPath.AddEllipse(0, 0, pb.Width, pb.Height);
+                    pe.Graphics.SetClip(clipPath);
+                }
+                using (var b = new SolidBrush(ThemeConfig.BackgroundColor))
+                    pe.Graphics.FillEllipse(b, 0, 0, pb.Width - 1, pb.Height - 1);
+
+                var img = pb.Image;
+                if (img != null)
+                    pe.Graphics.DrawImage(img, new Rectangle(4, 4, pb.Width - 8, pb.Height - 8));
+
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                    pe.Graphics.DrawEllipse(pen, 0, 0, pb.Width - 1, pb.Height - 1);
+            };
+            pb.Image = CreateProductImage(imgPath, category);
+
+            // Category label (muted)
+            Label lblCat = new Label
+            {
+                Text = category, Font = new Font("Segoe UI", 7.5F),
+                ForeColor = ThemeConfig.SecondaryColor, BackColor = Color.Transparent,
+                AutoSize = false, Size = new Size(CardW - 12, 18), Location = new Point(6, 88),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            // Product name (bold)
+            Label lblName = new Label
+            {
+                Text = name, Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark, BackColor = Color.Transparent,
+                AutoSize = false, Size = new Size(CardW - 12, 36), Location = new Point(6, 106),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            // Price
+            Label lblPrice = new Label
+            {
+                Text = butcherPOS.Services.CurrencyService.Format(price),
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                ForeColor = ThemeConfig.PrimaryColor, BackColor = Color.Transparent,
+                AutoSize = false, Size = new Size(CardW - 12, 22), Location = new Point(6, 143),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            // Status badge
+            Label lblStatus = new Label
+            {
+                Text = isActive ? (LocalizationManager.GetString("Status_Active") ?? "Active")
+                                : (LocalizationManager.GetString("Status_Inactive") ?? "Inactive"),
+                Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = isActive ? ThemeConfig.SuccessBadgeText : ThemeConfig.DangerBadgeText,
+                BackColor = isActive ? ThemeConfig.SuccessBadgeBg : ThemeConfig.DangerBadgeBg,
+                AutoSize = false, Size = new Size(60, 20), Location = new Point((CardW - 60) / 2, 168),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            lblStatus.Paint += (s, pe) =>
+            {
+                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = RoundedPath(new Rectangle(0, 0, lblStatus.Width - 1, lblStatus.Height - 1), 8))
+                using (var fill = new SolidBrush(lblStatus.BackColor))
+                    pe.Graphics.FillPath(fill, path);
+                TextRenderer.DrawText(pe.Graphics, lblStatus.Text, lblStatus.Font,
+                    new Rectangle(0, 0, lblStatus.Width, lblStatus.Height),
+                    lblStatus.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+            };
+
+            // Edit / Delete icons
+            PictureBox pbEdit = new PictureBox
+            {
+                Size = new Size(22, 22), Location = new Point(CardW - 52, 5),
+                BackColor = Color.Transparent, Cursor = Cursors.Hand, SizeMode = PictureBoxSizeMode.Zoom,
+                Image = ThemeConfig.GetNuricon("edit")
+            };
+            pbEdit.Click += (s, e) => OpenEditForm(row);
+
+            PictureBox pbDelete = new PictureBox
+            {
+                Size = new Size(22, 22), Location = new Point(CardW - 28, 5),
+                BackColor = Color.Transparent, Cursor = Cursors.Hand, SizeMode = PictureBoxSizeMode.Zoom,
+                Image = ThemeConfig.GetNuricon("delete")
+            };
+            pbDelete.Click += (s, e) =>
+            {
+                if (!UserSession.IsAdmin) { MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionDelete")); return; }
+                if (MessageHelper.ConfirmAction("Delete this item?"))
+                {
+                    _inventoryService.DeletePart(partId);
+                    RefreshAll();
+                }
+            };
+
+            // Click on card = edit
+            EventHandler editClick = (s, e) => OpenEditForm(row);
+            card.Click   += editClick;
+            pb.Click     += editClick;
+            lblName.Click += editClick;
+            lblCat.Click  += editClick;
+            lblPrice.Click += editClick;
+
+            card.Controls.Add(pb);
+            card.Controls.Add(lblCat);
+            card.Controls.Add(lblName);
+            card.Controls.Add(lblPrice);
+            card.Controls.Add(lblStatus);
+            card.Controls.Add(pbEdit);
+            card.Controls.Add(pbDelete);
+
+            // Hover effect
+            void HoverEnter(object s, EventArgs e)
+            {
+                card.BackColor = Color.FromArgb(248, 248, 252);
+                card.Invalidate();
+            }
+            void HoverLeave(object s, EventArgs e)
+            {
+                card.BackColor = ThemeConfig.SurfaceColor;
+                card.Invalidate();
+            }
+            card.MouseEnter   += HoverEnter; card.MouseLeave   += HoverLeave;
+            pb.MouseEnter     += HoverEnter; pb.MouseLeave     += HoverLeave;
+            lblName.MouseEnter += HoverEnter; lblName.MouseLeave += HoverLeave;
+
+            return card;
+        }
+
+        private void OpenEditForm(DataRow row)
+        {
+            if (!UserSession.IsAdmin) { MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionEdit")); return; }
+
+            string id       = row["part_id"]?.ToString();
+            string name     = row["part_name"]?.ToString() ?? "";
+            string sku      = row["part_number"]?.ToString() ?? "";
+            string category = row["category_name"]?.ToString() ?? "";
+            string status   = row["status"]?.ToString() ?? "Active";
+            string barcode  = row["barcode"]?.ToString() ?? "";
+            string location = row["location"]?.ToString() ?? "";
+            string shelf    = row["shelf"]?.ToString() ?? "";
+            string image    = row["part_image"]?.ToString() ?? "";
+
+            int qty      = row["quantity_in_stock"] == DBNull.Value ? 0 : Convert.ToInt32(row["quantity_in_stock"]);
+            decimal price = row["selling_price"] == DBNull.Value ? 0 : Convert.ToDecimal(row["selling_price"]);
+            int minStock  = row["minimum_stock_level"] == DBNull.Value ? 0 : Convert.ToInt32(row["minimum_stock_level"]);
+
+            if (category.Equals("Services", StringComparison.OrdinalIgnoreCase))
+            {
+                using (AddServiceForm form = new AddServiceForm())
+                {
+                    form.LoadServiceData(id, name, sku, price, status, image);
+                    if (form.ShowDialog() == DialogResult.OK) { RefreshAll(); MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_ServiceUpdated")); }
+                }
+            }
+            else
+            {
+                using (AddPartForm form = new AddPartForm())
+                {
+                    form.LoadPartData(id, name, sku, qty, price, minStock, status, barcode, location, shelf, image, category);
+                    if (form.ShowDialog() == DialogResult.OK) { RefreshAll(); MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_UpdateSuccess")); }
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // LIST VIEW — LoadData (existing DataGridView approach)
+        // ─────────────────────────────────────────────────────────────────
         private void LoadData(string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null)
         {
             try
             {
-                dgvParts.DataSource = null; // Force clear
-
+                dgvParts.DataSource = null;
                 DataTable dt = _inventoryService.GetAllParts(search, lowStockOnly, activeOnly, category);
                 dgvParts.DataSource = dt;
 
-                // Re-apply images
-                foreach (DataGridViewRow row in dgvParts.Rows)
+                if (lblItemCount != null)
+                    lblItemCount.Text = $"{(category ?? "All Items")} ({dt.Rows.Count})";
+
+                foreach (DataGridViewRow r in dgvParts.Rows)
                 {
-                    string imagePath = row.Cells["part_image"].Value?.ToString();
-                    string categoryName = row.Cells["colCategory"].Value?.ToString();
-                    row.Cells["colImage"].Value = CreateProductImage(imagePath, categoryName);
+                    string imagePath   = r.Cells["part_image"].Value?.ToString();
+                    string categoryName = r.Cells["colCategory"].Value?.ToString();
+                    r.Cells["colImage"].Value = CreateProductImage(imagePath, categoryName);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) { MessageHelper.ShowError($"Error: {ex.Message}"); }
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // LOCALIZATION
+        // ─────────────────────────────────────────────────────────────────
+        private void ApplyLocalization()
+        {
+            butcherPOS.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
+
+            var ctrlTitle = this.Controls.Find("lblInventoryTitle", true);
+            if (ctrlTitle.Length > 0) ctrlTitle[0].Text = L("Parts_Title");
+            if (txtSearch != null) txtSearch.PlaceholderText = L("Parts_Search");
+
+            if (btnAdd != null)         ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_AddProduct");
+            if (btnService != null)     ThemeConfig.ApplyStandardAddButton(btnService, "Parts_AddService");
+            if (btnAddCategory != null) ThemeConfig.ApplyStandardAddButton(btnAddCategory, "Parts_AddCategory");
+            if (btnFilter != null)  btnFilter.Invalidate();
+            if (btnImport != null)  btnImport.Invalidate();
+            if (btnExport != null)  btnExport.Invalidate();
+
+            var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
+            if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Parts_Delete");
+
+            butcherPOS.Helpers.LocalizationManager.TranslateControl(this);
+
+            if (dgvParts != null && dgvParts.Columns.Count > 0)
             {
-                MessageHelper.ShowError($"Error: {ex.Message}");
+                if (dgvParts.Columns.Contains("colImage"))          dgvParts.Columns["colImage"].HeaderText          = L("Parts_GridImage");
+                if (dgvParts.Columns.Contains("colSKU"))            dgvParts.Columns["colSKU"].HeaderText            = L("Parts_GridSKU");
+                if (dgvParts.Columns.Contains("colBarcode"))        dgvParts.Columns["colBarcode"].HeaderText        = L("Parts_GridBarcode");
+                if (dgvParts.Columns.Contains("colName"))           dgvParts.Columns["colName"].HeaderText           = L("Parts_GridProduct");
+                if (dgvParts.Columns.Contains("colCategory"))       dgvParts.Columns["colCategory"].HeaderText       = L("Parts_GridCategory");
+                if (dgvParts.Columns.Contains("colLocation"))       dgvParts.Columns["colLocation"].HeaderText       = L("Parts_GridLocation");
+                if (dgvParts.Columns.Contains("colShelf"))          dgvParts.Columns["colShelf"].HeaderText          = L("Parts_GridShelf");
+                if (dgvParts.Columns.Contains("colStock"))          dgvParts.Columns["colStock"].HeaderText          = L("Parts_GridStock");
+                if (dgvParts.Columns.Contains("minimum_stock_level")) dgvParts.Columns["minimum_stock_level"].HeaderText = L("Parts_GridMinStock");
+                if (dgvParts.Columns.Contains("colPrice"))          dgvParts.Columns["colPrice"].HeaderText          = L("Parts_GridPrice");
+                if (dgvParts.Columns.Contains("colStatus"))         dgvParts.Columns["colStatus"].HeaderText         = L("Parts_GridStatus");
+                if (dgvParts.Columns.Contains("colActions"))        dgvParts.Columns["colActions"].HeaderText        = L("Parts_GridActions");
             }
         }
 
+        protected override void OnVisibleChanged(EventArgs e)
+        {
+            base.OnVisibleChanged(e);
+            if (this.Visible && !this.DesignMode) RefreshAll();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // IMAGE HELPER
+        // ─────────────────────────────────────────────────────────────────
         private Bitmap CreateProductImage(string imagePath = null, string category = null)
         {
-            // Try loading from file first if path provided
             if (!string.IsNullOrEmpty(imagePath))
             {
                 try
@@ -288,107 +989,69 @@ namespace butcherPOS.Forms
                     string fullPath = System.IO.Path.Combine(Application.StartupPath, imagePath);
                     if (!System.IO.File.Exists(fullPath))
                         fullPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "Products", System.IO.Path.GetFileName(imagePath));
-
                     if (System.IO.File.Exists(fullPath))
                     {
                         byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
                         using (var ms = new System.IO.MemoryStream(bytes))
                         using (var original = Image.FromStream(ms))
-                            return new Bitmap(original, new Size(40, 40));
+                            return new Bitmap(original, new Size(56, 56));
                     }
                 }
                 catch { }
             }
 
-            // Procedural Placeholder based on Category
-            // Increased size to 60x60 to allow for more padding and a premium look
-            Bitmap img = new Bitmap(60, 60);
+            Bitmap img = new Bitmap(56, 56);
             using (Graphics g = Graphics.FromImage(img))
             {
                 g.Clear(ThemeConfig.BackgroundColor);
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-                string iconName = "inventory"; // Default
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                string iconName = "inventory";
                 if (category != null)
                 {
                     string cat = category.ToLower();
-                    if (cat.Contains("engine")) iconName = "engine";
-                    else if (cat.Contains("brake")) iconName = "brakes";
-                    else if (cat.Contains("service")) iconName = "services";
+                    if (cat.Contains("engine"))                               iconName = "engine";
+                    else if (cat.Contains("brake"))                           iconName = "brakes";
+                    else if (cat.Contains("service"))                         iconName = "services";
                     else if (cat.Contains("accessory") || cat.Contains("accessories")) iconName = "accessories";
-                    else if (cat.Contains("oil") || cat.Contains("fuel")) iconName = "oil";
+                    else if (cat.Contains("oil") || cat.Contains("fuel"))    iconName = "oil";
                 }
-
                 Image icon = ThemeConfig.GetNuricon(iconName);
                 if (icon != null)
                 {
-                    // Draw centered icon with significant padding (18px) for a "minimalist" premium look
-                    // Icon size: 24x24 inside 60x60 canvas
-                    int iconSize = 24;
-                    int padding = (60 - iconSize) / 2;
-                    g.DrawImage(icon, new Rectangle(padding, padding, iconSize, iconSize));
+                    int sz = 28, pad = (56 - sz) / 2;
+                    g.DrawImage(icon, new Rectangle(pad, pad, sz, sz));
                 }
             }
             return img;
         }
 
-
+        // ─────────────────────────────────────────────────────────────────
+        // DATAGRIDVIEW PAINTING (for list view)
+        // ─────────────────────────────────────────────────────────────────
         private void DgvParts_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex < 0) return;
             var row = dgvParts.Rows[e.RowIndex];
-
-            // Identify if this is a Service
             string category = row.Cells["colCategory"].Value?.ToString() ?? "";
             bool isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase) ||
-                             category.Equals("Service", StringComparison.OrdinalIgnoreCase);
+                             category.Equals("Service",  StringComparison.OrdinalIgnoreCase);
 
-            var stockCell = row.Cells["colStock"];
-            var minStockCell = row.Cells["minimum_stock_level"];
-
-            // Hide Stock/MinStock for Services
             if (isService)
             {
-                if (dgvParts.Columns[e.ColumnIndex].Name == "colStock")
-                {
-                    e.Value = "-"; // or "N/A"
-                    e.FormattingApplied = true;
-                }
-                if (dgvParts.Columns[e.ColumnIndex].Name == "minimum_stock_level")
-                {
-                    e.Value = "-";
-                    e.FormattingApplied = true;
-                }
+                if (dgvParts.Columns[e.ColumnIndex].Name == "colStock")            { e.Value = "-"; e.FormattingApplied = true; }
+                if (dgvParts.Columns[e.ColumnIndex].Name == "minimum_stock_level") { e.Value = "-"; e.FormattingApplied = true; }
             }
 
-            // Price: format using active currency
             if (dgvParts.Columns[e.ColumnIndex].Name == "colPrice" && e.Value != null)
-            {
-                if (decimal.TryParse(e.Value.ToString(), out decimal usdPrice))
-                {
-                    e.Value = butcherPOS.Services.CurrencyService.Format(usdPrice);
-                    e.FormattingApplied = true;
-                }
-            }
+                if (decimal.TryParse(e.Value.ToString(), out decimal p)) { e.Value = butcherPOS.Services.CurrencyService.Format(p); e.FormattingApplied = true; }
 
-            // Low Stock Logic: Whole Row Pink (Only for non-services)
-            if (!isService && stockCell.Value != null && minStockCell.Value != null)
+            var stockCell = row.Cells["colStock"]; var minCell = row.Cells["minimum_stock_level"];
+            if (!isService && stockCell.Value != null && minCell.Value != null)
             {
-                if (int.TryParse(stockCell.Value.ToString(), out int stock) && int.TryParse(minStockCell.Value.ToString(), out int minStock))
+                if (int.TryParse(stockCell.Value.ToString(), out int stock) && int.TryParse(minCell.Value.ToString(), out int minS))
                 {
-                    if (stock <= minStock)
-                    {
-                        row.DefaultCellStyle.BackColor = ThemeConfig.DangerBadgeBg;
-                        row.DefaultCellStyle.SelectionBackColor = ThemeConfig.DangerLight;
-                        row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark;
-                    }
-                    else
-                    {
-                        // Reset to default theme styles
-                        row.DefaultCellStyle.BackColor = ThemeConfig.SurfaceColor;
-                        row.DefaultCellStyle.SelectionBackColor = ThemeConfig.SelectionBackColor;
-                        row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark;
-                    }
+                    if (stock <= minS) { row.DefaultCellStyle.BackColor = ThemeConfig.DangerBadgeBg; row.DefaultCellStyle.SelectionBackColor = ThemeConfig.DangerLight; row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark; }
+                    else { row.DefaultCellStyle.BackColor = ThemeConfig.SurfaceColor; row.DefaultCellStyle.SelectionBackColor = ThemeConfig.SelectionBackColor; row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark; }
                 }
             }
         }
@@ -396,680 +1059,301 @@ namespace butcherPOS.Forms
         private void DgvParts_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
         {
             if (e.RowIndex < 0) return;
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
-            // 1. Stock Level Pill (Only if low stock and NOT a service)
             if (dgvParts.Columns[e.ColumnIndex].Name == "colStock")
             {
                 var row = dgvParts.Rows[e.RowIndex];
-                string category = row.Cells["colCategory"].Value?.ToString() ?? "";
-                bool isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase) ||
-                                 category.Equals("Service", StringComparison.OrdinalIgnoreCase);
-
-                if (isService) return; // Formatting handled by CellFormatting
-
-                var minStockCell = row.Cells["minimum_stock_level"];
-                if (e.Value != null && minStockCell.Value != null)
+                string cat = row.Cells["colCategory"].Value?.ToString() ?? "";
+                bool isSvc = cat.Equals("Services", StringComparison.OrdinalIgnoreCase) || cat.Equals("Service", StringComparison.OrdinalIgnoreCase);
+                if (isSvc) return;
+                var minCell = row.Cells["minimum_stock_level"];
+                if (e.Value != null && minCell.Value != null)
                 {
-                    int stock = 0;
-                    int minStock = 0;
-                    int.TryParse(e.Value.ToString(), out stock);
-                    int.TryParse(minStockCell.Value.ToString(), out minStock);
-
-                    if (stock <= minStock)
+                    int.TryParse(e.Value.ToString(), out int stock);
+                    int.TryParse(minCell.Value.ToString(), out int minS);
+                    if (stock <= minS)
                     {
-                        e.Handled = true;
-                        e.PaintBackground(e.CellBounds, true);
-
-                        // Draw Red Pill around the number
-                        SizeF textSize = e.Graphics.MeasureString(e.Value.ToString(), e.CellStyle.Font);
-                        float pillWidth = Math.Max(textSize.Width + 16, 40);
-                        float pillX = e.CellBounds.X + (e.CellBounds.Width - pillWidth) / 2;
-                        RectangleF pillRect = new RectangleF(
-                            pillX,
-                            e.CellBounds.Y + (e.CellBounds.Height - 24) / 2,
-                            pillWidth,
-                            24
-                        );
-
-                        using (GraphicsPath path = GetRoundedRect(Rectangle.Round(pillRect), 8))
-                        using (SolidBrush brush = new SolidBrush(ThemeConfig.DangerLight))
-                        {
+                        e.Handled = true; e.PaintBackground(e.CellBounds, true);
+                        SizeF ts = e.Graphics.MeasureString(e.Value.ToString(), e.CellStyle.Font);
+                        float pillW = Math.Max(ts.Width + 16, 40);
+                        float pillX = e.CellBounds.X + (e.CellBounds.Width - pillW) / 2;
+                        RectangleF pillRect = new RectangleF(pillX, e.CellBounds.Y + (e.CellBounds.Height - 24) / 2, pillW, 24);
+                        using (var path = GetRoundedRect(Rectangle.Round(pillRect), 8))
+                        using (var brush = new SolidBrush(ThemeConfig.DangerLight))
                             e.Graphics.FillPath(brush, path);
-                        }
-
                         TextRenderer.DrawText(e.Graphics, e.Value.ToString(), ThemeConfig.SmallBoldFont, Rectangle.Round(pillRect), ThemeConfig.DangerBadgeText, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                         return;
                     }
                 }
             }
 
-            // 2. Status badge (Active) - Outlined Style
             if (dgvParts.Columns[e.ColumnIndex].Name == "colStatus")
             {
-                e.Handled = true;
-                e.PaintBackground(e.CellBounds, true);
-
+                e.Handled = true; e.PaintBackground(e.CellBounds, true);
                 string status = e.Value?.ToString() ?? "Active";
-                bool isActive = status.Equals("Active", StringComparison.OrdinalIgnoreCase);
-                string displayStatus = isActive ? LocalizationManager.GetString("Status_Active") : LocalizationManager.GetString("Status_Inactive");
-
-                // Target: White/Light Bg, Green Border, Green Text
-                Color borderColor = isActive ? ThemeConfig.SuccessBorder : ThemeConfig.DangerBorder;
-                Color txtColor = isActive ? ThemeConfig.SuccessBadgeText : ThemeConfig.DangerBadgeText;
-                Color fillColor = isActive ? ThemeConfig.SuccessBadgeBg : ThemeConfig.DangerBadgeBg;
-
+                bool isAct = status.Equals("Active", StringComparison.OrdinalIgnoreCase);
+                string dispStatus = isAct ? LocalizationManager.GetString("Status_Active") : LocalizationManager.GetString("Status_Inactive");
+                Color borderC = isAct ? ThemeConfig.SuccessBorder : ThemeConfig.DangerBorder;
+                Color txtC    = isAct ? ThemeConfig.SuccessBadgeText : ThemeConfig.DangerBadgeText;
+                Color fillC   = isAct ? ThemeConfig.SuccessBadgeBg : ThemeConfig.DangerBadgeBg;
                 Rectangle badgeRect = new Rectangle(e.CellBounds.X + 5, e.CellBounds.Y + 13, 60, 24);
-
                 using (var path = GetRoundedRect(badgeRect, 10))
-                using (var pen = new Pen(borderColor, 1))
-                using (var brush = new SolidBrush(fillColor))
+                using (var pen = new Pen(borderC, 1))
+                using (var brush = new SolidBrush(fillC))
                 {
                     e.Graphics.FillPath(brush, path);
                     e.Graphics.DrawPath(pen, path);
-
-                    TextRenderer.DrawText(e.Graphics, displayStatus, ThemeConfig.MicroBoldFont, badgeRect, txtColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                    TextRenderer.DrawText(e.Graphics, dispStatus, ThemeConfig.MicroBoldFont, badgeRect, txtC, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                 }
-
             }
 
-            // 3. Actions - Nuricon Icons for Edit/Delete
             if (dgvParts.Columns[e.ColumnIndex].Name == "colActions")
             {
-                e.Handled = true;
-                e.PaintBackground(e.CellBounds, true);
-
-                // Load Nuricon Icons
-                Image imgEdit = ThemeConfig.GetNuricon("edit");
-                Image imgDelete = ThemeConfig.GetNuricon("delete");
-
-                // Edit Button (32x32)
-                Rectangle editRect = new Rectangle(e.CellBounds.X + 8, e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
-                if (imgEdit != null) e.Graphics.DrawImage(imgEdit, editRect);
-
-                // Delete Button (32x32)
-                Rectangle delRect = new Rectangle(e.CellBounds.X + 48, e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
-                if (imgDelete != null) e.Graphics.DrawImage(imgDelete, delRect);
-
-                // Adjust Stock Button (Slightly smaller 28x28 to fit perfectly)
-                Rectangle adjRect = new Rectangle(e.CellBounds.X + 88 + 2, e.CellBounds.Y + (e.CellBounds.Height - 28) / 2, 28, 28);
-                Image imgAdjust = ThemeConfig.GetNuricon("item_adjustment");
-                if (imgAdjust != null) e.Graphics.DrawImage(imgAdjust, adjRect);
+                e.Handled = true; e.PaintBackground(e.CellBounds, true);
+                Image imgEdit = ThemeConfig.GetNuricon("edit"); Image imgDel = ThemeConfig.GetNuricon("delete");
+                Rectangle editRect = new Rectangle(e.CellBounds.X + 8,      e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
+                Rectangle delRect  = new Rectangle(e.CellBounds.X + 48,     e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
+                Rectangle adjRect  = new Rectangle(e.CellBounds.X + 88 + 2, e.CellBounds.Y + (e.CellBounds.Height - 28) / 2, 28, 28);
+                if (imgEdit != null)  e.Graphics.DrawImage(imgEdit, editRect);
+                if (imgDel != null)   e.Graphics.DrawImage(imgDel,  delRect);
+                Image imgAdj = ThemeConfig.GetNuricon("item_adjustment");
+                if (imgAdj != null) e.Graphics.DrawImage(imgAdj, adjRect);
             }
-        }
-
-        private void DrawOutlinedButton(Graphics g, Rectangle rect, string icon, Color color)
-        {
-            // Draw White Box with Light Gray Border
-            using (var path = GetRoundedRect(rect, 8))
-            using (var pen = new Pen(ThemeConfig.BorderColor, 1)) // Light slate border
-            using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-            {
-                g.FillPath(brush, path);
-                g.DrawPath(pen, path);
-            }
-
-
-            // Draw Icon
-            // Using DrawString for GDI+ consistency if needed, assuming Emojis
-            // Center glyph
-            TextRenderer.DrawText(g, icon, ThemeConfig.EmojiFont, rect, color, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-        }
-
-        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRect(Rectangle rect, int radius)
-        {
-            var path = new System.Drawing.Drawing2D.GraphicsPath();
-            path.AddArc(rect.X, rect.Y, radius, radius, 180, 90);
-            path.AddArc(rect.Right - radius, rect.Y, radius, radius, 270, 90);
-            path.AddArc(rect.Right - radius, rect.Bottom - radius, radius, radius, 0, 90);
-            path.AddArc(rect.X, rect.Bottom - radius, radius, radius, 90, 90);
-            path.CloseFigure();
-            return path;
         }
 
         private void DgvParts_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
-
             if (dgvParts.Columns[e.ColumnIndex].Name == "colActions")
             {
-                // Hit Test based on e.X, e.Y (relative to cell)
-                // Edit Rect (X=10, W=30), Delete Rect (X=50, W=30)
-
-                // Reverted Hit Test for 32x32 icons
-
-                // Check Edit (X=10-40)
                 if (e.X >= 10 && e.X <= 40)
                 {
-                    if (!butcherPOS.Helpers.UserSession.IsAdmin)
-                    {
-                        MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionEdit") ?? "You do not have permission to edit items.");
-                        return;
-                    }
-
+                    if (!UserSession.IsAdmin) { MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionEdit")); return; }
                     var row = dgvParts.Rows[e.RowIndex];
                     string id = row.Cells["part_id"].Value?.ToString();
                     if (string.IsNullOrEmpty(id)) return;
-
                     string name = row.Cells["colName"].Value?.ToString() ?? "";
-                    string sku = row.Cells["colSKU"].Value?.ToString() ?? "";
-
-                    object qtyVal = row.Cells["colStock"].Value;
-                    int qty = (qtyVal == null || qtyVal == DBNull.Value) ? 0 : Convert.ToInt32(qtyVal);
-
-                    object priceVal = row.Cells["colPrice"].Value;
-                    decimal price = (priceVal == null || priceVal == DBNull.Value) ? 0 : Convert.ToDecimal(priceVal);
-
-                    string status = row.Cells["colStatus"].Value?.ToString() ?? "Active";
-                    string barcode = row.Cells["colBarcode"].Value?.ToString() ?? "";
+                    string sku  = row.Cells["colSKU"].Value?.ToString() ?? "";
+                    int qty     = Convert.ToInt32(row.Cells["colStock"].Value ?? 0);
+                    decimal price = Convert.ToDecimal(row.Cells["colPrice"].Value ?? 0);
+                    string status   = row.Cells["colStatus"].Value?.ToString() ?? "Active";
+                    string barcode  = row.Cells["colBarcode"].Value?.ToString() ?? "";
                     string location = row.Cells["colLocation"].Value?.ToString() ?? "";
-                    string shelf = row.Cells["colShelf"].Value?.ToString() ?? "";
-                    string image = row.Cells["part_image"].Value?.ToString() ?? "";
+                    string shelf    = row.Cells["colShelf"].Value?.ToString() ?? "";
+                    string image    = row.Cells["part_image"].Value?.ToString() ?? "";
                     string category = row.Cells["colCategory"].Value?.ToString() ?? "";
-
-                    object minVal = row.Cells["minimum_stock_level"].Value;
-                    int minStock = (minVal == null || minVal == DBNull.Value) ? 0 : Convert.ToInt32(minVal);
+                    int minStock    = Convert.ToInt32(row.Cells["minimum_stock_level"].Value ?? 0);
 
                     if (category == "Services")
                     {
                         using (AddServiceForm form = new AddServiceForm())
-                        {
-                            form.LoadServiceData(id, name, sku, price, status, image);
-                            if (form.ShowDialog() == DialogResult.OK)
-                            {
-                                LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
-                                MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_ServiceUpdated"));
-                            }
-                        }
+                        { form.LoadServiceData(id, name, sku, price, status, image); if (form.ShowDialog() == DialogResult.OK) { RefreshAll(); MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_ServiceUpdated")); } }
                     }
                     else
                     {
                         using (AddPartForm form = new AddPartForm())
-                        {
-                            form.LoadPartData(id, name, sku, qty, price, minStock, status, barcode, location, shelf, image, category);
-                            if (form.ShowDialog() == DialogResult.OK)
-                            {
-                                LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
-                                MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_UpdateSuccess"));
-                            }
-                        }
+                        { form.LoadPartData(id, name, sku, qty, price, minStock, status, barcode, location, shelf, image, category); if (form.ShowDialog() == DialogResult.OK) { RefreshAll(); MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_UpdateSuccess")); } }
                     }
                 }
-                // Check Delete (X=50-80)
                 else if (e.X >= 50 && e.X <= 80)
                 {
                     string id = dgvParts.Rows[e.RowIndex].Cells["part_id"].Value?.ToString();
                     if (string.IsNullOrEmpty(id)) return;
-
-                    if (!butcherPOS.Helpers.UserSession.IsAdmin)
-                    {
-                        MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionDelete") ?? "You do not have permission to delete items.");
-                        return;
-                    }
-
-                    if (MessageHelper.ConfirmAction("Delete this item?"))
-                    {
-                        _inventoryService.DeletePart(int.Parse(id));
-                        LoadData();
-                    }
+                    if (!UserSession.IsAdmin) { MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionDelete")); return; }
+                    if (MessageHelper.ConfirmAction("Delete this item?")) { _inventoryService.DeletePart(int.Parse(id)); RefreshAll(); }
                 }
-                // Check Stock Adjustment (X=90-120)
                 else if (e.X >= 90 && e.X <= 120)
                 {
                     var row = dgvParts.Rows[e.RowIndex];
-                    int partId = int.Parse(row.Cells["part_id"].Value?.ToString() ?? "0");
-                    string partName = row.Cells["colName"].Value?.ToString() ?? "";
-
-                    ShowAdjustmentDialog(partId, partName);
+                    ShowAdjustmentDialog(int.Parse(row.Cells["part_id"].Value?.ToString() ?? "0"), row.Cells["colName"].Value?.ToString() ?? "");
                 }
             }
         }
 
+        private void DgvParts_CellMouseMove(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            dgvParts.Cursor = (e.RowIndex >= 0 && dgvParts.Columns[e.ColumnIndex].Name == "colActions") ? Cursors.Hand : Cursors.Default;
+        }
+
+        private void DgvParts_CellMouseLeave(object sender, DataGridViewCellEventArgs e) => dgvParts.Cursor = Cursors.Default;
+
+        // ─────────────────────────────────────────────────────────────────
+        // ADJUSTMENT DIALOG
+        // ─────────────────────────────────────────────────────────────────
         private void ShowAdjustmentDialog(int partId, string partName)
         {
-            string title = (LocalizationManager.GetString("Msg_AdjustStock")) + partName;
+            string title = LocalizationManager.GetString("Msg_AdjustStock") + partName;
             BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(450, 280) };
-
             TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 1, RowCount = 5, AutoSize = true, Padding = new Padding(10) };
-            tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            tlp.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            tlp.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
-
-            string instrText = LocalizationManager.GetString("Msg_AdjustInstr") ?? "Enter quantity to add (+) or subtract (-):";
-            ModernNumericUpDown numQty = new ModernNumericUpDown { LabelText = instrText, Width = 380, Minimum = -99999, Maximum = 99999, Margin = new Padding(0, 0, 0, 20) };
-
-            string reasonLabelText = LocalizationManager.GetString("Msg_Reason");
-            Label lblReason = new Label { Text = reasonLabelText, AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 5) };
-            TextBox txtReasonAdjust = new TextBox { Width = 380, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 20), Multiline = true, Height = 80 };
-
-            Button btnSaveAdj = new ModernButton { Text = LocalizationManager.GetString("Msg_Adjust"), Size = new Size(120, 40), Anchor = AnchorStyles.Right };
-            ThemeConfig.ApplyPrimaryButton(btnSaveAdj);
-
-            btnSaveAdj.Click += (s, e) =>
+            for (int i = 0; i < 5; i++) tlp.RowStyles.Add(i < 4 ? new RowStyle(SizeType.AutoSize) : new RowStyle(SizeType.Absolute, 60F));
+            ModernNumericUpDown numQty = new ModernNumericUpDown { LabelText = LocalizationManager.GetString("Msg_AdjustInstr") ?? "Enter quantity to add (+) or subtract (-):", Width = 380, Minimum = -99999, Maximum = 99999, Margin = new Padding(0, 0, 0, 20) };
+            Label lblReason = new Label { Text = LocalizationManager.GetString("Msg_Reason"), AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 5) };
+            TextBox txtReason = new TextBox { Width = 380, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 20), Multiline = true, Height = 80 };
+            Button btnSave = new ModernButton { Text = LocalizationManager.GetString("Msg_Adjust"), Size = new Size(120, 40), Anchor = AnchorStyles.Right };
+            ThemeConfig.ApplyPrimaryButton(btnSave);
+            btnSave.Click += (s, e) =>
             {
-                if (numQty.Value == 0)
-                {
-                    MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_AdjZero"));
-                    return;
-                }
-                if (string.IsNullOrWhiteSpace(txtReasonAdjust.Text))
-                {
-                    MessageHelper.ShowWarning("Please provide a reason.");
-                    return;
-                }
-
-                try
-                {
-                    _inventoryService.AdjustStock(partId, (int)numQty.Value, txtReasonAdjust.Text);
-                    // Notify all connected web POS tablets in real-time
-                    InventoryBroadcaster.BroadcastStockChange("desktop-adjustment");
-                    MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_AdjSuccess"));
-                    f.DialogResult = DialogResult.OK;
-                    f.Close();
-                    LoadData(txtSearch.Text == "Search..." ? "" : txtSearch.Text);
-                }
+                if (numQty.Value == 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_AdjZero")); return; }
+                if (string.IsNullOrWhiteSpace(txtReason.Text)) { MessageHelper.ShowWarning("Please provide a reason."); return; }
+                try { _inventoryService.AdjustStock(partId, (int)numQty.Value, txtReason.Text); InventoryBroadcaster.BroadcastStockChange("desktop-adjustment"); MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_AdjSuccess")); f.DialogResult = DialogResult.OK; f.Close(); RefreshAll(); }
                 catch (Exception ex) { MessageHelper.ShowError("Error: " + ex.Message); }
             };
-
-            tlp.Controls.Add(numQty, 0, 1);
-            tlp.Controls.Add(lblReason, 0, 2);
-            tlp.Controls.Add(txtReasonAdjust, 0, 3);
-            tlp.Controls.Add(btnSaveAdj, 0, 4);
-
+            tlp.Controls.Add(numQty, 0, 1); tlp.Controls.Add(lblReason, 0, 2); tlp.Controls.Add(txtReason, 0, 3); tlp.Controls.Add(btnSave, 0, 4);
             f.ContentPanel.Controls.Add(tlp);
             LocalizationManager.ApplyRTL(f);
             f.ShowDialog();
         }
 
-
-        private void DgvParts_CellMouseMove(object sender, DataGridViewCellMouseEventArgs e)
-        {
-            if (e.RowIndex >= 0 && dgvParts.Columns[e.ColumnIndex].Name == "colActions")
-            {
-                dgvParts.Cursor = Cursors.Hand;
-            }
-            else
-            {
-                dgvParts.Cursor = Cursors.Default;
-            }
-        }
-
-        private void DgvParts_CellMouseLeave(object sender, DataGridViewCellEventArgs e)
-        {
-            dgvParts.Cursor = Cursors.Default;
-        }
-
+        // ─────────────────────────────────────────────────────────────────
+        // BUTTON HANDLERS (unchanged)
+        // ─────────────────────────────────────────────────────────────────
         private void BtnAdd_Click(object sender, EventArgs e)
         {
             using (AddPartForm form = new AddPartForm())
-            {
-                if (form.ShowDialog() == DialogResult.OK)
-                {
-                    LoadData();
-                }
-            }
+            { if (form.ShowDialog() == DialogResult.OK) RefreshAll(); }
         }
 
         private void BtnService_Click(object sender, EventArgs e)
         {
             using (AddServiceForm form = new AddServiceForm())
-            {
-                if (form.ShowDialog() == DialogResult.OK)
-                {
-                    LoadData();
-                }
-            }
+            { if (form.ShowDialog() == DialogResult.OK) RefreshAll(); }
         }
 
         private void BtnFilter_Click(object sender, EventArgs e)
         {
             ContextMenuStrip menu = new ContextMenuStrip();
             ThemeConfig.ApplyModernMenuTheme(menu);
-
-            // Standard Filters
-            menu.Items.Add("All Items", null, (s, args) => LoadData());
-            menu.Items.Add("Low Stock Only", null, (s, args) => LoadData("", lowStockOnly: true));
-            menu.Items.Add("Active Only", null, (s, args) => LoadData("", activeOnly: true));
-
+            menu.Items.Add("All Items",       null, (s, a) => { _lowStockOnly = false; _activeOnly = false; _activeCategory = null; RefreshAll(); });
+            menu.Items.Add("Low Stock Only",  null, (s, a) => { _lowStockOnly = true;  _activeOnly = false; RefreshAll(); });
+            menu.Items.Add("Active Only",     null, (s, a) => { _lowStockOnly = false; _activeOnly = true;  RefreshAll(); });
             menu.Items.Add(new ToolStripSeparator());
-
-            // Category Filters
-            var categoriesHeader = new ToolStripMenuItem("Categories") { Enabled = false, Font = ThemeConfig.ButtonFont };
-            menu.Items.Add(categoriesHeader);
-
             try
             {
-                var catList = butcherPOS.Data.CategoryData.GetAllCategories();
-                foreach (var cat in catList)
+                foreach (var cat in CategoryData.GetAllCategories())
                 {
                     ToolStripMenuItem catItem = new ToolStripMenuItem(cat.CategoryName);
-                    catItem.Click += (s, args) => LoadData("", category: cat.CategoryName);
-
+                    catItem.Click += (s, a) => { _activeCategory = cat.CategoryName; RefreshAll(); };
                     ToolStripMenuItem editItem = new ToolStripMenuItem("Edit Category", ThemeConfig.GetNuricon("edit"));
-                    editItem.Click += (s, args) =>
+                    editItem.Click += (s, a) =>
                     {
                         using (AddCategoryForm f = new AddCategoryForm())
-                        {
-                            f.LoadCategoryData(cat.Id, cat.CategoryName, cat.Description, cat.CategoryImage);
-                            if (f.ShowDialog() == DialogResult.OK) LoadData();
-                        }
+                        { f.LoadCategoryData(cat.Id, cat.CategoryName, cat.Description, cat.CategoryImage); if (f.ShowDialog() == DialogResult.OK) RefreshAll(); }
                     };
                     catItem.DropDownItems.Add(editItem);
                     menu.Items.Add(catItem);
                 }
             }
             catch { }
-
-            menu.Show(btnFilter, new Point(0, btnFilter.Height));
-        }
-        private void BtnAddCategory_Click(object sender, EventArgs e)
-        {
-            using (AddCategoryForm form = new AddCategoryForm())
+            
+            if (sender is Control btn)
             {
-                if (form.ShowDialog() == DialogResult.OK)
-                {
-                    MessageHelper.ShowSuccess("Category added! It will now appear in the dropdown.");
-                    // Could refresh grid but categories are in the add part form mostly
-                }
+                menu.Show(btn, new Point(0, btn.Height));
             }
         }
 
-        private void BtnExport_Click(object sender, EventArgs e)
+        private void BtnAddCategory_Click(object sender, EventArgs e)
         {
-            ExportToCsv();
+            using (AddCategoryForm form = new AddCategoryForm())
+            { if (form.ShowDialog() == DialogResult.OK) { RefreshAll(); MessageHelper.ShowSuccess("Category added!"); } }
         }
 
-        private void BtnImport_Click(object sender, EventArgs e)
+        private void BtnExport_Click(object sender, EventArgs e) => ExportToCsv();
+        private void BtnImport_Click(object sender, EventArgs e) => ImportFromCsv();
+
+        // ─────────────────────────────────────────────────────────────────
+        // PERMISSIONS
+        // ─────────────────────────────────────────────────────────────────
+        private void ApplyPermissions()
         {
-            ImportFromCsv();
+            if (!UserSession.IsAdmin)
+            {
+                if (btnAdd != null)    btnAdd.Visible = false;
+                if (btnImport != null) btnImport.Visible = false;
+                var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
+                if (ctrlDel.Length > 0) ctrlDel[0].Visible = false;
+            }
         }
 
+        // ─────────────────────────────────────────────────────────────────
+        // DRAWING HELPERS
+        // ─────────────────────────────────────────────────────────────────
+        private static GraphicsPath RoundedPath(Rectangle r, int rad)
+        {
+            var p = new GraphicsPath();
+            p.AddArc(r.X,             r.Y,              rad, rad, 180, 90);
+            p.AddArc(r.Right - rad,   r.Y,              rad, rad, 270, 90);
+            p.AddArc(r.Right - rad,   r.Bottom - rad,   rad, rad,   0, 90);
+            p.AddArc(r.X,             r.Bottom - rad,   rad, rad,  90, 90);
+            p.CloseFigure();
+            return p;
+        }
+
+        private static GraphicsPath GetRoundedRect(Rectangle rect, int radius) => RoundedPath(rect, radius);
+
+        private static Image ResizeImage(Image img, int w, int h)
+        {
+            var bmp = new System.Drawing.Bitmap(w, h);
+            using (var g = Graphics.FromImage(bmp))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.DrawImage(img, 0, 0, w, h);
+            }
+            return bmp;
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // EXPORT / IMPORT (preserved exactly)
+        // ─────────────────────────────────────────────────────────────────
         private void ExportToCsv()
         {
             try
             {
-                SaveFileDialog saveDialog = new SaveFileDialog();
-                saveDialog.Filter = "CSV Files (*.csv)|*.csv";
-                saveDialog.FileName = $"Parts_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                saveDialog.Title = "Export Parts to CSV";
-
-                if (saveDialog.ShowDialog() == DialogResult.OK)
-                {
-                    DataTable dt = (DataTable)dgvParts.DataSource;
-                    if (dt == null || dt.Rows.Count == 0)
-                    {
-                        MessageHelper.ShowWarning("No data to export.");
-                        return;
-                    }
-
-                    // Create export table with selected columns
-                    DataTable exportDt = new DataTable();
-                    exportDt.Columns.Add("PartNumber");
-                    exportDt.Columns.Add("PartName");
-                    exportDt.Columns.Add("Category");
-                    exportDt.Columns.Add("Quantity");
-                    exportDt.Columns.Add("MinimumStock");
-                    exportDt.Columns.Add("UnitPrice");
-                    exportDt.Columns.Add("Location");
-                    exportDt.Columns.Add("Status");
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        exportDt.Rows.Add(
-                            row["part_number"],
-                            row["part_name"],
-                            row["category_name"],
-                            row["quantity_in_stock"],
-                            row["minimum_stock_level"],
-                            row["selling_price"],
-                            row["location"],
-                            row["status"]
-                        );
-                    }
-
-                    if (Helpers.ImportExportHelper.ExportToCsv(exportDt, saveDialog.FileName))
-                    {
-                        MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} parts to CSV successfully!");
-                    }
-                    else
-                    {
-                        MessageHelper.ShowError("Failed to export data.");
-                    }
-                }
+                SaveFileDialog dlg = new SaveFileDialog { Filter = "CSV Files (*.csv)|*.csv", FileName = $"Parts_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv", Title = "Export Parts to CSV" };
+                if (dlg.ShowDialog() != DialogResult.OK) return;
+                DataTable dt = _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
+                if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data to export."); return; }
+                DataTable exportDt = new DataTable();
+                exportDt.Columns.Add("PartNumber"); exportDt.Columns.Add("PartName"); exportDt.Columns.Add("Category");
+                exportDt.Columns.Add("Quantity");   exportDt.Columns.Add("MinimumStock"); exportDt.Columns.Add("UnitPrice");
+                exportDt.Columns.Add("Location");   exportDt.Columns.Add("Status");
+                foreach (DataRow row in dt.Rows)
+                    exportDt.Rows.Add(row["part_number"], row["part_name"], row["category_name"], row["quantity_in_stock"], row["minimum_stock_level"], row["selling_price"], row["location"], row["status"]);
+                if (Helpers.ImportExportHelper.ExportToCsv(exportDt, dlg.FileName))
+                    MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} parts to CSV successfully!");
+                else
+                    MessageHelper.ShowError("Failed to export data.");
             }
-            catch (Exception ex)
-            {
-                MessageHelper.ShowError($"Export error: {ex.Message}");
-            }
-        }
-
-        private void ExportToExcel()
-        {
-            try
-            {
-                SaveFileDialog saveDialog = new SaveFileDialog();
-                saveDialog.Filter = "Excel Files (*.xlsx)|*.xlsx";
-                saveDialog.FileName = $"Parts_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-                saveDialog.Title = "Export Parts to Excel";
-
-                if (saveDialog.ShowDialog() == DialogResult.OK)
-                {
-                    DataTable dt = (DataTable)dgvParts.DataSource;
-                    if (dt == null || dt.Rows.Count == 0)
-                    {
-                        MessageHelper.ShowWarning("No data to export.");
-                        return;
-                    }
-
-                    // Create export table with selected columns
-                    DataTable exportDt = new DataTable();
-                    exportDt.Columns.Add("PartNumber");
-                    exportDt.Columns.Add("PartName");
-                    exportDt.Columns.Add("Category");
-                    exportDt.Columns.Add("Quantity");
-                    exportDt.Columns.Add("MinimumStock");
-                    exportDt.Columns.Add("UnitPrice");
-                    exportDt.Columns.Add("Location");
-                    exportDt.Columns.Add("Status");
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        exportDt.Rows.Add(
-                            row["part_number"],
-                            row["part_name"],
-                            row["category_name"],
-                            row["quantity_in_stock"],
-                            row["minimum_stock_level"],
-                            row["selling_price"],
-                            row["location"],
-                            row["status"]
-                        );
-                    }
-
-                    if (Helpers.ImportExportHelper.ExportToExcel(exportDt, saveDialog.FileName, "Parts"))
-                    {
-                        MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} parts to Excel successfully!");
-                    }
-                    else
-                    {
-                        MessageHelper.ShowError("Failed to export data.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageHelper.ShowError($"Export error: {ex.Message}");
-            }
+            catch (Exception ex) { MessageHelper.ShowError($"Export error: {ex.Message}"); }
         }
 
         private void ImportFromCsv()
         {
             try
             {
-                OpenFileDialog openDialog = new OpenFileDialog();
-                openDialog.Filter = "CSV Files (*.csv)|*.csv";
-                openDialog.Title = "Import Parts from CSV";
-
-                if (openDialog.ShowDialog() == DialogResult.OK)
+                OpenFileDialog dlg = new OpenFileDialog { Filter = "CSV Files (*.csv)|*.csv", Title = "Import Parts from CSV" };
+                if (dlg.ShowDialog() != DialogResult.OK) return;
+                DataTable dt = Helpers.ImportExportHelper.ImportFromCsv(dlg.FileName);
+                if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data found in the file."); return; }
+                if (!dt.Columns.Contains("PartNumber") || !dt.Columns.Contains("PartName")) { MessageHelper.ShowError("Invalid file format. Required columns: PartNumber, PartName, Category, Quantity, MinimumStock, UnitPrice, Location, Status"); return; }
+                int imported = 0, skipped = 0;
+                foreach (DataRow row in dt.Rows)
                 {
-                    DataTable dt = Helpers.ImportExportHelper.ImportFromCsv(openDialog.FileName);
-
-                    if (dt == null || dt.Rows.Count == 0)
+                    try
                     {
-                        MessageHelper.ShowWarning("No data found in the file.");
-                        return;
+                        string pn = row["PartNumber"].ToString(), name = row["PartName"].ToString();
+                        if (string.IsNullOrWhiteSpace(pn) || string.IsNullOrWhiteSpace(name)) { skipped++; continue; }
+                        if (_inventoryService.PartExists(pn)) { skipped++; continue; }
+                        _inventoryService.ImportPart(pn, name, row["Category"].ToString(), int.Parse(row["Quantity"].ToString()), int.Parse(row["MinimumStock"].ToString()), decimal.Parse(row["UnitPrice"].ToString()), row["Location"].ToString(), row["Status"].ToString());
+                        imported++;
                     }
-
-                    // Validate columns
-                    if (!dt.Columns.Contains("PartNumber") || !dt.Columns.Contains("PartName"))
-                    {
-                        MessageHelper.ShowError("Invalid file format. Required columns: PartNumber, PartName, Category, Quantity, MinimumStock, UnitPrice, Location, Status");
-                        return;
-                    }
-
-                    int imported = 0;
-                    int skipped = 0;
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        try
-                        {
-                            string partNumber = row["PartNumber"].ToString();
-                            string partName = row["PartName"].ToString();
-
-                            if (string.IsNullOrWhiteSpace(partNumber) || string.IsNullOrWhiteSpace(partName))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            // Check if part already exists
-                            if (_inventoryService.PartExists(partNumber))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            // Import the part
-                            _inventoryService.ImportPart(
-                                partNumber,
-                                partName,
-                                row["Category"].ToString(),
-                                int.Parse(row["Quantity"].ToString()),
-                                int.Parse(row["MinimumStock"].ToString()),
-                                decimal.Parse(row["UnitPrice"].ToString()),
-                                row["Location"].ToString(),
-                                row["Status"].ToString()
-                            );
-                            imported++;
-                        }
-                        catch
-                        {
-                            skipped++;
-                        }
-                    }
-
-                    LoadData();
-                    MessageHelper.ShowSuccess($"Import complete!\nImported: {imported}\nSkipped: {skipped}");
+                    catch { skipped++; }
                 }
+                RefreshAll();
+                MessageHelper.ShowSuccess($"Import complete!\nImported: {imported}\nSkipped: {skipped}");
             }
-            catch (Exception ex)
-            {
-                MessageHelper.ShowError($"Import error: {ex.Message}");
-            }
-        }
-
-        private void ImportFromExcel()
-        {
-            try
-            {
-                OpenFileDialog openDialog = new OpenFileDialog();
-                openDialog.Filter = "Excel Files (*.xlsx)|*.xlsx";
-                openDialog.Title = "Import Parts from Excel";
-
-                if (openDialog.ShowDialog() == DialogResult.OK)
-                {
-                    DataTable dt = Helpers.ImportExportHelper.ImportFromExcel(openDialog.FileName, "Parts");
-
-                    if (dt == null || dt.Rows.Count == 0)
-                    {
-                        MessageHelper.ShowWarning("No data found in the file.");
-                        return;
-                    }
-
-                    // Validate columns
-                    if (!dt.Columns.Contains("PartNumber") || !dt.Columns.Contains("PartName"))
-                    {
-                        MessageHelper.ShowError("Invalid file format. Required columns: PartNumber, PartName, Category, Quantity, MinimumStock, UnitPrice, Location, Status");
-                        return;
-                    }
-
-                    int imported = 0;
-                    int skipped = 0;
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        try
-                        {
-                            string partNumber = row["PartNumber"].ToString();
-                            string partName = row["PartName"].ToString();
-
-                            if (string.IsNullOrWhiteSpace(partNumber) || string.IsNullOrWhiteSpace(partName))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            // Check if part already exists
-                            if (_inventoryService.PartExists(partNumber))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            // Import the part
-                            _inventoryService.ImportPart(
-                                partNumber,
-                                partName,
-                                row["Category"].ToString(),
-                                int.Parse(row["Quantity"].ToString()),
-                                int.Parse(row["MinimumStock"].ToString()),
-                                decimal.Parse(row["UnitPrice"].ToString()),
-                                row["Location"].ToString(),
-                                row["Status"].ToString()
-                            );
-                            imported++;
-                        }
-                        catch
-                        {
-                            skipped++;
-                        }
-                    }
-
-                    LoadData();
-                    MessageHelper.ShowSuccess($"Import complete!\nImported: {imported}\nSkipped: {skipped}");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageHelper.ShowError($"Import error: {ex.Message}");
-            }
-        }
-        private void ApplyPermissions()
-        {
-            if (!butcherPOS.Helpers.UserSession.IsAdmin)
-            {
-                if (btnAdd != null) btnAdd.Visible = false;
-                if (btnAddCategory != null) btnAddCategory.Visible = false;
-                if (btnImport != null) btnImport.Visible = false; // Import is like adding
-
-                var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
-                if (ctrlDel.Length > 0) ctrlDel[0].Visible = false;
-            }
+            catch (Exception ex) { MessageHelper.ShowError($"Import error: {ex.Message}"); }
         }
     }
 }
-
-

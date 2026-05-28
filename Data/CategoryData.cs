@@ -58,5 +58,25 @@ namespace butcherPOS.Data
                 new SqliteParameter("@img",  image),
                 new SqliteParameter("@id",   id));
         }
+
+        /// <summary>
+        /// Returns the total count of all items (regardless of status) in a given category.
+        /// </summary>
+        public static int GetItemCount(string categoryName)
+        {
+            string sql = @"SELECT COUNT(*) FROM parts p
+                           LEFT JOIN categories c ON p.category_id = c.id
+                           WHERE p.date_deleted IS NULL AND c.category_name = @cat";
+            return DatabaseHelper.ExecuteScalar<int>(sql, new SqliteParameter("@cat", categoryName));
+        }
+
+        /// <summary>
+        /// Returns the total count of all items across all categories.
+        /// </summary>
+        public static int GetTotalItemCount()
+        {
+            string sql = "SELECT COUNT(*) FROM parts WHERE date_deleted IS NULL";
+            return DatabaseHelper.ExecuteScalar<int>(sql);
+        }
     }
 }
