@@ -17,8 +17,7 @@ namespace butcherPOS.Forms
     public partial class PartsForm : UserControl
     {
         // ── Toolbar buttons ──────────────────────────────────────────────
-        private Button btnAdd;
-        private Button btnService;
+        private butcherPOS.Controls.ModernButton btnAdd;
         private Button btnAddCategory;
         private Button btnFilter;
         private Button btnImport;
@@ -81,8 +80,7 @@ namespace butcherPOS.Forms
         // ─────────────────────────────────────────────────────────────────
         private void InitializeComponent()
         {
-            this.btnAdd         = new Button();
-            this.btnService     = new Button();
+            this.btnAdd         = new butcherPOS.Controls.ModernButton();
             this.btnImport      = new Button();
             this.btnExport      = new Button();
             this.txtSearch      = new ModernTextBox();
@@ -109,7 +107,7 @@ namespace butcherPOS.Forms
             {
                 IsSearch = true, ShowLabel = false,
                 PlaceholderText = LocalizationManager.GetString("Parts_Search"),
-                Size = new Size(280, 40)
+                Size = new Size(280, 35)
             };
             txtSearch.TextChanged += (s, e) =>
             {
@@ -118,31 +116,57 @@ namespace butcherPOS.Forms
                 RefreshAll();
             };
 
-            btnService.Size = new Size(160, 40);
-            btnService.Click += BtnService_Click;
-            ThemeConfig.ApplyStandardAddButton(btnService, "Parts_AddService");
-
-            btnAdd.Size = new Size(160, 40);
+            btnAdd.Size = new Size(120, 35);
             btnAdd.Click += BtnAdd_Click;
-            ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_AddProduct");
+            btnAdd.Text = "+ New";
+            ThemeConfig.ApplyPrimaryButton(btnAdd);
 
-            btnAddCategory = new Button { Size = new Size(140, 40) };
+            btnAddCategory = new Button { Size = new Size(140, 35) };
             btnAddCategory.Click += BtnAddCategory_Click;
             ThemeConfig.ApplyStandardAddButton(btnAddCategory, "Parts_AddCategory");
 
-            Button btnDeleteSelected = new Button { Size = new Size(130, 40), Name = "btnDeleteSelected" };
+            Button btnDeleteSelected = new Button { Size = new Size(130, 35), Name = "btnDeleteSelected" };
             btnDeleteSelected.Click += (s, e) =>
             {
                 var checkedIds = new List<int>();
-                foreach (DataGridViewRow row in dgvParts.Rows)
+                if (_isCardView)
                 {
-                    var chkCell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
-                    if (chkCell != null && Convert.ToBoolean(chkCell.Value ?? false))
-                        if (int.TryParse(row.Cells["part_id"].Value?.ToString(), out int pId))
-                            checkedIds.Add(pId);
+                    foreach (Control card in pnlCardFlow.Controls)
+                    {
+                        if (card is Panel)
+                        {
+                            foreach (Control c in card.Controls)
+                            {
+                                if (c is CheckBox chk && chk.Checked && chk.Tag is int pId)
+                                {
+                                    checkedIds.Add(pId);
+                                }
+                            }
+                        }
+                    }
                 }
-                if (checkedIds.Count == 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_SelectOne")); return; }
-                if (MessageHelper.ConfirmAction(string.Format(LocalizationManager.GetString("Msg_ConfirmDelete"), checkedIds.Count)))
+                else
+                {
+                    foreach (DataGridViewRow row in dgvParts.Rows)
+                    {
+                        var chkCell = row.Cells["colCheck"] as DataGridViewCheckBoxCell;
+                        if (chkCell != null && Convert.ToBoolean(chkCell.Value ?? false))
+                            if (int.TryParse(row.Cells["part_id"].Value?.ToString(), out int pId))
+                                checkedIds.Add(pId);
+                    }
+                }
+
+                if (checkedIds.Count == 0) 
+                { 
+                    string msg = LocalizationManager.GetString("Msg_SelectOne");
+                    MessageHelper.ShowWarning(string.IsNullOrEmpty(msg) ? "Please select at least one item." : msg); 
+                    return; 
+                }
+                
+                string confirmMsg = LocalizationManager.GetString("Msg_ConfirmDelete");
+                if (string.IsNullOrEmpty(confirmMsg)) confirmMsg = "Are you sure you want to delete {0} items?";
+                
+                if (MessageHelper.ConfirmAction(string.Format(confirmMsg, checkedIds.Count)))
                 {
                     foreach (int i in checkedIds) _inventoryService.DeletePart(i);
                     RefreshAll();
@@ -150,21 +174,21 @@ namespace butcherPOS.Forms
             };
             ThemeConfig.ApplyStandardDeleteButton(btnDeleteSelected, "Parts_Delete");
 
-            btnImport.Size = new Size(100, 40);
+            btnImport.Size = new Size(100, 35);
             btnImport.FlatStyle = FlatStyle.Flat;
             btnImport.FlatAppearance.BorderSize = 0;
             btnImport.Cursor = Cursors.Hand;
             btnImport.Click += BtnImport_Click;
             btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Parts_Import", Color.FromArgb(139, 92, 246), Color.FromArgb(139, 92, 246), true);
 
-            btnExport.Size = new Size(100, 40);
+            btnExport.Size = new Size(100, 35);
             btnExport.FlatStyle = FlatStyle.Flat;
             btnExport.FlatAppearance.BorderSize = 0;
             btnExport.Cursor = Cursors.Hand;
             btnExport.Click += BtnExport_Click;
             btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Parts_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
 
-            var actionButtons = new Control[] { btnService, btnAdd, btnDeleteSelected, btnImport, btnExport };
+            var actionButtons = new Control[] { btnAdd, btnDeleteSelected, btnImport, btnExport };
             TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblInventoryTitle, txtSearch, actionButtons);
             tlpRoot.Controls.Add(tlpHeader, 0, 0);
 
@@ -233,28 +257,13 @@ namespace butcherPOS.Forms
 
             // Add Category button at bottom of sidebar
             Panel pnlAddCatWrapper = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12), BackColor = Color.Transparent };
-            Button btnSidebarAddCat = new Button
+            var btnSidebarAddCat = new butcherPOS.Controls.ModernButton
             {
-                Dock = DockStyle.Fill, FlatStyle = FlatStyle.Flat,
-                Text = "⊕ " + (LocalizationManager.GetString("Parts_AddCategory") ?? "Add New Category"),
+                Dock = DockStyle.Fill,
+                Text = "+ " + (LocalizationManager.GetString("Parts_AddCategory") ?? "Add New Category"),
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 ForeColor = Color.White,
-                BackColor = ThemeConfig.PrimaryColor,
-                Cursor = Cursors.Hand
-            };
-            btnSidebarAddCat.FlatAppearance.BorderSize = 0;
-            btnSidebarAddCat.Paint += (s, pe) =>
-            {
-                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                pe.Graphics.Clear(pnlAddCatWrapper.BackColor);
-                using (var path = RoundedPath(new Rectangle(0, 0, btnSidebarAddCat.Width - 1, btnSidebarAddCat.Height - 1), 8))
-                using (var brush = new SolidBrush(btnSidebarAddCat.BackColor))
-                {
-                    pe.Graphics.FillPath(brush, path);
-                    TextRenderer.DrawText(pe.Graphics, btnSidebarAddCat.Text, btnSidebarAddCat.Font,
-                        new Rectangle(0, 0, btnSidebarAddCat.Width, btnSidebarAddCat.Height),
-                        btnSidebarAddCat.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-                }
+                BackColor = ThemeConfig.PrimaryColor
             };
             btnSidebarAddCat.Click += BtnAddCategory_Click;
             pnlAddCatWrapper.Controls.Add(btnSidebarAddCat);
@@ -310,8 +319,8 @@ namespace butcherPOS.Forms
             };
 
             // View toggle group (card ⊞ / list ≡)
-            btnToggleCard = CreateToggleBtn("⊞", true);
-            btnToggleGrid = CreateToggleBtn("≡", false);
+            btnToggleCard = CreateToggleBtn("grid", true);
+            btnToggleGrid = CreateToggleBtn("list", false);
             btnToggleCard.Click += (s, e) => SwitchView(true);
             btnToggleGrid.Click += (s, e) => SwitchView(false);
 
@@ -336,21 +345,27 @@ namespace butcherPOS.Forms
             // Filter button — outlined style matching green reference UI
             Button btnContentFilter = new Button
             {
-                Size = new Size(94, 34), Location = new Point(78, 1),
+                Size = new Size(36, 34), Location = new Point(78, 1),
                 FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand,
                 BackColor = ThemeConfig.SurfaceColor,
                 ForeColor = ThemeConfig.TextColorDark,
                 Font = new Font("Segoe UI", 9F),
-                Text = "  " + (LocalizationManager.GetString("Parts_Filter") ?? "Filter"),
+                Text = "",
                 TextImageRelation = TextImageRelation.ImageBeforeText,
-                ImageAlign = ContentAlignment.MiddleLeft,
-                TextAlign = ContentAlignment.MiddleLeft
+                ImageAlign = ContentAlignment.MiddleCenter,
+                TextAlign = ContentAlignment.MiddleCenter
             };
             btnContentFilter.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
             btnContentFilter.FlatAppearance.BorderSize = 1;
             btnContentFilter.FlatAppearance.MouseOverBackColor = ThemeConfig.BackgroundColor;
             Image filterIcon = ThemeConfig.GetNuricon("filter");
-            if (filterIcon != null) btnContentFilter.Image = ResizeImage(filterIcon, 16, 16);
+            if (filterIcon != null) 
+            {
+                using (var tinted = ThemeConfig.TintImage(filterIcon, btnContentFilter.ForeColor))
+                {
+                    btnContentFilter.Image = ResizeImage(tinted, 16, 16);
+                }
+            }
             btnContentFilter.Click += BtnFilter_Click;
 
             pnlRightControls.Controls.Add(pnlToggle);
@@ -426,19 +441,32 @@ namespace butcherPOS.Forms
         // ─────────────────────────────────────────────────────────────────
         // VIEW TOGGLE
         // ─────────────────────────────────────────────────────────────────
-        private Button CreateToggleBtn(string text, bool startActive)
+        private Button CreateToggleBtn(string iconName, bool startActive)
         {
             var btn = new Button
             {
-                Text = text,
+                Text = "",
+                Tag = iconName,
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 13F),
                 Cursor = Cursors.Hand,
                 BackColor = startActive ? ThemeConfig.PrimaryColor : Color.Transparent,
                 ForeColor = startActive ? Color.White : ThemeConfig.SecondaryColor,
-                Size = new Size(34, 30), TextAlign = ContentAlignment.MiddleCenter
+                Size = new Size(34, 30)
             };
             btn.FlatAppearance.BorderSize = 0;
+            btn.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                Image img = ThemeConfig.GetNuricon(iconName);
+                if (img != null)
+                {
+                    using (var tinted = ThemeConfig.TintImage(img, btn.ForeColor))
+                    {
+                        int size = 18;
+                        e.Graphics.DrawImage(tinted, (btn.Width - size) / 2, (btn.Height - size) / 2, size, size);
+                    }
+                }
+            };
             return btn;
         }
 
@@ -586,32 +614,83 @@ namespace butcherPOS.Forms
             // Right-click on real categories → Edit
             if (cat != null)
             {
+                Action editCategory = () =>
+                {
+                    using (AddCategoryForm f = new AddCategoryForm())
+                    {
+                        f.LoadCategoryData(cat.Id, cat.CategoryName, cat.Description, cat.CategoryImage);
+                        if (f.ShowDialog() == DialogResult.OK)
+                        {
+                            _activeCategory = null;
+                            RefreshAll();
+                        }
+                    }
+                };
+
+                Action deleteCategory = () =>
+                {
+                    int itemCount = CategoryData.GetItemCount(cat.CategoryName);
+                    string warningMsg = itemCount > 0 
+                        ? $"Warning: There are {itemCount} items in this category.\n\nAre you sure you want to delete the category \"{cat.CategoryName}\"?"
+                        : $"Delete category \"{cat.CategoryName}\"?";
+                        
+                    if (MessageHelper.ConfirmAction(warningMsg))
+                    {
+                        try { CategoryData.DeleteCategory(cat.Id); }
+                        catch (Exception ex) { MessageHelper.ShowError("Error deleting category: " + ex.Message); }
+                        _activeCategory = null;
+                        RefreshAll();
+                    }
+                };
+
+                // Add Edit / Delete buttons that appear on hover
+                PictureBox pbEdit = new PictureBox { Size = new Size(18, 18), Location = new Point(116, 13), Cursor = Cursors.Hand, Visible = false, BackColor = Color.Transparent };
+                PictureBox pbDelete = new PictureBox { Size = new Size(18, 18), Location = new Point(140, 13), Cursor = Cursors.Hand, Visible = false, BackColor = Color.Transparent };
+                
+                pbEdit.Paint += (s, e) => {
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    var img = ThemeConfig.TintImage(ThemeConfig.GetNuricon("edit"), ThemeConfig.SecondaryColor);
+                    if (img != null) e.Graphics.DrawImage(img, new Rectangle(0, 0, pbEdit.Width, pbEdit.Height));
+                };
+                pbDelete.Paint += (s, e) => {
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    var img = ThemeConfig.TintImage(ThemeConfig.GetNuricon("delete"), ThemeConfig.DangerColor);
+                    if (img != null) e.Graphics.DrawImage(img, new Rectangle(0, 0, pbDelete.Width, pbDelete.Height));
+                };
+
+                pbEdit.Click += (s, e) => editCategory();
+                pbDelete.Click += (s, e) => deleteCategory();
+
+                card.Controls.Add(pbEdit);
+                card.Controls.Add(pbDelete);
+                pbEdit.BringToFront();
+                pbDelete.BringToFront();
+
+                void ShowActions(object s, EventArgs e) { pbEdit.Visible = true; pbDelete.Visible = true; }
+                void HideActions(object s, EventArgs e) 
+                { 
+                    if (!card.ClientRectangle.Contains(card.PointToClient(Cursor.Position)))
+                    {
+                        pbEdit.Visible = false; pbDelete.Visible = false; 
+                    }
+                }
+
+                card.MouseEnter += ShowActions;
+                pbIcon.MouseEnter += ShowActions;
+                lblName.MouseEnter += ShowActions;
+                lblCount.MouseEnter += ShowActions;
+                
+                card.MouseLeave += HideActions;
+                pbIcon.MouseLeave += HideActions;
+                lblName.MouseLeave += HideActions;
+                lblCount.MouseLeave += HideActions;
+
                 void ShowCatMenu(object s, EventArgs e)
                 {
                     var menu = new ContextMenuStrip();
                     ThemeConfig.ApplyModernMenuTheme(menu);
-                    menu.Items.Add("Edit Category", ThemeConfig.GetNuricon("edit"), (ms, me) =>
-                    {
-                        using (AddCategoryForm f = new AddCategoryForm())
-                        {
-                            f.LoadCategoryData(cat.Id, cat.CategoryName, cat.Description, cat.CategoryImage);
-                            if (f.ShowDialog() == DialogResult.OK)
-                            {
-                                _activeCategory = null;
-                                RefreshAll();
-                            }
-                        }
-                    });
-                    menu.Items.Add("Delete Category", ThemeConfig.GetNuricon("delete"), (ms, me) =>
-                    {
-                        if (MessageHelper.ConfirmAction($"Delete category \"{cat.CategoryName}\"?"))
-                        {
-                            try { CategoryData.UpdateCategory(cat.Id, cat.CategoryName, cat.Description, ""); }
-                            catch { }
-                            _activeCategory = null;
-                            RefreshAll();
-                        }
-                    });
+                    menu.Items.Add("Edit Category", ThemeConfig.GetNuricon("edit"), (ms, me) => editCategory());
+                    menu.Items.Add("Delete Category", ThemeConfig.GetNuricon("delete"), (ms, me) => deleteCategory());
                     menu.Show(card, new Point(10, card.Height));
                 }
                 card.MouseClick += (s, e) => { if (((MouseEventArgs)e).Button == MouseButtons.Right) ShowCatMenu(s, e); };
@@ -684,17 +763,14 @@ namespace butcherPOS.Forms
             {
                 Text = addText, Font = new Font("Segoe UI", 8F, FontStyle.Bold),
                 ForeColor = ThemeConfig.PrimaryColor, BackColor = Color.Transparent,
-                AutoSize = false, Size = new Size(CardW - 16, 40), Location = new Point(8, 115),
+                AutoSize = false, Size = new Size(CardW - 16, 35), Location = new Point(8, 115),
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
             EventHandler addClick = (s, e) =>
             {
-                using (AddPartForm form = new AddPartForm())
+                using (AddProductServiceForm form = new AddProductServiceForm())
                 {
-                    // Pre-select the active sidebar category if there is one
-                    if (_activeCategory != null)
-                        form.PreSelectCategory(_activeCategory);
                     if (form.ShowDialog() == DialogResult.OK) RefreshAll();
                 }
             };
@@ -739,7 +815,7 @@ namespace butcherPOS.Forms
             PictureBox pb = new PictureBox
             {
                 Size = new Size(64, 64), Location = new Point((CardW - 64) / 2, 18),
-                BackColor = ThemeConfig.BackgroundColor, SizeMode = PictureBoxSizeMode.Zoom
+                BackColor = Color.Transparent, SizeMode = PictureBoxSizeMode.Zoom
             };
             pb.Paint += (s, pe) =>
             {
@@ -852,6 +928,16 @@ namespace butcherPOS.Forms
             card.Controls.Add(pbEdit);
             card.Controls.Add(pbDelete);
 
+            CheckBox chkSelect = new CheckBox
+            {
+                AutoSize = true,
+                Location = new Point(8, 8),
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                Tag = partId
+            };
+            card.Controls.Add(chkSelect);
+
             // Hover effect
             void HoverEnter(object s, EventArgs e)
             {
@@ -888,19 +974,12 @@ namespace butcherPOS.Forms
             decimal price = row["selling_price"] == DBNull.Value ? 0 : Convert.ToDecimal(row["selling_price"]);
             int minStock  = row["minimum_stock_level"] == DBNull.Value ? 0 : Convert.ToInt32(row["minimum_stock_level"]);
 
-            if (category.Equals("Services", StringComparison.OrdinalIgnoreCase))
+            var fullPart = PartData.GetAllParts().Find(p => p.Id == int.Parse(id));
+            if (fullPart != null)
             {
-                using (AddServiceForm form = new AddServiceForm())
+                using (AddProductServiceForm form = new AddProductServiceForm())
                 {
-                    form.LoadServiceData(id, name, sku, price, status, image);
-                    if (form.ShowDialog() == DialogResult.OK) { RefreshAll(); MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_ServiceUpdated")); }
-                }
-            }
-            else
-            {
-                using (AddPartForm form = new AddPartForm())
-                {
-                    form.LoadPartData(id, name, sku, qty, price, minStock, status, barcode, location, shelf, image, category);
+                    form.LoadPartData(fullPart);
                     if (form.ShowDialog() == DialogResult.OK) { RefreshAll(); MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_UpdateSuccess")); }
                 }
             }
@@ -942,9 +1021,7 @@ namespace butcherPOS.Forms
             if (ctrlTitle.Length > 0) ctrlTitle[0].Text = L("Parts_Title");
             if (txtSearch != null) txtSearch.PlaceholderText = L("Parts_Search");
 
-            if (btnAdd != null)         ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_AddProduct");
-            if (btnService != null)     ThemeConfig.ApplyStandardAddButton(btnService, "Parts_AddService");
-            if (btnAddCategory != null) ThemeConfig.ApplyStandardAddButton(btnAddCategory, "Parts_AddCategory");
+            if (btnAdd != null)         btnAdd.Text = "+ " + (butcherPOS.Helpers.LocalizationManager.GetString("Parts_AddProduct") ?? "New");
             if (btnFilter != null)  btnFilter.Invalidate();
             if (btnImport != null)  btnImport.Invalidate();
             if (btnExport != null)  btnExport.Invalidate();
@@ -1145,15 +1222,11 @@ namespace butcherPOS.Forms
                     string category = row.Cells["colCategory"].Value?.ToString() ?? "";
                     int minStock    = Convert.ToInt32(row.Cells["minimum_stock_level"].Value ?? 0);
 
-                    if (category == "Services")
+                    var fullPart = PartData.GetAllParts().Find(p => p.Id == int.Parse(id));
+                    if (fullPart != null)
                     {
-                        using (AddServiceForm form = new AddServiceForm())
-                        { form.LoadServiceData(id, name, sku, price, status, image); if (form.ShowDialog() == DialogResult.OK) { RefreshAll(); MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_ServiceUpdated")); } }
-                    }
-                    else
-                    {
-                        using (AddPartForm form = new AddPartForm())
-                        { form.LoadPartData(id, name, sku, qty, price, minStock, status, barcode, location, shelf, image, category); if (form.ShowDialog() == DialogResult.OK) { RefreshAll(); MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_UpdateSuccess")); } }
+                        using (AddProductServiceForm form = new AddProductServiceForm())
+                        { form.LoadPartData(fullPart); if (form.ShowDialog() == DialogResult.OK) { RefreshAll(); MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_UpdateSuccess")); } }
                     }
                 }
                 else if (e.X >= 50 && e.X <= 80)
@@ -1190,7 +1263,7 @@ namespace butcherPOS.Forms
             ModernNumericUpDown numQty = new ModernNumericUpDown { LabelText = LocalizationManager.GetString("Msg_AdjustInstr") ?? "Enter quantity to add (+) or subtract (-):", Width = 380, Minimum = -99999, Maximum = 99999, Margin = new Padding(0, 0, 0, 20) };
             Label lblReason = new Label { Text = LocalizationManager.GetString("Msg_Reason"), AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 5) };
             TextBox txtReason = new TextBox { Width = 380, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 20), Multiline = true, Height = 80 };
-            Button btnSave = new ModernButton { Text = LocalizationManager.GetString("Msg_Adjust"), Size = new Size(120, 40), Anchor = AnchorStyles.Right };
+            Button btnSave = new ModernButton { Text = LocalizationManager.GetString("Msg_Adjust"), Size = new Size(120, 35), Anchor = AnchorStyles.Right };
             ThemeConfig.ApplyPrimaryButton(btnSave);
             btnSave.Click += (s, e) =>
             {
@@ -1210,13 +1283,7 @@ namespace butcherPOS.Forms
         // ─────────────────────────────────────────────────────────────────
         private void BtnAdd_Click(object sender, EventArgs e)
         {
-            using (AddPartForm form = new AddPartForm())
-            { if (form.ShowDialog() == DialogResult.OK) RefreshAll(); }
-        }
-
-        private void BtnService_Click(object sender, EventArgs e)
-        {
-            using (AddServiceForm form = new AddServiceForm())
+            using (AddProductServiceForm form = new AddProductServiceForm())
             { if (form.ShowDialog() == DialogResult.OK) RefreshAll(); }
         }
 

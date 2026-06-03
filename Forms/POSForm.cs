@@ -496,6 +496,12 @@ namespace butcherPOS.Forms
             ThemeConfig.ApplyPrimaryButton(btnQuote);
             ThemeConfig.ApplyPrimaryButton(btnBill);
 
+            Font forceFont = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnReturn.Font = forceFont;
+            btnDraft.Font = forceFont;
+            btnQuote.Font = forceFont;
+            btnBill.Font = forceFont;
+
             // Wire up placeholders
             btnReturn.Click += (s, e) => {
                 var frm = new BlindReturnForm();
@@ -516,7 +522,7 @@ namespace butcherPOS.Forms
             pnl.Resize += (s, ev) =>
             {
                 int gap = 8;
-                int btnH = 40; // Standard button height
+                int btnH = 35; // Standard button height
                 int totalW = pnl.Width;
                 int btnW = (totalW - gap) / 2;
 
@@ -825,13 +831,19 @@ namespace butcherPOS.Forms
 
             pnl.Resize += (s, ev) =>
             {
-                int h = pnl.Height - 12;
+                int h = 35; // Force height to 35px to match standard buttons
                 int gap = 8;
                 int totalW = pnl.Width - 32 - gap;
                 int printW = (int)(totalW * 0.3);
                 int checkoutW = totalW - printW;
-                btnPrintReceipt.SetBounds(16, 6, printW, h);
-                btnCheckout.SetBounds(16 + printW + gap, 6, checkoutW, h);
+                
+                int yOffset = Math.Max(0, (pnl.Height - h) / 2); // Center vertically
+                
+                btnPrintReceipt.SetBounds(16, yOffset, printW, h);
+                btnCheckout.SetBounds(16 + printW + gap, yOffset, checkoutW, h);
+                
+                btnPrintReceipt.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                btnCheckout.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             };
 
             pnl.Controls.AddRange(new Control[] { btnPrintReceipt, btnCheckout });

@@ -160,7 +160,7 @@ namespace butcherPOS.Forms
             tlpMain.Controls.Add(lblSection, 0, 0);
 
             // Type Selection
-            TableLayoutPanel pnlType = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Height = 40, Margin = new Padding(0, 0, 0, 15) };
+            TableLayoutPanel pnlType = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Height = 35, Margin = new Padding(0, 0, 0, 15) };
             pnlType.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             pnlType.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
             pnlType.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
@@ -217,7 +217,7 @@ namespace butcherPOS.Forms
             chkEnableReminder = new CheckBox { Text = "Enable Payment Reminder", AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 15) };
             
             Label lblDueDate = new Label { Name = "lblDueDate", Text = "Payment Due Date", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
-            dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Enabled = false, Height = 40 };
+            dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Enabled = false, Height = 35 };
             
             numReminderDays = new ModernNumericUpDown { LabelText = "Reminder (Days Before)", Dock = DockStyle.Fill, Minimum = 0, Maximum = 365, Enabled = false, Increment = 1 };
             

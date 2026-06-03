@@ -17,8 +17,8 @@ namespace butcherPOS.Controls
             this.Cursor = Cursors.Hand;
             this.BackColor = ThemeConfig.PrimaryColor;
             this.ForeColor = Color.White;
-            this.Font = ThemeConfig.StandardFont;
-            this.Size = new Size(150, 40);
+            this.Font = ThemeConfig.ButtonFont;
+            this.Size = new Size(150, 35);
         }
 
         protected override void OnResize(EventArgs e)

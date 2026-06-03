@@ -51,7 +51,7 @@ namespace butcherPOS.Controls
             // Header Panel
             Panel pnlHeader = new Panel();
             pnlHeader.Dock = DockStyle.Top;
-            pnlHeader.Height = 40;
+            pnlHeader.Height = 35;
             pnlHeader.Margin = new Padding(0, 0, 0, 10);
 
             btnPrev = new Button { Text = "<", Width = 30, Dock = DockStyle.Left, FlatStyle = FlatStyle.Flat };

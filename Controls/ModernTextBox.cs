@@ -135,7 +135,7 @@ namespace butcherPOS.Controls
             this.DoubleBuffered = true; 
 
             this.BackColor = Color.Transparent; // Host container
-            this.Size = new Size(350, 67); // Default size (25px Label + 42px Input)
+            this.Size = new Size(350, 60); // Default size (25px Label + 35px Input)
             this.Padding = new Padding(0);
 
             InitializeControls();
@@ -217,7 +217,7 @@ namespace butcherPOS.Controls
             // Standardize height for single-line inputs
             if (!Multiline)
             {
-                this.Height = labelHeight + 42; // Enforce 42px input height
+                this.Height = labelHeight + 35; // Enforce 35px input height
             }
             
             pnlContainer.Size = new Size(this.Width, this.Height - labelHeight);

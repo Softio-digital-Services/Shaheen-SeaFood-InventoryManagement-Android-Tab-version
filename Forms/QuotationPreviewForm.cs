@@ -122,7 +122,7 @@ namespace butcherPOS.Forms
                         Font = new Font("Segoe UI", 20, FontStyle.Bold),
                         ForeColor = Color.DimGray,
                         Location = new Point(page.Width - 350, hy + 5),
-                        Size = new Size(310, 40),
+                        Size = new Size(310, 35),
                         TextAlign = ContentAlignment.TopRight
                     };
                     page.Controls.Add(lblQuoteTitle);
@@ -132,13 +132,13 @@ namespace butcherPOS.Forms
                         Text = "[Street Address] | [City, ST ZIP]\nWebsite: somedomain.com | Phone: [000-000-0000]",
                         Font = new Font("Segoe UI", 9),
                         Location = new Point(130, hy),
-                        Size = new Size(400, 40),
+                        Size = new Size(400, 35),
                         ForeColor = Color.Gray
                     };
                     page.Controls.Add(lblCompInfo);
 
                     hy += 60;
-                    Panel pnlDetails = new Panel { BackColor = Color.FromArgb(245, 247, 250), Location = new Point(40, hy), Size = new Size(page.Width - 80, 40) };
+                    Panel pnlDetails = new Panel { BackColor = Color.FromArgb(245, 247, 250), Location = new Point(40, hy), Size = new Size(page.Width - 80, 35) };
                     page.Controls.Add(pnlDetails);
 
                     string customerId = DatabaseHelper.ExecuteScalar<string>($"SELECT customer_id FROM orders WHERE order_id = {_orderId}");
@@ -198,7 +198,7 @@ namespace butcherPOS.Forms
                 grid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
                 grid.DefaultCellStyle.Padding = new Padding(5);
                 ThemeConfig.ApplyGridTheme(grid);
-                grid.ColumnHeadersHeight = 40;
+                grid.ColumnHeadersHeight = 35;
                 grid.RowTemplate.Height = 60;
 
                 grid.Columns.Add(new DataGridViewImageColumn { Name = "Photo", HeaderText = "PHOTO", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom });
@@ -216,7 +216,7 @@ namespace butcherPOS.Forms
 
                 bool isLastPage = (estimatedHeightNeeded <= maxGridHeightIfLastPage);
                 int maxGridHeightForThisPage = isLastPage ? maxGridHeightIfLastPage : (1080 - gridStartY);
-                int currentGridHeight = 40; // Starts with header height
+                int currentGridHeight = 35; // Starts with header height
 
                 while (currentItemIndex < items.Count)
                 {

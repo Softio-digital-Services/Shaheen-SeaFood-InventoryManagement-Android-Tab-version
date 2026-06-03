@@ -138,6 +138,10 @@ namespace butcherPOS
             
             // Labels
             labelTitle.Font = new Font("Segoe UI", 24F, FontStyle.Bold);
+            
+            // Window Controls
+            ThemeConfig.ApplyWindowControl(btnClose, "Close");
+            ThemeConfig.ApplyWindowControl(btnMinimize, "Minimize");
             labelTitle.ForeColor = ThemeConfig.PrimaryColor; 
             
             labelSubtitle.Font = ThemeConfig.StandardFont;

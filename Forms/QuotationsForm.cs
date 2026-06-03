@@ -64,7 +64,7 @@ namespace butcherPOS.Forms
             txtSearch = new ModernTextBox {
                 IsSearch = true, ShowLabel = false,
                 PlaceholderText = LocalizationManager.GetString("Msg_SearchQuotations") ?? "Search quotations...",
-                Size = new Size(320, 40)
+                Size = new Size(320, 35)
             };
             txtSearch.TextChanged += (s, e) => LoadQuotations(txtSearch.Text);
 

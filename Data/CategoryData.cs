@@ -59,6 +59,12 @@ namespace butcherPOS.Data
                 new SqliteParameter("@id",   id));
         }
 
+        public static void DeleteCategory(int id)
+        {
+            string sql = "DELETE FROM categories WHERE id=@id";
+            DatabaseHelper.ExecuteNonQuery(sql, new SqliteParameter("@id", id));
+        }
+
         /// <summary>
         /// Returns the total count of all items (regardless of status) in a given category.
         /// </summary>

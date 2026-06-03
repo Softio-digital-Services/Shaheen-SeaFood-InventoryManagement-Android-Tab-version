@@ -190,17 +190,17 @@ namespace butcherPOS.Forms
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = "Search Customers...";
-            txtSearch.Size = new Size(320, 40);
+            txtSearch.Size = new Size(320, 35);
             txtSearch.TextChanged += txtSearch_TextChanged;
 
             // Add Customer Button
-            this.btnAddNew.Size = new System.Drawing.Size(160, 40);
+            this.btnAddNew.Size = new System.Drawing.Size(160, 35);
             this.btnAddNew.Name = "btnAddCust";
             this.btnAddNew.Click += btnAddNew_Click;
             ThemeConfig.ApplyStandardAddButton(this.btnAddNew, "Cust_AddCustomer");
 
             // Details Button
-            this.btnCustomerDetails.Size = new System.Drawing.Size(160, 40);
+            this.btnCustomerDetails.Size = new System.Drawing.Size(160, 35);
             this.btnCustomerDetails.Text = "";
             this.btnCustomerDetails.Name = "btnDetailsCust";
             this.btnCustomerDetails.FlatStyle = FlatStyle.Flat;
@@ -210,13 +210,13 @@ namespace butcherPOS.Forms
             this.btnCustomerDetails.Paint += (s, e) => ThemeConfig.DrawIconButton(btnCustomerDetails, e.Graphics, "view", "Cust_Details", ThemeConfig.TextColorLight, ThemeConfig.WarningColor, false);
 
             // Delete Selected Button
-            this.btnDeleteBulk.Size = new System.Drawing.Size(130, 40);
+            this.btnDeleteBulk.Size = new System.Drawing.Size(130, 35);
             this.btnDeleteBulk.Name = "btnDeleteSelected";
             this.btnDeleteBulk.Click += btnDeleteBulk_Click;
             ThemeConfig.ApplyStandardDeleteButton(this.btnDeleteBulk, "Cust_Delete");
 
             // Export Button
-            this.btnExport.Size = new System.Drawing.Size(100, 40);
+            this.btnExport.Size = new System.Drawing.Size(100, 35);
             this.btnExport.Text = "";
             this.btnExport.Name = "btnExportCust";
             this.btnExport.FlatStyle = FlatStyle.Flat;
@@ -226,7 +226,7 @@ namespace butcherPOS.Forms
             this.btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Cust_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
 
             // Import Button
-            this.btnImport.Size = new System.Drawing.Size(100, 40);
+            this.btnImport.Size = new System.Drawing.Size(100, 35);
             this.btnImport.Text = "";
             this.btnImport.Name = "btnImportCust";
             this.btnImport.FlatStyle = FlatStyle.Flat;

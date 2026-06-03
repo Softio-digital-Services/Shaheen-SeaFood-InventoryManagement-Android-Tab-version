@@ -145,10 +145,10 @@ namespace butcherPOS.Forms
 
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
-            txtSearch.Size = new Size(350, 40);
+            txtSearch.Size = new Size(350, 35);
             txtSearch.TextChanged += (s, e) => { _searchTimer.Stop(); _searchTimer.Start(); };
 
-            btnGenerate.Size = new Size(180, 40);
+            btnGenerate.Size = new Size(180, 35);
             btnGenerate.Click += btnGenerate_Click;
 
             var actionButtons = new Control[] { btnGenerate };
@@ -158,7 +158,7 @@ namespace butcherPOS.Forms
             dgvItems = new DataGridView { 
                 Dock = DockStyle.Fill, AllowUserToAddRows = false, SelectionMode = DataGridViewSelectionMode.CellSelect, 
                 BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None,
-                RowTemplate = { Height = 40 }, RowHeadersVisible = false
+                RowTemplate = { Height = 35 }, RowHeadersVisible = false
             };
             
             dgvItems.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colSelect", Width = 50 });

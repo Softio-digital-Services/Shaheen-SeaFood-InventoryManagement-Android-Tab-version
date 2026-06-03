@@ -107,7 +107,7 @@ namespace butcherPOS.Controls
             bool isAr = LocalizationManager.IsArabic;
             pnlContainer = new Panel { 
                 BackColor = Color.Transparent,
-                Padding = isAr ? new Padding(35, 8, 10, 5) : new Padding(10, 8, 35, 5)
+                Padding = isAr ? new Padding(26, 6, 10, 5) : new Padding(10, 6, 26, 5)
             };
             pnlContainer.Paint += PnlContainer_Paint;
             this.Controls.Add(pnlContainer);
@@ -136,7 +136,7 @@ namespace butcherPOS.Controls
 
             // Up Button
             btnUp = new Button { 
-                Size = new Size(32, 21), 
+                Size = new Size(24, 17), 
                 FlatStyle = FlatStyle.Flat, 
                 Cursor = Cursors.Hand,
                 BackColor = Color.Transparent
@@ -148,7 +148,7 @@ namespace butcherPOS.Controls
 
             // Down Button
             btnDown = new Button { 
-                Size = new Size(32, 21), 
+                Size = new Size(24, 17), 
                 FlatStyle = FlatStyle.Flat, 
                 Cursor = Cursors.Hand,
                 BackColor = Color.Transparent
@@ -167,13 +167,13 @@ namespace butcherPOS.Controls
             if (pnlContainer == null) return;
 
             int labelHeight = _showLabel ? 25 : 0;
-            int totalHeight = labelHeight + 42;
+            int totalHeight = labelHeight + 35;
 
             // Pin our own height — never let a parent stretch us beyond our natural size
             this.Height = totalHeight;
 
             pnlContainer.Location = new Point(0, labelHeight);
-            pnlContainer.Size = new Size(this.Width, 42); // always exactly 42px tall
+            pnlContainer.Size = new Size(this.Width, 35); // always exactly 35px tall
 
             if (lblTitle != null)
             {
@@ -183,9 +183,9 @@ namespace butcherPOS.Controls
                     lblTitle.Location = new Point(5, 0);
             }
 
-            // Spinner buttons: always relative to the 42px container
-            if (btnUp   != null) btnUp.Location   = new Point(LocalizationManager.IsArabic ? 0 : pnlContainer.Width - 32, 0);
-            if (btnDown != null) btnDown.Location = new Point(LocalizationManager.IsArabic ? 0 : pnlContainer.Width - 32, 21);
+            // Spinner buttons: always relative to the 35px container
+            if (btnUp   != null) btnUp.Location   = new Point(LocalizationManager.IsArabic ? 1 : pnlContainer.Width - 25, 1);
+            if (btnDown != null) btnDown.Location = new Point(LocalizationManager.IsArabic ? 1 : pnlContainer.Width - 25, 17);
         }
 
         private void UpdateText()
@@ -212,7 +212,7 @@ namespace butcherPOS.Controls
             {
                 using (var tinted = ThemeConfig.TintImage(icon, ThemeConfig.SecondaryColor))
                 {
-                    g.DrawImage(tinted, new Rectangle(8, 4, 16, 13));
+                    g.DrawImage(tinted, new Rectangle(7, 4, 10, 9));
                 }
             }
         }
@@ -238,13 +238,13 @@ namespace butcherPOS.Controls
             bool isAr = LocalizationManager.IsArabic;
             if (isAr)
             {
-                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), 32, 5, 32, pnlContainer.Height - 5);
-                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), 0, 21, 32, 21);
+                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), 25, 5, 25, pnlContainer.Height - 5);
+                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), 1, 17, 25, 17);
             }
             else
             {
-                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), pnlContainer.Width - 32, 5, pnlContainer.Width - 32, pnlContainer.Height - 5);
-                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), pnlContainer.Width - 32, 21, pnlContainer.Width - 2, 21);
+                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), pnlContainer.Width - 25, 5, pnlContainer.Width - 25, pnlContainer.Height - 5);
+                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), pnlContainer.Width - 25, 17, pnlContainer.Width - 2, 17);
             }
         }
 

@@ -39,8 +39,8 @@ namespace butcherPOS
             this.txtPassword = new butcherPOS.Controls.ModernTextBox();
             this.btnLogin = new butcherPOS.Controls.ModernButton();
             this.chkShowPass = new System.Windows.Forms.CheckBox();
-            this.btnClose = new System.Windows.Forms.Label();
-            this.btnMinimize = new System.Windows.Forms.Label();
+            this.btnClose = new System.Windows.Forms.Button();
+            this.btnMinimize = new System.Windows.Forms.Button();
 
 
             this.tableLayoutPanel1.SuspendLayout();
@@ -83,25 +83,19 @@ namespace butcherPOS
             // 
             // btnClose (X)
             // 
-            this.btnClose.AutoSize = true;
-            this.btnClose.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnClose.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
-            this.btnClose.Location = new System.Drawing.Point(320, 10);
+            this.btnClose.Location = new System.Drawing.Point(300, 5);
             this.btnClose.Name = "btnClose";
-            this.btnClose.Size = new System.Drawing.Size(20, 20);
-            this.btnClose.Text = "X";
+            this.btnClose.Size = new System.Drawing.Size(45, 38);
             this.btnClose.Click += new System.EventHandler(this.label1_Click);
+            this.btnClose.BringToFront();
             // 
             // btnMinimize (--)
             // 
-            this.btnMinimize.AutoSize = true;
-            this.btnMinimize.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnMinimize.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
-            this.btnMinimize.Location = new System.Drawing.Point(295, 10);
+            this.btnMinimize.Location = new System.Drawing.Point(255, 5);
             this.btnMinimize.Name = "btnMinimize";
-            this.btnMinimize.Size = new System.Drawing.Size(20, 20);
-            this.btnMinimize.Text = "--";
+            this.btnMinimize.Size = new System.Drawing.Size(45, 38);
             this.btnMinimize.Click += (s, e) => this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
+            this.btnMinimize.BringToFront();
 
 
             // 
@@ -182,14 +176,14 @@ namespace butcherPOS
 
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
         private System.Windows.Forms.Panel panelLoginCard;
-        private System.Windows.Forms.Label btnClose;
+        private System.Windows.Forms.Button btnClose;
         private System.Windows.Forms.Label labelTitle;
         private System.Windows.Forms.Label labelSubtitle;
         private butcherPOS.Controls.ModernTextBox txtUsername;
         private butcherPOS.Controls.ModernTextBox txtPassword;
         private butcherPOS.Controls.ModernButton btnLogin;
         private System.Windows.Forms.CheckBox chkShowPass;
-        private System.Windows.Forms.Label btnMinimize;
+        private System.Windows.Forms.Button btnMinimize;
 
 
     }

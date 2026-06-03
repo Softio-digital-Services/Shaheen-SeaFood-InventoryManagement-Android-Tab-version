@@ -155,13 +155,13 @@ namespace butcherPOS.Forms
             txtSearch = new ModernTextBox {
                 IsSearch = true, ShowLabel = false,
                 PlaceholderText = LocalizationManager.GetString("Hist_Search") ?? "Search history...",
-                Size = new Size(320, 40)
+                Size = new Size(320, 35)
             };
             txtSearch.TextChanged += (s, e) => ApplyFilter();
 
             Button btnRefresh = new Button();
             btnRefresh.Name = "btnRefresh";
-            btnRefresh.Size = new Size(160, 40);
+            btnRefresh.Size = new Size(160, 35);
             ThemeConfig.ApplyStandardRefreshButton(btnRefresh, "Hist_Refresh");
 
             TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblHistoryTitle, txtSearch, new Control[] { btnRefresh });

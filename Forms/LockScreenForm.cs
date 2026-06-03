@@ -66,7 +66,7 @@ namespace butcherPOS.Forms
                 ForeColor = ThemeConfig.TextColorDark, 
                 TextAlign = ContentAlignment.MiddleCenter, 
                 Dock = DockStyle.Top, 
-                Height = 40 
+                Height = 35 
             };
             pnlCenter.Controls.Add(lblUser);
 

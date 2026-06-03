@@ -25,6 +25,19 @@ namespace butcherPOS.Data
         public string Barcode { get; set; }
         public string Status { get; set; }
         public DateTime DateAdded { get; set; }
+        
+        public string ItemType { get; set; } = "Product";
+        public string UnitOfMeasure { get; set; }
+        public string BatchNumber { get; set; }
+        public string ExpiryDate { get; set; }
+        public bool IsSalesItem { get; set; } = true;
+        public bool IsPurchaseItem { get; set; } = false;
+        public bool IsInactive { get; set; } = false;
+        public decimal TaxRate { get; set; } = 0;
+        public bool IsStockTracked { get; set; } = true;
+        public decimal Price2 { get; set; } = 0;
+        public decimal Price3 { get; set; } = 0;
+        public decimal Price4 { get; set; } = 0;
 
         public static List<PartData> GetAllParts()
         {
@@ -96,7 +109,19 @@ namespace butcherPOS.Data
                 PartImage         = Safe<string>(r, "part_image", ""),
                 Barcode           = Safe<string>(r, "barcode", ""),
                 Status            = Safe<string>(r, "status", "Active"),
-                DateAdded         = DateTime.TryParse(Safe<string>(r, "date_added", ""), out DateTime da) ? da : DateTime.Now
+                DateAdded         = DateTime.TryParse(Safe<string>(r, "date_added", ""), out DateTime da) ? da : DateTime.Now,
+                ItemType          = Safe<string>(r, "item_type", "Product"),
+                UnitOfMeasure     = Safe<string>(r, "unit_of_measure", ""),
+                BatchNumber       = Safe<string>(r, "batch_number", ""),
+                ExpiryDate        = Safe<string>(r, "expiry_date", ""),
+                IsSalesItem       = Safe<int>(r, "is_sales_item", 1) == 1,
+                IsPurchaseItem    = Safe<int>(r, "is_purchase_item", 0) == 1,
+                IsInactive        = Safe<int>(r, "is_inactive", 0) == 1,
+                TaxRate           = Safe<decimal>(r, "tax_rate", 0),
+                IsStockTracked    = Safe<int>(r, "is_stock_tracked", 1) == 1,
+                Price2            = Safe<decimal>(r, "price2", 0),
+                Price3            = Safe<decimal>(r, "price3", 0),
+                Price4            = Safe<decimal>(r, "price4", 0)
             };
         }
     }

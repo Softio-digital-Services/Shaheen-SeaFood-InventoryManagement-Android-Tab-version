@@ -314,7 +314,7 @@ namespace butcherPOS.Forms
             {
                 PrimaryButton = new Controls.ModernButton { 
                     Text = primaryText, 
-                    Size = new Size(130, 40),
+                    Size = new Size(130, 35),
                     Margin = new Padding(10, 0, 0, 0),
                     Font = ThemeConfig.ButtonFont
                 };
@@ -328,7 +328,7 @@ namespace butcherPOS.Forms
             {
                 SecondaryButton = new Controls.ModernButton { 
                     Text = secondaryText, 
-                    Size = new Size(130, 40),
+                    Size = new Size(130, 35),
                     Margin = new Padding(10, 0, 0, 0),
                     Font = ThemeConfig.ButtonFont
                 };
@@ -342,7 +342,7 @@ namespace butcherPOS.Forms
             {
                 TertiaryButton = new Controls.ModernButton { 
                     Text = tertiaryText, 
-                    Size = new Size(130, 40),
+                    Size = new Size(130, 35),
                     Margin = new Padding(10, 0, 0, 0),
                     Font = ThemeConfig.ButtonFont
                 };

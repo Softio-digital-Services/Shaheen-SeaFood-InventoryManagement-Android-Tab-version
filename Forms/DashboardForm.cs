@@ -161,9 +161,11 @@ namespace butcherPOS.Forms
             {
                 Name = "btnScan", 
                 Text = LocalizationManager.GetString("Dash_ScanToConnect"),
-                Width = 145
+                Width = 145,
+                Height = 35
             };
             ThemeConfig.ApplyPrimaryButton(btnScan);
+            btnScan.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnScan.Click += (s, e) => new ScanToConnectForm().ShowDialog();
 
             var headerControls = new Control[] { lblServerUrl, btnScan };
@@ -241,6 +243,8 @@ namespace butcherPOS.Forms
             
             _gridTopItems = new DataGridView();
             _gridTopItems.DataError += (s, e) => { e.ThrowException = false; };
+            _gridTopItems.AllowUserToAddRows = false;
+            _gridTopItems.ReadOnly = true;
             ThemeConfig.ApplyGridTheme(_gridTopItems);
             _gridTopItems.Dock = DockStyle.Fill;
             _gridTopItems.ColumnHeadersVisible = true; 

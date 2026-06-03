@@ -325,20 +325,6 @@ namespace butcherPOS
             button3.TextAlign = ContentAlignment.MiddleLeft; button3.Padding = new Padding(LocalizationManager.IsArabic ? 0 : 15, 0, LocalizationManager.IsArabic ? 15 : 0, 0); button3.Font = ThemeConfig.ButtonFont;
             button3.FlatAppearance.MouseOverBackColor = ThemeConfig.DangerLight;
 
-            // Softio Logo in Sidebar
-            PictureBox pbSoftioSidebarLogo = new PictureBox {
-                Name = "pbSoftioSidebarLogo",
-                Size = new Size(180, 45),
-                SizeMode = PictureBoxSizeMode.Zoom,
-                Dock = DockStyle.Bottom,
-                BackColor = Color.Transparent,
-                Margin = new Padding(0, 5, 0, 0)
-            };
-            try {
-                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png");
-                if (System.IO.File.Exists(logoPath)) pbSoftioSidebarLogo.Image = Image.FromFile(logoPath);
-            } catch { }
-            pnlBranding.Controls.Add(pbSoftioSidebarLogo);
             // Logout button is already Dock=Top, so they will be separated naturally.
 
             SetupHeaderIcons();

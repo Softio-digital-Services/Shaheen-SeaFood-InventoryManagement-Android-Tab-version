@@ -243,7 +243,7 @@ namespace butcherPOS.Forms
                 Dock = DockStyle.Top, 
                 Font = ThemeConfig.SubHeaderFont, 
                 ForeColor = ThemeConfig.TextColorDark,
-                Height = 40,
+                Height = 35,
                 Padding = new Padding(15, 10, 0, 0)
             };
         }

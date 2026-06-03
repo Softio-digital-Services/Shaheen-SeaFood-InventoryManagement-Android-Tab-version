@@ -56,7 +56,7 @@ namespace butcherPOS.Forms
                 IsSearch = true,
                 ShowLabel = false,
                 PlaceholderText = LocalizationManager.GetString("Parts_Search") ?? "Search expenses...",
-                Size = new Size(320, 40)
+                Size = new Size(320, 35)
             };
             txtSearch.TextChanged += (s, e) => LoadData(txtSearch.Text);
 
@@ -128,7 +128,7 @@ namespace butcherPOS.Forms
                 AutoSize = true
             };
             dtpDate = new FlatDateTimePicker { Width = 150 };
-            Panel pnlDateInput = ThemeConfig.WrapInStyledInput(dtpDate, 42);
+            Panel pnlDateInput = ThemeConfig.WrapInStyledInput(dtpDate, 35);
             pnlDateInput.Location = new Point(0, 25);
             pnlDateInput.Width = 170;
             pnlDate.Controls.Add(pnlDateInput);
@@ -160,11 +160,11 @@ namespace butcherPOS.Forms
             };
 
             // Increased width to 140
-            btnAdd = new Button { Size = new Size(140, 40), Margin = new Padding(5, 0, 5, 0) };
+            btnAdd = new Button { Size = new Size(140, 35), Margin = new Padding(5, 0, 5, 0) };
             btnAdd.Click += BtnAdd_Click;
             ThemeConfig.ApplyStandardAddButton(btnAdd, "Exp_Add");
 
-            btnDelete = new Button { Size = new Size(140, 40), Margin = new Padding(5, 0, 5, 0) };
+            btnDelete = new Button { Size = new Size(140, 35), Margin = new Padding(5, 0, 5, 0) };
             btnDelete.Click += BtnDelete_Click;
             ThemeConfig.ApplyStandardDeleteButton(btnDelete, "Exp_Delete");
 
@@ -379,11 +379,11 @@ namespace butcherPOS.Forms
 
         public void LoadData(string search = "")
         {
-            string query = "SELECT * FROM expenses";
+            string query = "SELECT * FROM expenses WHERE category != 'System'";
             DataTable dt;
             if (!string.IsNullOrEmpty(search))
             {
-                query += " WHERE category LIKE @s OR description LIKE @s";
+                query += " AND (category LIKE @s OR description LIKE @s)";
                 dt = DatabaseHelper.ExecuteDataTable(query + " ORDER BY expense_date DESC", new SqliteParameter("@s", "%" + search + "%"));
             }
             else

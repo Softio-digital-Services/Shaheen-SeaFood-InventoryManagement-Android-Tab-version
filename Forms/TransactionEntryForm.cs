@@ -76,7 +76,7 @@ namespace butcherPOS.Forms
             if (_showDueDate)
             {
                 lblDueDate = new Label { AutoSize = true, Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, Margin = new Padding(0, 5, 0, 5) };
-                dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Height = 40, Margin = new Padding(0, 0, 0, 15), Value = DateTime.Today.AddDays(30) };
+                dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Height = 35, Margin = new Padding(0, 0, 0, 15), Value = DateTime.Today.AddDays(30) };
                 
                 tlpMain.Controls.Add(lblDueDate, 0, nextRow++);
                 tlpMain.Controls.Add(dtDueDate, 0, nextRow++);

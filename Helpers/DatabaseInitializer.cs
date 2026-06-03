@@ -24,44 +24,10 @@ namespace butcherPOS.Helpers
             // Ensure category_image column exists for existing databases
             DatabaseHelper.ExecuteNonQuery("ALTER TABLE categories ADD COLUMN category_image TEXT;");
 
-            // Ensure Services category exists with default icons
-            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Engine', '⚙️');");
-            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Brakes', '🛑');");
-            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Suspension', '🚜');");
-            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Electrical', '⚡');");
-            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Body', '🚗');");
-            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Interior', '💺');");
-            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Accessories', '💎');");
-            DatabaseHelper.ExecuteNonQuery("INSERT OR IGNORE INTO categories (category_name, category_image) VALUES ('Services', '🛠️');");
-
-            // Update existing categories if they have no image
-            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '⚙️' WHERE category_name = 'Engine' AND category_image IS NULL;");
-            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '🛑' WHERE category_name = 'Brakes' AND category_image IS NULL;");
-            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '🛠️' WHERE category_name = 'Services' AND category_image IS NULL;");
-            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '⚡' WHERE category_name = 'Electrical' AND category_image IS NULL;");
-            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '🚗' WHERE category_name = 'Body' AND category_image IS NULL;");
-            DatabaseHelper.ExecuteNonQuery("UPDATE categories SET category_image = '💎' WHERE category_name = 'Accessories' AND category_image IS NULL;");
-
-
             // Ensure admin user exists
             DatabaseHelper.ExecuteNonQuery(
                 "INSERT OR IGNORE INTO users (username, password, full_name, role) VALUES ('Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin');"
             );
-
-            // Seed service items if missing
-            DatabaseHelper.ExecuteNonQuery(@"
-                INSERT OR IGNORE INTO parts (part_name, part_number, category_id, selling_price, quantity_in_stock, minimum_stock_level, status, barcode, description)
-                SELECT 'Standard Labor (1hr)', 'SVC-001', id, 80.0, 999, 0, 'Active', '', 'Professional labor service per hour'
-                FROM categories WHERE category_name = 'Services'
-                AND NOT EXISTS (SELECT 1 FROM parts WHERE part_number = 'SVC-001');
-            ");
-
-            DatabaseHelper.ExecuteNonQuery(@"
-                INSERT OR IGNORE INTO parts (part_name, part_number, category_id, selling_price, quantity_in_stock, minimum_stock_level, status, barcode, description)
-                SELECT 'Diagnostic Check', 'SVC-002', id, 40.0, 999, 0, 'Active', '', 'Full system diagnostic and report'
-                FROM categories WHERE category_name = 'Services'
-                AND NOT EXISTS (SELECT 1 FROM parts WHERE part_number = 'SVC-002');
-            ");
 
             // Repair: Standardise status values (fix Arabic UI bug)
             DatabaseHelper.ExecuteNonQuery(

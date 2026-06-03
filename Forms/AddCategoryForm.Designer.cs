@@ -15,7 +15,7 @@ namespace butcherPOS.Forms
             this.txtName = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsRequired = true };
             this.txtDesc = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
             this.pbImage = new System.Windows.Forms.PictureBox { Width = 150, Height = 150, BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke, Anchor = AnchorStyles.Top };
-            this.btnUpload = new butcherPOS.Controls.ModernButton { Text = "Upload Image", Height = 40, Width = 150, Anchor = AnchorStyles.Top };
+            this.btnUpload = new butcherPOS.Controls.ModernButton { Text = "Upload Image", Height = 35, Width = 150, Anchor = AnchorStyles.Top };
             
             this.SuspendLayout();
 

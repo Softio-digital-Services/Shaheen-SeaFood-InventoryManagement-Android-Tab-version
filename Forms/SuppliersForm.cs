@@ -106,7 +106,7 @@ namespace butcherPOS.Forms
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = "Search Suppliers...";
-            txtSearch.Size = new Size(320, 40);
+            txtSearch.Size = new Size(320, 35);
             txtSearch.TextChanged += (s, e) =>
             {
                 string ph = butcherPOS.Helpers.LocalizationManager.GetString("Sup_Search");
@@ -116,13 +116,13 @@ namespace butcherPOS.Forms
 
             // Buttons
             // Add New Supplier Button
-            this.btnAdd.Size = new System.Drawing.Size(160, 40);
+            this.btnAdd.Size = new System.Drawing.Size(160, 35);
             this.btnAdd.Name = "btnAddSupplier";
             this.btnAdd.Click += BtnAdd_Click;
             ThemeConfig.ApplyStandardAddButton(this.btnAdd, "Sup_AddSupplier");
 
             // Supplier Details Button
-            this.btnDetails.Size = new System.Drawing.Size(160, 40);
+            this.btnDetails.Size = new System.Drawing.Size(160, 35);
             this.btnDetails.Text = "";
             this.btnDetails.Name = "btnDetailsSup";
             this.btnDetails.FlatStyle = FlatStyle.Flat;
@@ -134,7 +134,7 @@ namespace butcherPOS.Forms
 
             // Delete Selected Button
             Button btnDeleteSelected = new Button();
-            btnDeleteSelected.Size = new Size(130, 40);
+            btnDeleteSelected.Size = new Size(130, 35);
             btnDeleteSelected.Name = "btnDeleteSelected";
             btnDeleteSelected.Click += (s, e) =>
             {
@@ -166,7 +166,7 @@ namespace butcherPOS.Forms
             ThemeConfig.ApplyStandardDeleteButton(btnDeleteSelected, "Sup_Delete");
 
             // Export Button
-            this.btnExport.Size = new System.Drawing.Size(100, 40);
+            this.btnExport.Size = new System.Drawing.Size(100, 35);
             this.btnExport.Text = "";
             this.btnExport.Name = "btnExportSup";
             this.btnExport.FlatStyle = FlatStyle.Flat;
@@ -176,7 +176,7 @@ namespace butcherPOS.Forms
             this.btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Sup_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
 
             // Import Button
-            this.btnImport.Size = new System.Drawing.Size(100, 40);
+            this.btnImport.Size = new System.Drawing.Size(100, 35);
             this.btnImport.Text = "";
             this.btnImport.Name = "btnImportSup";
             this.btnImport.FlatStyle = FlatStyle.Flat;

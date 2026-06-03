@@ -86,6 +86,68 @@ namespace butcherPOS.Services
             GlobalEvents.RaiseInventoryUpdated();
         }
 
+        public void SaveProductService(butcherPOS.Data.PartData p)
+        {
+            int categoryId = GetCategoryId(p.CategoryName);
+            bool isNew = p.Id == 0;
+            
+            string sql;
+            if (isNew)
+            {
+                sql = @"INSERT INTO parts (part_name, part_number, description, category_id, supplier_id, purchase_price, selling_price, quantity_in_stock, minimum_stock_level, reorder_quantity, location, shelf, part_image, barcode, status, date_added,
+                                          item_type, unit_of_measure, batch_number, expiry_date, is_sales_item, is_purchase_item, is_inactive, tax_rate, is_stock_tracked, price2, price3, price4) 
+                        VALUES (@name, @num, @desc, @cat, @sup, @cost, @price1, @stock, @min, @reorder, @loc, @shelf, @img, @barcode, @status, datetime('now'),
+                                @type, @uom, @batch, @expiry, @sales, @purchase, @inactive, @tax, @tracked, @price2, @price3, @price4)";
+            }
+            else
+            {
+                sql = @"UPDATE parts SET part_name=@name, part_number=@num, description=@desc, category_id=@cat, supplier_id=@sup, purchase_price=@cost, selling_price=@price1, 
+                                         quantity_in_stock=@stock, minimum_stock_level=@min, reorder_quantity=@reorder, location=@loc, shelf=@shelf, barcode=@barcode, status=@status,
+                                         item_type=@type, unit_of_measure=@uom, batch_number=@batch, expiry_date=@expiry, is_sales_item=@sales, is_purchase_item=@purchase, 
+                                         is_inactive=@inactive, tax_rate=@tax, is_stock_tracked=@tracked, price2=@price2, price3=@price3, price4=@price4";
+                if (p.PartImage != null) sql += ", part_image=@img";
+                sql += " WHERE id=@id";
+            }
+
+            var parms = new System.Collections.Generic.List<SqliteParameter>
+            {
+                new SqliteParameter("@name",     p.PartName),
+                new SqliteParameter("@num",      p.PartNumber ?? ""),
+                new SqliteParameter("@desc",     p.Description ?? ""),
+                new SqliteParameter("@cat",      categoryId),
+                new SqliteParameter("@sup",      p.SupplierId.HasValue ? (object)p.SupplierId.Value : DBNull.Value),
+                new SqliteParameter("@cost",     p.PurchasePrice),
+                new SqliteParameter("@price1",   p.SellingPrice),
+                new SqliteParameter("@stock",    p.QuantityInStock),
+                new SqliteParameter("@min",      p.MinimumStockLevel),
+                new SqliteParameter("@reorder",  p.ReorderQuantity),
+                new SqliteParameter("@loc",      p.Location ?? ""),
+                new SqliteParameter("@shelf",    p.Shelf ?? ""),
+                new SqliteParameter("@barcode",  p.Barcode ?? ""),
+                new SqliteParameter("@status",   p.Status ?? "Active"),
+                new SqliteParameter("@type",     p.ItemType ?? "Product"),
+                new SqliteParameter("@uom",      p.UnitOfMeasure ?? ""),
+                new SqliteParameter("@batch",    p.BatchNumber ?? ""),
+                new SqliteParameter("@expiry",   p.ExpiryDate ?? ""),
+                new SqliteParameter("@sales",    p.IsSalesItem ? 1 : 0),
+                new SqliteParameter("@purchase", p.IsPurchaseItem ? 1 : 0),
+                new SqliteParameter("@inactive", p.IsInactive ? 1 : 0),
+                new SqliteParameter("@tax",      p.TaxRate),
+                new SqliteParameter("@tracked",  p.IsStockTracked ? 1 : 0),
+                new SqliteParameter("@price2",   p.Price2),
+                new SqliteParameter("@price3",   p.Price3),
+                new SqliteParameter("@price4",   p.Price4)
+            };
+            if (isNew || p.PartImage != null) parms.Add(new SqliteParameter("@img", p.PartImage ?? (object)DBNull.Value));
+            if (!isNew) parms.Add(new SqliteParameter("@id", p.Id));
+
+            if (!DatabaseHelper.ExecuteNonQuery(sql, parms.ToArray()))
+                throw new Exception("Failed to save product/service. Database operation failed.");
+
+            LogTransaction(isNew ? "ADD" : "EDIT", $"{(isNew ? "Added" : "Updated")} {p.ItemType}: {p.PartName} ({p.PartNumber})", p.PartName);
+            GlobalEvents.RaiseInventoryUpdated();
+        }
+
         private int GetCategoryId(string categoryName)
         {
             if (string.IsNullOrWhiteSpace(categoryName)) return 1;

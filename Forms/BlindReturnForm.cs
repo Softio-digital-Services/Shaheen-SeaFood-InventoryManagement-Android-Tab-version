@@ -109,7 +109,7 @@ namespace butcherPOS.Forms
             Label lblCustomer = new Label { Text = (LocalizationManager.GetString("Cust_Title")) + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Dock = DockStyle.Top, Margin = new Padding(0, 0, 0, 5) };
             cmbCustomer = new ComboBox { Font = ThemeConfig.StandardFont, DropDownStyle = ComboBoxStyle.DropDownList };
             ThemeConfig.ApplyComboBoxStyle(cmbCustomer);
-            Panel pnlCmbWrapper = ThemeConfig.WrapInStyledInput(cmbCustomer, 42); 
+            Panel pnlCmbWrapper = ThemeConfig.WrapInStyledInput(cmbCustomer, 35); 
             pnlCmbWrapper.Dock = DockStyle.Fill;
             pnlCust.Controls.Add(pnlCmbWrapper); pnlCmbWrapper.BringToFront();
             pnlCust.Controls.Add(lblCustomer);

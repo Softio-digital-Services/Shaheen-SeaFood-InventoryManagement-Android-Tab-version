@@ -44,11 +44,11 @@ namespace butcherPOS.Forms
                 IsSearch = true, 
                 ShowLabel = false, 
                 PlaceholderText = LocalizationManager.GetString("Msg_SearchUsers") ?? "Search users...", 
-                Size = new Size(320, 40)
+                Size = new Size(320, 35)
             };
             txtSearch.TextChanged += (s, e) => LoadData(txtSearch.Text);
 
-            btnAddUser = new Button { Size = new Size(160, 40) };
+            btnAddUser = new Button { Size = new Size(160, 35) };
             btnAddUser.Click += btnAddUser_Click;
             ThemeConfig.ApplyStandardAddButton(btnAddUser, "User_AddUser");
 

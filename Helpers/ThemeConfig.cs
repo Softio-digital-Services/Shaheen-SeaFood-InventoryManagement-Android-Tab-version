@@ -129,7 +129,7 @@ namespace butcherPOS
         public static Font SubHeaderFont { get; } = new Font("Segoe UI", 10F, FontStyle.Bold);
         public static Font StandardFont { get; } = new Font("Segoe UI", 9F, FontStyle.Regular);
         public static Font SmallFont { get; } = new Font("Segoe UI", 8F, FontStyle.Regular);
-        public static Font ButtonFont { get; } = new Font("Segoe UI", 10F, FontStyle.Bold);
+        public static Font ButtonFont { get; } = new Font("Segoe UI", 9F, FontStyle.Bold);
         public static Font SmallBoldFont { get; } = new Font("Segoe UI", 9F, FontStyle.Bold);
         public static Font MicroBoldFont { get; } = new Font("Segoe UI", 8F, FontStyle.Bold);
         public static Font EmojiFont { get; } = new Font("Segoe UI Emoji", 11F);
@@ -841,6 +841,10 @@ namespace butcherPOS
         public static void DrawRoundedButton(Button btn, Graphics g)
         {
             if (btn == null) return;
+            
+            // Standard icon buttons (e.g., standard_refresh) handle their own painting.
+            // Returning here prevents the base button logic from drawing a conflicting white text shadow.
+            if (btn.Tag != null && btn.Tag.ToString().StartsWith("standard_")) return;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
             
@@ -1007,7 +1011,7 @@ namespace butcherPOS
                 ts.BackColor = Color.White;
                 ts.GripStyle = ToolStripGripStyle.Hidden;
                 ts.AutoSize = false;
-                ts.Height = 40;
+                ts.Height = 35;
                 ts.Dock = DockStyle.None;
                 ts.CanOverflow = false; // Remove the extra section / overflow arrow
                 ts.Location = new Point(20, 45); 

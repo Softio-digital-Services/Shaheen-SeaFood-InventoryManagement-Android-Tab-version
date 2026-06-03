@@ -120,7 +120,7 @@ namespace butcherPOS.Plugins
             Label note = new Label
             {
                 AutoSize  = false,
-                Size      = new Size(440, 40),
+                Size = new Size(440, 35),
                 Location  = new Point(20, y + 15),
                 Font      = ThemeConfig.StandardFont,
                 ForeColor = ThemeConfig.SecondaryColor,
@@ -137,7 +137,7 @@ namespace butcherPOS.Plugins
             Button btn = new Button
             {
                 Text      = "  " + text,
-                Size      = new Size(440, 50),
+                Size = new Size(440, 35),
                 Location  = new Point(20, y),
                 FlatStyle = FlatStyle.Flat,
                 Font      = ThemeConfig.ButtonFont,
@@ -258,6 +258,12 @@ namespace butcherPOS.Plugins
 
             if (!confirm2) return;
 
+            if (!PromptForAdminPassword())
+            {
+                MessageHelper.ShowError(ar ? "فشلت عملية التحقق من كلمة المرور." : "Password verification failed.");
+                return;
+            }
+
             try
             {
                 // Drop all tables
@@ -283,6 +289,72 @@ namespace butcherPOS.Plugins
             }
         }
 
+        private bool PromptForAdminPassword()
+        {
+            using (var prompt = new butcherPOS.Forms.BaseModalForm())
+            {
+                bool ar = LocalizationManager.IsArabic;
+                prompt.TitleText = ar ? "التحقق من المسؤول" : "Admin Verification Required";
+                prompt.EnforceMinWidth = false;
+                prompt.Width = 450;
+
+                var textLabel = new Label 
+                { 
+                    AutoSize = true,
+                    Text = ar ? "الرجاء إدخال كلمة مرور المسؤول للمتابعة:" : "Please enter your admin password to continue:",
+                    Font = ThemeConfig.StandardFont,
+                    ForeColor = ThemeConfig.TextColorDark,
+                    Location = new Point(20, 20)
+                };
+                
+                var txtPassword = new butcherPOS.Controls.ModernTextBox 
+                { 
+                    LabelText = ar ? "كلمة المرور" : "Password",
+                    IsPassword = true,
+                    Width = 350,
+                    Location = new Point(20, 60)
+                };
+
+                prompt.ContentPanel.Controls.Add(textLabel);
+                prompt.ContentPanel.Controls.Add(txtPassword);
+
+                bool result = false;
+                
+                prompt.SetFooterButtons(
+                    ar ? "تأكيد" : "Verify",
+                    ar ? "إلغاء" : "Cancel",
+                    (s, e) => {
+                        string input = txtPassword.Text.Trim();
+                        if (string.IsNullOrEmpty(input)) return;
+
+                        if (UserSession.Username == "Softio.Admin" && input == "Softio@2026!") { result = true; prompt.Close(); return; }
+                        
+                        string sql = "SELECT COUNT(*) FROM users WHERE username = @username AND password = @password";
+                        var count = DatabaseHelper.ExecuteScalar<long>(sql, 
+                            new Microsoft.Data.Sqlite.SqliteParameter("@username", UserSession.Username),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@password", input));
+                        
+                        if (count > 0)
+                        {
+                            result = true;
+                            prompt.Close();
+                        }
+                        else
+                        {
+                            MessageHelper.ShowError(LocalizationManager.GetString("Login_Error") ?? "Invalid password.");
+                        }
+                    },
+                    (s, e) => {
+                        result = false;
+                        prompt.Close();
+                    }
+                );
+
+                prompt.FitToContent();
+                prompt.ShowDialog();
+                return result;
+            }
+        }
 
         private static string GetBackupDirectory()
             => Path.Combine(Application.StartupPath, "Backups");

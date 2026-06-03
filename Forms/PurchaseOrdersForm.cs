@@ -49,10 +49,10 @@ namespace butcherPOS.Forms
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
             txtSearch.PlaceholderText = LocalizationManager.GetString("Msg_SearchPO");
-            txtSearch.Size = new Size(320, 40);
+            txtSearch.Size = new Size(320, 35);
             txtSearch.TextChanged += (s, e) => LoadPurchaseOrders(txtSearch.Text);
 
-            Button btnNewPO = new Button { Size = new Size(180, 40), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
+            Button btnNewPO = new Button { Size = new Size(180, 35), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
             btnNewPO.FlatAppearance.BorderSize = 0;
             btnNewPO.Click += BtnNewPO_Click;
             btnNewPO.Paint += (s, e) => ThemeConfig.DrawIconButton(btnNewPO, e.Graphics, "add", "PO_New", Color.White, ThemeConfig.PrimaryColor, false);
@@ -61,7 +61,7 @@ namespace butcherPOS.Forms
 
             if (UserSession.IsAdmin || UserSession.IsAccountant)
             {
-                Button btnAutoPO = new Button { Size = new Size(200, 40), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
+                Button btnAutoPO = new Button { Size = new Size(200, 35), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
                 btnAutoPO.FlatAppearance.BorderSize = 0;
                 btnAutoPO.Click += BtnAutoPO_Click;
                 btnAutoPO.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAutoPO, e.Graphics, "orders", "PO_Predictive", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);

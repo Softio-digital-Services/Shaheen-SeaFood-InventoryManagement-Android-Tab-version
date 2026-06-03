@@ -38,7 +38,7 @@ namespace butcherPOS.Forms
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 ForeColor = ThemeConfig.PrimaryColor,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(440, 40),
+                Size = new Size(440, 35),
                 Location = new Point(0, 150)
             };
             container.Controls.Add(lblName);

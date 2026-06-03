@@ -49,37 +49,35 @@ namespace butcherPOS.Forms
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F)); // Info
 
             // ---------------------------------- Header ----------------------------------------------------------------------------
-            TableLayoutPanel tlpHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1 };
-            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160F));
-            tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200F));
-
-            tlpHeader.Controls.Add(new Control(), 0, 0); // Spacer
-
-            Button btnAdd = new ModernButton
+            FlowLayoutPanel flpHeader = new FlowLayoutPanel
             {
-                Text = LocalizationManager.GetString("Curr_AddBtn"),
-                Height = 45,
-                Dock = DockStyle.Top,
+                Dock = DockStyle.Fill,
+                FlowDirection = LocalizationManager.IsArabic ? FlowDirection.LeftToRight : FlowDirection.RightToLeft,
+                Padding = new Padding(0),
+                BackColor = Color.Transparent
+            };
+
+            Button btnRefresh = new Button
+            {
+                Height = 45, Width = 150,
                 Cursor = Cursors.Hand,
                 Margin = new Padding(0, 10, 10, 0)
             };
-            ThemeConfig.ApplySecondaryButton(btnAdd);
-            btnAdd.Click += BtnAdd_Click;
-            tlpHeader.Controls.Add(btnAdd, 1, 0);
-
-            btnRefresh = new ModernButton
-            {
-                Height = 45,
-                Dock = DockStyle.Top,
-                Cursor = Cursors.Hand,
-                Margin = new Padding(0, 10, 0, 0)
-            };
             ThemeConfig.ApplyStandardRefreshButton(btnRefresh, "Curr_RefreshBtn");
             btnRefresh.Click += BtnRefresh_Click;
-            tlpHeader.Controls.Add(btnRefresh, 2, 0);
+            flpHeader.Controls.Add(btnRefresh);
 
-            tlpMain.Controls.Add(tlpHeader, 0, 0);
+            Button btnAdd = new Button
+            {
+                Height = 45, Width = 160,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(0, 10, 10, 0)
+            };
+            ThemeConfig.ApplyStandardAddButton(btnAdd, "Curr_AddBtn");
+            btnAdd.Click += BtnAdd_Click;
+            flpHeader.Controls.Add(btnAdd);
+
+            tlpMain.Controls.Add(flpHeader, 0, 0);
 
             // ---------------------------------- Status label ------------------------------------------------------------------
             lblStatus = new Label
@@ -185,7 +183,6 @@ namespace butcherPOS.Forms
         private async void BtnRefresh_Click(object sender, EventArgs e)
         {
             btnRefresh.Enabled = false;
-            btnRefresh.Text    = LocalizationManager.IsArabic ? "جاري الجلب..." : "Fetching...";
             lblStatus.ForeColor = ThemeConfig.SecondaryColor;
             lblStatus.Text     = LocalizationManager.IsArabic ? "جاري الاتصال بخدمة الأسعار..." : "Connecting to exchange rate service...";
 
@@ -205,7 +202,6 @@ namespace butcherPOS.Forms
             }
 
             btnRefresh.Enabled = true;
-            btnRefresh.Text    = LocalizationManager.GetString("Curr_RefreshBtn");
         }
 
         private void DgvRates_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)

@@ -207,7 +207,19 @@ namespace butcherPOS
                         barcode             TEXT,
                         status              TEXT DEFAULT 'Active',
                         date_added          TEXT DEFAULT (datetime('now')),
-                        date_deleted        TEXT
+                        date_deleted        TEXT,
+                        item_type           TEXT DEFAULT 'Product',
+                        unit_of_measure     TEXT,
+                        batch_number        TEXT,
+                        expiry_date         TEXT,
+                        is_sales_item       INTEGER DEFAULT 1,
+                        is_purchase_item    INTEGER DEFAULT 0,
+                        is_inactive         INTEGER DEFAULT 0,
+                        tax_rate            REAL DEFAULT 0,
+                        is_stock_tracked    INTEGER DEFAULT 1,
+                        price2              REAL DEFAULT 0,
+                        price3              REAL DEFAULT 0,
+                        price4              REAL DEFAULT 0
                     );
 
                     CREATE TABLE IF NOT EXISTS transactions (
@@ -316,6 +328,20 @@ namespace butcherPOS
                 }
 
                 // --- MIGRATIONS ---
+                // Add new unified product/service fields to parts
+                if (!ColumnExists("parts", "item_type")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN item_type TEXT DEFAULT 'Product';");
+                if (!ColumnExists("parts", "unit_of_measure")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN unit_of_measure TEXT;");
+                if (!ColumnExists("parts", "batch_number")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN batch_number TEXT;");
+                if (!ColumnExists("parts", "expiry_date")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN expiry_date TEXT;");
+                if (!ColumnExists("parts", "is_sales_item")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_sales_item INTEGER DEFAULT 1;");
+                if (!ColumnExists("parts", "is_purchase_item")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_purchase_item INTEGER DEFAULT 0;");
+                if (!ColumnExists("parts", "is_inactive")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_inactive INTEGER DEFAULT 0;");
+                if (!ColumnExists("parts", "tax_rate")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN tax_rate REAL DEFAULT 0;");
+                if (!ColumnExists("parts", "is_stock_tracked")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_stock_tracked INTEGER DEFAULT 1;");
+                if (!ColumnExists("parts", "price2")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price2 REAL DEFAULT 0;");
+                if (!ColumnExists("parts", "price3")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price3 REAL DEFAULT 0;");
+                if (!ColumnExists("parts", "price4")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price4 REAL DEFAULT 0;");
+
                 // Add due_date to payments if missing
                 if (!ColumnExists("payments", "due_date"))
                 {

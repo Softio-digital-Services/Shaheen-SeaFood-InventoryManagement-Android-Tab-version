@@ -58,7 +58,7 @@ namespace butcherPOS.Controls
                 ForeColor = ThemeConfig.TextColorDark,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Location = new Point(20, 120),
-                Size = new Size(pnlCard.Width - 40, 40)
+                Size = new Size(pnlCard.Width - 40, 35)
             };
             pnlCard.Controls.Add(lblTitle);
 

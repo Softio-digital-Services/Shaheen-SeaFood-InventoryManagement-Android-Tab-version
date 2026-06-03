@@ -145,10 +145,16 @@ namespace butcherPOS.Helpers
 
                 if (c is Button || c is Label || c is CheckBox || c is RadioButton)
                 {
-                    string translated = GetString(c.Name);
-                    if (translated != c.Name && !string.IsNullOrEmpty(translated))
+                    // Skip setting native text for custom-painted standard buttons
+                    bool isStandardButton = c is Button && c.Tag != null && c.Tag.ToString().StartsWith("standard_");
+                    
+                    if (!isStandardButton)
                     {
-                        c.Text = translated;
+                        string translated = GetString(c.Name);
+                        if (translated != c.Name && !string.IsNullOrEmpty(translated))
+                        {
+                            c.Text = translated;
+                        }
                     }
                 }
 

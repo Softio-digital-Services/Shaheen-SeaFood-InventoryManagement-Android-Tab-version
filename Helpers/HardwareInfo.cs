@@ -20,10 +20,9 @@ namespace butcherPOS.Helpers
             try
             {
                 string machineName = Environment.MachineName;
-                string macAddress = GetMacAddress(); // Uses stable MAC address
-                string osVersion = Environment.OSVersion.ToString();
-
-                string combined = machineName + macAddress + osVersion;
+                string machineGuid = GetWindowsMachineGuid();
+                
+                string combined = machineName + machineGuid;
                 return ComputeHash(combined);
             }
             catch
@@ -63,29 +62,22 @@ namespace butcherPOS.Helpers
             return fullId.Substring(0, Math.Min(12, fullId.Length)).ToUpper();
         }
 
-        private static string GetMacAddress()
+        private static string GetWindowsMachineGuid()
         {
             try
             {
-                // Use a deterministic order and don't rely on OperationalStatus.Up
-                // as network disconnections would change the MAC address.
-                var interfaces = System.Linq.Enumerable.OrderBy(
-                    NetworkInterface.GetAllNetworkInterfaces(),
-                    nic => nic.Id);
-
-                foreach (NetworkInterface nic in interfaces)
+                using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography"))
                 {
-                    if (nic.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-                        nic.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
+                    if (key != null)
                     {
-                        string mac = nic.GetPhysicalAddress().ToString();
-                        if (!string.IsNullOrEmpty(mac))
-                            return mac;
+                        object val = key.GetValue("MachineGuid");
+                        if (val != null)
+                            return val.ToString();
                     }
                 }
             }
             catch { }
-            return "DEFAULT_MAC";
+            return "DEFAULT_GUID";
         }
 
         private static string GetLegacyMacAddress()
