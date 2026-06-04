@@ -31,18 +31,11 @@ namespace butcherPOS.Controls
 
         protected override void OnPaint(PaintEventArgs pevent)
         {
-            // SKIP base.OnPaint(pevent) to prevent default border/focus rect
-            
-            // Invoke the custom painter directly
+            // Never call base.OnPaint! It triggers native Windows Forms drawing which 
+            // draws a flat rectangle and overwrites our modern rounded corners.
+            // ThemeConfig.DrawRoundedButton now handles all buttons, including special icon buttons.
             ThemeConfig.DrawRoundedButton(this, pevent.Graphics);
         }
-        
-        // Handle Hover States manually since we might lose standard behavior if we get too aggressive, 
-        // but UserPaint usually still fires MouseEnter/Leave. 
-        // ThemeConfig.ApplyPrimaryButton attaches events for Hover colors.
-        // Those event handlers UPDATE the BackColor property.
-        // Changing BackColor triggers Invalidate(), which triggers OnPaint.
-        // So the hover logic in ThemeConfig will still work perfectly!
 
         public override void NotifyDefault(bool value)
         {

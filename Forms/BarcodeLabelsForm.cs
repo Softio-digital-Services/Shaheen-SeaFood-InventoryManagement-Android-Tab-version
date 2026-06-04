@@ -45,7 +45,7 @@ namespace butcherPOS.Forms
 
             if (lblTitle != null) { lblTitle.Font = ThemeConfig.HeaderFont; lblTitle.ForeColor = ThemeConfig.PrimaryColor; }
             ThemeConfig.ApplyGridTheme(dgvItems);
-            ThemeConfig.ApplyPrimaryButton(btnGenerate);
+            ThemeConfig.ApplyPaletteButton(btnGenerate, Color.FromArgb(59, 130, 246)); // Blue
         }
 
         private void ApplyLocalization()

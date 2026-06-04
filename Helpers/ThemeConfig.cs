@@ -276,13 +276,13 @@ namespace butcherPOS
             btn.Tag = "standard_add";
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
-            btn.BackColor = PrimaryColor;
+            btn.BackColor = SuccessColor;
             btn.ForeColor = Color.Transparent;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
             btn.UseVisualStyleBackColor = false;
-            btn.FlatAppearance.MouseOverBackColor = PrimaryHoverColor;
-            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(10, 85, 200);
+            btn.FlatAppearance.MouseOverBackColor = SuccessBorder;
+            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(20, 150, 80);
             
             // Suppress native text shadows completely
             btn.Text = "";
@@ -301,15 +301,57 @@ namespace butcherPOS
             btn.Paint += StandardAdd_Paint;
         }
 
-        private static void StandardAdd_MouseEnter(object s, EventArgs e) { if (s is Button b) { b.BackColor = PrimaryHoverColor; b.Invalidate(); } }
-        private static void StandardAdd_MouseLeave(object s, EventArgs e) { if (s is Button b) { b.BackColor = PrimaryColor; b.Invalidate(); } }
+        private static void StandardAdd_MouseEnter(object s, EventArgs e) { if (s is Button b) { b.BackColor = SuccessBorder; b.Invalidate(); } }
+        private static void StandardAdd_MouseLeave(object s, EventArgs e) { if (s is Button b) { b.BackColor = SuccessColor; b.Invalidate(); } }
 
         private static void StandardAdd_Paint(object s, PaintEventArgs e)
         {
             if (s is Button btn)
             {
                 _standardButtonKeys.TryGetValue(btn, out string key);
-                DrawIconButton(btn, e.Graphics, "add", key, Color.White, PrimaryColor, false);
+                DrawIconButton(btn, e.Graphics, "add", key, Color.White, SuccessColor, false);
+            }
+        }
+
+        public static void ApplySuccessAddButton(Button btn, string localizationKey = null)
+        {
+            if (btn == null) return;
+            btn.Tag = "success_add";
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.BackColor = SuccessColor;
+            btn.ForeColor = Color.Transparent;
+            btn.Font = SmallBoldFont;
+            btn.Cursor = Cursors.Hand;
+            btn.UseVisualStyleBackColor = false;
+            btn.FlatAppearance.MouseOverBackColor = SuccessBorder;
+            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(20, 150, 80);
+            
+            btn.Text = "";
+            if (localizationKey != null)
+            {
+                _standardButtonKeys.Remove(btn);
+                _standardButtonKeys.Add(btn, localizationKey);
+            }
+
+            btn.MouseEnter -= SuccessAdd_MouseEnter;
+            btn.MouseEnter += SuccessAdd_MouseEnter;
+            btn.MouseLeave -= SuccessAdd_MouseLeave;
+            btn.MouseLeave += SuccessAdd_MouseLeave;
+
+            btn.Paint -= SuccessAdd_Paint;
+            btn.Paint += SuccessAdd_Paint;
+        }
+
+        private static void SuccessAdd_MouseEnter(object s, EventArgs e) { if (s is Button b) { b.BackColor = SuccessBorder; b.Invalidate(); } }
+        private static void SuccessAdd_MouseLeave(object s, EventArgs e) { if (s is Button b) { b.BackColor = SuccessColor; b.Invalidate(); } }
+
+        private static void SuccessAdd_Paint(object s, PaintEventArgs e)
+        {
+            if (s is Button btn)
+            {
+                _standardButtonKeys.TryGetValue(btn, out string key);
+                DrawIconButton(btn, e.Graphics, "add", key, Color.White, SuccessColor, false);
             }
         }
 
@@ -412,6 +454,7 @@ namespace butcherPOS
             if (string.IsNullOrEmpty(text) || text == localizationKey)
             {
                 if (!string.IsNullOrEmpty(btn.Text)) text = btn.Text;
+                else if (!string.IsNullOrEmpty(localizationKey)) text = localizationKey;
             }
 
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -420,14 +463,14 @@ namespace butcherPOS
             bool isPaletted = btn.Tag != null && btn.Tag.ToString() == "paletted";
             bool isStandardAdd = btn.Tag != null && btn.Tag.ToString() == "standard_add";
             Color baseBgColor = isPaletted ? btn.BackColor : accentColor;
-            if (isStandardAdd) baseBgColor = PrimaryColor;
+            if (isStandardAdd) baseBgColor = SuccessColor;
 
             bool isHovered = btn.ClientRectangle.Contains(btn.PointToClient(System.Windows.Forms.Cursor.Position));
 
             Color effectiveBg = baseBgColor;
             if (isHovered && !isOutline)
             {
-                effectiveBg = isStandardAdd ? PrimaryHoverColor : Color.FromArgb(Math.Max(0, baseBgColor.R - 20), Math.Max(0, baseBgColor.G - 20), Math.Max(0, baseBgColor.B - 20));
+                effectiveBg = isStandardAdd ? SuccessBorder : Color.FromArgb(Math.Max(0, baseBgColor.R - 20), Math.Max(0, baseBgColor.G - 20), Math.Max(0, baseBgColor.B - 20));
             }
 
             Color effectiveText = isPaletted ? TextColorWhite : textColor;
@@ -843,8 +886,22 @@ namespace butcherPOS
             if (btn == null) return;
             
             // Standard icon buttons (e.g., standard_refresh) handle their own painting.
-            // Returning here prevents the base button logic from drawing a conflicting white text shadow.
-            if (btn.Tag != null && btn.Tag.ToString().StartsWith("standard_")) return;
+            // By dispatching them to DrawIconButton here, we eliminate the need for base.OnPaint to fire Paint events.
+            if (btn.Tag != null)
+            {
+                string tag = btn.Tag.ToString();
+                if (tag.StartsWith("standard_") || tag.StartsWith("success_"))
+                {
+                    _standardButtonKeys.TryGetValue(btn, out string key);
+                    if (tag == "standard_add" || tag == "success_add")
+                        DrawIconButton(btn, g, "add", key, Color.White, SuccessColor, false);
+                    else if (tag == "standard_refresh")
+                        DrawIconButton(btn, g, "refresh", key, SuccessColor, SuccessColor, true);
+                    else if (tag == "standard_delete")
+                        DrawIconButton(btn, g, "delete", key, DangerColor, DangerColor, true);
+                    return;
+                }
+            }
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
             
@@ -1722,56 +1779,7 @@ namespace butcherPOS
                 ApplyUserControlStyle(uc);
             }
 
-            if (parent is Panel || parent is FlowLayoutPanel)
-            {
-                var actionBtns = parent.Controls.OfType<Button>()
-                    .Where(b => !b.Name.StartsWith("btnWindow") && !b.Name.StartsWith("btnIcon") && !b.Name.ToLower().StartsWith("btntab") && (b.Tag == null || !b.Tag.ToString().StartsWith("standard_")))
-                    .ToList();
 
-                                if (actionBtns.Count == 1)
-                {
-                    var btn = actionBtns[0];
-                    string name = btn.Name.ToLower();
-                    if (name.Contains("delete") || name.Contains("remove") || name.Contains("clear"))
-                    {
-                        ApplyDangerButton(btn);
-                    }
-                    else
-                    {
-                        ApplyPaletteButton(btn, PrimaryColor);
-                    }
-                    btn.Tag = "paletted";
-                }
-                else if (actionBtns.Count > 2)
-                {
-                    Color[] palette = new Color[] 
-                    { 
-                        Color.FromArgb(139, 92, 246), // Purple
-                        Color.FromArgb(14, 165, 233), // Sky Blue
-                        Color.FromArgb(236, 72, 153), // Pink
-                        Color.FromArgb(245, 158, 11), // Orange
-                        Color.FromArgb(16, 185, 129), // Emerald
-                        Color.FromArgb(99, 102, 241), // Indigo
-                        Color.FromArgb(20, 184, 166)  // Teal
-                    };
-                    
-                    int pIdx = 0;
-                    foreach (var btn in actionBtns)
-                    {
-                        string name = btn.Name.ToLower();
-                        if (name.Contains("delete") || name.Contains("remove") || name.Contains("clear"))
-                        {
-                            ApplyDangerButton(btn);
-                        }
-                        else
-                        {
-                            ApplyPaletteButton(btn, palette[pIdx % palette.Length]);
-                            pIdx++;
-                        }
-                        btn.Tag = "paletted";
-                    }
-                }
-            }
 
             foreach (Control c in parent.Controls)
             {
@@ -1792,7 +1800,7 @@ namespace butcherPOS
                     if (btn.Name.ToLower().StartsWith("btntab")) continue;
 
                     // Ignore already paletted or standard buttons
-                    if (btn.Tag != null && (btn.Tag.ToString() == "paletted" || btn.Tag.ToString().StartsWith("standard_"))) continue; 
+                    if (btn.Tag != null && (btn.Tag.ToString() == "paletted" || btn.Tag.ToString().StartsWith("standard_") || btn.Tag.ToString().StartsWith("success_"))) continue; 
 
                     string name = btn.Name.ToLower();
                     if (name.Contains("delete") || name.Contains("remove") || name.Contains("clear"))

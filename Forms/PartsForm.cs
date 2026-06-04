@@ -118,8 +118,7 @@ namespace butcherPOS.Forms
 
             btnAdd.Size = new Size(120, 35);
             btnAdd.Click += BtnAdd_Click;
-            btnAdd.Text = "+ New";
-            ThemeConfig.ApplyPrimaryButton(btnAdd);
+            ThemeConfig.ApplyStandardAddButton(btnAdd, "New");
 
             btnAddCategory = new Button { Size = new Size(140, 35) };
             btnAddCategory.Click += BtnAddCategory_Click;
@@ -235,7 +234,7 @@ namespace butcherPOS.Forms
             // Sidebar title
             Label lblCatTitle = new Label
             {
-                Text = LocalizationManager.GetString("Parts_Categories") ?? "Categories",
+                Text = LocalizationManager.GetString("Parts_Categories") == "Parts_Categories" ? "Categories" : LocalizationManager.GetString("Parts_Categories"),
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
                 Dock = DockStyle.Fill,
@@ -260,11 +259,9 @@ namespace butcherPOS.Forms
             var btnSidebarAddCat = new butcherPOS.Controls.ModernButton
             {
                 Dock = DockStyle.Fill,
-                Text = "+ " + (LocalizationManager.GetString("Parts_AddCategory") ?? "Add New Category"),
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                ForeColor = Color.White,
-                BackColor = ThemeConfig.PrimaryColor
+                Height = 38
             };
+            ThemeConfig.ApplyStandardAddButton(btnSidebarAddCat, LocalizationManager.GetString("Parts_AddCategory") ?? "Add Category");
             btnSidebarAddCat.Click += BtnAddCategory_Click;
             pnlAddCatWrapper.Controls.Add(btnSidebarAddCat);
             tlpSidebar.Controls.Add(pnlAddCatWrapper, 0, 2);
@@ -314,7 +311,7 @@ namespace butcherPOS.Forms
             // Combined right-side control panel
             Panel pnlRightControls = new Panel
             {
-                Size = new Size(180, 36), Anchor = AnchorStyles.Right | AnchorStyles.Top,
+                Size = new Size(114, 36), Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 BackColor = Color.Transparent
             };
 
@@ -372,7 +369,7 @@ namespace butcherPOS.Forms
             pnlRightControls.Controls.Add(btnContentFilter);
 
             pnlContentHeader.Resize += (s, e) =>
-                pnlRightControls.Location = new Point(pnlContentHeader.Width - pnlRightControls.Width - 4, 4);
+                pnlRightControls.Location = new Point(pnlContentHeader.Width - pnlRightControls.Width, 4);
             pnlContentHeader.Controls.Add(pnlRightControls);
 
             // ── Card view ──────────────────────────────────────────────────
@@ -424,7 +421,8 @@ namespace butcherPOS.Forms
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "minimum_stock_level", HeaderText = "Min Stock", DataPropertyName = "minimum_stock_level", FillWeight = 8, ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPrice",    HeaderText = "Price",    DataPropertyName = "selling_price",        FillWeight = 10, ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus",   HeaderText = "Status",   DataPropertyName = "status",               FillWeight = 9,  ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewButtonColumn  { Name = "colActions",  HeaderText = "Actions",                                             FillWeight = 10, ReadOnly = true });
+            var colActions = new DataGridViewButtonColumn { Name = "colActions", HeaderText = "Actions", ReadOnly = true, MinimumWidth = 130, Width = 130, AutoSizeMode = DataGridViewAutoSizeColumnMode.None };
+            dgvParts.Columns.Add(colActions);
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_id",     DataPropertyName = "part_id",    Visible = false });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_image",  DataPropertyName = "part_image", Visible = false });
 
@@ -745,27 +743,21 @@ namespace butcherPOS.Forms
             {
                 pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 using (var path = RoundedPath(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 14))
-                using (var pen = new Pen(ThemeConfig.PrimaryColor, 1.5f) { DashStyle = DashStyle.Dash })
+                using (var pen = new Pen(ThemeConfig.SuccessColor, 1.5f) { DashStyle = DashStyle.Dash })
                     pe.Graphics.DrawPath(pen, path);
             };
 
-            Label lblPlus = new Label
-            {
-                Text = "+", Font = new Font("Segoe UI", 30F, FontStyle.Regular),
-                ForeColor = ThemeConfig.PrimaryColor, BackColor = Color.Transparent,
-                AutoSize = false, Size = new Size(CardW, 60), Location = new Point(0, 55),
-                TextAlign = ContentAlignment.MiddleCenter
-            };
             string addText = _activeCategory == null
                 ? (LocalizationManager.GetString("Parts_AddProduct") ?? "Add New Item")
                 : $"Add to {_activeCategory}";
-            Label lblText = new Label
+
+            // Use a proper standard add button centered in the card
+            var btnAdd = new butcherPOS.Controls.ModernButton
             {
-                Text = addText, Font = new Font("Segoe UI", 8F, FontStyle.Bold),
-                ForeColor = ThemeConfig.PrimaryColor, BackColor = Color.Transparent,
-                AutoSize = false, Size = new Size(CardW - 16, 35), Location = new Point(8, 115),
-                TextAlign = ContentAlignment.MiddleCenter
+                Size = new Size(CardW - 24, 40),
+                Location = new Point(12, (CardH - 40) / 2)
             };
+            ThemeConfig.ApplyStandardAddButton(btnAdd, addText);
 
             EventHandler addClick = (s, e) =>
             {
@@ -774,12 +766,10 @@ namespace butcherPOS.Forms
                     if (form.ShowDialog() == DialogResult.OK) RefreshAll();
                 }
             };
-            card.Click   += addClick;
-            lblPlus.Click += addClick;
-            lblText.Click += addClick;
+            card.Click  += addClick;
+            btnAdd.Click += addClick;
 
-            card.Controls.Add(lblPlus);
-            card.Controls.Add(lblText);
+            card.Controls.Add(btnAdd);
             return card;
         }
 
@@ -1377,18 +1367,24 @@ namespace butcherPOS.Forms
         {
             try
             {
-                SaveFileDialog dlg = new SaveFileDialog { Filter = "CSV Files (*.csv)|*.csv", FileName = $"Parts_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv", Title = "Export Parts to CSV" };
+                SaveFileDialog dlg = new SaveFileDialog { Filter = "CSV Files (*.csv)|*.csv", FileName = $"Items_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv", Title = "Export Items to CSV" };
                 if (dlg.ShowDialog() != DialogResult.OK) return;
                 DataTable dt = _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
                 if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data to export."); return; }
-                DataTable exportDt = new DataTable();
-                exportDt.Columns.Add("PartNumber"); exportDt.Columns.Add("PartName"); exportDt.Columns.Add("Category");
-                exportDt.Columns.Add("Quantity");   exportDt.Columns.Add("MinimumStock"); exportDt.Columns.Add("UnitPrice");
-                exportDt.Columns.Add("Location");   exportDt.Columns.Add("Status");
-                foreach (DataRow row in dt.Rows)
-                    exportDt.Rows.Add(row["part_number"], row["part_name"], row["category_name"], row["quantity_in_stock"], row["minimum_stock_level"], row["selling_price"], row["location"], row["status"]);
+                
+                // Keep the exact same columns as the actual database query
+                DataTable exportDt = dt.Copy();
+                
+                // Clear any inherited constraints (like Primary Key on part_id) so we can remove columns
+                exportDt.PrimaryKey = null;
+                exportDt.Constraints.Clear();
+
+                // We can just remove 'part_id' or keep it. Let's remove part_id and part_image so we export raw data cleanly.
+                if (exportDt.Columns.Contains("part_id")) exportDt.Columns.Remove("part_id");
+                if (exportDt.Columns.Contains("part_image")) exportDt.Columns.Remove("part_image");
+
                 if (Helpers.ImportExportHelper.ExportToCsv(exportDt, dlg.FileName))
-                    MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} parts to CSV successfully!");
+                    MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} items to CSV successfully!");
                 else
                     MessageHelper.ShowError("Failed to export data.");
             }
@@ -1399,20 +1395,69 @@ namespace butcherPOS.Forms
         {
             try
             {
-                OpenFileDialog dlg = new OpenFileDialog { Filter = "CSV Files (*.csv)|*.csv", Title = "Import Parts from CSV" };
+                OpenFileDialog dlg = new OpenFileDialog { Filter = "CSV Files (*.csv)|*.csv", Title = "Import Items from CSV" };
                 if (dlg.ShowDialog() != DialogResult.OK) return;
                 DataTable dt = Helpers.ImportExportHelper.ImportFromCsv(dlg.FileName);
                 if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data found in the file."); return; }
-                if (!dt.Columns.Contains("PartNumber") || !dt.Columns.Contains("PartName")) { MessageHelper.ShowError("Invalid file format. Required columns: PartNumber, PartName, Category, Quantity, MinimumStock, UnitPrice, Location, Status"); return; }
+                
+                // Allow both old format and new format by checking for either
+                bool isNewFormat = dt.Columns.Contains("part_name");
+                bool isOldFormat = dt.Columns.Contains("PartName");
+                
+                if (!isNewFormat && !isOldFormat) { MessageHelper.ShowError("Invalid file format. Could not find part name column."); return; }
+                
                 int imported = 0, skipped = 0;
                 foreach (DataRow row in dt.Rows)
                 {
                     try
                     {
-                        string pn = row["PartNumber"].ToString(), name = row["PartName"].ToString();
-                        if (string.IsNullOrWhiteSpace(pn) || string.IsNullOrWhiteSpace(name)) { skipped++; continue; }
-                        if (_inventoryService.PartExists(pn)) { skipped++; continue; }
-                        _inventoryService.ImportPart(pn, name, row["Category"].ToString(), int.Parse(row["Quantity"].ToString()), int.Parse(row["MinimumStock"].ToString()), decimal.Parse(row["UnitPrice"].ToString()), row["Location"].ToString(), row["Status"].ToString());
+                        string name = isNewFormat ? row["part_name"].ToString() : row["PartName"].ToString();
+                        string pn = isNewFormat && dt.Columns.Contains("part_number") ? row["part_number"].ToString() : (isOldFormat && dt.Columns.Contains("PartNumber") ? row["PartNumber"].ToString() : "");
+                        
+                        if (string.IsNullOrWhiteSpace(name)) { skipped++; continue; }
+                        if (!string.IsNullOrWhiteSpace(pn) && _inventoryService.PartExists(pn)) { skipped++; continue; }
+
+                        var p = new butcherPOS.Data.PartData();
+                        p.PartName = name;
+                        p.PartNumber = pn;
+                        
+                        if (isNewFormat)
+                        {
+                            if (dt.Columns.Contains("category_name")) p.CategoryName = row["category_name"].ToString();
+                            if (dt.Columns.Contains("description")) p.Description = row["description"].ToString();
+                            if (dt.Columns.Contains("quantity_in_stock")) p.QuantityInStock = int.TryParse(row["quantity_in_stock"].ToString(), out int q) ? q : 0;
+                            if (dt.Columns.Contains("minimum_stock_level")) p.MinimumStockLevel = int.TryParse(row["minimum_stock_level"].ToString(), out int m) ? m : 0;
+                            if (dt.Columns.Contains("reorder_quantity")) p.ReorderQuantity = int.TryParse(row["reorder_quantity"].ToString(), out int rq) ? rq : 0;
+                            if (dt.Columns.Contains("purchase_price")) p.PurchasePrice = decimal.TryParse(row["purchase_price"].ToString(), out decimal pp) ? pp : 0;
+                            if (dt.Columns.Contains("selling_price")) p.SellingPrice = decimal.TryParse(row["selling_price"].ToString(), out decimal sp) ? sp : 0;
+                            if (dt.Columns.Contains("location")) p.Location = row["location"].ToString();
+                            if (dt.Columns.Contains("shelf")) p.Shelf = row["shelf"].ToString();
+                            if (dt.Columns.Contains("barcode")) p.Barcode = row["barcode"].ToString();
+                            if (dt.Columns.Contains("status")) p.Status = row["status"].ToString();
+                            if (dt.Columns.Contains("item_type")) p.ItemType = row["item_type"].ToString();
+                            if (dt.Columns.Contains("unit_of_measure")) p.UnitOfMeasure = row["unit_of_measure"].ToString();
+                            if (dt.Columns.Contains("batch_number")) p.BatchNumber = row["batch_number"].ToString();
+                            if (dt.Columns.Contains("expiry_date")) p.ExpiryDate = row["expiry_date"].ToString();
+                            if (dt.Columns.Contains("is_sales_item")) p.IsSalesItem = row["is_sales_item"].ToString() == "1" || row["is_sales_item"].ToString().ToLower() == "true";
+                            if (dt.Columns.Contains("is_purchase_item")) p.IsPurchaseItem = row["is_purchase_item"].ToString() == "1" || row["is_purchase_item"].ToString().ToLower() == "true";
+                            if (dt.Columns.Contains("is_inactive")) p.IsInactive = row["is_inactive"].ToString() == "1" || row["is_inactive"].ToString().ToLower() == "true";
+                            if (dt.Columns.Contains("tax_rate")) p.TaxRate = decimal.TryParse(row["tax_rate"].ToString(), out decimal t) ? t : 0;
+                            if (dt.Columns.Contains("is_stock_tracked")) p.IsStockTracked = row["is_stock_tracked"].ToString() == "1" || row["is_stock_tracked"].ToString().ToLower() == "true";
+                            if (dt.Columns.Contains("price2")) p.Price2 = decimal.TryParse(row["price2"].ToString(), out decimal p2) ? p2 : 0;
+                            if (dt.Columns.Contains("price3")) p.Price3 = decimal.TryParse(row["price3"].ToString(), out decimal p3) ? p3 : 0;
+                            if (dt.Columns.Contains("price4")) p.Price4 = decimal.TryParse(row["price4"].ToString(), out decimal p4) ? p4 : 0;
+                        }
+                        else
+                        {
+                            if (dt.Columns.Contains("Category")) p.CategoryName = row["Category"].ToString();
+                            if (dt.Columns.Contains("Quantity")) p.QuantityInStock = int.TryParse(row["Quantity"].ToString(), out int q) ? q : 0;
+                            if (dt.Columns.Contains("MinimumStock")) p.MinimumStockLevel = int.TryParse(row["MinimumStock"].ToString(), out int m) ? m : 0;
+                            if (dt.Columns.Contains("UnitPrice")) p.SellingPrice = decimal.TryParse(row["UnitPrice"].ToString(), out decimal sp) ? sp : 0;
+                            if (dt.Columns.Contains("Location")) p.Location = row["Location"].ToString();
+                            if (dt.Columns.Contains("Status")) p.Status = row["Status"].ToString();
+                        }
+                        
+                        _inventoryService.SaveProductService(p);
                         imported++;
                     }
                     catch { skipped++; }

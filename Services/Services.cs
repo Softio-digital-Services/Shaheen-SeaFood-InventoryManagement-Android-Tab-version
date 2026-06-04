@@ -9,13 +9,18 @@ namespace butcherPOS.Services
     {
         public DataTable GetAllParts(string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null)
         {
-            string sql = @"SELECT p.id as part_id, p.part_number, p.part_name,
+            string sql = @"SELECT p.id as part_id, p.part_number, p.part_name, p.description,
                            COALESCE(c.category_name, 'Category') as category_name,
-                           p.quantity_in_stock, p.selling_price, p.status, 
+                           COALESCE(s.supplier_name, '') as supplier_name,
+                           p.quantity_in_stock, p.selling_price, p.purchase_price, p.status, 
                            COALESCE(NULLIF(p.part_image, ''), NULLIF(c.category_image, '')) as part_image,
-                           p.minimum_stock_level, p.location, p.barcode, p.shelf
+                           p.minimum_stock_level, p.reorder_quantity, p.location, p.barcode, p.shelf,
+                           p.item_type, p.unit_of_measure, p.batch_number, p.expiry_date,
+                           p.is_sales_item, p.is_purchase_item, p.is_inactive, p.tax_rate,
+                           p.is_stock_tracked, p.price2, p.price3, p.price4
                            FROM parts p
                            LEFT JOIN categories c ON p.category_id = c.id
+                           LEFT JOIN suppliers s ON p.supplier_id = s.id
                            WHERE p.date_deleted IS NULL";
 
             if (!string.IsNullOrEmpty(search))

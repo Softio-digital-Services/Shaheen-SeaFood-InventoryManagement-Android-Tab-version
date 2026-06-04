@@ -55,7 +55,7 @@ namespace butcherPOS.Forms
             Button btnNewPO = new Button { Size = new Size(180, 35), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
             btnNewPO.FlatAppearance.BorderSize = 0;
             btnNewPO.Click += BtnNewPO_Click;
-            btnNewPO.Paint += (s, e) => ThemeConfig.DrawIconButton(btnNewPO, e.Graphics, "add", "PO_New", Color.White, ThemeConfig.PrimaryColor, false);
+            ThemeConfig.ApplyStandardAddButton(btnNewPO, "PO_New");
 
             List<Control> buttons = new List<Control> { btnNewPO };
 

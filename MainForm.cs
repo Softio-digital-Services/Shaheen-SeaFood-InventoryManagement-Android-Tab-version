@@ -292,21 +292,10 @@ namespace butcherPOS
         private void RefineNavigationLayout()
         {
             panel2.Controls.Remove(label4); label4.Visible = false;
-            
-            // Re-order panel2 to ensure pnlBranding is NOT covered by pnlNav
+            // Re-order panel2 to ensure pnlNav fills the remaining space
             Panel pnlNav = panel2.Controls.Find("pnlNav", true).FirstOrDefault() as Panel;
             if(pnlNav != null) panel2.Controls.Remove(pnlNav);
 
-            // Create a dedicated branding panel at the bottom
-            Panel pnlBranding = new Panel { 
-                Name = "pnlBranding",
-                Dock = DockStyle.Bottom, 
-                Height = 110, 
-                BackColor = Color.Transparent,
-                Padding = new Padding(0)
-            };
-            panel2.Controls.Add(pnlBranding);
-            
             // Now re-add pnlNav to fill the REMAINING space
             if(pnlNav != null) {
                 panel2.Controls.Add(pnlNav);
@@ -314,18 +303,20 @@ namespace butcherPOS
                 pnlNav.BringToFront();
             }
 
-            // Logout Button - Moved into the branding panel
-            button3.Parent = pnlBranding;
-            button3.Dock = DockStyle.Top; 
+            // Logout Button - Moved to the extreme bottom of the sidebar
+            button3.Parent = panel2;
+            button3.Dock = DockStyle.Bottom; 
+            button3.SendToBack(); // Puts it at the absolute bottom edge
             button3.Height = 50; 
             button3.Text = "  " + LocalizationManager.GetString("Nav_Logout"); 
             button3.ForeColor = ThemeConfig.DangerColor;
             Image logoutIcon = ThemeConfig.GetNuricon("logout");
             if (logoutIcon != null) { button3.Image = ResizeImage(logoutIcon, 22, 22); button3.ImageAlign = ContentAlignment.MiddleLeft; button3.TextImageRelation = TextImageRelation.ImageBeforeText; }
-            button3.TextAlign = ContentAlignment.MiddleLeft; button3.Padding = new Padding(LocalizationManager.IsArabic ? 0 : 15, 0, LocalizationManager.IsArabic ? 15 : 0, 0); button3.Font = ThemeConfig.ButtonFont;
+            button3.TextAlign = ContentAlignment.MiddleLeft; button3.Padding = new Padding(LocalizationManager.IsArabic ? 0 : 15, 0, LocalizationManager.IsArabic ? 15 : 0, 0); 
+            button3.Font = Dashboard_btn.Font;
             button3.FlatAppearance.MouseOverBackColor = ThemeConfig.DangerLight;
 
-            // Logout button is already Dock=Top, so they will be separated naturally.
+            // Logout button is docked to the bottom.
 
             SetupHeaderIcons();
             SetupFooter();
