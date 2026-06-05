@@ -205,7 +205,8 @@ namespace butcherPOS.Forms
             Panel pnlSidebarOuter = new Panel
             {
                 Dock = DockStyle.Fill, BackColor = Color.Transparent,
-                Margin = new Padding(0, 0, 12, 0)
+                Margin = new Padding(0, 0, 12, 0),
+                Tag = "surface"
             };
             pnlSidebarOuter.Paint += (s, pe) =>
             {
@@ -270,7 +271,8 @@ namespace butcherPOS.Forms
             Panel pnlContent = new Panel
             {
                 Dock = DockStyle.Fill, BackColor = Color.Transparent,
-                Margin = new Padding(0)
+                Margin = new Padding(0),
+                Tag = "surface"
             };
             pnlContent.Paint += (s, pe) =>
             {
@@ -737,7 +739,8 @@ namespace butcherPOS.Forms
             Panel card = new Panel
             {
                 Size = new Size(CardW, CardH), Margin = new Padding(CardGap / 2),
-                BackColor = Color.Transparent, Cursor = Cursors.Hand
+                BackColor = Color.Transparent, Cursor = Cursors.Hand,
+                Tag = "surface"
             };
             card.Paint += (s, pe) =>
             {
@@ -748,7 +751,7 @@ namespace butcherPOS.Forms
             };
 
             string addText = _activeCategory == null
-                ? (LocalizationManager.GetString("Parts_AddProduct") ?? "Add New Item")
+                ? "New"
                 : $"Add to {_activeCategory}";
 
             // Use a proper standard add button centered in the card
@@ -1011,7 +1014,7 @@ namespace butcherPOS.Forms
             if (ctrlTitle.Length > 0) ctrlTitle[0].Text = L("Parts_Title");
             if (txtSearch != null) txtSearch.PlaceholderText = L("Parts_Search");
 
-            if (btnAdd != null)         btnAdd.Text = "+ " + (butcherPOS.Helpers.LocalizationManager.GetString("Parts_AddProduct") ?? "New");
+            if (btnAdd != null) ThemeConfig.ApplyStandardAddButton(btnAdd, "New");
             if (btnFilter != null)  btnFilter.Invalidate();
             if (btnImport != null)  btnImport.Invalidate();
             if (btnExport != null)  btnExport.Invalidate();
@@ -1041,7 +1044,11 @@ namespace butcherPOS.Forms
         protected override void OnVisibleChanged(EventArgs e)
         {
             base.OnVisibleChanged(e);
-            if (this.Visible && !this.DesignMode) RefreshAll();
+            if (this.Visible && !this.DesignMode)
+            {
+                RefreshAll();
+                this.ActiveControl = null;
+            }
         }
 
         // ─────────────────────────────────────────────────────────────────
@@ -1070,7 +1077,7 @@ namespace butcherPOS.Forms
             Bitmap img = new Bitmap(56, 56);
             using (Graphics g = Graphics.FromImage(img))
             {
-                g.Clear(ThemeConfig.BackgroundColor);
+                g.Clear(Color.Transparent);
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 string iconName = "inventory";
                 if (category != null)

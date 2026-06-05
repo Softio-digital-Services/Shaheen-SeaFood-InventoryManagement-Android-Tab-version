@@ -28,6 +28,19 @@ namespace butcherPOS.Controls
 
         public DateTime MinDate { get; set; } = DateTime.MinValue;
 
+        public bool ShowCheckBox { get; set; } = false;
+
+        public bool Checked
+        {
+            get => _value.HasValue;
+            set
+            {
+                if (value && !_value.HasValue) _value = DateTime.Today;
+                else if (!value) _value = null;
+                UpdateLabel();
+            }
+        }
+
         // Maintain compatibility with POsForm code
         public DateTimePickerFormat Format { get; set; } = DateTimePickerFormat.Short;
         
@@ -36,9 +49,9 @@ namespace butcherPOS.Controls
         
         public FlatDateTimePicker()
         {
-            this.Size = new Size(200, 30); 
+            this.Size = new Size(200, 35); 
             this.Padding = new Padding(0);
-            this.BackColor = Color.White;
+            this.BackColor = Color.Transparent;
             if (Helpers.LocalizationManager.IsArabic) this.RightToLeft = RightToLeft.Yes;
             
             InitializeControls();
@@ -48,7 +61,7 @@ namespace butcherPOS.Controls
         {
             pnlContainer = new Panel();
             pnlContainer.Dock = DockStyle.Fill;
-            pnlContainer.Padding = new Padding(5, 0, 5, 0);
+            pnlContainer.Padding = new Padding(10, 5, 5, 5);
             pnlContainer.Cursor = Cursors.Hand;
             pnlContainer.Click += OpenCalendar;
             
@@ -70,8 +83,24 @@ namespace butcherPOS.Controls
 
             pnlContainer.Controls.Add(lblDate);
             pnlContainer.Controls.Add(lblIcon);
+            pnlContainer.Paint += PnlContainer_Paint;
             
             this.Controls.Add(pnlContainer);
+        }
+
+        private void PnlContainer_Paint(object sender, PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Color parentColor = ThemeConfig.GetParentColor(this);
+            using (var brush = new SolidBrush(parentColor))
+                e.Graphics.FillRectangle(brush, -1, -1, pnlContainer.Width + 2, pnlContainer.Height + 2);
+
+            Rectangle rect = new Rectangle(0, 0, pnlContainer.Width - 1, pnlContainer.Height - 1);
+            using (var path = ThemeConfig.GetRoundedPathPublic(rect, 12))
+            {
+                using (var brush = new SolidBrush(Color.White)) e.Graphics.FillPath(brush, path);
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f)) e.Graphics.DrawPath(pen, path);
+            }
         }
 
         private void OpenCalendar(object sender, EventArgs e)

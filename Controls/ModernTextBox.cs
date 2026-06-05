@@ -20,6 +20,13 @@ namespace butcherPOS.Controls
             set => txtInput.Text = value;
         }
 
+        [Category("Behavior")]
+        public bool ReadOnly
+        {
+            get => txtInput.ReadOnly;
+            set => txtInput.ReadOnly = value;
+        }
+
         public new event KeyEventHandler KeyDown
         {
             add => txtInput.KeyDown += value;

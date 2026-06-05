@@ -88,6 +88,7 @@ namespace butcherPOS.Forms
             if (this.Visible && !this.DesignMode)
             {
                 LoadData();
+                this.ActiveControl = null;
             }
         }
 

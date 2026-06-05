@@ -62,6 +62,7 @@ namespace butcherPOS.Forms
                 RefreshStats();
                 LoadCustomers();
                 LoadProducts();
+                this.ActiveControl = null;
             }
         }
 
@@ -216,7 +217,7 @@ namespace butcherPOS.Forms
             Label lblCatTitle = new Label
             {
                 Text = menuTitleTrans == "POS_MenuTitle" ? "Products Menu" : menuTitleTrans,
-                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                Font = ThemeConfig.CardTitleFont,
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize = true,
                 Location = new Point(2, 4),
@@ -367,7 +368,7 @@ namespace butcherPOS.Forms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 4,
+                RowCount = 5,
                 BackColor = Color.Transparent,
                 Margin = new Padding(0)
             };
@@ -376,18 +377,18 @@ namespace butcherPOS.Forms
             tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));  // Ordered Items Title
             tlpCard1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Cart items
             tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 175F)); // Payment Summary
+            tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // Currency Selector
             pnlCard1.Controls.Add(tlpCard1);
 
             // -- Order Header
             Panel pnlOrderHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 16, 16, 0) };
 
-            Label lblNewOrder = new Label { Text = "New Order", Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Location = new Point(16, 16) };
+            Label lblNewOrder = new Label { Text = "New Order", Font = ThemeConfig.CardTitleFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Location = new Point(16, 16) };
             pnlOrderHeader.Controls.Add(lblNewOrder);
 
-            lblOrderNum = new Label { Text = "#001", Font = new Font("Segoe UI", 9F), ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Location = new Point(16, 42) };
+            lblOrderNum = new Label { Text = "#001", Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Regular), ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Location = new Point(16, 42) };
             pnlOrderHeader.Controls.Add(lblOrderNum);
 
-            PictureBox btnEdit = new PictureBox { Image = ThemeConfig.GetNuricon("edit"), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(20, 20), Cursor = Cursors.Hand };
             PictureBox btnTrash = new PictureBox { Image = ThemeConfig.GetNuricon("delete"), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(20, 20), Cursor = Cursors.Hand };
             btnTrash.Click += (s, e) =>
             {
@@ -397,7 +398,6 @@ namespace butcherPOS.Forms
                     RefreshCartDisplay();
                 }
             };
-            pnlOrderHeader.Controls.Add(btnEdit);
             pnlOrderHeader.Controls.Add(btnTrash);
 
             cmbCustomers = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
@@ -408,7 +408,6 @@ namespace butcherPOS.Forms
             {
                 int w = pnlOrderHeader.Width;
                 btnTrash.Location = new Point(w - 32, 16);
-                btnEdit.Location = new Point(w - 60, 16);
                 lblNewOrder.Location = new Point(16, 16);
                 lblOrderNum.Location = new Point(16, 42);
                 cmbCustomers.Width = 140;
@@ -430,6 +429,11 @@ namespace butcherPOS.Forms
             BuildSummaryPanel(pnlSummary);
             tlpCard1.Controls.Add(pnlSummary, 0, 3);
 
+            // -- Currency Selector
+            Panel pnlCurrency = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 0, 16, 10) };
+            BuildCurrencySelectorPanel(pnlCurrency);
+            tlpCard1.Controls.Add(pnlCurrency, 0, 4);
+
             // -- Card 2: Actions ---------------------------------------
             Panel pnlCard2 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0) };
             pnlCard2.Paint += cardPaint;
@@ -441,7 +445,7 @@ namespace butcherPOS.Forms
             tlpCard2.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Buttons height
             Panel pnlActionsHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 8, 16, 0) };
             string actStr = LocalizationManager.GetString("POS_Actions");
-            Label lblActionsTitle = new Label { Text = (string.IsNullOrEmpty(actStr) || actStr == "POS_Actions") ? "Actions" : actStr, Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft, BackColor = Color.Transparent };
+            Label lblActionsTitle = new Label { Text = (string.IsNullOrEmpty(actStr) || actStr == "POS_Actions") ? "Payment Method" : actStr, Font = ThemeConfig.CardTitleFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft, BackColor = Color.Transparent };
             pnlActionsHeader.Controls.Add(lblActionsTitle);
             tlpCard2.Controls.Add(pnlActionsHeader, 0, 0);
 
@@ -477,7 +481,7 @@ namespace butcherPOS.Forms
             Label lblOrderedItems = new Label
             {
                 Text = orderedItemsTrans == "POS_OrderedItems" ? "Current Order" : orderedItemsTrans,
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Font = ThemeConfig.CardTitleFont,
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize = true,
                 BackColor = Color.Transparent
@@ -487,7 +491,7 @@ namespace butcherPOS.Forms
             _lblCartCount = new Label
             {
                 Text = "00",
-                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                Font = new Font(ThemeConfig.AppFontFamily, 10F, FontStyle.Regular),
                 ForeColor = ThemeConfig.SecondaryColor,
                 AutoSize = true,
                 BackColor = Color.Transparent
@@ -517,7 +521,7 @@ namespace butcherPOS.Forms
             ThemeConfig.ApplyPaletteButton(btnQuote, Color.FromArgb(59, 130, 246)); // Blue for Quote
             ThemeConfig.ApplyPaletteButton(btnBill, Color.FromArgb(16, 185, 129)); // Green for Bill
 
-            Font forceFont = new Font("Segoe UI", 9F, FontStyle.Bold);
+            Font forceFont = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold);
             btnReturn.Font = forceFont;
             btnDraft.Font = forceFont;
             btnQuote.Font = forceFont;
@@ -626,7 +630,7 @@ namespace butcherPOS.Forms
             Label lblSummaryHeader = new Label
             {
                 Text = paymentSummaryTrans == "POS_PaymentSummary" ? "Payment Summary" : paymentSummaryTrans,
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Font = ThemeConfig.CardTitleFont,
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize = true,
                 BackColor = Color.Transparent
@@ -736,19 +740,19 @@ namespace butcherPOS.Forms
             };
         }
 
-        private Label MakeSummaryLabel(string text, bool bold)
+        private Label MakeSummaryLabel(string text, bool isTotal)
         {
             return new Label
             {
                 Text = text,
                 AutoSize = true,
-                Font = bold ? ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold) : ThemeConfig.StandardFont,
-                ForeColor = bold ? ThemeConfig.TextColorDark : ThemeConfig.SecondaryColor,
+                Font = isTotal ? new Font(ThemeConfig.AppFontFamily, 12F, FontStyle.Bold) : new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Regular),
+                ForeColor = isTotal ? ThemeConfig.TextColorDark : ThemeConfig.SecondaryColor,
                 BackColor = Color.Transparent
             };
         }
 
-        private Label MakeSummaryValueLabel(string text, bool bold)
+        private Label MakeSummaryValueLabel(string text, bool isTotal)
         {
             return new Label
             {
@@ -757,8 +761,8 @@ namespace butcherPOS.Forms
                 Width = 120,
                 Height = 22,
                 TextAlign = ContentAlignment.MiddleRight,
-                Font = bold ? new Font("Segoe UI", 12F, FontStyle.Bold) : ThemeConfig.StandardFont,
-                ForeColor = bold ? ThemeConfig.PrimaryColor : ThemeConfig.TextColorDark,
+                Font = isTotal ? new Font(ThemeConfig.AppFontFamily, 12F, FontStyle.Bold) : new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
                 BackColor = Color.Transparent
             };
         }
@@ -770,22 +774,22 @@ namespace butcherPOS.Forms
         {
             var currencies = butcherPOS.Services.CurrencyService.SupportedCurrencies;
 
+            string curTrans = LocalizationManager.GetString("POS_Currency");
             Label lblCurrLabel = new Label
             {
-                Text = LocalizationManager.GetString("POS_Currency") ?? "Currency",
+                Text = (string.IsNullOrEmpty(curTrans) || curTrans == "POS_Currency") ? "Currency" : curTrans,
                 Font = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold),
                 ForeColor = ThemeConfig.SecondaryColor,
                 AutoSize = true,
                 BackColor = Color.Transparent
             };
 
-            ComboBox cmbCurrency = new ComboBox
+            butcherPOS.Controls.ModernComboBox cmbCurrency = new butcherPOS.Controls.ModernComboBox
             {
-                DropDownStyle = ComboBoxStyle.DropDownList,
                 Font = ThemeConfig.StandardFont,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                ShowLabel = false
             };
-            ThemeConfig.ApplyComboBoxStyle(cmbCurrency);
 
             foreach (var curr in currencies)
                 cmbCurrency.Items.Add(curr.Code);
@@ -795,7 +799,7 @@ namespace butcherPOS.Forms
             int idx = cmbCurrency.Items.IndexOf(active);
             cmbCurrency.SelectedIndex = idx >= 0 ? idx : 0;
 
-            cmbCurrency.SelectedIndexChanged += (s, e) =>
+            cmbCurrency.InnerComboBox.SelectedIndexChanged += (s, e) =>
             {
                 string selected = cmbCurrency.SelectedItem?.ToString();
                 if (!string.IsNullOrEmpty(selected))
@@ -921,8 +925,8 @@ namespace butcherPOS.Forms
                 btnPrintReceipt.SetBounds(16, yOffset, printW, h);
                 btnCheckout.SetBounds(16 + printW + gap, yOffset, checkoutW, h);
 
-                btnPrintReceipt.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-                btnCheckout.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                btnPrintReceipt.Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold);
+                btnCheckout.Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold);
             };
 
             pnl.Controls.AddRange(new Control[] { btnPrintReceipt, btnCheckout });
@@ -1598,8 +1602,8 @@ namespace butcherPOS.Forms
                 Label lblName = new Label
                 {
                     Text = partName,
-                    Font = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold),
-                    ForeColor = ThemeConfig.TextColorDark,
+                    Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Regular),
+                    ForeColor = ThemeConfig.SecondaryColor,
                     AutoSize = false,
                     Height = 18,
                     Location = new Point(16, 4),
@@ -1611,7 +1615,7 @@ namespace butcherPOS.Forms
                 Label lblQtyTxt = new Label
                 {
                     Text = $"{qty} × ",
-                    Font = ThemeConfig.SmallFont ?? new Font("Segoe UI", 8F),
+                    Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Regular),
                     ForeColor = ThemeConfig.SecondaryColor,
                     AutoSize = true,
                     Height = 16,
@@ -1624,7 +1628,7 @@ namespace butcherPOS.Forms
                 ComboBox cmbPrice = new ComboBox
                 {
                     DropDownStyle = ComboBoxStyle.DropDownList,
-                    Font = ThemeConfig.SmallFont ?? new Font("Segoe UI", 8F),
+                    Font = new Font(ThemeConfig.AppFontFamily, 8F, FontStyle.Regular),
                     Width = 75,
                     Location = new Point(50, 20),
                     TabStop = false
@@ -1671,7 +1675,7 @@ namespace butcherPOS.Forms
                 Label lblRowTotal = new Label
                 {
                     Text = CurrencyService.Format(total),
-                    Font = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold),
+                    Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold),
                     ForeColor = ThemeConfig.TextColorDark,
                     AutoSize = false,
                     Width = 80,
@@ -1690,7 +1694,7 @@ namespace butcherPOS.Forms
                     Text = "-",
                     Size = new Size(bSz, bSz),
                     FlatStyle = FlatStyle.Flat,
-                    Font = new Font("Segoe UI", 9F),
+                    Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Regular),
                     Cursor = Cursors.Hand,
                     BackColor = ThemeConfig.SurfaceColor,
                     ForeColor = ThemeConfig.TextColorDark,
@@ -1705,7 +1709,7 @@ namespace butcherPOS.Forms
                     Text = qty.ToString(),
                     Size = new Size(20, bSz),
                     TextAlign = ContentAlignment.MiddleCenter,
-                    Font = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                    Font = new Font(ThemeConfig.AppFontFamily, 8.5F, FontStyle.Bold),
                     ForeColor = ThemeConfig.TextColorDark,
                     BackColor = Color.Transparent
                 };
@@ -1715,7 +1719,7 @@ namespace butcherPOS.Forms
                     Text = "+",
                     Size = new Size(bSz, bSz),
                     FlatStyle = FlatStyle.Flat,
-                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold),
                     Cursor = Cursors.Hand,
                     BackColor = ThemeConfig.PrimaryColor,
                     ForeColor = Color.White,

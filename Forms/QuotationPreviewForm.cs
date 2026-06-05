@@ -306,7 +306,7 @@ namespace butcherPOS.Forms
                     page.Controls.Add(lblFinal);
 
                     Label lblContactFooter = new Label {
-                        Text = "Phone: +1 (555) 000-0000  |  Email: contact@acmecorp.com  |  Website: www.acmecorp.com",
+                        Text = "Phone: +1 (555) 000-0000  |  Email: contact@a2z.com  |  Website: www.a2z.com",
                         Font = new Font("Segoe UI", 8.5F),
                         Location = new Point(0, 1085),
                         Size = new Size(page.Width, 25),

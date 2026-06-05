@@ -16,6 +16,12 @@ namespace butcherPOS.Controls
 
         public ComboBox InnerComboBox => cmbInput;
 
+        public override string Text
+        {
+            get => cmbInput.Text;
+            set => cmbInput.Text = value;
+        }
+
         [Category("Appearance")]
         public string LabelText
         {
@@ -41,6 +47,12 @@ namespace butcherPOS.Controls
             set => cmbInput.DropDownStyle = value;
         }
 
+        public object SelectedValue
+        {
+            get => cmbInput.SelectedValue;
+            set => cmbInput.SelectedValue = value;
+        }
+
         public ComboBox.ObjectCollection Items => cmbInput.Items;
 
         public object DataSource
@@ -59,12 +71,6 @@ namespace butcherPOS.Controls
         {
             get => cmbInput.ValueMember;
             set => cmbInput.ValueMember = value;
-        }
-
-        public object SelectedValue
-        {
-            get => cmbInput.SelectedValue;
-            set => cmbInput.SelectedValue = value;
         }
 
         private string _placeholderText = "";
@@ -126,7 +132,7 @@ namespace butcherPOS.Controls
             pnlContainer.Size = new Size(this.Width, 45); // Match ModernTextBox height
             pnlContainer.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             pnlContainer.Paint += PnlContainer_Paint;
-            pnlContainer.Padding = new Padding(12, 10, 12, 8); // Match ModernTextBox padding
+            pnlContainer.Padding = new Padding(0); // We will manually center the combobox
             this.Controls.Add(pnlContainer);
 
             // ComboBox
@@ -134,9 +140,17 @@ namespace butcherPOS.Controls
             cmbInput.FlatStyle = FlatStyle.Flat;
             cmbInput.Font = new Font("Segoe UI", 10F);
             cmbInput.ForeColor = ThemeConfig.TextColorDark;
-            cmbInput.Dock = DockStyle.Fill;
             cmbInput.BackColor = Color.White;
+            cmbInput.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             if (LocalizationManager.IsArabic) cmbInput.RightToLeft = RightToLeft.Yes;
+            
+            pnlContainer.Resize += (s, e) => {
+                if (cmbInput != null)
+                {
+                    cmbInput.Width = pnlContainer.Width - 24;
+                    cmbInput.Location = new Point(12, (pnlContainer.Height - cmbInput.Height) / 2);
+                }
+            };
 
             cmbInput.Enter += (s, e) => { 
                 _isFocused = true; 
@@ -171,8 +185,11 @@ namespace butcherPOS.Controls
             if (pnlContainer == null) return;
             bool isAr = LocalizationManager.IsArabic;
             int labelHeight = _showLabel ? 25 : 0;
+            
+            this.Height = labelHeight + 35; // Enforce 35px input height
+            
             pnlContainer.Location = new Point(0, labelHeight);
-            pnlContainer.Size = new Size(this.Width, Math.Min(this.Height - labelHeight, 45));
+            pnlContainer.Size = new Size(this.Width, 35);
 
             if (lblTitle != null)
             {

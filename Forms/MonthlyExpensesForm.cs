@@ -127,11 +127,8 @@ namespace butcherPOS.Forms
                 Location = new Point(0, 0),
                 AutoSize = true
             };
-            dtpDate = new FlatDateTimePicker { Width = 150 };
-            Panel pnlDateInput = ThemeConfig.WrapInStyledInput(dtpDate, 35);
-            pnlDateInput.Location = new Point(0, 25);
-            pnlDateInput.Width = 170;
-            pnlDate.Controls.Add(pnlDateInput);
+            dtpDate = new FlatDateTimePicker { Width = 170, Location = new Point(0, 25) };
+            pnlDate.Controls.Add(dtpDate);
             pnlDate.Controls.Add(lblDateRef);
 
             

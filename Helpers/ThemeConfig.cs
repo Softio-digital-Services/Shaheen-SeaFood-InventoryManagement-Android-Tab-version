@@ -125,13 +125,34 @@ namespace butcherPOS
         // ==========================================
         // FONTS
         // ==========================================
-        public static Font HeaderFont { get; } = new Font("Segoe UI", 14F, FontStyle.Bold); // Larger
-        public static Font SubHeaderFont { get; } = new Font("Segoe UI", 10F, FontStyle.Bold);
-        public static Font StandardFont { get; } = new Font("Segoe UI", 9F, FontStyle.Regular);
-        public static Font SmallFont { get; } = new Font("Segoe UI", 8F, FontStyle.Regular);
-        public static Font ButtonFont { get; } = new Font("Segoe UI", 9F, FontStyle.Bold);
-        public static Font SmallBoldFont { get; } = new Font("Segoe UI", 9F, FontStyle.Bold);
-        public static Font MicroBoldFont { get; } = new Font("Segoe UI", 8F, FontStyle.Bold);
+        private static FontFamily GetAppFontFamily()
+        {
+            try
+            {
+                var fonts = new System.Drawing.Text.InstalledFontCollection();
+                string[] preferred = { "Inter", "Outfit", "Roboto", "Helvetica Neue", "Segoe UI" };
+                foreach (string pref in preferred)
+                {
+                    foreach (var ff in fonts.Families)
+                    {
+                        if (ff.Name.Equals(pref, StringComparison.OrdinalIgnoreCase)) return ff;
+                    }
+                }
+            }
+            catch { }
+            return new FontFamily("Segoe UI");
+        }
+
+        public static FontFamily AppFontFamily { get; } = GetAppFontFamily();
+
+        public static Font HeaderFont { get; } = new Font(AppFontFamily, 14F, FontStyle.Bold); 
+        public static Font CardTitleFont { get; } = new Font(AppFontFamily, 12F, FontStyle.Bold);
+        public static Font SubHeaderFont { get; } = new Font(AppFontFamily, 10F, FontStyle.Bold);
+        public static Font StandardFont { get; } = new Font(AppFontFamily, 9F, FontStyle.Regular);
+        public static Font SmallFont { get; } = new Font(AppFontFamily, 8F, FontStyle.Regular);
+        public static Font ButtonFont { get; } = new Font(AppFontFamily, 9F, FontStyle.Bold);
+        public static Font SmallBoldFont { get; } = new Font(AppFontFamily, 9F, FontStyle.Bold);
+        public static Font MicroBoldFont { get; } = new Font(AppFontFamily, 8F, FontStyle.Bold);
         public static Font EmojiFont { get; } = new Font("Segoe UI Emoji", 11F);
         public static Font EmojiFontLarge { get; } = new Font("Segoe UI Emoji", 14F);
         public static Font SymbolFont { get; } = new Font("Segoe UI Symbol", 11F);
@@ -258,6 +279,7 @@ namespace butcherPOS
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = PrimaryColor;
+            btn.Height = 35;
             btn.ForeColor = TextColorLight;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
@@ -277,6 +299,7 @@ namespace butcherPOS
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = SuccessColor;
+            btn.Height = 35;
             btn.ForeColor = Color.Transparent;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
@@ -320,6 +343,7 @@ namespace butcherPOS
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = SuccessColor;
+            btn.Height = 35;
             btn.ForeColor = Color.Transparent;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
@@ -362,6 +386,7 @@ namespace butcherPOS
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = Color.Transparent;
+            btn.Height = 35;
             btn.ForeColor = Color.Transparent;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
@@ -405,6 +430,7 @@ namespace butcherPOS
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = Color.Transparent;
+            btn.Height = 35;
             btn.ForeColor = Color.Transparent;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
@@ -441,9 +467,14 @@ namespace butcherPOS
         public static Color GetParentColor(Control ctrl)
         {
             Control p = ctrl.Parent;
-            while (p != null && (p.BackColor == Color.Transparent || p.BackColor.A == 0 || p.BackColor == Color.Empty))
+            while (p != null)
+            {
+                if (p.Tag != null && p.Tag.ToString() == "surface") return SurfaceColor;
+                if (p.BackColor != Color.Transparent && p.BackColor.A != 0 && p.BackColor != Color.Empty)
+                    return p.BackColor;
                 p = p.Parent;
-            return p?.BackColor ?? BackgroundColor;
+            }
+            return BackgroundColor;
         }
 
         public static void DrawIconButton(Button btn, Graphics g, string iconName, string localizationKey, Color textColor, Color accentColor, bool isOutline)
@@ -560,8 +591,10 @@ namespace butcherPOS
             };
         }
 
-        public static Panel WrapInStyledInput(Control innerControl, int height, bool isMultiline = false)
+        public static Panel WrapInStyledInput(Control innerControl, int height = 35, bool isMultiline = false)
         {
+            if (!isMultiline) height = 35; // Enforce 35px height for single line inputs
+
             Panel p = new Panel
             {
                 Size      = new Size(200, height),
@@ -1175,9 +1208,11 @@ namespace butcherPOS
 
                 public static void ApplyPaletteButton(Button btn, Color baseColor)
         {
+            btn.Tag = "palette_button";
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = baseColor;
+            btn.Height = 35;
             btn.ForeColor = TextColorWhite;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
@@ -1195,6 +1230,7 @@ namespace butcherPOS
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = DangerColor;
+            btn.Height = 35;
             btn.ForeColor = TextColorLight;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
@@ -1210,6 +1246,7 @@ namespace butcherPOS
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = Color.FromArgb(230, 230, 240);
+            btn.Height = 35;
             btn.ForeColor = TextColorDark;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
@@ -1800,7 +1837,7 @@ namespace butcherPOS
                     if (btn.Name.ToLower().StartsWith("btntab")) continue;
 
                     // Ignore already paletted or standard buttons
-                    if (btn.Tag != null && (btn.Tag.ToString() == "paletted" || btn.Tag.ToString().StartsWith("standard_") || btn.Tag.ToString().StartsWith("success_"))) continue; 
+                    if (btn.Tag != null && (btn.Tag.ToString() == "palette_button" || btn.Tag.ToString().StartsWith("standard_") || btn.Tag.ToString().StartsWith("success_"))) continue; 
 
                     string name = btn.Name.ToLower();
                     if (name.Contains("delete") || name.Contains("remove") || name.Contains("clear"))

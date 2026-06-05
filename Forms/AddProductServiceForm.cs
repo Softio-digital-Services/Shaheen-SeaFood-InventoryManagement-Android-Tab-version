@@ -22,10 +22,10 @@ namespace butcherPOS.Forms
         private ModernButton btnScanBarcode;
         private ModernTextBox txtLocation;
         private ModernTextBox txtShelf;
-        private ComboBox cmbCategory;
+        private ModernComboBox cmbCategory;
         private ModernTextBox txtUom;
         private ModernTextBox txtBatch;
-        private DateTimePicker dtpExpiry;
+        private FlatDateTimePicker dtpExpiry;
 
         private RadioButton rbProduct;
         private RadioButton rbService;
@@ -33,24 +33,24 @@ namespace butcherPOS.Forms
         private CheckBox chkPurchase;
         private CheckBox chkInactive;
 
-        private ComboBox cmbTaxRate;
+        private ModernComboBox cmbTaxRate;
         private CheckBox chkTrackStock;
         private ModernNumericUpDown numStock;
         private ModernNumericUpDown numLowLevel;
 
-        private ComboBox cmbSupplier;
+        private ModernComboBox cmbSupplier;
         private ModernNumericUpDown numCost;
 
         private ModernNumericUpDown[] numPrices = new ModernNumericUpDown[4];
-        private TextBox[] txtGrosses = new TextBox[4];
-        private TextBox[] txtProfits = new TextBox[4];
+        private ModernTextBox[] txtGrosses = new ModernTextBox[4];
+        private ModernTextBox[] txtProfits = new ModernTextBox[4];
 
         private int? _editPartId = null;
         private string _currentImagePath = null;
         
         public AddProductServiceForm()
         {
-            this.ClientSize = new Size(900, 800);
+            this.ClientSize = new Size(1050, 800);
             this.TitleText = LocalizationManager.GetString("AddPart_TitleNew") ?? "Product / Service";
             
             InitializeUI();
@@ -77,103 +77,112 @@ namespace butcherPOS.Forms
         private void InitializeUI()
         {
             this.ContentPanel.AutoScroll = true;
-            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 3, RowCount = 3, Padding = new Padding(15, 15, 30, 15), AutoSize = true };
-            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280F));
+            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 2, RowCount = 3, Padding = new Padding(15, 15, 15, 15), AutoSize = true };
+            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300F));
             tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F));
             
             tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-            // -- Left Pane (Image) --
-            Panel pnlLeft = new Panel { Dock = DockStyle.Top, Margin = new Padding(0,0,10,10), Height = 280 };
+            // -- Left Pane --
+            FlowLayoutPanel flpLeft = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, Margin = new Padding(0,0,10,0), AutoSize = true };
+            
+            // Image
+            Panel pnlLeft = new Panel { Width = 280, Height = 280, Margin = new Padding(0,0,0,15) };
             pbImage = new PictureBox { Dock = DockStyle.Fill, BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke };
             btnUpload = new ModernButton { Text = "Upload Image", Dock = DockStyle.Bottom, Height = 35, Margin = new Padding(0,10,0,0) };
             btnUpload.Click += btnUpload_Click;
+            ThemeConfig.ApplyPrimaryButton(btnUpload);
             pnlLeft.Controls.Add(pbImage);
             pnlLeft.Controls.Add(btnUpload);
-            tlpMain.Controls.Add(pnlLeft, 0, 0);
+            flpLeft.Controls.Add(pnlLeft);
 
-            // -- Tax Rates (Left Pane, Row 1) --
-            FlowLayoutPanel flpTax = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, Margin = new Padding(0,10,10,0), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
-            Label lblTax = new Label { Text = "Tax Rates:", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold), Margin = new Padding(0,0,0,5) };
-            cmbTaxRate = new ComboBox { Width = 260, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10F) };
-            Panel pnlTax = ThemeConfig.WrapInStyledInput(cmbTaxRate, 35); pnlTax.Width = 260;
-            flpTax.Controls.AddRange(new Control[] { lblTax, pnlTax });
-            tlpMain.Controls.Add(flpTax, 0, 1);
-            tlpMain.SetRowSpan(flpTax, 2);
+            // Type
+            GroupBox gbType = new GroupBox { Text = "Type", Width = 280, Height = 60, Margin = new Padding(0,0,0,15) };
+            rbProduct = new RadioButton { Text = "Product", Checked = true, Location = new Point(15, 25), AutoSize = true };
+            rbService = new RadioButton { Text = "Service", Location = new Point(120, 25), AutoSize = true };
+            gbType.Controls.Add(rbProduct); gbType.Controls.Add(rbService);
+            flpLeft.Controls.Add(gbType);
 
-            // -- Middle Pane (General Info) --
-            FlowLayoutPanel flpMiddle = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, WrapContents = false, Margin = new Padding(10,0,10,0), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
-            int midW = 420; // Fixed width for forms
-            txtName = new ModernTextBox { LabelText = "Name", Width = midW, Margin = new Padding(0,0,0,10) };
-            txtDescription = new ModernTextBox { LabelText = "Description", Width = midW, Margin = new Padding(0,0,0,10) };
+            // Settings
+            GroupBox gbSettings = new GroupBox { Text = "Settings", Width = 280, Height = 100, Margin = new Padding(0,0,0,15) };
+            chkSales = new CheckBox { Text = "Sales item", Checked = true, Location = new Point(15, 25), AutoSize = true };
+            chkPurchase = new CheckBox { Text = "Purchase item", Location = new Point(15, 50), AutoSize = true };
+            chkInactive = new CheckBox { Text = "Inactive", Location = new Point(15, 75), AutoSize = true };
+            gbSettings.Controls.AddRange(new Control[] { chkSales, chkPurchase, chkInactive });
+            flpLeft.Controls.Add(gbSettings);
+
+            // Tax
+            cmbTaxRate = new ModernComboBox { LabelText = "Tax Rates:", Width = 280, Margin = new Padding(0,0,0,15), DropDownStyle = ComboBoxStyle.DropDownList };
+            flpLeft.Controls.Add(cmbTaxRate);
+
+            // Category
+            cmbCategory = new ModernComboBox { LabelText = "Category", Width = 280, Margin = new Padding(0,0,0,10), DropDownStyle = ComboBoxStyle.DropDownList };
+            flpLeft.Controls.Add(cmbCategory);
             
-            FlowLayoutPanel flpSku = new FlowLayoutPanel { Width = midW, Height = 67, Margin = new Padding(0,0,0,10), FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
-            txtSku = new ModernTextBox { LabelText = "SKU", Width = midW - 80, Margin = new Padding(0) };
-            btnAutoSku = new ModernButton { Text = "Auto", Width = 70, Margin = new Padding(10,25,0,0) };
+            // Unit of Measure
+            txtUom = new ModernTextBox { LabelText = "Unit of Measure", Width = 280, Margin = new Padding(0,0,0,10) };
+            flpLeft.Controls.Add(txtUom);
+            
+            // Expiry Date
+            FlowLayoutPanel flpExp = new FlowLayoutPanel { Width = 280, Height = 67, Margin = new Padding(0,0,0,10), FlowDirection = FlowDirection.TopDown };
+            Label lblExp = new Label { Text = "Expiry Date", AutoSize = true, Font = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
+            dtpExpiry = new FlatDateTimePicker { Width = 270, Format = DateTimePickerFormat.Short, ShowCheckBox = true, Checked = false };
+            flpExp.Controls.Add(lblExp); flpExp.Controls.Add(dtpExpiry);
+            flpLeft.Controls.Add(flpExp);
+
+            tlpMain.Controls.Add(flpLeft, 0, 0);
+            tlpMain.SetRowSpan(flpLeft, 3);
+
+            // -- Right Pane (General Info) --
+            FlowLayoutPanel flpMiddle = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(10,0,0,0), AutoSize = true };
+            int fullW = 690; // 690 fits Name/Desc perfectly inside 720
+            int halfW = 340; // 340 * 2 + 10 margin = 690
+            
+            txtName = new ModernTextBox { LabelText = "Name", Width = fullW, Margin = new Padding(0,0,20,10) };
+            txtDescription = new ModernTextBox { LabelText = "Description", Width = fullW, Margin = new Padding(0,0,20,10) };
+            
+            FlowLayoutPanel flpSku = new FlowLayoutPanel { Width = halfW, Height = 67, Margin = new Padding(0,0,10,10), FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
+            txtSku = new ModernTextBox { LabelText = "SKU", Width = halfW - 75, Margin = new Padding(0) };
+            btnAutoSku = new ModernButton { Text = "Auto", Width = 65, Height = 35, Margin = new Padding(10,25,0,0) };
+            ThemeConfig.ApplyPrimaryButton(btnAutoSku);
             flpSku.Controls.AddRange(new Control[] { txtSku, btnAutoSku });
             btnAutoSku.Click += (s, e) => { txtSku.Text = "SKU-" + DateTime.Now.ToString("yyMMddHHmmss"); };
 
-            FlowLayoutPanel flpBarcode = new FlowLayoutPanel { Width = midW, Height = 67, Margin = new Padding(0,0,0,10), FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
-            txtBarcode = new ModernTextBox { LabelText = "Barcode", Width = midW - 80, Margin = new Padding(0) };
-            btnScanBarcode = new ModernButton { Text = "Scan", Width = 70, Margin = new Padding(10,25,0,0) };
+            FlowLayoutPanel flpBarcode = new FlowLayoutPanel { Width = halfW, Height = 67, Margin = new Padding(0,0,10,10), FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
+            txtBarcode = new ModernTextBox { LabelText = "Barcode", Width = halfW - 75, Margin = new Padding(0) };
+            btnScanBarcode = new ModernButton { Text = "Scan", Width = 65, Height = 35, Margin = new Padding(10,25,0,0) };
+            ThemeConfig.ApplyPrimaryButton(btnScanBarcode);
             flpBarcode.Controls.AddRange(new Control[] { txtBarcode, btnScanBarcode });
             btnScanBarcode.Click += (s, e) => { MessageHelper.ShowInfo("Ready to scan..."); txtBarcode.Focus(); };
             
-            Label lblCat = new Label { Text = "Category:", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
-            cmbCategory = new ComboBox { Width = midW, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10F) };
-            Panel pnlCat = ThemeConfig.WrapInStyledInput(cmbCategory, 35); pnlCat.Width = midW; pnlCat.Margin = new Padding(0,0,0,10);
+            txtBatch = new ModernTextBox { LabelText = "Batch No.", Width = halfW, Margin = new Padding(0,0,10,10) };
+            txtLocation = new ModernTextBox { LabelText = "Location", Width = halfW, Margin = new Padding(0,0,10,10) };
+            txtShelf = new ModernTextBox { LabelText = "Shelf", Width = halfW, Margin = new Padding(0,0,10,10) };
             
-            txtUom = new ModernTextBox { LabelText = "Unit of Measure", Width = midW, Margin = new Padding(0,0,0,10) };
-            txtBatch = new ModernTextBox { LabelText = "Batch No.", Width = midW, Margin = new Padding(0,0,0,10) };
-            
-            Label lblExp = new Label { Text = "Expiry Date:", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
-            dtpExpiry = new DateTimePicker { Width = midW, Format = DateTimePickerFormat.Short, Font = new Font("Segoe UI", 10F), Margin = new Padding(0,0,0,10), ShowCheckBox = true, Checked = false };
-            
-            txtLocation = new ModernTextBox { LabelText = "Location", Width = midW, Margin = new Padding(0,0,0,10) };
-            txtShelf = new ModernTextBox { LabelText = "Shelf", Width = midW, Margin = new Padding(0,0,0,10) };
-            
-            flpMiddle.Controls.AddRange(new Control[] { txtName, txtDescription, flpSku, flpBarcode, lblCat, pnlCat, txtUom, txtBatch, lblExp, dtpExpiry, txtLocation, txtShelf });
+            flpMiddle.Controls.AddRange(new Control[] { txtName, txtDescription, flpSku, flpBarcode, txtBatch, txtLocation, txtShelf });
             tlpMain.Controls.Add(flpMiddle, 1, 0);
 
-            // -- Right Pane (Flags) --
-            FlowLayoutPanel flpRight = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, Margin = new Padding(10,0,0,0), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
-            GroupBox gbType = new GroupBox { Text = "Type", Width = 150, Height = 90, Margin = new Padding(0,0,0,15) };
-            rbProduct = new RadioButton { Text = "Product", Checked = true, Location = new Point(15, 25) };
-            rbService = new RadioButton { Text = "Service", Location = new Point(15, 55) };
-            gbType.Controls.Add(rbProduct); gbType.Controls.Add(rbService);
+            // -- Right Pane Row 1: Stock & Supplier --
+            FlowLayoutPanel flpStockSupp = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(10,0,0,0), AutoSize = true };
             
-            chkSales = new CheckBox { Text = "Sales item", Checked = true, Margin = new Padding(5,0,0,10) };
-            chkPurchase = new CheckBox { Text = "Purchase item", Margin = new Padding(5,0,0,10) };
-            chkInactive = new CheckBox { Text = "Inactive", Margin = new Padding(5,0,0,10) };
-            
-            flpRight.Controls.AddRange(new Control[] { gbType, chkSales, chkPurchase, chkInactive });
-            tlpMain.Controls.Add(flpRight, 2, 0);
-
-            // -- Middle Row 1: Stock & Supplier --
-            FlowLayoutPanel flpStockSupp = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(10,0,0,0), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
-            
-            GroupBox gbStock = new GroupBox { Text = "Stock control", Width = 310, Height = 120, Margin = new Padding(0,0,15,10) };
+            GroupBox gbStock = new GroupBox { Text = "Stock control", Width = halfW, Height = 120, Margin = new Padding(0,0,10,10) };
             chkTrackStock = new CheckBox { Text = "Control this item", Checked = true, Location = new Point(10, 20), AutoSize = true };
-            numStock = new ModernNumericUpDown { LabelText = "Stock", Width = 135, Location = new Point(10, 50) };
-            numLowLevel = new ModernNumericUpDown { LabelText = "Low level", Width = 135, Location = new Point(160, 50) };
+            numStock = new ModernNumericUpDown { LabelText = "Stock", Width = (halfW / 2) - 15, Location = new Point(10, 45) };
+            numLowLevel = new ModernNumericUpDown { LabelText = "Low level", Width = (halfW / 2) - 15, Location = new Point((halfW / 2) + 5, 45) };
             gbStock.Controls.AddRange(new Control[] { chkTrackStock, numStock, numLowLevel });
             
-            GroupBox gbSupp = new GroupBox { Text = "Supplier", Width = 280, Height = 120, Margin = new Padding(0,0,0,10) };
-            cmbSupplier = new ComboBox { Width = 130, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10F) };
-            Panel pnlSupp = ThemeConfig.WrapInStyledInput(cmbSupplier, 35); pnlSupp.Location = new Point(10, 75); pnlSupp.Width = 130;
-            Label lblSupp = new Label { Text = "Supplier Name", AutoSize = true, Location = new Point(10, 50), Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
-            numCost = new ModernNumericUpDown { LabelText = "Cost", Width = 120, Location = new Point(150, 50), DecimalPlaces = 2, Maximum = 1000000 };
-            gbSupp.Controls.AddRange(new Control[] { lblSupp, pnlSupp, numCost });
+            GroupBox gbSupp = new GroupBox { Text = "Supplier Cost", Width = halfW, Height = 120, Margin = new Padding(0,0,10,10) };
+            cmbSupplier = new ModernComboBox { LabelText = "Supplier", Width = (halfW / 2) - 15, Location = new Point(10, 45), DropDownStyle = ComboBoxStyle.DropDownList };
+            numCost = new ModernNumericUpDown { LabelText = "Cost", Width = (halfW / 2) - 15, Location = new Point((halfW / 2) + 5, 45), DecimalPlaces = 2, Maximum = 1000000 };
+            gbSupp.Controls.AddRange(new Control[] { cmbSupplier, numCost });
 
             flpStockSupp.Controls.AddRange(new Control[] { gbStock, gbSupp });
             tlpMain.Controls.Add(flpStockSupp, 1, 1);
-            tlpMain.SetColumnSpan(flpStockSupp, 2);
 
             // -- Prices Grid --
-            GroupBox gbPrices = new GroupBox { Text = "Prices", Dock = DockStyle.Top, Margin = new Padding(10,10,0,20), AutoSize = true };
+            GroupBox gbPrices = new GroupBox { Text = "Prices", Dock = DockStyle.Top, Margin = new Padding(10,0,20,20), AutoSize = true };
             TableLayoutPanel tlpPrices = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 4, RowCount = 5, Padding = new Padding(10), AutoSize = true };
             tlpPrices.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100F));
             tlpPrices.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
@@ -187,9 +196,9 @@ namespace butcherPOS.Forms
 
             for (int i=0; i<4; i++) {
                 tlpPrices.Controls.Add(new Label { Text = "Price " + (i+1), Anchor = AnchorStyles.Left }, 0, i+1);
-                numPrices[i] = new ModernNumericUpDown { Width = 150, DecimalPlaces = 2, Maximum = 1000000, Margin = new Padding(2), Dock=DockStyle.Top };
-                txtGrosses[i] = new TextBox { Width = 150, ReadOnly = true, Margin = new Padding(2,8,2,2), Font = new Font("Segoe UI", 10F), Dock=DockStyle.Top };
-                txtProfits[i] = new TextBox { Width = 150, ReadOnly = true, Margin = new Padding(2,8,2,2), Font = new Font("Segoe UI", 10F), Dock=DockStyle.Top };
+                numPrices[i] = new ModernNumericUpDown { Width = 150, DecimalPlaces = 2, Maximum = 1000000, Margin = new Padding(2), Dock=DockStyle.Fill, ShowLabel=false };
+                txtGrosses[i] = new ModernTextBox { Width = 150, ReadOnly = true, ShowLabel = false, Margin = new Padding(2), Dock=DockStyle.Fill };
+                txtProfits[i] = new ModernTextBox { Width = 150, ReadOnly = true, ShowLabel = false, Margin = new Padding(2), Dock=DockStyle.Fill };
                 
                 tlpPrices.Controls.Add(numPrices[i], 1, i+1);
                 tlpPrices.Controls.Add(txtGrosses[i], 2, i+1);
@@ -197,7 +206,6 @@ namespace butcherPOS.Forms
             }
             gbPrices.Controls.Add(tlpPrices);
             tlpMain.Controls.Add(gbPrices, 1, 2);
-            tlpMain.SetColumnSpan(gbPrices, 2);
 
             this.ContentPanel.Controls.Add(tlpMain);
         }
@@ -334,7 +342,7 @@ namespace butcherPOS.Forms
                 BatchNumber = txtBatch.Text.Trim(),
                 Location = txtLocation.Text.Trim(),
                 Shelf = txtShelf.Text.Trim(),
-                ExpiryDate = dtpExpiry.Checked ? dtpExpiry.Value.ToString("yyyy-MM-dd") : "",
+                ExpiryDate = dtpExpiry.Checked ? dtpExpiry.Value.Value.ToString("yyyy-MM-dd") : "",
                 ItemType = rbService.Checked ? "Service" : "Product",
                 IsSalesItem = chkSales.Checked,
                 IsPurchaseItem = chkPurchase.Checked,

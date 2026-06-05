@@ -134,29 +134,24 @@ namespace butcherPOS.Controls
             };
             pnlContainer.Controls.Add(txtInput);
 
-            // Up Button
-            btnUp = new Button { 
-                Size = new Size(24, 17), 
-                FlatStyle = FlatStyle.Flat, 
-                Cursor = Cursors.Hand,
-                BackColor = Color.Transparent
+            pnlContainer.MouseClick += (s, e) => {
+                bool isAr = LocalizationManager.IsArabic;
+                int btnZoneX = isAr ? 0 : pnlContainer.Width - 25;
+                if (e.X >= btnZoneX && e.X <= btnZoneX + 25)
+                {
+                    if (e.Y < pnlContainer.Height / 2) Value += _increment;
+                    else Value -= _increment;
+                }
             };
-            btnUp.FlatAppearance.BorderSize = 0;
-            btnUp.Paint += (s, e) => DrawChevron(e.Graphics, true);
-            btnUp.Click += (s, e) => { Value += _increment; };
-            pnlContainer.Controls.Add(btnUp);
 
-            // Down Button
-            btnDown = new Button { 
-                Size = new Size(24, 17), 
-                FlatStyle = FlatStyle.Flat, 
-                Cursor = Cursors.Hand,
-                BackColor = Color.Transparent
+            pnlContainer.MouseMove += (s, e) => {
+                bool isAr = LocalizationManager.IsArabic;
+                int btnZoneX = isAr ? 0 : pnlContainer.Width - 25;
+                if (e.X >= btnZoneX && e.X <= btnZoneX + 25)
+                    pnlContainer.Cursor = Cursors.Hand;
+                else
+                    pnlContainer.Cursor = Cursors.Default;
             };
-            btnDown.FlatAppearance.BorderSize = 0;
-            btnDown.Paint += (s, e) => DrawChevron(e.Graphics, false);
-            btnDown.Click += (s, e) => { Value -= _increment; };
-            pnlContainer.Controls.Add(btnDown);
 
             UpdateLayout();
             UpdateText();
@@ -183,9 +178,7 @@ namespace butcherPOS.Controls
                     lblTitle.Location = new Point(5, 0);
             }
 
-            // Spinner buttons: always relative to the 35px container
-            if (btnUp   != null) btnUp.Location   = new Point(LocalizationManager.IsArabic ? 1 : pnlContainer.Width - 25, 1);
-            if (btnDown != null) btnDown.Location = new Point(LocalizationManager.IsArabic ? 1 : pnlContainer.Width - 25, 17);
+            // Buttons are now drawn manually in paint event
         }
 
         private void UpdateText()
@@ -236,15 +229,25 @@ namespace butcherPOS.Controls
 
             // Separator for buttons
             bool isAr = LocalizationManager.IsArabic;
-            if (isAr)
+            int btnZoneX = isAr ? 25 : pnlContainer.Width - 25;
+            
+            // Draw lines for button area
+            e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), btnZoneX, 5, btnZoneX, pnlContainer.Height - 5);
+            e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), isAr ? 1 : btnZoneX, pnlContainer.Height / 2, isAr ? 25 : pnlContainer.Width - 2, pnlContainer.Height / 2);
+
+            // Draw chevrons
+            int chevronX = isAr ? 7 : pnlContainer.Width - 18;
+            Image iconUp = ThemeConfig.GetNuricon("chevron_up");
+            Image iconDown = ThemeConfig.GetNuricon("chevron_down");
+            if (iconUp != null)
             {
-                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), 25, 5, 25, pnlContainer.Height - 5);
-                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), 1, 17, 25, 17);
+                using (var tinted = ThemeConfig.TintImage(iconUp, ThemeConfig.SecondaryColor))
+                    e.Graphics.DrawImage(tinted, new Rectangle(chevronX, 5, 10, 9));
             }
-            else
+            if (iconDown != null)
             {
-                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), pnlContainer.Width - 25, 5, pnlContainer.Width - 25, pnlContainer.Height - 5);
-                e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), pnlContainer.Width - 25, 17, pnlContainer.Width - 2, 17);
+                using (var tinted = ThemeConfig.TintImage(iconDown, ThemeConfig.SecondaryColor))
+                    e.Graphics.DrawImage(tinted, new Rectangle(chevronX, (pnlContainer.Height / 2) + 4, 10, 9));
             }
         }
 
