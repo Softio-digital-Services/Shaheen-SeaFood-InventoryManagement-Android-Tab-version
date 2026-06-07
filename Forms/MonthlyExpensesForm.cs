@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using System.Drawing;
@@ -403,28 +403,6 @@ namespace InventorySystem.Forms
         {
             cmbCategory.Items.Clear();
             
-            // Check if table has data
-            long count = 0;
-            try { count = DatabaseHelper.ExecuteScalar<long>("SELECT COUNT(*) FROM expense_categories"); } catch { }
-            
-            if (count == 0)
-            {
-                // Insert defaults
-                string[] defaults = new string[] { 
-                    LocalizationManager.GetString("Exp_Rent") ?? "Rent", 
-                    LocalizationManager.GetString("Exp_Utilities") ?? "Utilities", 
-                    LocalizationManager.GetString("Exp_Wages") ?? "Wages", 
-                    LocalizationManager.GetString("Exp_Supplies") ?? "Supplies", 
-                    LocalizationManager.GetString("Exp_Maintenance") ?? "Maintenance", 
-                    LocalizationManager.GetString("Exp_Other") ?? "Other"
-                };
-                foreach (string d in defaults)
-                {
-                    if (!string.IsNullOrWhiteSpace(d))
-                        DatabaseHelper.ExecuteNonQuery($"INSERT INTO expense_categories (category_name) VALUES ('{d}')");
-                }
-            }
-
             DataTable dt = DatabaseHelper.ExecuteDataTable("SELECT category_name FROM expense_categories ORDER BY category_name");
             foreach (DataRow row in dt.Rows)
             {

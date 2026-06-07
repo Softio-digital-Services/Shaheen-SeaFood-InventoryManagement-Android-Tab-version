@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace InventorySystem.Helpers
 {
@@ -7,11 +7,13 @@ namespace InventorySystem.Helpers
         public static string Username { get; set; } = "Guest";
         public static string FullName { get; set; } = "Guest User";
         public static string Role { get; set; } = "Guest";
-        
-        public static bool IsAdmin => Role?.Equals("Admin", StringComparison.OrdinalIgnoreCase) ?? false;
+
+        public static bool IsAdmin => Role?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true || 
+                                      Role?.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) == true || 
+                                      Role?.Contains("admin", StringComparison.OrdinalIgnoreCase) == true;
         public static bool IsStaff => Role?.Equals("Staff", StringComparison.OrdinalIgnoreCase) ?? false;
         public static bool IsAccountant => Role?.Equals("Accountant", StringComparison.OrdinalIgnoreCase) ?? false;
-        
+
         public static void Clear()
         {
             Username = "Guest";

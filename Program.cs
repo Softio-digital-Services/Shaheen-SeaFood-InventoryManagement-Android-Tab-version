@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -163,7 +163,9 @@ namespace InventorySystem
                 app.MapGet("/api/config", () => Microsoft.AspNetCore.Http.Results.Ok(new
                 {
                     language = LocalizationManager.IsArabic ? "ar" : "en",
-                    isArabic = LocalizationManager.IsArabic
+                    isArabic = LocalizationManager.IsArabic,
+                    primaryColor = System.Drawing.ColorTranslator.ToHtml(ThemeConfig.PrimaryColor),
+                    primaryRgb = $"{ThemeConfig.PrimaryColor.R}, {ThemeConfig.PrimaryColor.G}, {ThemeConfig.PrimaryColor.B}"
                 }));
 
                 // Wire up dynamic language broadcast to connected web portals

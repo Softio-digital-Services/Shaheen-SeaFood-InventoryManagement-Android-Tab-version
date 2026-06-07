@@ -3,6 +3,7 @@
     --bg-secondary: #171717;
     --accent: #dc2626; 
     --accent-hover: #b91c1c;
+    --accent-rgb: 220, 38, 38;
     --danger: #ef4444;
     --text-main: #ffffff;
     --text-muted: #a3a3a3;
@@ -64,7 +65,7 @@ body {
     height: 54px; 
     background: transparent url('nuricon_POS_web.png') no-repeat center; 
     background-size: contain; 
-    filter: drop-shadow(0 0 12px rgba(220, 38, 38, 0.5)); 
+    filter: drop-shadow(0 0 12px rgba(var(--accent-rgb), 0.5)); 
 }
 
 .search-bar { 
@@ -261,7 +262,7 @@ body {
 .cat-btn.active { 
     background: var(--accent); 
     border-color: var(--accent); 
-    box-shadow: 0 0 25px rgba(220, 38, 38, 0.4); 
+    box-shadow: 0 0 25px rgba(var(--accent-rgb), 0.4); 
     transform: translateY(-2px);
 }
 
@@ -347,7 +348,7 @@ body {
 .input-group input, .input-group select { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; color: white; font-size: 0.9rem; outline: none; height: 45px; -webkit-appearance: none; -moz-appearance: none; appearance: none; transition: all 0.2s; }
 .input-group select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: calc(100% - 12px) center; padding-right: 35px; cursor: pointer; }
 .input-group select option, .currency-select option { background: #171717; color: white; padding: 10px; }
-.input-group input:focus, .input-group select:focus { border-color: var(--accent); background: rgba(255, 255, 255, 0.1); box-shadow: 0 0 10px rgba(220, 38, 38, 0.2); }
+.input-group input:focus, .input-group select:focus { border-color: var(--accent); background: rgba(255, 255, 255, 0.1); box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.2); }
 
 .password-toggle { 
     position: absolute; 
@@ -381,14 +382,14 @@ body {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
     text-transform: uppercase;
     letter-spacing: 1.2px;
-    box-shadow: 0 10px 30px rgba(220, 38, 38, 0.3); 
+    box-shadow: 0 10px 30px rgba(var(--accent-rgb), 0.3); 
     outline: none;
 }
 
 .btn-primary-large:hover, .btn-checkout:hover {
     background: var(--accent-hover);
     transform: translateY(-2px);
-    box-shadow: 0 15px 30px rgba(220, 38, 38, 0.4);
+    box-shadow: 0 15px 30px rgba(var(--accent-rgb), 0.4);
 }
 
 .btn-primary-large:active, .btn-checkout:active {
@@ -528,7 +529,7 @@ body {
     transition: all 0.2s;
 }
 .currency-select:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); }
-.currency-select:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(220, 38, 38, 0.2); }
+.currency-select:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.2); }
 
 .returns-list {
     display: flex;
@@ -584,7 +585,7 @@ body {
     transition: all 0.2s;
 }
 .btn-lang-toggle:hover {
-    background: rgba(220, 38, 38, 0.15) !important;
+    background: rgba(var(--accent-rgb), 0.15) !important;
 }
 
 /* ─── RTL / ARABIC LAYOUT ─────────────────────────────────────────── */

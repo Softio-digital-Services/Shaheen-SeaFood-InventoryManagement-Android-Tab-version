@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using InventorySystem.Helpers.Plugins;
 using InventorySystem.Helpers;
@@ -15,7 +15,7 @@ namespace InventorySystem.Plugins
         public string Description => "Manage Monthly Expenses.";
         public string Author => "Softio Services";
 
-        public bool RequiresLicense => true;
+        public bool RequiresLicense => false;
         public string LicenseFeatureKey => "Plugin_MonthlyExpenses";
 
         public string TabId => "btnExpenses";

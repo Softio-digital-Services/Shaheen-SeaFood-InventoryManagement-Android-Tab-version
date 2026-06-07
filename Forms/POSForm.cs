@@ -330,7 +330,7 @@ namespace InventorySystem.Forms
             tlpRight.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 16F)); // Gap
             // Card 2: Actions
-            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F));
+            tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 150F));
             tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 16F)); // Gap
             // Card 3: Footer
             tlpRight.RowStyles.Add(new RowStyle(SizeType.Absolute, 80F));
@@ -364,7 +364,7 @@ namespace InventorySystem.Forms
             tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 80F));  // Header
             tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));  // Ordered Items Title
             tlpCard1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Cart items
-            tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 175F)); // Payment Summary
+            tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 140F)); // Payment Summary
             tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // Currency Selector
             pnlCard1.Controls.Add(tlpCard1);
 

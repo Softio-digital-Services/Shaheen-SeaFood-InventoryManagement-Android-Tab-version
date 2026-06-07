@@ -31,8 +31,8 @@ namespace InventorySystem.Forms
         private Panel          pnlGridView;        // wraps dgvParts
         private Panel          pnlCardView;        // wraps pnlCardFlow + header
         private Label          lblItemCount;       // "Desserts (19)"
-        private Button         btnToggleGrid;
-        private Button         btnToggleCard;
+        private Panel          btnToggleGrid;
+        private Panel          btnToggleCard;
 
         // ── State ─────────────────────────────────────────────────────────
         private InventoryService _inventoryService;
@@ -313,7 +313,7 @@ namespace InventorySystem.Forms
             // Combined right-side control panel (FlowLayoutPanel for easier alignment)
             FlowLayoutPanel pnlRightControls = new FlowLayoutPanel
             {
-                Size = new Size(120, 36), Anchor = AnchorStyles.Right | AnchorStyles.Top,
+                Size = new Size(110, 30), Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 BackColor = Color.Transparent, FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false
             };
@@ -324,20 +324,31 @@ namespace InventorySystem.Forms
             btnToggleCard.Click += (s, e) => SwitchView(true);
             btnToggleGrid.Click += (s, e) => SwitchView(false);
 
-            // Filter button — outlined style matching green reference UI
-            Button btnContentFilter = new Button
+            // Filter button — panel-based for true transparency
+            Panel btnContentFilter = new Panel
             {
-                Size = new Size(36, 34),
-                FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand,
+                Size = new Size(26, 26),
                 BackColor = Color.Transparent,
-                ForeColor = ThemeConfig.SecondaryColor,
-                Text = "",
-                Margin = new Padding(4, 1, 0, 0)
+                Cursor = Cursors.Hand,
+                Margin = new Padding(4, 1, 0, 0),
+                Tag = ThemeConfig.SecondaryColor
             };
-            btnContentFilter.FlatAppearance.BorderSize = 0;
-            btnContentFilter.FlatAppearance.MouseOverBackColor = Color.Transparent;
-            btnContentFilter.FlatAppearance.MouseDownBackColor = Color.Transparent;
-            btnContentFilter.Paint += (s, e) => ThemeConfig.DrawIconButton(btnContentFilter, e.Graphics, "filter", "", btnContentFilter.ForeColor, ThemeConfig.SuccessColor, true);
+            btnContentFilter.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = ThemeConfig.GetRoundedPathPublic(new Rectangle(0, 0, btnContentFilter.Width - 1, btnContentFilter.Height - 1), 6))
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                    e.Graphics.DrawPath(pen, path);
+                Image img = ThemeConfig.GetNuricon("filter");
+                if (img != null)
+                {
+                    using (var tinted = ThemeConfig.TintImage(img, ThemeConfig.SecondaryColor))
+                    {
+                        int iconSize = 16;
+                        e.Graphics.DrawImage(tinted, new Rectangle((btnContentFilter.Width - iconSize)/2, (btnContentFilter.Height - iconSize)/2, iconSize, iconSize));
+                    }
+                }
+            };
             btnContentFilter.Click += BtnFilter_Click;
 
             pnlRightControls.Controls.Add(btnToggleCard);
@@ -415,29 +426,49 @@ namespace InventorySystem.Forms
         // ─────────────────────────────────────────────────────────────────
         // VIEW TOGGLE
         // ─────────────────────────────────────────────────────────────────
-        private Button CreateToggleBtn(string iconName, bool startActive)
+        private Panel CreateToggleBtn(string iconName, bool startActive)
         {
-            var btn = new Button
+            bool isActive = startActive;
+            var pnl = new Panel
             {
-                Text = "",
-                Tag = iconName,
-                FlatStyle = FlatStyle.Flat,
+                Size = new Size(26, 26),
+                BackColor = Color.Transparent,
                 Cursor = Cursors.Hand,
-                BackColor = startActive ? ThemeConfig.SuccessColor : Color.Transparent,
-                ForeColor = startActive ? Color.White : ThemeConfig.SecondaryColor,
-                Size = new Size(36, 34),
-                Margin = new Padding(0, 1, 4, 0)
+                Margin = new Padding(0, 1, 4, 0),
+                Tag = isActive  // store active state in Tag
             };
-            btn.FlatAppearance.BorderSize = 0;
-            btn.FlatAppearance.MouseOverBackColor = Color.Transparent;
-            btn.FlatAppearance.MouseDownBackColor = Color.Transparent;
-            
-            btn.Paint += (s, e) =>
+
+            pnl.Paint += (s, e) =>
             {
-                bool isActive = btn.BackColor != Color.Transparent;
-                ThemeConfig.DrawIconButton(btn, e.Graphics, iconName, "", isActive ? Color.White : btn.ForeColor, ThemeConfig.SuccessColor, !isActive);
+                bool active = pnl.Tag is bool b && b;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+                using (var path = ThemeConfig.GetRoundedPathPublic(new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1), 6))
+                {
+                    if (active)
+                    {
+                        using (var brush = new SolidBrush(ThemeConfig.PrimaryColor))
+                            e.Graphics.FillPath(brush, path);
+                    }
+                    else
+                    {
+                        using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                            e.Graphics.DrawPath(pen, path);
+                    }
+                }
+
+                Image img = ThemeConfig.GetNuricon(iconName);
+                if (img != null)
+                {
+                    Color tint = active ? Color.White : ThemeConfig.SecondaryColor;
+                    using (var tinted = ThemeConfig.TintImage(img, tint))
+                    {
+                        int iconSize = 16;
+                        e.Graphics.DrawImage(tinted, new Rectangle((pnl.Width - iconSize)/2, (pnl.Height - iconSize)/2, iconSize, iconSize));
+                    }
+                }
             };
-            return btn;
+            return pnl;
         }
 
         private void SwitchView(bool toCard)
@@ -446,10 +477,11 @@ namespace InventorySystem.Forms
             pnlCardView.Visible  = toCard;
             pnlGridView.Visible  = !toCard;
 
-            btnToggleCard.BackColor = toCard  ? ThemeConfig.SuccessColor : Color.Transparent;
-            btnToggleCard.ForeColor = toCard  ? Color.White : ThemeConfig.SecondaryColor;
-            btnToggleGrid.BackColor = !toCard ? ThemeConfig.SuccessColor : Color.Transparent;
-            btnToggleGrid.ForeColor = !toCard ? Color.White : ThemeConfig.SecondaryColor;
+            btnToggleCard.Tag = toCard;
+            btnToggleGrid.Tag = !toCard;
+
+            btnToggleCard.Invalidate();
+            btnToggleGrid.Invalidate();
 
             if (toCard) LoadCards();
             else        LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);

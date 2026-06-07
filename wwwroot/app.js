@@ -322,6 +322,13 @@ async function fetchLanguageConfig() {
                 currentLang = data.language;
                 applyLanguage();
             }
+            if (data.primaryColor) {
+                document.documentElement.style.setProperty('--accent', data.primaryColor);
+                document.documentElement.style.setProperty('--accent-hover', data.primaryColor);
+            }
+            if (data.primaryRgb) {
+                document.documentElement.style.setProperty('--accent-rgb', data.primaryRgb);
+            }
         }
     } catch (e) { console.error("Language config fetch failed", e); }
 }

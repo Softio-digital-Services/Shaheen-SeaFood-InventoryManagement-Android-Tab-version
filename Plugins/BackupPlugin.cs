@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -269,7 +269,7 @@ namespace InventorySystem.Plugins
                 // Drop all tables
                 string[] tables = { "categories", "suppliers", "customers", "parts", "transactions", 
                                     "users", "orders", "order_items", "payments", "purchase_orders", 
-                                    "purchase_order_items", "returns", "return_items", "expenses" };
+                                    "purchase_order_items", "returns", "return_items", "expenses", "expense_categories" };
 
                 foreach (string table in tables)
                 {
