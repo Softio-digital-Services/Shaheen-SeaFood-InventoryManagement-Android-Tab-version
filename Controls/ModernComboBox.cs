@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -140,7 +140,7 @@ namespace InventorySystem.Controls
             cmbInput.FlatStyle = FlatStyle.Flat;
             cmbInput.Font = new Font("Segoe UI", 10F);
             cmbInput.ForeColor = ThemeConfig.TextColorDark;
-            cmbInput.BackColor = Color.White;
+            cmbInput.BackColor = ThemeConfig.SurfaceColor;
             cmbInput.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             if (LocalizationManager.IsArabic) cmbInput.RightToLeft = RightToLeft.Yes;
             
@@ -218,7 +218,7 @@ namespace InventorySystem.Controls
             Rectangle rect = new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1);
             using (var path = GetRoundedPath(rect, 12))
             {
-                using (var brush = new SolidBrush(Color.White))
+                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
                 {
                     e.Graphics.FillPath(brush, path);
                 }

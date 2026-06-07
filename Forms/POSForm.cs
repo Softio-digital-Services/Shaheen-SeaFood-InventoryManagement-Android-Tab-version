@@ -856,7 +856,7 @@ namespace InventorySystem.Forms
                 FlatStyle = FlatStyle.Flat,
                 Font = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold),
                 Cursor = Cursors.Hand,
-                BackColor = Color.White,
+                BackColor = ThemeConfig.SurfaceColor,
                 ForeColor = ThemeConfig.TextColorDark
             };
             btn.FlatAppearance.BorderSize = 0;
@@ -881,7 +881,7 @@ namespace InventorySystem.Forms
 
         private void SetPayPillActive(Button btn, bool active)
         {
-            btn.BackColor = Color.White;
+            btn.BackColor = ThemeConfig.SurfaceColor;
             btn.ForeColor = active ? ThemeConfig.PrimaryColor : ThemeConfig.TextColorDark;
             btn.FlatAppearance.BorderColor = active ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor;
             btn.Invalidate();
@@ -981,16 +981,24 @@ namespace InventorySystem.Forms
 
             string countText = $"{itemCount} items";
 
-            // Get emoji
-            string emoji = "??";
-            if (categoryKey == null) emoji = "???";
-            else
+            Image chipIcon = categoryKey == null ? ThemeConfig.GetNuricon("dashboard") : ThemeConfig.GetNuricon("category_placeholder");
+            if (categoryKey != null)
             {
                 try
                 {
                     var cats = CategoryData.GetAllCategories();
                     var cat = cats.Find(c => string.Equals(c.CategoryName, categoryKey, StringComparison.OrdinalIgnoreCase));
-                    if (!string.IsNullOrEmpty(cat?.CategoryImage)) emoji = cat.CategoryImage;
+                    if (cat != null && !string.IsNullOrEmpty(cat.CategoryImage))
+                    {
+                        string fullPath = System.IO.Path.Combine(Application.StartupPath, cat.CategoryImage);
+                        if (System.IO.File.Exists(fullPath))
+                        {
+                            using (var ms = new System.IO.MemoryStream(System.IO.File.ReadAllBytes(fullPath)))
+                            {
+                                chipIcon = Image.FromStream(ms);
+                            }
+                        }
+                    }
                 }
                 catch { }
             }
@@ -1068,11 +1076,15 @@ namespace InventorySystem.Forms
                 using (var iconBr = new SolidBrush(Color.FromArgb(242, 244, 246))) // Very light grey
                     g.FillPath(iconBr, iconBgPath);
 
-                using (var emojiFont = new Font("Segoe UI Emoji", 12F))
-                    TextRenderer.DrawText(g, emoji, emojiFont,
-                        new Rectangle(cx, cy, iconSize, iconSize),
-                        ThemeConfig.TextColorDark,
-                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+                if (chipIcon != null)
+                {
+                    float scale = Math.Min(iconSize * 0.7f / chipIcon.Width, iconSize * 0.7f / chipIcon.Height);
+                    float sw = chipIcon.Width * scale;
+                    float sh = chipIcon.Height * scale;
+                    float dx = cx + (iconSize - sw) / 2f;
+                    float dy = cy + (iconSize - sh) / 2f;
+                    g.DrawImage(chipIcon, new RectangleF(dx, dy, sw, sh));
+                }
 
                 // -- Text block (right of icon) --------------------------------
                 int textX = cx + iconSize + 10;
@@ -1910,11 +1922,31 @@ namespace InventorySystem.Forms
                     g.FillEllipse(br, 1, 1, size - 2, size - 2);
                 try
                 {
+                    Image catImg = null;
                     var cats = CategoryData.GetAllCategories();
                     var cat = cats.Find(c => c.CategoryName?.Equals(categoryName, StringComparison.OrdinalIgnoreCase) == true);
-                    string emoji = cat?.CategoryImage ?? "??";
-                    if (!string.IsNullOrEmpty(emoji))
-                        TextRenderer.DrawText(g, emoji, new Font("Segoe UI Emoji", size * 0.4f), new Rectangle(0, 0, size, size), ThemeConfig.TextColorDark, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                    if (cat != null && !string.IsNullOrEmpty(cat.CategoryImage))
+                    {
+                        string fullPath = System.IO.Path.Combine(Application.StartupPath, cat.CategoryImage);
+                        if (System.IO.File.Exists(fullPath))
+                        {
+                            using (var ms = new System.IO.MemoryStream(System.IO.File.ReadAllBytes(fullPath)))
+                            {
+                                catImg = Image.FromStream(ms);
+                            }
+                        }
+                    }
+                    if (catImg == null) catImg = ThemeConfig.GetNuricon("pos");
+                    
+                    if (catImg != null)
+                    {
+                        float scale = Math.Min(size * 0.5f / catImg.Width, size * 0.5f / catImg.Height);
+                        float sw = catImg.Width * scale;
+                        float sh = catImg.Height * scale;
+                        float dx = (size - sw) / 2f;
+                        float dy = (size - sh) / 2f;
+                        g.DrawImage(catImg, new RectangleF(dx, dy, sw, sh));
+                    }
                 }
                 catch { }
             }

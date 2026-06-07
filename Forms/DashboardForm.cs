@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting; // Standard Charting
@@ -290,7 +290,7 @@ namespace InventorySystem.Forms
 
         private Chart CreateModernChart()
         {
-            Chart chart = new Chart { Dock = DockStyle.Fill, BackColor = Color.White };
+            Chart chart = new Chart { Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor };
             ChartArea area = new ChartArea("Default");
             chart.ChartAreas.Add(area);
             

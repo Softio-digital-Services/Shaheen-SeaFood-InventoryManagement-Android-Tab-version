@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
@@ -37,7 +37,7 @@ namespace InventorySystem.Forms
         {
             this.DoubleBuffered = true;
             this.FormBorderStyle = FormBorderStyle.None;
-            this.BackColor = Color.White;
+            this.BackColor = ThemeConfig.SurfaceColor;
             this.StartPosition = FormStartPosition.CenterParent;
 
             this.Padding = new Padding(0);
@@ -369,7 +369,7 @@ namespace InventorySystem.Forms
             // 1. Draw the Solid Background (The Form itself)
             using (GraphicsPath path = GetRoundedPath(rect, radius))
             {
-                using (SolidBrush brush = new SolidBrush(Color.White))
+                using (SolidBrush brush = new SolidBrush(ThemeConfig.SurfaceColor))
                 {
                     e.Graphics.FillPath(brush, path);
                 }

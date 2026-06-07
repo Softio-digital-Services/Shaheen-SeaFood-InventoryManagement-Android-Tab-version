@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -17,7 +17,7 @@ namespace InventorySystem.Controls
         {
             this.SetStyle(ControlStyles.UserPaint | ControlStyles.ResizeRedraw | ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.SupportsTransparentBackColor, true);
             this.BackColor = Color.Transparent;
-            this.ForeColor = Color.Black;
+            this.ForeColor = ThemeConfig.TextColorDark;
             this.Size = new Size(350, 200);
         }
 

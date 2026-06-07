@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -280,8 +280,8 @@ namespace InventorySystem.Controls
             Rectangle r = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
             using (var path = GetRoundedRect(r, 15))
             {
-                // 2. Fill rounded card with surface color (White)
-                using (var brush = new SolidBrush(Color.White))
+                // 2. Fill rounded card with surface color
+                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
                 {
                     e.Graphics.FillPath(brush, path);
                 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -34,7 +34,7 @@ namespace InventorySystem.Controls
             this.ShowInTaskbar = false;
             this.StartPosition = FormStartPosition.Manual;
             this.Size = new Size(280, 300);
-            this.BackColor = Color.White;
+            this.BackColor = ThemeConfig.SurfaceColor;
             this.Padding = new Padding(10);
             
             // Shadow / Border Paint
@@ -133,7 +133,7 @@ namespace InventorySystem.Controls
                 if (btnDate.Date < MinDate.Date)
                 {
                     btn.BackColor = Color.FromArgb(240, 240, 240);
-                    btn.ForeColor = Color.LightGray;
+                    btn.ForeColor = ThemeConfig.MutedTextColor;
                     btn.Cursor = Cursors.Default;
                     btn.Enabled = false;
                 }
@@ -149,7 +149,7 @@ namespace InventorySystem.Controls
                 }
                 else
                 {
-                    btn.BackColor = Color.White;
+                    btn.BackColor = ThemeConfig.SurfaceColor;
                 }
 
                 btn.Click += (s, e) => 

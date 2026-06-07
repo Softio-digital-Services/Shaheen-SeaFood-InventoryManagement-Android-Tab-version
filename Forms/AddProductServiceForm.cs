@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Collections.Generic;
@@ -90,7 +90,7 @@ namespace InventorySystem.Forms
             
             // Image
             Panel pnlLeft = new Panel { Width = 280, Height = 280, Margin = new Padding(0,0,0,15) };
-            pbImage = new PictureBox { Dock = DockStyle.Fill, BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke };
+            pbImage = new PictureBox { Dock = DockStyle.Fill, BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = ThemeConfig.BackgroundColor };
             btnUpload = new ModernButton { Text = "Upload Image", Dock = DockStyle.Bottom, Height = 35, Margin = new Padding(0,10,0,0) };
             btnUpload.Click += btnUpload_Click;
             ThemeConfig.ApplyPrimaryButton(btnUpload);

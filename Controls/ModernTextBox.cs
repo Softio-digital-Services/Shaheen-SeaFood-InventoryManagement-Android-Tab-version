@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -175,7 +175,7 @@ namespace InventorySystem.Controls
             txtInput.Font = new Font("Segoe UI", 10F); // premium size
             txtInput.ForeColor = ThemeConfig.TextColorDark;
             txtInput.Dock = DockStyle.Fill;
-            txtInput.BackColor = Color.White;
+            txtInput.BackColor = ThemeConfig.SurfaceColor;
             if (LocalizationManager.IsArabic) txtInput.RightToLeft = RightToLeft.Yes;
             
             // Center vertically
@@ -292,7 +292,7 @@ namespace InventorySystem.Controls
 
             using (var path = GetRoundedPath(rect, radius))
             {
-                using (var brush = new SolidBrush(Color.White))
+                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
                 {
                     e.Graphics.FillPath(brush, path);
                 }

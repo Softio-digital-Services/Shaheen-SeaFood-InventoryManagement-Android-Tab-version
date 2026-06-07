@@ -555,12 +555,29 @@ namespace InventorySystem.Forms
                 }
             };
 
+            Image iconImage = cat == null ? ThemeConfig.GetNuricon("dashboard") : ThemeConfig.GetNuricon("category_placeholder");
+            if (cat != null && !string.IsNullOrEmpty(cat.CategoryImage))
+            {
+                try
+                {
+                    string fullPath = System.IO.Path.Combine(Application.StartupPath, cat.CategoryImage);
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        using (var ms = new System.IO.MemoryStream(System.IO.File.ReadAllBytes(fullPath)))
+                        {
+                            iconImage = Image.FromStream(ms);
+                        }
+                    }
+                }
+                catch { /* fallback to placeholder */ }
+            }
+
             // Fake Icon / Image placeholder on the left
             PictureBox pbIcon = new PictureBox
             {
                 Size = new Size(24, 24), Location = new Point(12, 10),
                 SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Transparent,
-                Image = cat == null ? ThemeConfig.GetNuricon("dashboard") : ThemeConfig.GetNuricon("category_placeholder") // Or actually load cat image
+                Image = iconImage
             };
             if (pbIcon.Image == null) { pbIcon.BackColor = ThemeConfig.BorderColor; }
             card.Controls.Add(pbIcon);

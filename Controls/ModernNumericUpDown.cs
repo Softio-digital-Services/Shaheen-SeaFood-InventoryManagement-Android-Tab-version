@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -117,7 +117,7 @@ namespace InventorySystem.Controls
                 BorderStyle = BorderStyle.None, 
                 Font = new Font("Segoe UI", 10F), 
                 ForeColor = ThemeConfig.TextColorDark, 
-                BackColor = Color.White,
+                BackColor = ThemeConfig.SurfaceColor,
                 Dock = DockStyle.Fill,
                 RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No
             };
@@ -223,7 +223,7 @@ namespace InventorySystem.Controls
             Rectangle rect = new Rectangle(0, 0, pnlContainer.Width - 1, pnlContainer.Height - 1);
             using (var path = ThemeConfig.GetRoundedPathPublic(rect, 12))
             {
-                using (var brush = new SolidBrush(Color.White)) e.Graphics.FillPath(brush, path);
+                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor)) e.Graphics.FillPath(brush, path);
                 using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f)) e.Graphics.DrawPath(pen, path);
             }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using InventorySystem.Helpers;
@@ -16,7 +16,7 @@ namespace InventorySystem.Controls
         public LockOverlay()
         {
             this.Dock = DockStyle.Fill;
-            this.BackColor = Color.FromArgb(180, 15, 23, 42); // Semi-transparent dark slate
+            this.BackColor = Color.FromArgb(180, ThemeConfig.BackgroundColor); // Semi-transparent dark overlay
             this.DoubleBuffered = true;
             
             InitializeUI();
@@ -24,7 +24,7 @@ namespace InventorySystem.Controls
 
         private void InitializeUI()
         {
-            pnlCard = new Panel { Size = new Size(380, 420), BackColor = Color.White };
+            pnlCard = new Panel { Size = new Size(380, 420), BackColor = ThemeConfig.SurfaceColor };
             this.Controls.Add(pnlCard);
 
             // Center the card
