@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
-using butcherPOS.Helpers;
-using butcherPOS.Helpers.Plugins;
+using InventorySystem.Helpers;
+using InventorySystem.Helpers.Plugins;
 
-namespace butcherPOS.Plugins
+namespace InventorySystem.Plugins
 {
     /// <summary>
     /// Free built-in plugin -- adds Database Backup &amp; Restore via the sidebar.
@@ -277,7 +277,7 @@ namespace butcherPOS.Plugins
                 }
 
                 // Re-initialize
-                butcherPOS.Helpers.DatabaseInitializer.Initialize();
+                InventorySystem.Helpers.DatabaseInitializer.Initialize();
 
                 MessageHelper.ShowSuccess(ar
                     ? "تم إعادة ضبط قاعدة البيانات بنجاح. يرجى إعادة تشغيل التطبيق."
@@ -291,7 +291,7 @@ namespace butcherPOS.Plugins
 
         private bool PromptForAdminPassword()
         {
-            using (var prompt = new butcherPOS.Forms.BaseModalForm())
+            using (var prompt = new InventorySystem.Forms.BaseModalForm())
             {
                 bool ar = LocalizationManager.IsArabic;
                 prompt.TitleText = ar ? "التحقق من المسؤول" : "Admin Verification Required";
@@ -307,7 +307,7 @@ namespace butcherPOS.Plugins
                     Location = new Point(20, 20)
                 };
                 
-                var txtPassword = new butcherPOS.Controls.ModernTextBox 
+                var txtPassword = new InventorySystem.Controls.ModernTextBox 
                 { 
                     LabelText = ar ? "كلمة المرور" : "Password",
                     IsPassword = true,

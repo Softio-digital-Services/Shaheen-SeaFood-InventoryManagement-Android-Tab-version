@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
-using butcherPOS.Data;
-using butcherPOS.Controls;
-using butcherPOS.Helpers;
+using InventorySystem.Data;
+using InventorySystem.Controls;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public class ProductSelectorForm : BaseModalForm
     {

@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 
-namespace butcherPOS.Controls
+namespace InventorySystem.Controls
 {
     public class SidebarButton : Button
     {

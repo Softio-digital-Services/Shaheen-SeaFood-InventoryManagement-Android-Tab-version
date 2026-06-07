@@ -1,18 +1,18 @@
-using System.Drawing;
+﻿using System.Drawing;
 using System.Windows.Forms;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     partial class AddCurrencyForm
     {
         private void InitializeComponent()
         {
-            this.txtCode = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
-            this.txtName = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
-            this.txtSymbol = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
-            this.numRate = new butcherPOS.Controls.ModernNumericUpDown { DecimalPlaces = 4, Maximum = 1000000, Dock = DockStyle.Fill, Margin = new Padding(0) };
-            this.btnFetch = new butcherPOS.Controls.ModernButton { Text = "Fetch", Width = 110, Height = 42, Anchor = AnchorStyles.Bottom | AnchorStyles.Right, Margin = new Padding(0, 0, 0, 0) };
+            this.txtCode = new InventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
+            this.txtName = new InventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
+            this.txtSymbol = new InventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
+            this.numRate = new InventorySystem.Controls.ModernNumericUpDown { DecimalPlaces = 4, Maximum = 1000000, Dock = DockStyle.Fill, Margin = new Padding(0) };
+            this.btnFetch = new InventorySystem.Controls.ModernButton { Text = "Fetch", Width = 110, Height = 42, Anchor = AnchorStyles.Bottom | AnchorStyles.Right, Margin = new Padding(0, 0, 0, 0) };
             ThemeConfig.ApplyPrimaryButton(btnFetch);
             
             this.SuspendLayout();
@@ -46,10 +46,10 @@ namespace butcherPOS.Forms
             this.PerformLayout();
         }
 
-        private butcherPOS.Controls.ModernTextBox txtCode;
-        private butcherPOS.Controls.ModernTextBox txtName;
-        private butcherPOS.Controls.ModernTextBox txtSymbol;
-        private butcherPOS.Controls.ModernNumericUpDown numRate;
-        private butcherPOS.Controls.ModernButton btnFetch;
+        private InventorySystem.Controls.ModernTextBox txtCode;
+        private InventorySystem.Controls.ModernTextBox txtName;
+        private InventorySystem.Controls.ModernTextBox txtSymbol;
+        private InventorySystem.Controls.ModernNumericUpDown numRate;
+        private InventorySystem.Controls.ModernButton btnFetch;
     }
 }

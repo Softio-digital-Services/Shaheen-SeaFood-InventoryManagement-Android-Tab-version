@@ -1,15 +1,15 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using butcherPOS.Helpers;
-using butcherPOS.Data;
-using butcherPOS.Controls;
-using butcherPOS.Services;
+using InventorySystem.Helpers;
+using InventorySystem.Data;
+using InventorySystem.Controls;
+using InventorySystem.Services;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class BarcodeLabelsForm : UserControl
     {
@@ -248,12 +248,12 @@ namespace butcherPOS.Forms
         private void btnGenerate_Click(object sender, EventArgs e)
         {
             dgvItems.EndEdit();
-            var selectedItems = new List<butcherPOS.Helpers.LabelPrintItem>();
+            var selectedItems = new List<InventorySystem.Helpers.LabelPrintItem>();
             foreach (DataGridViewRow row in dgvItems.Rows)
             {
                 if (Convert.ToBoolean(row.Cells["colSelect"].Value))
                 {
-                    selectedItems.Add(new butcherPOS.Helpers.LabelPrintItem {
+                    selectedItems.Add(new InventorySystem.Helpers.LabelPrintItem {
                         Name = row.Cells["colName"].Value.ToString(),
                         SKU = row.Cells["colSku"].Value?.ToString() ?? "",
                         Price = row.Cells["colPrice"].Value != null ? Convert.ToDecimal(row.Cells["colPrice"].Value) : 0m,

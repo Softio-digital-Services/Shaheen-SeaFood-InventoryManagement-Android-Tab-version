@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using butcherPOS; // Correct namespace for ThemeConfig
+using InventorySystem; // Correct namespace for ThemeConfig
 
-namespace butcherPOS.Controls
+namespace InventorySystem.Controls
 {
     public class ModernPanel : Panel
     {

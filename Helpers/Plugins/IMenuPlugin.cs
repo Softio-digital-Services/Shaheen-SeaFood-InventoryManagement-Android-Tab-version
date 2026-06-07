@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace butcherPOS.Helpers.Plugins
+namespace InventorySystem.Helpers.Plugins
 {
     /// <summary>
     /// Implement this on top of IPlugin to inject items into the top menu-bar.

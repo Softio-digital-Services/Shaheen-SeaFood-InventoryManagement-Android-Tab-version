@@ -1,4 +1,4 @@
-namespace butcherPOS.Forms
+﻿namespace InventorySystem.Forms
 {
     partial class AddCategoryForm
     {
@@ -12,10 +12,10 @@ namespace butcherPOS.Forms
 
         private void InitializeComponent()
         {
-            this.txtName = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsRequired = true };
-            this.txtDesc = new butcherPOS.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
+            this.txtName = new InventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsRequired = true };
+            this.txtDesc = new InventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
             this.pbImage = new System.Windows.Forms.PictureBox { Width = 150, Height = 150, BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke, Anchor = AnchorStyles.Top };
-            this.btnUpload = new butcherPOS.Controls.ModernButton { Text = "Upload Image", Height = 35, Width = 150, Anchor = AnchorStyles.Top };
+            this.btnUpload = new InventorySystem.Controls.ModernButton { Text = "Upload Image", Height = 35, Width = 150, Anchor = AnchorStyles.Top };
             
             this.SuspendLayout();
 
@@ -50,9 +50,9 @@ namespace butcherPOS.Forms
             this.PerformLayout();
         }
 
-        private butcherPOS.Controls.ModernTextBox txtName;
-        private butcherPOS.Controls.ModernTextBox txtDesc;
+        private InventorySystem.Controls.ModernTextBox txtName;
+        private InventorySystem.Controls.ModernTextBox txtDesc;
         private System.Windows.Forms.PictureBox pbImage;
-        private butcherPOS.Controls.ModernButton btnUpload;
+        private InventorySystem.Controls.ModernButton btnUpload;
     }
 }

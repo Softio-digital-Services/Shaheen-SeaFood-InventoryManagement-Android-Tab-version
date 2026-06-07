@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using butcherPOS.Controls;
-using butcherPOS.Helpers;
-using butcherPOS.Services;
+using InventorySystem.Controls;
+using InventorySystem.Helpers;
+using InventorySystem.Services;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public class QuotationsForm : UserControl
     {
@@ -27,7 +27,7 @@ namespace butcherPOS.Forms
             ApplyLocalization();
 
             // Currency Sync
-            butcherPOS.Services.CurrencyService.CurrencyChanged += (s, e) => { dgvQuotes.Invalidate(); };
+            InventorySystem.Services.CurrencyService.CurrencyChanged += (s, e) => { dgvQuotes.Invalidate(); };
 
             GlobalEvents.OnOrdersUpdated += () => {
                 if (!this.IsDisposed) LoadQuotations();
@@ -116,7 +116,7 @@ namespace butcherPOS.Forms
             {
                 if (decimal.TryParse(e.Value.ToString(), out decimal usdTotal))
                 {
-                    e.Value = butcherPOS.Services.CurrencyService.Format(usdTotal);
+                    e.Value = InventorySystem.Services.CurrencyService.Format(usdTotal);
                     e.FormattingApplied = true;
                 }
             }

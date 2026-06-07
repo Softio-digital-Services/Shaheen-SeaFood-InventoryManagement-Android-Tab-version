@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,10 +7,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using butcherPOS.Services;
-using butcherPOS.Helpers;
+using InventorySystem.Services;
+using InventorySystem.Helpers;
 
-namespace butcherPOS
+namespace InventorySystem
 {
     static class Program
     {
@@ -24,10 +24,10 @@ namespace butcherPOS
             Application.SetCompatibleTextRenderingDefault(false);
 
             // Set initial language to Arabic for testing
-            butcherPOS.Helpers.LocalizationManager.SetLanguage("en-US");
+            InventorySystem.Helpers.LocalizationManager.SetLanguage("en-US");
 
             // Set initial language to English
-            //butcherPOS.Helpers.LocalizationManager.SetLanguage("ar");
+            //InventorySystem.Helpers.LocalizationManager.SetLanguage("ar");
 
             // Expose background task for server hosting without blocking UI thread
             _ = Task.Run(() => StartApiServer());
@@ -44,19 +44,19 @@ namespace butcherPOS
             try
             {
                 // Initialize Database (Create if missing)
-                butcherPOS.Helpers.DatabaseInitializer.Initialize();
+                InventorySystem.Helpers.DatabaseInitializer.Initialize();
 
                 // Ensure schema is up to date (add missing columns)
                 DatabaseHelper.EnsureSchema();
 
                 // Initialize currency tables and load cached rates
-                butcherPOS.Services.CurrencyService.EnsureTable();
+                InventorySystem.Services.CurrencyService.EnsureTable();
 
                 // Check License
-                if (!butcherPOS.Helpers.LicenseManager.HasValidLicense())
+                if (!InventorySystem.Helpers.LicenseManager.HasValidLicense())
                 {
                     // Show activation form
-                    butcherPOS.Forms.LicenseActivationForm activationForm = new butcherPOS.Forms.LicenseActivationForm();
+                    InventorySystem.Forms.LicenseActivationForm activationForm = new InventorySystem.Forms.LicenseActivationForm();
                     if (activationForm.ShowDialog() != System.Windows.Forms.DialogResult.OK)
                     {
                         // User cancelled activation - exit application
@@ -65,11 +65,11 @@ namespace butcherPOS
                 }
 
                 // Check for expiring license and show warning
-                var license = butcherPOS.Helpers.LicenseManager.GetCurrentLicense();
+                var license = InventorySystem.Helpers.LicenseManager.GetCurrentLicense();
                 if (license != null && license.IsExpiringSoon() && !license.IsTrial())
                 {
                     int daysLeft = license.DaysRemaining();
-                    butcherPOS.Forms.ModernMessageBox.Show(
+                    InventorySystem.Forms.ModernMessageBox.Show(
                         string.Format(LocalizationManager.GetString("Msg_LicExpiringSoonBody"), daysLeft),
                         LocalizationManager.GetString("Msg_LicExpiringSoon"),
                         MessageBoxButtons.OK,
@@ -81,7 +81,7 @@ namespace butcherPOS
             }
             catch (Exception ex)
             {
-                butcherPOS.Forms.ModernMessageBox.Show(
+                InventorySystem.Forms.ModernMessageBox.Show(
                     string.Format(LocalizationManager.GetString("Msg_CriticalError"), ex.Message) + $"\n\n{LocalizationManager.GetString("Msg_StackTrace")}\n{ex.StackTrace}",
                     LocalizationManager.GetString("Error_AppCrash"),
                     MessageBoxButtons.OK,
@@ -603,7 +603,7 @@ namespace butcherPOS
 // ============================================================
 //  SignalR Hub -- manages real-time WebSocket connections
 // ============================================================
-namespace butcherPOS
+namespace InventorySystem
 {
     using Microsoft.AspNetCore.SignalR;
 

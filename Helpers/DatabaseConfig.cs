@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Windows.Forms;
 using System.Text.Json;
 
-namespace butcherPOS
+namespace InventorySystem
 {
     /// <summary>
     /// Centralized database and file path configuration (SQLite)

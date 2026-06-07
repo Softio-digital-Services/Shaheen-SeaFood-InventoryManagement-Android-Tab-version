@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Collections.Generic;
 
-namespace butcherPOS.Data
+namespace InventorySystem.Data
 {
     public static class DashboardAnalytics
     {

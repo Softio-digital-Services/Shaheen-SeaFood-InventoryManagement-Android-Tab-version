@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using butcherPOS.Controls;
-using butcherPOS.Helpers;
-using butcherPOS.Services;
+using InventorySystem.Controls;
+using InventorySystem.Helpers;
+using InventorySystem.Services;
 using System.Drawing.Printing;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public class QuotationPreviewForm : BaseModalForm
     {
@@ -270,21 +270,33 @@ namespace butcherPOS.Forms
                     };
                     pnlSummaryWrap.Controls.Add(lblTerms);
 
-                    decimal taxRate = 0.0625m;
-                    decimal taxAmount = total * taxRate;
-                    decimal grandTotal = total + taxAmount;
+                    decimal dbTotal = DatabaseHelper.ExecuteScalar<decimal>($"SELECT total_amount FROM orders WHERE order_id = {_orderId}");
+                    decimal taxAmount = dbTotal > total ? dbTotal - total : 0;
+                    decimal grandTotal = dbTotal > total ? dbTotal : total;
 
                     int sx = pnlSummaryWrap.Width - 280;
-                    string[] labels = LocalizationManager.IsArabic ? 
-                        new string[] { "المجموع الفرعي", "المبلغ الخاضع للضريبة", "الضريبة (6.25%)", "المجموع الكلي" } :
-                        new string[] { "Subtotal", "Taxable Amount", "Tax (6.25%)", "GRAND TOTAL" };
-                    string[] vals = { CurrencyService.Format(total), CurrencyService.Format(total), CurrencyService.Format(taxAmount), CurrencyService.Format(grandTotal) };
+                    
+                    List<string> lbls = new List<string>();
+                    List<string> vls = new List<string>();
+                    
+                    if (LocalizationManager.IsArabic)
+                    {
+                        lbls.Add("المجموع الفرعي"); vls.Add(CurrencyService.Format(total));
+                        if (taxAmount > 0) { lbls.Add("الضريبة / رسوم"); vls.Add(CurrencyService.Format(taxAmount)); }
+                        lbls.Add("المجموع الكلي"); vls.Add(CurrencyService.Format(grandTotal));
+                    }
+                    else
+                    {
+                        lbls.Add("Subtotal"); vls.Add(CurrencyService.Format(total));
+                        if (taxAmount > 0) { lbls.Add("Tax / Extras"); vls.Add(CurrencyService.Format(taxAmount)); }
+                        lbls.Add("GRAND TOTAL"); vls.Add(CurrencyService.Format(grandTotal));
+                    }
 
-                    for (int i = 0; i < 4; i++) {
-                        bool isLast = (i == 3);
-                        Label lblL = new Label { Text = labels[i], Font = new Font("Segoe UI", isLast ? 10 : 9, isLast ? FontStyle.Bold : FontStyle.Regular), Location = new Point(sx, i * 28), Size = new Size(130, 25), TextAlign = ContentAlignment.MiddleRight };
+                    for (int i = 0; i < lbls.Count; i++) {
+                        bool isLast = (i == lbls.Count - 1);
+                        Label lblL = new Label { Text = lbls[i], Font = new Font("Segoe UI", isLast ? 10 : 9, isLast ? FontStyle.Bold : FontStyle.Regular), Location = new Point(sx, i * 28), Size = new Size(130, 25), TextAlign = ContentAlignment.MiddleRight };
                         Label lblV = new Label { 
-                            Text = vals[i], 
+                            Text = vls[i], 
                             Font = new Font("Segoe UI", isLast ? 12 : 10, isLast ? FontStyle.Bold : FontStyle.Regular), 
                             Location = new Point(sx + 135, i * 28), 
                             Size = new Size(140, 25), 

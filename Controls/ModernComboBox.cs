@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using butcherPOS.Helpers;
-using butcherPOS;
+using InventorySystem.Helpers;
+using InventorySystem;
 
-namespace butcherPOS.Controls
+namespace InventorySystem.Controls
 {
     public class ModernComboBox : UserControl
     {

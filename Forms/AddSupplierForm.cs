@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 using System.Drawing;
-using butcherPOS.Data;
-using butcherPOS.Controls;
+using InventorySystem.Data;
+using InventorySystem.Controls;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class AddSupplierForm : BaseModalForm
     {
@@ -34,14 +34,14 @@ namespace butcherPOS.Forms
         {
             InitializeComponent();
             SetFooterButtons(
-                butcherPOS.Helpers.LocalizationManager.GetString("AddSup_Save"),
-                butcherPOS.Helpers.LocalizationManager.GetString("Popup_Cancel"),
+                InventorySystem.Helpers.LocalizationManager.GetString("AddSup_Save"),
+                InventorySystem.Helpers.LocalizationManager.GetString("Popup_Cancel"),
                 btnSave_Click,
                 btnCancel_Click
             );
             
             ApplyTheme();
-            butcherPOS.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
         }
 
@@ -71,8 +71,8 @@ namespace butcherPOS.Forms
 
         private void ApplyLocalization()
         {
-            butcherPOS.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
+            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
 
             bool isEdit = this.TitleText != null && (this.TitleText.Contains("Edit") || this.TitleText.Contains(L("AddSup_TitleEdit")));
             this.TitleText = isEdit ? L("AddSup_TitleEdit") : L("AddSup_TitleNew");
@@ -114,10 +114,10 @@ namespace butcherPOS.Forms
         // Edit Mode Constructor
         public AddSupplierForm(int id, string name, string phone, string email, string address, string type, DateTime? dueDate = null, int reminderDays = 0, string contactPerson = "") : this()
         {
-            this.TitleText = butcherPOS.Helpers.LocalizationManager.GetString("AddSup_TitleEdit");
+            this.TitleText = InventorySystem.Helpers.LocalizationManager.GetString("AddSup_TitleEdit");
             SetFooterButtons(
-                butcherPOS.Helpers.LocalizationManager.GetString("AddSup_UpdateBtn"),
-                butcherPOS.Helpers.LocalizationManager.GetString("Popup_Cancel"),
+                InventorySystem.Helpers.LocalizationManager.GetString("AddSup_UpdateBtn"),
+                InventorySystem.Helpers.LocalizationManager.GetString("Popup_Cancel"),
                 btnSave_Click,
                 btnCancel_Click
             );
@@ -250,7 +250,7 @@ namespace butcherPOS.Forms
 
         private void UpdateValidationUI()
         {
-            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
             bool isCompany = rdoCompany.Checked;
 
             txtName.Visible = isCompany;

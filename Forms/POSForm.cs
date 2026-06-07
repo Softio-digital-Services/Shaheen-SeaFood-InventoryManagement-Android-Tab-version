@@ -5,23 +5,23 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
-using butcherPOS.Controls;
-using butcherPOS.Data;
-using butcherPOS.Helpers;
-using butcherPOS.Services;
+using InventorySystem.Controls;
+using InventorySystem.Data;
+using InventorySystem.Helpers;
+using InventorySystem.Services;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class POSForm : UserControl
     {
         // -- LEFT PANEL CONTROLS ----------------------------------------------
         private FlowLayoutPanel pnlProducts;   // product card grid
         private FlowLayoutPanel pnlChips;      // category chip strip
-        private butcherPOS.Controls.ModernTextBox txtProductSearch;
+        private InventorySystem.Controls.ModernTextBox txtProductSearch;
 
         // -- RIGHT PANEL CONTROLS ---------------------------------------------
         private Panel pnlCartItems;        // scrollable cart rows
-        private ComboBox cmbCustomers;
+        private InventorySystem.Controls.ModernComboBox cmbCustomers;
         private Label lblOrderNum;
         private Label lblSubtotalVal, lblTaxVal, lblShippingVal, lblTotalVal;
         private CheckBox chkApplyVAT, chkApplyShipping;
@@ -114,65 +114,34 @@ namespace butcherPOS.Forms
                 BackColor = ThemeConfig.BackgroundColor,
                 Padding = new Padding(16, 16, 8, 16)
             };
-            // Row 0  Page title "Products Menu"
-            tlpLeft.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));
-            // Row 1 – Search bar
-            tlpLeft.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
+            // Row 0  Header (Title + Search + Actions)
+            tlpLeft.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            // Row 1  Stat cards
+            tlpLeft.RowStyles.Add(new RowStyle(SizeType.Absolute, 95F));
             // Row 2  Category section (title + cards)
             tlpLeft.RowStyles.Add(new RowStyle(SizeType.Absolute, 136F));
             // Row 3  Product grid
             tlpLeft.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             tlpRoot.Controls.Add(tlpLeft, 0, 0);
 
-            // -- Row 0: Page title --------------------------------------------
+            // -- Header -------------------------------------------------------
             string pageTitle = LocalizationManager.GetString("POS_PageTitle");
-            Label lblPageTitle = new Label
-            {
-                Text = pageTitle == "POS_PageTitle" ? "Products Menu" : pageTitle,
-                Font = new Font("Segoe UI", 16F, FontStyle.Bold),
-                ForeColor = ThemeConfig.TextColorDark,
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                BackColor = Color.Transparent,
-                Margin = new Padding(0, 0, 0, 2)
-            };
-            tlpLeft.Controls.Add(lblPageTitle, 0, 0);
+            Label lblPageTitle = ThemeConfig.CreateStandardHeader(pageTitle == "POS_PageTitle" ? "Checkout" : pageTitle);
 
-            // -- Search bar --------------------------------------------------
-            // -- Search bar and Actions --------------------------------------------------
-            TableLayoutPanel tlpActions = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 4,
-                RowCount = 1,
-                Margin = new Padding(0, 0, 0, 8),
-                BackColor = Color.Transparent
-            };
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F)); // Search Bar
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); // Manage Drafts
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); // Process
-            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); // Add Shipping Details
-
-            txtProductSearch = new butcherPOS.Controls.ModernTextBox
+            txtProductSearch = new InventorySystem.Controls.ModernTextBox
             {
                 IsSearch = true,
                 ShowLabel = false,
                 PlaceholderText = LocalizationManager.GetString("POS_SearchProducts") ?? "Search products...",
-                Size = new Size(280, 35),
-                Dock = DockStyle.Left,
-                Margin = new Padding(0, 5, 0, 0)
+                Size = new Size(320, 35)
             };
             txtProductSearch.TextChanged += (s, ev) => LoadProducts(txtProductSearch.Text);
 
-            Button btnManageDrafts = new butcherPOS.Controls.ModernButton { Text = "Manage Drafts", Cursor = Cursors.Hand, Height = 35, Width = 160, Margin = new Padding(10, 5, 5, 5) };
-            Button btnProcess = new butcherPOS.Controls.ModernButton { Text = "Process", Cursor = Cursors.Hand, Height = 35, Width = 130, Margin = new Padding(5, 5, 5, 5) };
-            Button btnAddShipping = new butcherPOS.Controls.ModernButton { Text = "Add Shipping Details", Cursor = Cursors.Hand, Height = 35, Width = 200, Margin = new Padding(5, 5, 0, 5) };
+            Button btnManageDrafts = new InventorySystem.Controls.ModernButton { Text = "Manage Drafts", Cursor = Cursors.Hand, Height = 35, Width = 160 };
+            Button btnAddShipping = new InventorySystem.Controls.ModernButton { Text = "Add Shipping Details", Cursor = Cursors.Hand, Height = 35, Width = 200 };
 
             ThemeConfig.ApplyPaletteButton(btnManageDrafts, Color.FromArgb(99, 102, 241)); // Indigo
-            ThemeConfig.ApplyPaletteButton(btnProcess, Color.FromArgb(16, 185, 129)); // Emerald Green
             ThemeConfig.ApplyPaletteButton(btnAddShipping, Color.FromArgb(14, 165, 233)); // Sky Blue
-            btnManageDrafts.Text = "Manage Drafts";
-            btnProcess.Text = "Process";
 
             btnManageDrafts.Click += (s, ev) =>
             {
@@ -180,7 +149,6 @@ namespace butcherPOS.Forms
                 if (msg == "Msg_ManageDraftsInHistory") msg = "Please navigate to the History tab to manage drafts.";
                 MessageHelper.ShowInfo(msg);
             };
-            btnProcess.Click += (s, ev) => { BtnCheckout_Click(s, ev); };
             btnAddShipping.Click += (s, ev) =>
             {
                 if (_shippingDetails == null) _shippingDetails = new ShippingDetailsForm();
@@ -190,12 +158,32 @@ namespace butcherPOS.Forms
                 }
             };
 
-            tlpActions.Controls.Add(txtProductSearch, 0, 0);
-            tlpActions.Controls.Add(btnManageDrafts, 1, 0);
-            tlpActions.Controls.Add(btnProcess, 2, 0);
-            tlpActions.Controls.Add(btnAddShipping, 3, 0);
+            var actionButtons = new Control[] { btnManageDrafts, btnAddShipping };
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblPageTitle, txtProductSearch, actionButtons);
+            tlpLeft.Controls.Add(tlpHeader, 0, 0);
 
-            tlpLeft.Controls.Add(tlpActions, 0, 1);
+            // -- Stat Cards ----------------------------------------------------
+            TableLayoutPanel tlpStats = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 3,
+                RowCount = 1,
+                Margin = new Padding(0, 0, 0, 6),
+                BackColor = Color.Transparent
+            };
+            tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
+            tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
+            tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
+
+            cardTodayOrders = new StatCard { Title = "Orders", Value = "0", IconImage = ThemeConfig.GetNuricon("pos"), ThemeColor = ThemeConfig.PrimaryColor, Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
+            cardTodaySales  = new StatCard { Title = "Sales",  Value = "$0", IconImage = ThemeConfig.GetNuricon("revenue"), ThemeColor = ThemeConfig.SuccessColor, Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
+            cardPending     = new StatCard { Title = "Pending",Value = "0", IconImage = ThemeConfig.GetNuricon("orders"), ThemeColor = ThemeConfig.WarningColor, Dock = DockStyle.Fill, Margin = new Padding(0) };
+
+            tlpStats.Controls.Add(cardTodayOrders, 0, 0);
+            tlpStats.Controls.Add(cardTodaySales, 1, 0);
+            tlpStats.Controls.Add(cardPending, 2, 0);
+
+            tlpLeft.Controls.Add(tlpStats, 0, 1);
 
             // -- Category section (title bar + scrollable cards) -------------
             Panel pnlCategorySection = new Panel
@@ -216,7 +204,7 @@ namespace butcherPOS.Forms
             string menuTitleTrans = LocalizationManager.GetString("POS_MenuTitle");
             Label lblCatTitle = new Label
             {
-                Text = menuTitleTrans == "POS_MenuTitle" ? "Products Menu" : menuTitleTrans,
+                Text = menuTitleTrans == "POS_MenuTitle" ? "Categories" : menuTitleTrans,
                 Font = ThemeConfig.CardTitleFont,
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize = true,
@@ -360,7 +348,7 @@ namespace butcherPOS.Forms
             };
 
             // -- Card 1: Order Details & Cart ---------------------------------
-            Panel pnlCard1 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0) };
+            Panel pnlCard1 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0), Tag = "surface" };
             pnlCard1.Paint += cardPaint;
             tlpRight.Controls.Add(pnlCard1, 0, 0);
 
@@ -386,7 +374,7 @@ namespace butcherPOS.Forms
             Label lblNewOrder = new Label { Text = "New Order", Font = ThemeConfig.CardTitleFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Location = new Point(16, 16) };
             pnlOrderHeader.Controls.Add(lblNewOrder);
 
-            lblOrderNum = new Label { Text = "#001", Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Regular), ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Location = new Point(16, 42) };
+            lblOrderNum = new Label { Text = "#001", Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold), ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Location = new Point(16, 42) };
             pnlOrderHeader.Controls.Add(lblOrderNum);
 
             PictureBox btnTrash = new PictureBox { Image = ThemeConfig.GetNuricon("delete"), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(20, 20), Cursor = Cursors.Hand };
@@ -400,8 +388,7 @@ namespace butcherPOS.Forms
             };
             pnlOrderHeader.Controls.Add(btnTrash);
 
-            cmbCustomers = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
-            ThemeConfig.ApplyComboBoxStyle(cmbCustomers);
+            cmbCustomers = new InventorySystem.Controls.ModernComboBox { DropDownStyle = ComboBoxStyle.DropDownList, ShowLabel = false };
             pnlOrderHeader.Controls.Add(cmbCustomers);
 
             pnlOrderHeader.Resize += (s, ev) =>
@@ -410,8 +397,8 @@ namespace butcherPOS.Forms
                 btnTrash.Location = new Point(w - 32, 16);
                 lblNewOrder.Location = new Point(16, 16);
                 lblOrderNum.Location = new Point(16, 42);
-                cmbCustomers.Width = 140;
-                cmbCustomers.Location = new Point(w - 156, 38);
+                cmbCustomers.Width = 160;
+                cmbCustomers.Location = new Point(w - 176, 36);
             };
             tlpCard1.Controls.Add(pnlOrderHeader, 0, 0);
 
@@ -435,17 +422,17 @@ namespace butcherPOS.Forms
             tlpCard1.Controls.Add(pnlCurrency, 0, 4);
 
             // -- Card 2: Actions ---------------------------------------
-            Panel pnlCard2 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0) };
+            Panel pnlCard2 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0), Tag = "surface" };
             pnlCard2.Paint += cardPaint;
             tlpRight.Controls.Add(pnlCard2, 0, 2);
 
             TableLayoutPanel tlpCard2 = new TableLayoutPanel { Dock = DockStyle.Fill, Margin = new Padding(0) };
             tlpCard2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpCard2.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F)); // Header height
+            tlpCard2.RowStyles.Add(new RowStyle(SizeType.Absolute, 45F)); // Header height
             tlpCard2.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Buttons height
             Panel pnlActionsHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 8, 16, 0) };
             string actStr = LocalizationManager.GetString("POS_Actions");
-            Label lblActionsTitle = new Label { Text = (string.IsNullOrEmpty(actStr) || actStr == "POS_Actions") ? "Payment Method" : actStr, Font = ThemeConfig.CardTitleFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft, BackColor = Color.Transparent };
+            Label lblActionsTitle = new Label { Text = (string.IsNullOrEmpty(actStr) || actStr == "POS_Actions") ? "Actions" : actStr, Font = ThemeConfig.CardTitleFont, ForeColor = ThemeConfig.TextColorDark, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft, BackColor = Color.Transparent };
             pnlActionsHeader.Controls.Add(lblActionsTitle);
             tlpCard2.Controls.Add(pnlActionsHeader, 0, 0);
 
@@ -455,7 +442,7 @@ namespace butcherPOS.Forms
             pnlCard2.Controls.Add(tlpCard2);
 
             // -- Card 3: Footer Buttons ---------------------------------------
-            Panel pnlCard3 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0) };
+            Panel pnlCard3 = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(0), Tag = "surface" };
             pnlCard3.Paint += cardPaint;
             tlpRight.Controls.Add(pnlCard3, 0, 4);
 
@@ -499,8 +486,8 @@ namespace butcherPOS.Forms
 
             pnl.Resize += (s, ev) =>
             {
-                lblOrderedItems.Location = new Point(0, (pnl.Height - lblOrderedItems.Height) / 2);
-                _lblCartCount.Location = new Point(pnl.Width - _lblCartCount.Width, (pnl.Height - _lblCartCount.Height) / 2);
+                lblOrderedItems.Location = new Point(16, (pnl.Height - lblOrderedItems.Height) / 2);
+                _lblCartCount.Location = new Point(pnl.Width - 16 - _lblCartCount.Width, (pnl.Height - _lblCartCount.Height) / 2);
                 _lblCartCount.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             };
             pnl.Controls.AddRange(new Control[] { lblOrderedItems, _lblCartCount });
@@ -538,16 +525,22 @@ namespace butcherPOS.Forms
                 if (cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
                 int cid = cmbCustomers.SelectedValue != null ? Convert.ToInt32(cmbCustomers.SelectedValue) : -1;
                 decimal totalAmount = 0;
-                List<butcherPOS.Services.OrderItem> items = new List<butcherPOS.Services.OrderItem>();
+                List<InventorySystem.Services.OrderItem> items = new List<InventorySystem.Services.OrderItem>();
                 foreach (DataRow r in cartTable.Rows)
                 {
                     if (r.RowState != DataRowState.Deleted)
                     {
                         totalAmount += (decimal)r["Total"];
-                        items.Add(new butcherPOS.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
+                        items.Add(new InventorySystem.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
                     }
                 }
-                if (new butcherPOS.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Draft") > 0)
+                decimal t = chkApplyVAT.Checked ? (totalAmount * 0.11m) : 0;
+                decimal ship = chkApplyShipping.Checked ? numShipping.Value : 0;
+                totalAmount += (t + ship);
+                DateTime? dDate = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.DeliveryDate : (DateTime?)null;
+                DateTime? pDate = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.PaymentDueDate : (DateTime?)null;
+                string sAddr = _shippingDetails?.ShippingTo;
+                if (new InventorySystem.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Draft", pDate, sAddr, dDate) > 0)
                 {
                     MessageHelper.ShowInfo(LocalizationManager.GetString("Msg_DraftSaved") ?? "Draft saved successfully!");
                     cartTable.Rows.Clear();
@@ -559,16 +552,22 @@ namespace butcherPOS.Forms
                 if (cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
                 int cid = cmbCustomers.SelectedValue != null ? Convert.ToInt32(cmbCustomers.SelectedValue) : -1;
                 decimal totalAmount = 0;
-                List<butcherPOS.Services.OrderItem> items = new List<butcherPOS.Services.OrderItem>();
+                List<InventorySystem.Services.OrderItem> items = new List<InventorySystem.Services.OrderItem>();
                 foreach (DataRow r in cartTable.Rows)
                 {
                     if (r.RowState != DataRowState.Deleted)
                     {
                         totalAmount += (decimal)r["Total"];
-                        items.Add(new butcherPOS.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
+                        items.Add(new InventorySystem.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
                     }
                 }
-                if (new butcherPOS.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Quotation") > 0)
+                decimal tQuote = chkApplyVAT.Checked ? (totalAmount * 0.11m) : 0;
+                decimal shipQuote = chkApplyShipping.Checked ? numShipping.Value : 0;
+                totalAmount += (tQuote + shipQuote);
+                DateTime? dDateQ = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.DeliveryDate : (DateTime?)null;
+                DateTime? pDateQ = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.PaymentDueDate : (DateTime?)null;
+                string sAddrQ = _shippingDetails?.ShippingTo;
+                if (new InventorySystem.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Quotation", pDateQ, sAddrQ, dDateQ) > 0)
                 {
                     MessageHelper.ShowInfo(LocalizationManager.GetString("Msg_QuotationSaved") ?? "Quotation saved successfully!");
                     cartTable.Rows.Clear();
@@ -585,16 +584,22 @@ namespace butcherPOS.Forms
                     return;
                 }
                 decimal totalAmount = 0;
-                List<butcherPOS.Services.OrderItem> items = new List<butcherPOS.Services.OrderItem>();
+                List<InventorySystem.Services.OrderItem> items = new List<InventorySystem.Services.OrderItem>();
                 foreach (DataRow r in cartTable.Rows)
                 {
                     if (r.RowState != DataRowState.Deleted)
                     {
                         totalAmount += (decimal)r["Total"];
-                        items.Add(new butcherPOS.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
+                        items.Add(new InventorySystem.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
                     }
                 }
-                if (new butcherPOS.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Completed") > 0)
+                decimal tBill = chkApplyVAT.Checked ? (totalAmount * 0.11m) : 0;
+                decimal shipBill = chkApplyShipping.Checked ? numShipping.Value : 0;
+                totalAmount += (tBill + shipBill);
+                DateTime? dDateB = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.DeliveryDate : (DateTime?)null;
+                DateTime? pDateB = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.PaymentDueDate : (DateTime?)null;
+                string sAddrB = _shippingDetails?.ShippingTo;
+                if (new InventorySystem.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Completed", pDateB, sAddrB, dDateB) > 0)
                 {
                     MessageHelper.ShowInfo(LocalizationManager.GetString("Msg_AddedToBill") ?? "Successfully added to customer bill!");
                     cartTable.Rows.Clear();
@@ -746,7 +751,7 @@ namespace butcherPOS.Forms
             {
                 Text = text,
                 AutoSize = true,
-                Font = isTotal ? new Font(ThemeConfig.AppFontFamily, 12F, FontStyle.Bold) : new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Regular),
+                Font = isTotal ? new Font(ThemeConfig.AppFontFamily, 12F, FontStyle.Bold) : new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold),
                 ForeColor = isTotal ? ThemeConfig.TextColorDark : ThemeConfig.SecondaryColor,
                 BackColor = Color.Transparent
             };
@@ -772,7 +777,7 @@ namespace butcherPOS.Forms
         // ---------------------------------------------------------------------
         private void BuildCurrencySelectorPanel(Panel pnl)
         {
-            var currencies = butcherPOS.Services.CurrencyService.SupportedCurrencies;
+            var currencies = InventorySystem.Services.CurrencyService.SupportedCurrencies;
 
             string curTrans = LocalizationManager.GetString("POS_Currency");
             Label lblCurrLabel = new Label
@@ -784,7 +789,7 @@ namespace butcherPOS.Forms
                 BackColor = Color.Transparent
             };
 
-            butcherPOS.Controls.ModernComboBox cmbCurrency = new butcherPOS.Controls.ModernComboBox
+            InventorySystem.Controls.ModernComboBox cmbCurrency = new InventorySystem.Controls.ModernComboBox
             {
                 Font = ThemeConfig.StandardFont,
                 Cursor = Cursors.Hand,
@@ -795,7 +800,7 @@ namespace butcherPOS.Forms
                 cmbCurrency.Items.Add(curr.Code);
 
             // Select current active
-            string active = butcherPOS.Services.CurrencyService.ActiveCurrency;
+            string active = InventorySystem.Services.CurrencyService.ActiveCurrency;
             int idx = cmbCurrency.Items.IndexOf(active);
             cmbCurrency.SelectedIndex = idx >= 0 ? idx : 0;
 
@@ -804,7 +809,7 @@ namespace butcherPOS.Forms
                 string selected = cmbCurrency.SelectedItem?.ToString();
                 if (!string.IsNullOrEmpty(selected))
                 {
-                    butcherPOS.Services.CurrencyService.ActiveCurrency = selected;
+                    InventorySystem.Services.CurrencyService.ActiveCurrency = selected;
                     if (cartTable != null)
                     {
                         LoadProducts(_activeCategory);
@@ -814,9 +819,9 @@ namespace butcherPOS.Forms
                 }
             };
 
-            butcherPOS.Services.CurrencyService.CurrencyChanged += (s, e) =>
+            InventorySystem.Services.CurrencyService.CurrencyChanged += (s, e) =>
             {
-                string cur = butcherPOS.Services.CurrencyService.ActiveCurrency;
+                string cur = InventorySystem.Services.CurrencyService.ActiveCurrency;
                 int i = cmbCurrency.Items.IndexOf(cur);
                 if (i >= 0 && cmbCurrency.SelectedIndex != i)
                     cmbCurrency.SelectedIndex = i;
@@ -835,7 +840,8 @@ namespace butcherPOS.Forms
                 int h = pnl.Height - 10;
                 int cy = (pnl.Height - h) / 2;
                 lblCurrLabel.Location = new Point(16, cy + (h - lblCurrLabel.Height) / 2);
-                cmbCurrency.SetBounds(16 + labelW + gap, cy, pnl.Width - 32 - labelW - gap, h);
+                int cw = 140; // Fixed small width for currency dropdown
+                cmbCurrency.SetBounds(pnl.Width - 16 - cw, cy, cw, h);
             };
 
             pnl.Controls.AddRange(new Control[] { lblCurrLabel, cmbCurrency });
@@ -2080,7 +2086,10 @@ namespace butcherPOS.Forms
                 foreach (DataRow row in cartTable.Rows)
                     items.Add(new OrderItem { PartId = (int)row["PartID"], Quantity = (int)row["Quantity"], UnitPrice = (decimal)row["SellingPrice"] });
                 int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
-                int orderId = new OrderService().PlaceOrder(customerId, items, total, true); // true = Paid
+                DateTime? dDateC = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.DeliveryDate : (DateTime?)null;
+                DateTime? pDateC = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.PaymentDueDate : (DateTime?)null;
+                string sAddrC = _shippingDetails?.ShippingTo;
+                int orderId = new OrderService().PlaceOrder(customerId, items, total, true, "Completed", pDateC, sAddrC, dDateC); // true = Paid
                 DatabaseHelper.LogTransaction("SALE", "Order #" + orderId, "Paid Total: $" + total);
                 // Notify all connected web POS tablets in real-time
                 InventoryBroadcaster.BroadcastStockChange("desktop-sale");
@@ -2142,7 +2151,27 @@ namespace butcherPOS.Forms
             y += 5; g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
 
             g.DrawString("GRAND TOTAL:", fH, Brushes.Black, m, y); g.DrawString(lblTotalVal.Text, fH, Brushes.Black, new Rectangle(m, y, w, 25), rA);
-            y += 40; g.DrawString("Thank you!", fS, Brushes.Black, new Rectangle(m, y, w, 20), cA); e.HasMorePages = false;
+            y += 40;
+            if (_shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo))
+            {
+                g.DrawLine(Pens.Black, m, y, m + w, y); y += 10;
+                g.DrawString("--- SHIPPING DETAILS ---", fS, Brushes.Black, new Rectangle(m, y, w, 20), cA); y += 25;
+                
+                if (_shippingDetails.SelectedCustomerId > 0)
+                {
+                    string customerName = InventorySystem.DatabaseHelper.ExecuteScalar<string>($"SELECT COALESCE(full_name, '') FROM customers WHERE customer_id = {_shippingDetails.SelectedCustomerId}");
+                    if (!string.IsNullOrEmpty(customerName))
+                    {
+                        g.DrawString("Customer: " + customerName, fS, Brushes.Black, new Rectangle(m, y, w, 20)); y += 20;
+                    }
+                }
+                
+                string address = _shippingDetails.ShippingTo.Replace("\r\n", ", ").Replace("\n", ", ");
+                g.DrawString("Address: " + address, fS, Brushes.Black, new Rectangle(m, y, w, 40)); y += 40;
+                g.DrawString("Delivery: " + _shippingDetails.DeliveryDate.ToShortDateString(), fS, Brushes.Black, m, y); y += 20;
+                y += 10;
+            }
+            g.DrawString("Thank you!", fS, Brushes.Black, new Rectangle(m, y, w, 20), cA); e.HasMorePages = false;
         }
 
 

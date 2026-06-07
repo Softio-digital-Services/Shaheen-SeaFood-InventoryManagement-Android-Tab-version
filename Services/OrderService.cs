@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Services
+namespace InventorySystem.Services
 {
     public class OrderItem
     {
@@ -26,7 +26,7 @@ namespace butcherPOS.Services
         /// <param name="totalAmount">Total amount of the order</param>
         /// <param name="isPaid">Whether the order is fully paid</param>
         /// <returns>The ID of the created order</returns>
-        public int PlaceOrder(int customerId, List<OrderItem> items, decimal totalAmount, bool isPaid, string orderStatus = "Completed", DateTime? dueDate = null)
+        public int PlaceOrder(int customerId, List<OrderItem> items, decimal totalAmount, bool isPaid, string orderStatus = "Completed", DateTime? dueDate = null, string shippingAddress = null, DateTime? deliveryDate = null)
         {
             // 1. Determine Status
             // Walk-in is always paid (enforced by UI, but logic here: if walk-in, force paid?)
@@ -40,13 +40,13 @@ namespace butcherPOS.Services
             string sqlOrder;
             if (isWalkIn)
             {
-                sqlOrder = "INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, status) " +
-                           "VALUES (datetime('now'), @total, @status, @paid, @ostatus); SELECT last_insert_rowid();";
+                sqlOrder = "INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, status, shipping_address, delivery_date, due_date) " +
+                           "VALUES (datetime('now'), @total, @status, @paid, @ostatus, @shipAddr, @delDate, @dueDate); SELECT last_insert_rowid();";
             }
             else
             {
-                sqlOrder = "INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, customer_id, status) " +
-                           "VALUES (datetime('now'), @total, @status, @paid, @cid, @ostatus); SELECT last_insert_rowid();";
+                sqlOrder = "INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, customer_id, status, shipping_address, delivery_date, due_date) " +
+                           "VALUES (datetime('now'), @total, @status, @paid, @cid, @ostatus, @shipAddr, @delDate, @dueDate); SELECT last_insert_rowid();";
             }
 
             long orderIdLong = DatabaseHelper.ExecuteScalar<long>(sqlOrder,
@@ -54,7 +54,10 @@ namespace butcherPOS.Services
                 new SqliteParameter("@status", paymentStatus),
                 new SqliteParameter("@paid", amountPaid),
                 new SqliteParameter("@cid", customerId),
-                new SqliteParameter("@ostatus", orderStatus)
+                new SqliteParameter("@ostatus", orderStatus),
+                new SqliteParameter("@shipAddr", string.IsNullOrEmpty(shippingAddress) ? (object)DBNull.Value : shippingAddress),
+                new SqliteParameter("@delDate", deliveryDate.HasValue ? (object)deliveryDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : DBNull.Value),
+                new SqliteParameter("@dueDate", dueDate.HasValue ? (object)dueDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : DBNull.Value)
             );
             int orderId = Convert.ToInt32(orderIdLong);
 
@@ -214,6 +217,17 @@ namespace butcherPOS.Services
             {
                 throw new Exception("Conversion failed: " + ex.Message);
             }
+        }
+
+        public System.Data.DataRow GetOrderHeader(int orderId)
+        {
+            string sql = @"SELECT o.order_id, o.order_date, o.total_amount, o.status, o.payment_status, o.shipping_address, o.delivery_date, o.due_date, c.full_name as customer_name
+                           FROM orders o
+                           LEFT JOIN customers c ON o.customer_id = c.customer_id
+                           WHERE o.order_id = @id";
+            var dt = DatabaseHelper.ExecuteDataTable(sql, new SqliteParameter("@id", orderId));
+            if (dt != null && dt.Rows.Count > 0) return dt.Rows[0];
+            return null;
         }
 
         public List<OrderItem> GetOrderItems(int orderId)

@@ -1,5 +1,5 @@
-
-namespace butcherPOS
+﻿
+namespace InventorySystem
 {
     partial class LoginForm
     {
@@ -35,9 +35,9 @@ namespace butcherPOS
             this.panelLoginCard = new System.Windows.Forms.Panel();
             this.labelTitle = new System.Windows.Forms.Label();
             this.labelSubtitle = new System.Windows.Forms.Label();
-            this.txtUsername = new butcherPOS.Controls.ModernTextBox();
-            this.txtPassword = new butcherPOS.Controls.ModernTextBox();
-            this.btnLogin = new butcherPOS.Controls.ModernButton();
+            this.txtUsername = new InventorySystem.Controls.ModernTextBox();
+            this.txtPassword = new InventorySystem.Controls.ModernTextBox();
+            this.btnLogin = new InventorySystem.Controls.ModernButton();
             this.chkShowPass = new System.Windows.Forms.CheckBox();
             this.btnClose = new System.Windows.Forms.Button();
             this.btnMinimize = new System.Windows.Forms.Button();
@@ -179,9 +179,9 @@ namespace butcherPOS
         private System.Windows.Forms.Button btnClose;
         private System.Windows.Forms.Label labelTitle;
         private System.Windows.Forms.Label labelSubtitle;
-        private butcherPOS.Controls.ModernTextBox txtUsername;
-        private butcherPOS.Controls.ModernTextBox txtPassword;
-        private butcherPOS.Controls.ModernButton btnLogin;
+        private InventorySystem.Controls.ModernTextBox txtUsername;
+        private InventorySystem.Controls.ModernTextBox txtPassword;
+        private InventorySystem.Controls.ModernButton btnLogin;
         private System.Windows.Forms.CheckBox chkShowPass;
         private System.Windows.Forms.Button btnMinimize;
 

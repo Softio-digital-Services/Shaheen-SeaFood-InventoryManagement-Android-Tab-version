@@ -1,10 +1,10 @@
-@echo off
+﻿@echo off
 echo ============================================
-echo  butcherPOS - Publish Script
+echo  InventorySystem - Publish Script
 echo ============================================
 echo.
 
-set PROJECT=c:\Users\Khale\Desktop\Personal\Service Company\butcherPOS
+set PROJECT=c:\Users\Khale\Desktop\Personal\Service Company\InventorySystem
 set OUTPUT=%PROJECT%\publish-output
 
 echo [1/4] Cleaning previous publish output...

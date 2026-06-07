@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.Sqlite;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Services
+namespace InventorySystem.Services
 {
     public class ExpenseService
     {

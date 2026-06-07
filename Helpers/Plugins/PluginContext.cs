@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 
-namespace butcherPOS.Helpers.Plugins
+namespace InventorySystem.Helpers.Plugins
 {
     /// <summary>
     /// Safe API surface that the core app exposes to every plugin.
@@ -19,7 +19,7 @@ namespace butcherPOS.Helpers.Plugins
         public bool   IsAdmin     { get; set; }
 
         // - Localization -
-        public bool IsArabic => butcherPOS.Helpers.LocalizationManager.IsArabic;
+        public bool IsArabic => InventorySystem.Helpers.LocalizationManager.IsArabic;
 
         // - License -
         /// <summary>

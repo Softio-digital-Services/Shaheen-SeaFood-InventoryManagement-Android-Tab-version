@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using butcherPOS.Helpers;
-using butcherPOS.Controls;
+using InventorySystem.Helpers;
+using InventorySystem.Controls;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public class OrderIdPromptForm : BaseModalForm
     {

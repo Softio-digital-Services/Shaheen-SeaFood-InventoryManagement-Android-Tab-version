@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Services
+namespace InventorySystem.Services
 {
     public class InventoryService
     {
@@ -91,7 +91,7 @@ namespace butcherPOS.Services
             GlobalEvents.RaiseInventoryUpdated();
         }
 
-        public void SaveProductService(butcherPOS.Data.PartData p)
+        public void SaveProductService(InventorySystem.Data.PartData p)
         {
             int categoryId = GetCategoryId(p.CategoryName);
             bool isNew = p.Id == 0;

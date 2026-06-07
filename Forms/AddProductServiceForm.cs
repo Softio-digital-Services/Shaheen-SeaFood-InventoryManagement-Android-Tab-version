@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Collections.Generic;
-using butcherPOS.Data;
-using butcherPOS.Controls;
-using butcherPOS.Services;
-using butcherPOS.Helpers;
+using InventorySystem.Data;
+using InventorySystem.Controls;
+using InventorySystem.Services;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public class AddProductServiceForm : BaseModalForm
     {
@@ -120,11 +120,7 @@ namespace butcherPOS.Forms
             // Category
             cmbCategory = new ModernComboBox { LabelText = "Category", Width = 280, Margin = new Padding(0,0,0,10), DropDownStyle = ComboBoxStyle.DropDownList };
             flpLeft.Controls.Add(cmbCategory);
-            
-            // Unit of Measure
-            txtUom = new ModernTextBox { LabelText = "Unit of Measure", Width = 280, Margin = new Padding(0,0,0,10) };
-            flpLeft.Controls.Add(txtUom);
-            
+
             // Expiry Date
             FlowLayoutPanel flpExp = new FlowLayoutPanel { Width = 280, Height = 67, Margin = new Padding(0,0,0,10), FlowDirection = FlowDirection.TopDown };
             Label lblExp = new Label { Text = "Expiry Date", AutoSize = true, Font = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
@@ -148,7 +144,18 @@ namespace butcherPOS.Forms
             btnAutoSku = new ModernButton { Text = "Auto", Width = 65, Height = 35, Margin = new Padding(10,25,0,0) };
             ThemeConfig.ApplyPrimaryButton(btnAutoSku);
             flpSku.Controls.AddRange(new Control[] { txtSku, btnAutoSku });
-            btnAutoSku.Click += (s, e) => { txtSku.Text = "SKU-" + DateTime.Now.ToString("yyMMddHHmmss"); };
+            btnAutoSku.Click += (s, e) => 
+            { 
+                string cat = cmbCategory.Text.Trim();
+                if (string.IsNullOrEmpty(cat)) cat = "GEN";
+                string name = txtName.Text.Trim();
+                if (string.IsNullOrEmpty(name)) name = "PRD";
+                
+                string catPrefix = cat.Length >= 3 ? cat.Substring(0, 3).ToUpper() : cat.ToUpper().PadRight(3, 'X');
+                string namePrefix = name.Length >= 3 ? name.Substring(0, 3).ToUpper() : name.ToUpper().PadRight(3, 'X');
+                
+                txtSku.Text = $"{catPrefix}-{namePrefix}-{DateTime.Now.ToString("yyMMddHHmm")}"; 
+            };
 
             FlowLayoutPanel flpBarcode = new FlowLayoutPanel { Width = halfW, Height = 67, Margin = new Padding(0,0,10,10), FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
             txtBarcode = new ModernTextBox { LabelText = "Barcode", Width = halfW - 75, Margin = new Padding(0) };
@@ -160,8 +167,9 @@ namespace butcherPOS.Forms
             txtBatch = new ModernTextBox { LabelText = "Batch No.", Width = halfW, Margin = new Padding(0,0,10,10) };
             txtLocation = new ModernTextBox { LabelText = "Location", Width = halfW, Margin = new Padding(0,0,10,10) };
             txtShelf = new ModernTextBox { LabelText = "Shelf", Width = halfW, Margin = new Padding(0,0,10,10) };
+            txtUom = new ModernTextBox { LabelText = "Unit of Measure", Width = halfW, Margin = new Padding(0,0,10,10) };
             
-            flpMiddle.Controls.AddRange(new Control[] { txtName, txtDescription, flpSku, flpBarcode, txtBatch, txtLocation, txtShelf });
+            flpMiddle.Controls.AddRange(new Control[] { txtName, txtDescription, flpSku, flpBarcode, txtBatch, txtLocation, txtShelf, txtUom });
             tlpMain.Controls.Add(flpMiddle, 1, 0);
 
             // -- Right Pane Row 1: Stock & Supplier --

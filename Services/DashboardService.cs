@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace butcherPOS.Services
+namespace InventorySystem.Services
 {
     public class Notification
     {

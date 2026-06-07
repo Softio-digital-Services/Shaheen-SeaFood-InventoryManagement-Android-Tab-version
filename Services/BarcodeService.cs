@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Services
+namespace InventorySystem.Services
 {
     public class BarcodeService
     {

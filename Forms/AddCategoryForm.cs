@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using butcherPOS.Helpers;
-using butcherPOS.Controls;
-using butcherPOS.Data;
+using InventorySystem.Helpers;
+using InventorySystem.Controls;
+using InventorySystem.Data;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class AddCategoryForm : BaseModalForm
     {

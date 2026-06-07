@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.IO;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers;
 
-namespace butcherPOS
+namespace InventorySystem
 {
     /// <summary>
     /// Centralized configuration for UI Theming and Branding.
@@ -21,7 +21,7 @@ namespace butcherPOS
         // BRANDING
         // ==========================================
         public static string CompanyName { get; set; } = "Generic Solutions";
-        public static string AppTitle { get; set; } = "butcherPOS";
+        public static string AppTitle { get; set; } = "GenericInventorySystem1.1";
 
         static ThemeConfig()
         {
@@ -51,13 +51,13 @@ namespace butcherPOS
         // COLOR PALETTE (Light / Horizon Blue)
         // ==========================================
         
-        // Primary Brand Color (Butcher Crimson Red)
-        public static Color PrimaryColor { get; } = Color.FromArgb(168, 30, 46); // Rich Red
-        public static Color PrimaryHoverColor { get; } = Color.FromArgb(136, 19, 32);
+        // Primary Brand Color (Cyan/Sky)
+        public static Color PrimaryColor { get; } = Color.FromArgb(14, 165, 233); // Sky 500
+        public static Color PrimaryHoverColor { get; } = Color.FromArgb(2, 132, 199); // Sky 600
 
         // Gradient Colors for Primary Buttons
-        public static Color GradientStart { get; } = Color.FromArgb(185, 28, 28); 
-        public static Color GradientEnd { get; } = Color.FromArgb(136, 19, 32);   
+        public static Color GradientStart { get; } = Color.FromArgb(56, 189, 248); // Sky 400
+        public static Color GradientEnd { get; } = Color.FromArgb(14, 165, 233);   // Sky 500
 
         // Secondary / Text Colors
         public static Color SecondaryColor { get; } = Color.FromArgb(100, 116, 139); // Slate Gray
@@ -69,8 +69,8 @@ namespace butcherPOS
         // Backgrounds
         public static Color BackgroundColor { get; } = Color.FromArgb(241, 245, 249); 
         public static Color SidebarColor { get; } = Color.FromArgb(248, 250, 252);     
-        public static Color HeaderColor { get; } = Color.FromArgb(168, 30, 46);      
-        public static Color ActiveBackColor { get; } = Color.FromArgb(254, 242, 242); 
+        public static Color HeaderColor { get; } = Color.FromArgb(14, 165, 233);      
+        public static Color ActiveBackColor { get; } = Color.FromArgb(240, 249, 255); 
 
         
         // Semantic Token Mapping
@@ -118,8 +118,8 @@ namespace butcherPOS
         public static Color POS_SidebarBg { get; } = Color.FromArgb(248, 249, 251);
         public static Color POS_CartItemBg { get; } = Color.FromArgb(248, 250, 252);
         public static Color POS_SeparatorColor { get; } = Color.FromArgb(235, 237, 240);
-        public static Color POS_ChipActive { get; } = Color.FromArgb(168, 30, 46);
-        public static Color POS_ChipActiveBorder { get; } = Color.FromArgb(136, 19, 32);
+        public static Color POS_ChipActive { get; } = Color.FromArgb(14, 165, 233);
+        public static Color POS_ChipActiveBorder { get; } = Color.FromArgb(2, 132, 199);
 
 
         // ==========================================
@@ -127,19 +127,6 @@ namespace butcherPOS
         // ==========================================
         private static FontFamily GetAppFontFamily()
         {
-            try
-            {
-                var fonts = new System.Drawing.Text.InstalledFontCollection();
-                string[] preferred = { "Inter", "Outfit", "Roboto", "Helvetica Neue", "Segoe UI" };
-                foreach (string pref in preferred)
-                {
-                    foreach (var ff in fonts.Families)
-                    {
-                        if (ff.Name.Equals(pref, StringComparison.OrdinalIgnoreCase)) return ff;
-                    }
-                }
-            }
-            catch { }
             return new FontFamily("Segoe UI");
         }
 
@@ -229,6 +216,7 @@ namespace butcherPOS
                     tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F)); // col-0 = search (left)
                     tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));  // col-1 = buttons (right)
                 }
+
 
                 if (searchBox != null)
                 {
@@ -480,8 +468,8 @@ namespace butcherPOS
         public static void DrawIconButton(Button btn, Graphics g, string iconName, string localizationKey, Color textColor, Color accentColor, bool isOutline)
         {
             if (btn == null) return;
-            bool isArabic = butcherPOS.Helpers.LocalizationManager.IsArabic;
-            string text = butcherPOS.Helpers.LocalizationManager.GetString(localizationKey);
+            bool isArabic = InventorySystem.Helpers.LocalizationManager.IsArabic;
+            string text = InventorySystem.Helpers.LocalizationManager.GetString(localizationKey);
             if (string.IsNullOrEmpty(text) || text == localizationKey)
             {
                 if (!string.IsNullOrEmpty(btn.Text)) text = btn.Text;
@@ -973,7 +961,7 @@ namespace butcherPOS
                 int textX = startX + iconSize + gap;
                 Rectangle textRect = new Rectangle(textX, 0, textSize.Width + 4, btn.Height);
                 TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.NoPadding | TextFormatFlags.EndEllipsis;
-                if (butcherPOS.Helpers.LocalizationManager.IsArabic)
+                if (InventorySystem.Helpers.LocalizationManager.IsArabic)
                     flags |= TextFormatFlags.RightToLeft;
                 TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor, flags);
             }
@@ -988,7 +976,7 @@ namespace butcherPOS
                 }
 
                 TextFormatFlags flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
-                if (butcherPOS.Helpers.LocalizationManager.IsArabic)
+                if (InventorySystem.Helpers.LocalizationManager.IsArabic)
                     flags |= TextFormatFlags.RightToLeft;
                 TextRenderer.DrawText(g, btn.Text, btn.Font, Rectangle.Round(r), btn.ForeColor, flags);
             }
@@ -1862,11 +1850,12 @@ namespace butcherPOS
                 }
                 else if (c is Label lbl)
                 {
-                    // If this label already uses HeaderFont (e.g. from CreateStandardHeader), never downgrade it
-                    if (lbl.Font != null && lbl.Font.Size == HeaderFont.Size && lbl.Font.Bold)
+                    // Do not downgrade labels that were explicitly made bold by the developer
+                    if (lbl.Font != null && lbl.Font.Bold)
                     {
                         lbl.BackColor = Color.Transparent;
-                        lbl.ForeColor = PrimaryColor; // Always keep header labels primary blue
+                        if (lbl.Font.Size >= HeaderFont.Size)
+                            lbl.ForeColor = PrimaryColor; // Keep giant headers primary blue
                     }
                     // Try to guess label type by name keyword
                     else if (lbl.Name.ToLower().Contains("title") || lbl.Name.ToLower().Contains("header"))

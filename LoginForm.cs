@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using Microsoft.Data.Sqlite;
 using System.Windows.Forms;
 using System.Drawing;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers;
 
-namespace butcherPOS
+namespace InventorySystem
 {
     public partial class LoginForm : Form
     {

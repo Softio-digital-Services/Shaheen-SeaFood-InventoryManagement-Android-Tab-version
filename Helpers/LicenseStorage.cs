@@ -1,9 +1,9 @@
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Globalization;
 
-namespace butcherPOS.Helpers
+namespace InventorySystem.Helpers
 {
     /// <summary>
     /// Handles secure storage and retrieval of license information

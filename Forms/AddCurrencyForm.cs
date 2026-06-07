@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
-using butcherPOS.Helpers;
-using butcherPOS.Services;
+using InventorySystem.Helpers;
+using InventorySystem.Services;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class AddCurrencyForm : BaseModalForm
     {

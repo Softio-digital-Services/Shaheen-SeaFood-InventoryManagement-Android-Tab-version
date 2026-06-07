@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
-using butcherPOS.Helpers.Plugins;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers.Plugins;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Plugins
+namespace InventorySystem.Plugins
 {
     public class BarcodeLabelsPlugin : ITabPlugin
     {
@@ -37,7 +37,7 @@ namespace butcherPOS.Plugins
 
             if (allowed)
             {
-                var form = new butcherPOS.Forms.BarcodeLabelsForm();
+                var form = new InventorySystem.Forms.BarcodeLabelsForm();
                 var loadMethod = form.GetType().GetMethod("LoadData") ?? form.GetType().GetMethod("LoadQuotations");
                 if (loadMethod != null) { if (loadMethod.GetParameters().Length == 1) loadMethod.Invoke(form, new object[] { "" }); else loadMethod.Invoke(form, null); }
                 return form;

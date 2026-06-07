@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Runtime.CompilerServices;
 
-namespace butcherPOS.Helpers
+namespace InventorySystem.Helpers
 {
     public static class LocalizationManager
     {
@@ -66,8 +66,8 @@ namespace butcherPOS.Helpers
             {
                 // Load from embedded resource stream
                 var assembly = Assembly.GetExecutingAssembly();
-                // The resource is embedded as "butcherPOS.Properties.Resources.ar.resx"
-                using (var stream = assembly.GetManifestResourceStream("butcherPOS.Properties.Resources.ar"))
+                // The resource is embedded as "InventorySystem.Properties.Resources.ar.resx"
+                using (var stream = assembly.GetManifestResourceStream("InventorySystem.Properties.Resources.ar"))
                 {
                     if (stream != null)
                     {

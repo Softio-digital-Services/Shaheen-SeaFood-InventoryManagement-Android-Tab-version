@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Text;
 using System.Windows.Forms;
 
-namespace butcherPOS.Helpers
+namespace InventorySystem.Helpers
 {
     public class BarcodeScanner
     {

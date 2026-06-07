@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Globalization;
 using System.Windows.Forms;
-using butcherPOS.Data;
-using butcherPOS.Helpers;
-using butcherPOS.Controls;
+using InventorySystem.Data;
+using InventorySystem.Helpers;
+using InventorySystem.Controls;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class CustomerDetailsForm : BaseModalForm
     {
@@ -251,7 +251,7 @@ namespace butcherPOS.Forms
         {
             decimal currentBalance = ParseBalance();
 
-            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
             TransactionEntryForm form = new TransactionEntryForm(
                 L("Cust_RecordSale"),
                 string.Format(L("Prompt_RecordSale"), _customerName),
@@ -298,7 +298,7 @@ namespace butcherPOS.Forms
         {
             decimal currentBalance = ParseBalance();
 
-            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
             TransactionEntryForm form = new TransactionEntryForm(
                 L("Cust_ReceivePayment"),
                 string.Format(L("Prompt_ReceivePayment"), _customerName));

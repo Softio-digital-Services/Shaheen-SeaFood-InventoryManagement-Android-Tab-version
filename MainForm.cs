@@ -1,20 +1,20 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Linq;
-using butcherPOS.Controls;
-using butcherPOS.Helpers;
-using butcherPOS.Services;
+using InventorySystem.Controls;
+using InventorySystem.Helpers;
+using InventorySystem.Services;
 
-namespace butcherPOS
+namespace InventorySystem
 {
     public partial class MainForm : Form
     {
         private Forms.PartsForm partsForm;
         private Forms.UsersForm usersForm;
-        private butcherPOS.Forms.DashboardForm dashboardForm;
-        private butcherPOS.Forms.ReportsForm reportsForm;
-        private butcherPOS.Forms.HistoryForm historyForm;
+        private InventorySystem.Forms.DashboardForm dashboardForm;
+        private InventorySystem.Forms.ReportsForm reportsForm;
+        private InventorySystem.Forms.HistoryForm historyForm;
         private Forms.POSForm posForm;
 
         // Header Controls
@@ -208,13 +208,13 @@ namespace butcherPOS
             // Dashboard - wrapped in try/catch so a DB error never crashes MainForm
             try
             {
-                dashboardForm = new butcherPOS.Forms.DashboardForm { Dock = DockStyle.Fill };
+                dashboardForm = new InventorySystem.Forms.DashboardForm { Dock = DockStyle.Fill };
                 ThemeConfig.ApplyGlobalTheme(dashboardForm);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("Dashboard init error: " + ex.Message);
-                dashboardForm = new butcherPOS.Forms.DashboardForm();
+                dashboardForm = new InventorySystem.Forms.DashboardForm();
                 dashboardForm.Dock = DockStyle.Fill;
             }
             panel3.Controls.Add(dashboardForm);
@@ -578,8 +578,8 @@ namespace butcherPOS
         private void ShowForm(UserControl form) {
             foreach(Control c in panel3.Controls) if(c is UserControl) c.Visible = false;
             form.Visible = true; form.BringToFront();
-            form.Focus();
-            if (form is butcherPOS.Forms.DashboardForm dash) dash.RefreshDashboard();
+            panel3.Focus(); // Focus the main panel to prevent auto-selecting the first control (like search bar) in the UserControl
+            if (form is InventorySystem.Forms.DashboardForm dash) dash.RefreshDashboard();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Data;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Services
+namespace InventorySystem.Services
 {
     public class HistoryService
     {

@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Text;
 
-namespace butcherPOS.Helpers
+namespace InventorySystem.Helpers
 {
     /// <summary>
     /// Manages license validation, activation, and generation

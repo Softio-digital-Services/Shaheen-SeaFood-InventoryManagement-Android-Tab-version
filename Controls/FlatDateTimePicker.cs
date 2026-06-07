@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 
-namespace butcherPOS.Controls
+namespace InventorySystem.Controls
 {
     // Replaces the previous inheritance from DateTimePicker to a full Custom Control
     public class FlatDateTimePicker : UserControl

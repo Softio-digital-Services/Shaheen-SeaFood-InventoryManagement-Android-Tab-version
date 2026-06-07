@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using butcherPOS.Controls;
-using butcherPOS.Helpers;
+using InventorySystem.Controls;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class TransactionEntryForm : BaseModalForm
     {
@@ -28,14 +28,14 @@ namespace butcherPOS.Forms
             lblPrompt.Text = prompt;
             txtAmount.Text = initialValue;
             ApplyTheme();
-            butcherPOS.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
         }
 
         private void ApplyLocalization()
         {
-            butcherPOS.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
+            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
 
             if (txtAmount != null) txtAmount.LabelText = L("Tran_AmountLabel");
             if (txtNotes != null) txtNotes.LabelText = L("Tran_NotesLabel");

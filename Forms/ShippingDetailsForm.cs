@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using butcherPOS.Data;
-using butcherPOS.Controls;
-using butcherPOS.Helpers;
+using InventorySystem.Data;
+using InventorySystem.Controls;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class ShippingDetailsForm : BaseModalForm
     {
@@ -64,16 +64,12 @@ namespace butcherPOS.Forms
             
             cmbCustomer = new ModernComboBox { LabelText = "Customer", Dock = DockStyle.Fill, Margin = new Padding(0, 0, 5, 0) };
             
-            Button btnAddCustomer = new butcherPOS.Controls.ModernButton 
+            Button btnAddCustomer = new Button 
             { 
-                Text = "+", 
-                Width = 40, 
-                Height = 40,
-                Margin = new Padding(0, 20, 0, 0), // align with bottom of combobox
-                Cursor = Cursors.Hand
+                Width = 35, 
+                Margin = new Padding(10, 25, 0, 0)
             };
-            ThemeConfig.ApplyPrimaryButton(btnAddCustomer);
-            btnAddCustomer.Font = new Font("Segoe UI", 16F, FontStyle.Bold); // Override font for bigger +
+            ThemeConfig.ApplyStandardAddButton(btnAddCustomer, "");
             btnAddCustomer.Click += BtnAddCustomer_Click;
             
             pnlCustomer.Controls.Add(cmbCustomer, 0, 0);

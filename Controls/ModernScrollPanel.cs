@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace butcherPOS.Controls
+namespace InventorySystem.Controls
 {
     /// <summary>
     /// A clean, themed scrollable panel using standard WinForms scrolling for maximum stability.

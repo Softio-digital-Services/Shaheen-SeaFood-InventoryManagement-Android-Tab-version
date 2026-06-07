@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace butcherPOS.Helpers
+namespace InventorySystem.Helpers
 {
     /// <summary>
     /// Provides AES encryption and decryption utilities for license storage

@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using butcherPOS.Helpers;
-using butcherPOS.Controls;
+using InventorySystem.Helpers;
+using InventorySystem.Controls;
 
-namespace butcherPOS.Controls
+namespace InventorySystem.Controls
 {
     public class LockOverlay : UserControl
     {

@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using System.Drawing;
 using System.Windows.Forms;
-using butcherPOS.Controls;
-using butcherPOS.Data;
-using butcherPOS.Helpers;
+using InventorySystem.Controls;
+using InventorySystem.Data;
+using InventorySystem.Helpers;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class AddUserForm : BaseModalForm
     {

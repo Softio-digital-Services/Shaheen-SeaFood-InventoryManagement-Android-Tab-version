@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 
-namespace butcherPOS.Helpers
+namespace InventorySystem.Helpers
 {
     public static class GlobalEvents
     {

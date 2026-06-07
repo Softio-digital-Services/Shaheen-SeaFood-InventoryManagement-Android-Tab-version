@@ -1,15 +1,15 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
-using butcherPOS.Data;
-using butcherPOS.Helpers;
-using butcherPOS.Services;
-using butcherPOS.Controls;
+using InventorySystem.Data;
+using InventorySystem.Helpers;
+using InventorySystem.Services;
+using InventorySystem.Controls;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class SuppliersForm : UserControl
     {
@@ -26,16 +26,16 @@ namespace butcherPOS.Forms
             InitializeComponent();
             ApplyTheme();
 
-            butcherPOS.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
             ApplyPermissions();
         }
 
         private void ApplyLocalization()
         {
-            butcherPOS.Helpers.LocalizationManager.ApplyRTL(this);
-            butcherPOS.Helpers.LocalizationManager.TranslateControl(this);
-            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
+            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
+            InventorySystem.Helpers.LocalizationManager.TranslateControl(this);
+            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
 
             if (lblSuppliersTitle != null) lblSuppliersTitle.Text = L("Sup_Title");
 
@@ -109,7 +109,7 @@ namespace butcherPOS.Forms
             txtSearch.Size = new Size(320, 35);
             txtSearch.TextChanged += (s, e) =>
             {
-                string ph = butcherPOS.Helpers.LocalizationManager.GetString("Sup_Search");
+                string ph = InventorySystem.Helpers.LocalizationManager.GetString("Sup_Search");
                 if (txtSearch.Text != ph && txtSearch.Text != "Search...")
                     LoadData(txtSearch.Text);
             };
@@ -297,9 +297,9 @@ namespace butcherPOS.Forms
             if (e.X >= startX - 4 && e.X <= startX + iconSize + 4) // Edit Rect with tolerance
             {
                 // Edit
-                if (!butcherPOS.Helpers.UserSession.IsAdmin)
+                if (!InventorySystem.Helpers.UserSession.IsAdmin)
                 {
-                    MessageHelper.ShowWarning(butcherPOS.Helpers.LocalizationManager.IsArabic ? "\u0644\u064a\u0633 \u0644\u062f\u064a\u0643 \u0635\u0644\u0627\u062d\u064a\u0629 \u0644\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646." : "You do not have permission to edit suppliers.");
+                    MessageHelper.ShowWarning(InventorySystem.Helpers.LocalizationManager.IsArabic ? "\u0644\u064a\u0633 \u0644\u062f\u064a\u0643 \u0635\u0644\u0627\u062d\u064a\u0629 \u0644\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646." : "You do not have permission to edit suppliers.");
                     return;
                 }
 
@@ -324,9 +324,9 @@ namespace butcherPOS.Forms
             else if (e.X >= startX + iconSize + gap - 4 && e.X <= startX + totalWidth + 4) // Delete Rect with tolerance
             {
                 // Delete
-                if (!butcherPOS.Helpers.UserSession.IsAdmin)
+                if (!InventorySystem.Helpers.UserSession.IsAdmin)
                 {
-                    MessageHelper.ShowWarning(butcherPOS.Helpers.LocalizationManager.IsArabic ? "\u0644\u064a\u0633 \u0644\u062f\u064a\u0643 \u0635\u0644\u0627\u062d\u064a\u0629 \u0644\u062d\u0630\u0641 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646." : "You do not have permission to delete suppliers.");
+                    MessageHelper.ShowWarning(InventorySystem.Helpers.LocalizationManager.IsArabic ? "\u0644\u064a\u0633 \u0644\u062f\u064a\u0643 \u0635\u0644\u0627\u062d\u064a\u0629 \u0644\u062d\u0630\u0641 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646." : "You do not have permission to delete suppliers.");
                     return;
                 }
 
@@ -728,7 +728,7 @@ namespace butcherPOS.Forms
 
         private void ApplyPermissions()
         {
-            if (!butcherPOS.Helpers.UserSession.IsAdmin)
+            if (!InventorySystem.Helpers.UserSession.IsAdmin)
             {
                 var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
                 if (ctrlDel.Length > 0) ctrlDel[0].Visible = false;

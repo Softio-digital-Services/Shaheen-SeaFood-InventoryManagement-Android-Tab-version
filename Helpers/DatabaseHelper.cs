@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.Sqlite;
-using butcherPOS.Helpers;
+using InventorySystem.Helpers;
 
-namespace butcherPOS
+namespace InventorySystem
 {
     /// <summary>
     /// Centralized database operations helper -- SQLite backend.
@@ -317,6 +317,11 @@ namespace butcherPOS
                         last_processed_month TEXT,
                         date_deleted        TEXT
                     );
+
+                    CREATE TABLE IF NOT EXISTS expense_categories (
+                        category_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        category_name TEXT NOT NULL UNIQUE
+                    );
                 ";
 
                 // SQLite doesn't support multiple statements in one call -- split them
@@ -347,6 +352,11 @@ namespace butcherPOS
                 {
                     ExecuteNonQuery("ALTER TABLE payments ADD COLUMN due_date TEXT;");
                 }
+
+                // Add shipping fields to orders
+                if (!ColumnExists("orders", "shipping_address")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN shipping_address TEXT;");
+                if (!ColumnExists("orders", "delivery_date")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN delivery_date TEXT;");
+                if (!ColumnExists("orders", "due_date")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN due_date TEXT;");
             }
             catch (Exception ex)
             {

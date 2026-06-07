@@ -1,5 +1,5 @@
-
-namespace butcherPOS.Forms
+﻿
+namespace InventorySystem.Forms
 {
     partial class SupplierDetailsForm
     {

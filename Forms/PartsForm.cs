@@ -4,12 +4,12 @@ using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using butcherPOS.Data;
-using butcherPOS.Helpers;
-using butcherPOS.Controls;
-using butcherPOS.Services;
+using InventorySystem.Data;
+using InventorySystem.Helpers;
+using InventorySystem.Controls;
+using InventorySystem.Services;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     /// <summary>
     /// Inventory Management Screen — card-view + category sidebar layout.
@@ -17,7 +17,7 @@ namespace butcherPOS.Forms
     public partial class PartsForm : UserControl
     {
         // ── Toolbar buttons ──────────────────────────────────────────────
-        private butcherPOS.Controls.ModernButton btnAdd;
+        private InventorySystem.Controls.ModernButton btnAdd;
         private Button btnAddCategory;
         private Button btnFilter;
         private Button btnImport;
@@ -56,8 +56,8 @@ namespace butcherPOS.Forms
             EventHandler currHandler    = (s, e) => { if (_isCardView) LoadCards(); else dgvParts?.Invalidate(); };
             EventHandler invHandler     = (s, e) => { if (this.Visible) RefreshAll(); };
 
-            butcherPOS.Helpers.LocalizationManager.LanguageChanged += langHandler;
-            butcherPOS.Services.CurrencyService.CurrencyChanged    += currHandler;
+            InventorySystem.Helpers.LocalizationManager.LanguageChanged += langHandler;
+            InventorySystem.Services.CurrencyService.CurrencyChanged    += currHandler;
 
             ApplyLocalization();
             ApplyPermissions();
@@ -70,8 +70,8 @@ namespace butcherPOS.Forms
             this.Disposed += (s, e) =>
             {
                 syncTimer.Stop(); syncTimer.Dispose();
-                butcherPOS.Helpers.LocalizationManager.LanguageChanged -= langHandler;
-                butcherPOS.Services.CurrencyService.CurrencyChanged    -= currHandler;
+                InventorySystem.Helpers.LocalizationManager.LanguageChanged -= langHandler;
+                InventorySystem.Services.CurrencyService.CurrencyChanged    -= currHandler;
             };
         }
 
@@ -80,7 +80,7 @@ namespace butcherPOS.Forms
         // ─────────────────────────────────────────────────────────────────
         private void InitializeComponent()
         {
-            this.btnAdd         = new butcherPOS.Controls.ModernButton();
+            this.btnAdd         = new InventorySystem.Controls.ModernButton();
             this.btnImport      = new Button();
             this.btnExport      = new Button();
             this.txtSearch      = new ModernTextBox();
@@ -257,7 +257,7 @@ namespace butcherPOS.Forms
 
             // Add Category button at bottom of sidebar
             Panel pnlAddCatWrapper = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12), BackColor = Color.Transparent };
-            var btnSidebarAddCat = new butcherPOS.Controls.ModernButton
+            var btnSidebarAddCat = new InventorySystem.Controls.ModernButton
             {
                 Dock = DockStyle.Fill,
                 Height = 38
@@ -310,11 +310,12 @@ namespace butcherPOS.Forms
             pnlContentHeader.Controls.Add(lblItemCount);
 
             // ── Right toolbar: view toggles + filter button (matching green reference) ─────
-            // Combined right-side control panel
-            Panel pnlRightControls = new Panel
+            // Combined right-side control panel (FlowLayoutPanel for easier alignment)
+            FlowLayoutPanel pnlRightControls = new FlowLayoutPanel
             {
-                Size = new Size(114, 36), Anchor = AnchorStyles.Right | AnchorStyles.Top,
-                BackColor = Color.Transparent
+                Size = new Size(120, 36), Anchor = AnchorStyles.Right | AnchorStyles.Top,
+                BackColor = Color.Transparent, FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false
             };
 
             // View toggle group (card ⊞ / list ≡)
@@ -323,55 +324,28 @@ namespace butcherPOS.Forms
             btnToggleCard.Click += (s, e) => SwitchView(true);
             btnToggleGrid.Click += (s, e) => SwitchView(false);
 
-            Panel pnlToggle = new Panel
-            {
-                Size = new Size(72, 34), Location = new Point(0, 1),
-                BackColor = ThemeConfig.SurfaceColor
-            };
-            pnlToggle.Paint += (s, pe) =>
-            {
-                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (var path = RoundedPath(new Rectangle(0, 0, pnlToggle.Width - 1, pnlToggle.Height - 1), 8))
-                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                { pe.Graphics.FillPath(brush, path); pe.Graphics.DrawPath(pen, path); }
-            };
-            btnToggleCard.SetBounds(2, 2, 32, 30);
-            btnToggleGrid.SetBounds(37, 2, 32, 30);
-            pnlToggle.Controls.Add(btnToggleCard);
-            pnlToggle.Controls.Add(btnToggleGrid);
-
             // Filter button — outlined style matching green reference UI
             Button btnContentFilter = new Button
             {
-                Size = new Size(36, 34), Location = new Point(78, 1),
+                Size = new Size(36, 34),
                 FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand,
-                BackColor = ThemeConfig.SurfaceColor,
-                ForeColor = ThemeConfig.TextColorDark,
-                Font = new Font("Segoe UI", 9F),
+                BackColor = Color.Transparent,
+                ForeColor = ThemeConfig.SecondaryColor,
                 Text = "",
-                TextImageRelation = TextImageRelation.ImageBeforeText,
-                ImageAlign = ContentAlignment.MiddleCenter,
-                TextAlign = ContentAlignment.MiddleCenter
+                Margin = new Padding(4, 1, 0, 0)
             };
-            btnContentFilter.FlatAppearance.BorderColor = ThemeConfig.BorderColor;
-            btnContentFilter.FlatAppearance.BorderSize = 1;
-            btnContentFilter.FlatAppearance.MouseOverBackColor = ThemeConfig.BackgroundColor;
-            Image filterIcon = ThemeConfig.GetNuricon("filter");
-            if (filterIcon != null) 
-            {
-                using (var tinted = ThemeConfig.TintImage(filterIcon, btnContentFilter.ForeColor))
-                {
-                    btnContentFilter.Image = ResizeImage(tinted, 16, 16);
-                }
-            }
+            btnContentFilter.FlatAppearance.BorderSize = 0;
+            btnContentFilter.FlatAppearance.MouseOverBackColor = Color.Transparent;
+            btnContentFilter.FlatAppearance.MouseDownBackColor = Color.Transparent;
+            btnContentFilter.Paint += (s, e) => ThemeConfig.DrawIconButton(btnContentFilter, e.Graphics, "filter", "", btnContentFilter.ForeColor, ThemeConfig.SuccessColor, true);
             btnContentFilter.Click += BtnFilter_Click;
 
-            pnlRightControls.Controls.Add(pnlToggle);
+            pnlRightControls.Controls.Add(btnToggleCard);
+            pnlRightControls.Controls.Add(btnToggleGrid);
             pnlRightControls.Controls.Add(btnContentFilter);
 
             pnlContentHeader.Resize += (s, e) =>
-                pnlRightControls.Location = new Point(pnlContentHeader.Width - pnlRightControls.Width, 4);
+                pnlRightControls.Location = new Point(pnlContentHeader.Width - pnlRightControls.Width - 8, 4);
             pnlContentHeader.Controls.Add(pnlRightControls);
 
             // ── Card view ──────────────────────────────────────────────────
@@ -449,23 +423,19 @@ namespace butcherPOS.Forms
                 Tag = iconName,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                BackColor = startActive ? ThemeConfig.PrimaryColor : Color.Transparent,
+                BackColor = startActive ? ThemeConfig.SuccessColor : Color.Transparent,
                 ForeColor = startActive ? Color.White : ThemeConfig.SecondaryColor,
-                Size = new Size(34, 30)
+                Size = new Size(36, 34),
+                Margin = new Padding(0, 1, 4, 0)
             };
             btn.FlatAppearance.BorderSize = 0;
+            btn.FlatAppearance.MouseOverBackColor = Color.Transparent;
+            btn.FlatAppearance.MouseDownBackColor = Color.Transparent;
+            
             btn.Paint += (s, e) =>
             {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                Image img = ThemeConfig.GetNuricon(iconName);
-                if (img != null)
-                {
-                    using (var tinted = ThemeConfig.TintImage(img, btn.ForeColor))
-                    {
-                        int size = 18;
-                        e.Graphics.DrawImage(tinted, (btn.Width - size) / 2, (btn.Height - size) / 2, size, size);
-                    }
-                }
+                bool isActive = btn.BackColor != Color.Transparent;
+                ThemeConfig.DrawIconButton(btn, e.Graphics, iconName, "", isActive ? Color.White : btn.ForeColor, ThemeConfig.SuccessColor, !isActive);
             };
             return btn;
         }
@@ -476,9 +446,9 @@ namespace butcherPOS.Forms
             pnlCardView.Visible  = toCard;
             pnlGridView.Visible  = !toCard;
 
-            btnToggleCard.BackColor = toCard  ? ThemeConfig.PrimaryColor : Color.Transparent;
+            btnToggleCard.BackColor = toCard  ? ThemeConfig.SuccessColor : Color.Transparent;
             btnToggleCard.ForeColor = toCard  ? Color.White : ThemeConfig.SecondaryColor;
-            btnToggleGrid.BackColor = !toCard ? ThemeConfig.PrimaryColor : Color.Transparent;
+            btnToggleGrid.BackColor = !toCard ? ThemeConfig.SuccessColor : Color.Transparent;
             btnToggleGrid.ForeColor = !toCard ? Color.White : ThemeConfig.SecondaryColor;
 
             if (toCard) LoadCards();
@@ -755,7 +725,7 @@ namespace butcherPOS.Forms
                 : $"Add to {_activeCategory}";
 
             // Use a proper standard add button centered in the card
-            var btnAdd = new butcherPOS.Controls.ModernButton
+            var btnAdd = new InventorySystem.Controls.ModernButton
             {
                 Size = new Size(CardW - 24, 40),
                 Location = new Point(12, (CardH - 40) / 2)
@@ -851,7 +821,7 @@ namespace butcherPOS.Forms
             // Price
             Label lblPrice = new Label
             {
-                Text = butcherPOS.Services.CurrencyService.Format(price),
+                Text = InventorySystem.Services.CurrencyService.Format(price),
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                 ForeColor = ThemeConfig.PrimaryColor, BackColor = Color.Transparent,
                 AutoSize = false, Size = new Size(CardW - 12, 22), Location = new Point(6, 143),
@@ -1007,8 +977,8 @@ namespace butcherPOS.Forms
         // ─────────────────────────────────────────────────────────────────
         private void ApplyLocalization()
         {
-            butcherPOS.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = butcherPOS.Helpers.LocalizationManager.GetString;
+            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
 
             var ctrlTitle = this.Controls.Find("lblInventoryTitle", true);
             if (ctrlTitle.Length > 0) ctrlTitle[0].Text = L("Parts_Title");
@@ -1022,7 +992,7 @@ namespace butcherPOS.Forms
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
             if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Parts_Delete");
 
-            butcherPOS.Helpers.LocalizationManager.TranslateControl(this);
+            InventorySystem.Helpers.LocalizationManager.TranslateControl(this);
 
             if (dgvParts != null && dgvParts.Columns.Count > 0)
             {
@@ -1117,7 +1087,7 @@ namespace butcherPOS.Forms
             }
 
             if (dgvParts.Columns[e.ColumnIndex].Name == "colPrice" && e.Value != null)
-                if (decimal.TryParse(e.Value.ToString(), out decimal p)) { e.Value = butcherPOS.Services.CurrencyService.Format(p); e.FormattingApplied = true; }
+                if (decimal.TryParse(e.Value.ToString(), out decimal p)) { e.Value = InventorySystem.Services.CurrencyService.Format(p); e.FormattingApplied = true; }
 
             var stockCell = row.Cells["colStock"]; var minCell = row.Cells["minimum_stock_level"];
             if (!isService && stockCell.Value != null && minCell.Value != null)
@@ -1424,7 +1394,7 @@ namespace butcherPOS.Forms
                         if (string.IsNullOrWhiteSpace(name)) { skipped++; continue; }
                         if (!string.IsNullOrWhiteSpace(pn) && _inventoryService.PartExists(pn)) { skipped++; continue; }
 
-                        var p = new butcherPOS.Data.PartData();
+                        var p = new InventorySystem.Data.PartData();
                         p.PartName = name;
                         p.PartNumber = pn;
                         

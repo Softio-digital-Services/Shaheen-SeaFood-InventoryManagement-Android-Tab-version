@@ -1,15 +1,15 @@
-using System;
+﻿using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using butcherPOS.Controls;
-using butcherPOS.Data;
-using butcherPOS.Helpers;
-using butcherPOS.Services;
+using InventorySystem.Controls;
+using InventorySystem.Data;
+using InventorySystem.Helpers;
+using InventorySystem.Services;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public class MonthlyExpensesForm : UserControl
     {
@@ -90,33 +90,27 @@ namespace butcherPOS.Forms
             grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 35F)); // Sub Row (Recurring)
 
             // 1. Category with Add Button
-            Panel pnlCatContainer = new Panel { Dock = DockStyle.Fill, Margin = new Padding(5, 5, 5, 10) };
+            TableLayoutPanel pnlCatContainer = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(15, 5, 5, 10), Width = 220 };
+            pnlCatContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            pnlCatContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 45F));
+
             cmbCategory = new ModernComboBox { 
-                Width = 135,
-                Location = new Point(0, 0),
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 5, 0),
                 LabelText = LocalizationManager.GetString("Exp_CategoryLabel")
             };
             cmbCategory.Items.AddRange(new object[] { "Rent", "Utilities", "Wages", "Supplies", "Maintenance", "Other" });
             
-            Button btnQuickAddCat = new Button { 
-                Size = new Size(36, 36), 
-                Location = new Point(138, 26), 
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand,
-                BackColor = ThemeConfig.PrimaryColor
+            Button btnAddCategory = new Button 
+            { 
+                Width = 35, 
+                Margin = new Padding(0, 25, 0, 0)
             };
-            btnQuickAddCat.FlatAppearance.BorderSize = 0;
-            btnQuickAddCat.Paint += (s, e) => ThemeConfig.DrawIconButton(btnQuickAddCat, e.Graphics, "add", "", Color.White, ThemeConfig.PrimaryColor, false);
-            btnQuickAddCat.Click += (s, e) => {
-                using (var f = new AddCategoryForm()) {
-                    if (f.ShowDialog() == DialogResult.OK) {
-                        // Refresh categories if needed, for now just a placeholder action
-                        MessageHelper.ShowInfo("Category added. Please refresh.");
-                    }
-                }
-            };
-            pnlCatContainer.Controls.Add(cmbCategory);
-            pnlCatContainer.Controls.Add(btnQuickAddCat);
+            ThemeConfig.ApplyStandardAddButton(btnAddCategory, "");
+            btnAddCategory.Click += BtnAddCategory_Click;
+
+            pnlCatContainer.Controls.Add(cmbCategory, 0, 0);
+            pnlCatContainer.Controls.Add(btnAddCategory, 1, 0);
             
             Panel pnlDate = new Panel { Dock = DockStyle.Fill, Margin = new Padding(10, 5, 5, 10) };
             lblDateRef = new Label {
@@ -187,12 +181,12 @@ namespace butcherPOS.Forms
                 Maximum = 1000000,
                 Width = 140
             };
-            // Position the numAmount vertically centered within the wrapper at its natural height
+            // Position the numAmount at the top within the wrapper to align with other labels
             pnlAmountWrapper.Controls.Add(numAmount);
             pnlAmountWrapper.Resize += (s, e) =>
             {
                 numAmount.Width = pnlAmountWrapper.Width;
-                numAmount.Location = new Point(0, Math.Max(0, (pnlAmountWrapper.Height - numAmount.Height) / 2));
+                numAmount.Location = new Point(0, 0);
             };
 
             grid.Controls.Add(pnlCatContainer, 0, 0);
@@ -408,14 +402,43 @@ namespace butcherPOS.Forms
         private void LoadCategories()
         {
             cmbCategory.Items.Clear();
-            cmbCategory.Items.AddRange(new object[] { 
-                LocalizationManager.GetString("Exp_Rent"), 
-                LocalizationManager.GetString("Exp_Utilities"), 
-                LocalizationManager.GetString("Exp_Wages"), 
-                LocalizationManager.GetString("Exp_Supplies"), 
-                LocalizationManager.GetString("Exp_Maintenance"), 
-                LocalizationManager.GetString("Exp_Other") 
-            });
+            
+            // Check if table has data
+            long count = 0;
+            try { count = DatabaseHelper.ExecuteScalar<long>("SELECT COUNT(*) FROM expense_categories"); } catch { }
+            
+            if (count == 0)
+            {
+                // Insert defaults
+                string[] defaults = new string[] { 
+                    LocalizationManager.GetString("Exp_Rent") ?? "Rent", 
+                    LocalizationManager.GetString("Exp_Utilities") ?? "Utilities", 
+                    LocalizationManager.GetString("Exp_Wages") ?? "Wages", 
+                    LocalizationManager.GetString("Exp_Supplies") ?? "Supplies", 
+                    LocalizationManager.GetString("Exp_Maintenance") ?? "Maintenance", 
+                    LocalizationManager.GetString("Exp_Other") ?? "Other"
+                };
+                foreach (string d in defaults)
+                {
+                    if (!string.IsNullOrWhiteSpace(d))
+                        DatabaseHelper.ExecuteNonQuery($"INSERT INTO expense_categories (category_name) VALUES ('{d}')");
+                }
+            }
+
+            DataTable dt = DatabaseHelper.ExecuteDataTable("SELECT category_name FROM expense_categories ORDER BY category_name");
+            foreach (DataRow row in dt.Rows)
+            {
+                cmbCategory.Items.Add(row["category_name"].ToString());
+            }
+        }
+
+        private void BtnAddCategory_Click(object sender, EventArgs e)
+        {
+            using (var frm = new ManageExpenseCategoriesForm())
+            {
+                frm.ShowDialog();
+                LoadCategories();
+            }
         }
     }
 }

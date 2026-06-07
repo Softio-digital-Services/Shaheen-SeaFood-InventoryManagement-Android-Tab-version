@@ -1,15 +1,15 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
-using butcherPOS.Helpers;
-using butcherPOS.Data;
-using butcherPOS.Controls;
+using InventorySystem.Helpers;
+using InventorySystem.Data;
+using InventorySystem.Controls;
 
-namespace butcherPOS.Forms
+namespace InventorySystem.Forms
 {
     public partial class CustomersForm : UserControl
     {

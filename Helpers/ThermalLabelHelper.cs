@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Windows.Forms;
-using butcherPOS.Services;
-using butcherPOS.Forms;
+using InventorySystem.Services;
+using InventorySystem.Forms;
 using System.IO;
 
-namespace butcherPOS.Helpers
+namespace InventorySystem.Helpers
 {
     public class LabelPrintItem
     {
