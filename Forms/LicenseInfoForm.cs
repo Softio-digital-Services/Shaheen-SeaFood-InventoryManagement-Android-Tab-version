@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using InventorySystem.Controls;
@@ -56,11 +56,17 @@ namespace InventorySystem.Forms
 
             this.TitleText = LocalizationManager.GetString("Msg_LicenseInfo");
             
+            var currentLicense = LicenseManager.GetCurrentLicense();
+            bool showActivate = currentLicense == null || currentLicense.IsTrial();
+
             SetFooterButtons(
                 LocalizationManager.GetString("Popup_Cancel"),
-                "",
+                showActivate ? (LocalizationManager.GetString("Btn_ActivateLicense") ?? "Activate License") : "",
                 (s, e) => this.Close(),
-                null
+                showActivate ? new EventHandler((s, e) => {
+                    this.Close();
+                    new LicenseActivationForm().ShowDialog();
+                }) : null
             );
         }
 

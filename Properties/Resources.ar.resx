@@ -683,4 +683,10 @@
   <data name="Msg_DaysRemaining" xml:space="preserve"><value>الأيام المتبقية</value></data>
   <data name="Msg_Status" xml:space="preserve"><value>الحالة</value></data>
   <data name="Msg_NoLicense" xml:space="preserve"><value>لا يوجد ترخيص فعال</value></data>
+  <data name="Btn_ActivateLicense" xml:space="preserve">
+    <value>تفعيل الترخيص</value>
+  </data>
+  <data name="Msg_QuotationSaved" xml:space="preserve">
+    <value>تم حفظ عرض السعر بنجاح!</value>
+  </data>
 </root>

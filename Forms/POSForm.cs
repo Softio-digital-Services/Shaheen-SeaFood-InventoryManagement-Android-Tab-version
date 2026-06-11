@@ -361,7 +361,7 @@ namespace InventorySystem.Forms
                 Margin = new Padding(0)
             };
             tlpCard1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 80F));  // Header
+            tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 110F));  // Header
             tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));  // Ordered Items Title
             tlpCard1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Cart items
             tlpCard1.RowStyles.Add(new RowStyle(SizeType.Absolute, 140F)); // Payment Summary
@@ -377,7 +377,7 @@ namespace InventorySystem.Forms
             lblOrderNum = new Label { Text = "#001", Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold), ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Location = new Point(16, 42) };
             pnlOrderHeader.Controls.Add(lblOrderNum);
 
-            PictureBox btnTrash = new PictureBox { Image = ThemeConfig.GetNuricon("delete"), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(20, 20), Cursor = Cursors.Hand };
+            PictureBox btnTrash = new PictureBox { Image = ThemeConfig.GetNuricon("delete"), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(28, 28), Cursor = Cursors.Hand };
             btnTrash.Click += (s, e) =>
             {
                 if (cartTable.Rows.Count > 0 && MessageHelper.ConfirmAction(LocalizationManager.GetString("POS_ClearCartConfirm") ?? "Clear cart?"))
@@ -391,14 +391,37 @@ namespace InventorySystem.Forms
             cmbCustomers = new InventorySystem.Controls.ModernComboBox { DropDownStyle = ComboBoxStyle.DropDownList, ShowLabel = false };
             pnlOrderHeader.Controls.Add(cmbCustomers);
 
+            Button btnAddCustomer = new Button
+            {
+                Size = new Size(26, 26),
+                Cursor = Cursors.Hand,
+                TabStop = false,
+                Margin = new Padding(0)
+            };
+            ThemeConfig.ApplyStandardAddButton(btnAddCustomer, "");
+            btnAddCustomer.Size = new Size(26, 26);
+            btnAddCustomer.Click += (s, e) =>
+            {
+                var f = new AddCustomerForm();
+                if (f.ShowDialog() == DialogResult.OK)
+                {
+                    LoadCustomers();
+                }
+            };
+            pnlOrderHeader.Controls.Add(btnAddCustomer);
+
             pnlOrderHeader.Resize += (s, ev) =>
             {
                 int w = pnlOrderHeader.Width;
-                btnTrash.Location = new Point(w - 32, 16);
+                btnTrash.Location = new Point(w - 40, 12);
                 lblNewOrder.Location = new Point(16, 16);
                 lblOrderNum.Location = new Point(16, 42);
-                cmbCustomers.Width = 160;
-                cmbCustomers.Location = new Point(w - 176, 36);
+                
+                cmbCustomers.Width = w - 16 - 16 - 26 - 8; // span most of the width
+                cmbCustomers.Location = new Point(16, 65);
+                
+                btnAddCustomer.Size = new Size(26, 26);
+                btnAddCustomer.Location = new Point(cmbCustomers.Right + 8, cmbCustomers.Top + (cmbCustomers.Height - btnAddCustomer.Height) / 2);
             };
             tlpCard1.Controls.Add(pnlOrderHeader, 0, 0);
 

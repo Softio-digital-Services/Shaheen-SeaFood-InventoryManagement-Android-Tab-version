@@ -1583,4 +1583,10 @@ Or click the link above to copy it</value>
   <data name="Msg_NoLicense" xml:space="preserve">
     <value>No active license found</value>
   </data>
+  <data name="Btn_ActivateLicense" xml:space="preserve">
+    <value>Activate License</value>
+  </data>
+  <data name="Msg_QuotationSaved" xml:space="preserve">
+    <value>Quotation saved successfully!</value>
+  </data>
 </root>

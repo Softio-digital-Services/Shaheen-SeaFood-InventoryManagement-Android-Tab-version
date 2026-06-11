@@ -388,11 +388,11 @@ async function fetchCategories() {
             renderCategories(cats);
         }
     } catch (err) {
-        renderCategories(['Engine', 'Services']);
+        renderCategories([]);
     }
 }
 
-let masterCategories = ['Engine', 'Services'];
+let masterCategories = [];
 
 function renderCategories(apiCategories = null) {
     const container = document.getElementById('categoryList');
@@ -403,8 +403,20 @@ function renderCategories(apiCategories = null) {
         masterCategories = apiCategories;
     }
 
-    const categories = ['All', ...new Set(['Engine', 'Services', ...masterCategories])];
+    const categories = ['All', ...masterCategories];
     container.innerHTML = '';
+    
+    // Sync the Add Item modal category dropdown
+    const modalSelect = document.getElementById('newItemCategory');
+    if (modalSelect) {
+        modalSelect.innerHTML = '';
+        masterCategories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.innerText = cat;
+            modalSelect.appendChild(opt);
+        });
+    }
     
     categories.forEach(cat => {
         const btn = document.createElement('button');
@@ -478,7 +490,7 @@ function openEditModal(id) {
     document.getElementById('btnSubmitItem').innerText = t('modal_save_btn');
     document.getElementById('editItemId').value = item.id;
     document.getElementById('newItemName').value = item.name;
-    document.getElementById('newItemCategory').value = item.category || 'Engine';
+    document.getElementById('newItemCategory').value = item.category || (masterCategories.length > 0 ? masterCategories[0] : '');
     document.getElementById('newItemPrice').value = item.price;
     document.getElementById('newItemStock').value = item.stock;
     document.getElementById('newItemBarcode').value = item.barcode || '';

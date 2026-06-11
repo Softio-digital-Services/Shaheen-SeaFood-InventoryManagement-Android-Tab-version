@@ -278,8 +278,6 @@ namespace InventorySystem
                         foreach (System.Data.DataRow row in dt.Rows)
                             categories.Add(row["category_name"].ToString());
 
-                        if (!categories.Contains("Services")) categories.Add("Services");
-
                         return Microsoft.AspNetCore.Http.Results.Ok(categories);
                     }
                     catch (Exception ex)
