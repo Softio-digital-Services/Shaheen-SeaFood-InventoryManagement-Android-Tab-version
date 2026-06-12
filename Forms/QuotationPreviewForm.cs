@@ -20,7 +20,7 @@ namespace InventorySystem.Forms
         {
             _orderId = orderId;
             _orderService = new OrderService();
-            
+
             this.TitleText = (LocalizationManager.IsArabic ? "معاينة عرض السعر" : "Quotation Preview") + " - #" + orderId;
             this.Size = new Size(950, 950); // Increased width to ensure A4 fits
 
@@ -33,7 +33,7 @@ namespace InventorySystem.Forms
         private void InitializeUI()
         {
             this.ContentPanel.AutoScroll = true;
-            
+
             SetFooterButtons(
                 LocalizationManager.GetString("Tran_Print") ?? "Print",
                 LocalizationManager.GetString("Tran_Export") ?? "Export",
@@ -43,7 +43,8 @@ namespace InventorySystem.Forms
                 (s, e) => this.Close()
             );
 
-            this.ContentPanel.Resize += (s, e) => {
+            this.ContentPanel.Resize += (s, e) =>
+            {
                 foreach (Control ctrl in this.ContentPanel.Controls)
                 {
                     if (ctrl is Panel p) p.Left = Math.Max(0, (this.ContentPanel.Width - p.Width) / 2);
@@ -58,12 +59,12 @@ namespace InventorySystem.Forms
                 // Fetch Data
                 var items = _orderService.GetOrderItems(_orderId);
                 decimal total = 0;
-                foreach(var item in items) total += (item.Quantity * item.UnitPrice);
+                foreach (var item in items) total += (item.Quantity * item.UnitPrice);
 
                 // Build UI on pnlContent
                 RenderDocument(items, total);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 MessageHelper.ShowError("Could not load quotation details: " + ex.Message);
             }
@@ -71,7 +72,8 @@ namespace InventorySystem.Forms
 
         private Panel CreateA4PagePanel()
         {
-            return new Panel {
+            return new Panel
+            {
                 Width = 800,
                 Height = 1131,
                 BackColor = Color.White,
@@ -102,13 +104,16 @@ namespace InventorySystem.Forms
                     int hy = 40;
                     PictureBox pbLogo = new PictureBox { Size = new Size(70, 70), Location = new Point(40, hy), SizeMode = PictureBoxSizeMode.Zoom };
                     pbLogo.Image = ThemeConfig.GetNuricon("pos");
-                    try {
+                    try
+                    {
                         string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "logo.png");
                         if (System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath);
-                    } catch { }
+                    }
+                    catch { }
                     page.Controls.Add(pbLogo);
 
-                    Label lblCompany = new Label {
+                    Label lblCompany = new Label
+                    {
                         Text = ThemeConfig.CompanyName.ToUpper(),
                         Font = new Font("Segoe UI", 24, FontStyle.Bold),
                         ForeColor = ThemeConfig.PrimaryColor,
@@ -117,7 +122,8 @@ namespace InventorySystem.Forms
                     };
                     page.Controls.Add(lblCompany);
 
-                    Label lblQuoteTitle = new Label {
+                    Label lblQuoteTitle = new Label
+                    {
                         Text = LocalizationManager.IsArabic ? "عرض سعر" : "QUOTATION",
                         Font = new Font("Segoe UI", 20, FontStyle.Bold),
                         ForeColor = Color.DimGray,
@@ -128,8 +134,9 @@ namespace InventorySystem.Forms
                     page.Controls.Add(lblQuoteTitle);
 
                     hy += 45;
-                    Label lblCompInfo = new Label {
-                        Text = "[Street Address] | [City, ST ZIP]\nWebsite: somedomain.com | Phone: [000-000-0000]",
+                    Label lblCompInfo = new Label
+                    {
+                        Text = "[Street Address] | [Beirut - Lebanon]\n | Phone: [000-000-0000]",
                         Font = new Font("Segoe UI", 9),
                         Location = new Point(130, hy),
                         Size = new Size(400, 35),
@@ -142,7 +149,8 @@ namespace InventorySystem.Forms
                     page.Controls.Add(pnlDetails);
 
                     string customerId = DatabaseHelper.ExecuteScalar<string>($"SELECT customer_id FROM orders WHERE order_id = {_orderId}");
-                    Label lblQuoteInfo = new Label {
+                    Label lblQuoteInfo = new Label
+                    {
                         Text = $"QUOTE #: {_orderId}   |   DATE: {DateTime.Now:dd MMM yyyy}   |   CUST ID: {customerId ?? "N/A"}   |   VALIDITY: 15 Days",
                         Font = new Font("Segoe UI", 9, FontStyle.Bold),
                         ForeColor = Color.FromArgb(64, 64, 64),
@@ -156,13 +164,30 @@ namespace InventorySystem.Forms
                     page.Controls.Add(lblCustHeader);
                     hy += 25;
 
-                    string customerName = DatabaseHelper.ExecuteScalar<string>($@"
-                        SELECT COALESCE(c.full_name, 'Walk-in Customer') 
-                        FROM orders o LEFT JOIN customers c ON o.customer_id = c.customer_id 
-                        WHERE o.order_id = {_orderId}");
+                    string custQuery = $@"
+                        SELECT c.full_name, c.address, c.phone 
+                        FROM orders o 
+                        LEFT JOIN customers c ON o.customer_id = c.customer_id 
+                        WHERE o.order_id = {_orderId}";
+                    var custDt = DatabaseHelper.ExecuteDataTable(custQuery);
 
-                    Label lblCustInfo = new Label {
-                        Text = $"{customerName}\n[Company Name] | [Street Address] | [Phone]",
+                    string custFullName = "Walk-in Customer";
+                    string custAddress = "No Address Provided";
+                    string custPhone = "No Phone Provided";
+
+                    if (custDt.Rows.Count > 0 && custDt.Rows[0]["full_name"] != DBNull.Value)
+                    {
+                        custFullName = custDt.Rows[0]["full_name"].ToString();
+                        string addr = custDt.Rows[0]["address"]?.ToString();
+                        string phone = custDt.Rows[0]["phone"]?.ToString();
+
+                        if (!string.IsNullOrWhiteSpace(addr)) custAddress = addr;
+                        if (!string.IsNullOrWhiteSpace(phone)) custPhone = phone;
+                    }
+
+                    Label lblCustInfo = new Label
+                    {
+                        Text = $"{custFullName}\nAddress: {custAddress} | Phone: {custPhone}",
                         Font = new Font("Segoe UI", 10),
                         Location = new Point(40, hy),
                         Size = new Size(600, 45),
@@ -175,7 +200,8 @@ namespace InventorySystem.Forms
                 else
                 {
                     // Continued Header
-                    Label lblCont = new Label {
+                    Label lblCont = new Label
+                    {
                         Text = $"QUOTATION #{_orderId} (Continued - Page {pageNumber})",
                         Font = new Font("Segoe UI", 10, FontStyle.Bold),
                         ForeColor = Color.Gray,
@@ -187,13 +213,19 @@ namespace InventorySystem.Forms
                 }
 
                 // Create Grid for this specific page
-                DataGridView grid = new DataGridView {
+                DataGridView grid = new DataGridView
+                {
                     Location = new Point(40, gridStartY),
                     Width = page.Width - 80,
-                    AllowUserToAddRows = false, ReadOnly = true, RowHeadersVisible = false,
-                    BackgroundColor = Color.White, BorderStyle = BorderStyle.None, ScrollBars = ScrollBars.None,
+                    AllowUserToAddRows = false,
+                    ReadOnly = true,
+                    RowHeadersVisible = false,
+                    BackgroundColor = Color.White,
+                    BorderStyle = BorderStyle.None,
+                    ScrollBars = ScrollBars.None,
                     SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                    EnableHeadersVisualStyles = false, AllowUserToResizeRows = false
+                    EnableHeadersVisualStyles = false,
+                    AllowUserToResizeRows = false
                 };
                 grid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
                 grid.DefaultCellStyle.Padding = new Padding(5);
@@ -210,7 +242,7 @@ namespace InventorySystem.Forms
                 // Calculate available grid height depending on whether this can be the final page
                 int remainingItems = items.Count - currentItemIndex;
                 int estimatedHeightNeeded = 40 + (remainingItems * 60) + 10;
-                
+
                 // Final page footer block reserves Y bounds from 860 down. Max printable grid baseline on final page is 850.
                 int maxGridHeightIfLastPage = 850 - gridStartY;
 
@@ -230,7 +262,7 @@ namespace InventorySystem.Forms
                     Image partImg = ThemeConfig.GetNuricon("pos");
                     try { if (!string.IsNullOrEmpty(item.PartImage) && System.IO.File.Exists(item.PartImage)) partImg = Image.FromFile(item.PartImage); } catch { }
                     grid.Rows.Add(partImg, $"{item.PartName}\n{item.Description}", item.Quantity, CurrencyService.Format(item.UnitPrice), CurrencyService.Format(item.Quantity * item.UnitPrice));
-                    
+
                     currentGridHeight += 60;
                     currentItemIndex++;
                 }
@@ -248,20 +280,22 @@ namespace InventorySystem.Forms
                     Panel pnlSummaryWrap = new Panel { Location = new Point(40, footerStartY), Size = new Size(page.Width - 80, 180) };
                     page.Controls.Add(pnlSummaryWrap);
 
-                    Label lblTermsHead = new Label { 
-                        Text = LocalizationManager.IsArabic ? "الشروط والأحكام" : "TERMS AND CONDITIONS", 
-                        Font = new Font("Segoe UI", 9, FontStyle.Bold), 
-                        ForeColor = ThemeConfig.PrimaryColor, 
-                        Location = new Point(0, 0), 
-                        AutoSize = true 
+                    Label lblTermsHead = new Label
+                    {
+                        Text = LocalizationManager.IsArabic ? "الشروط والأحكام" : "TERMS AND CONDITIONS",
+                        Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                        ForeColor = ThemeConfig.PrimaryColor,
+                        Location = new Point(0, 0),
+                        AutoSize = true
                     };
                     pnlSummaryWrap.Controls.Add(lblTermsHead);
-                    
+
                     string termsText = LocalizationManager.IsArabic ?
                         "• الصلاحية: 15 يوماً من تاريخ الإصدار.\n• يستحق الدفع قبل التسليم.\n• القبول يعتبر تأكيداً للفوترة.\n\nتم القبول بواسطة: __________________________" :
                         "• Validity: 15 days from issue.\n• Payment due prior to delivery.\n• Acceptance indicates billing confirmation.\n\nAccepted By: __________________________";
 
-                    Label lblTerms = new Label {
+                    Label lblTerms = new Label
+                    {
                         Text = termsText,
                         Font = new Font("Segoe UI", 8.5F),
                         Location = new Point(0, 25),
@@ -275,10 +309,10 @@ namespace InventorySystem.Forms
                     decimal grandTotal = dbTotal > total ? dbTotal : total;
 
                     int sx = pnlSummaryWrap.Width - 280;
-                    
+
                     List<string> lbls = new List<string>();
                     List<string> vls = new List<string>();
-                    
+
                     if (LocalizationManager.IsArabic)
                     {
                         lbls.Add("المجموع الفرعي"); vls.Add(CurrencyService.Format(total));
@@ -292,14 +326,16 @@ namespace InventorySystem.Forms
                         lbls.Add("GRAND TOTAL"); vls.Add(CurrencyService.Format(grandTotal));
                     }
 
-                    for (int i = 0; i < lbls.Count; i++) {
+                    for (int i = 0; i < lbls.Count; i++)
+                    {
                         bool isLast = (i == lbls.Count - 1);
                         Label lblL = new Label { Text = lbls[i], Font = new Font("Segoe UI", isLast ? 10 : 9, isLast ? FontStyle.Bold : FontStyle.Regular), Location = new Point(sx, i * 28), Size = new Size(130, 25), TextAlign = ContentAlignment.MiddleRight };
-                        Label lblV = new Label { 
-                            Text = vls[i], 
-                            Font = new Font("Segoe UI", isLast ? 12 : 10, isLast ? FontStyle.Bold : FontStyle.Regular), 
-                            Location = new Point(sx + 135, i * 28), 
-                            Size = new Size(140, 25), 
+                        Label lblV = new Label
+                        {
+                            Text = vls[i],
+                            Font = new Font("Segoe UI", isLast ? 12 : 10, isLast ? FontStyle.Bold : FontStyle.Regular),
+                            Location = new Point(sx + 135, i * 28),
+                            Size = new Size(140, 25),
                             TextAlign = ContentAlignment.MiddleRight,
                             ForeColor = isLast ? ThemeConfig.PrimaryColor : Color.Black
                         };
@@ -307,7 +343,8 @@ namespace InventorySystem.Forms
                         pnlSummaryWrap.Controls.Add(lblV);
                     }
 
-                    Label lblFinal = new Label {
+                    Label lblFinal = new Label
+                    {
                         Text = LocalizationManager.IsArabic ? "شكراً لتعاملكم معنا! يرجى التواصل معنا في حال وجود أي استفسارات." : "Thank you for your business! Please contact us if you have any questions.",
                         Font = new Font("Segoe UI", 10, FontStyle.Bold | FontStyle.Italic),
                         Location = new Point(0, 1050),
@@ -317,7 +354,8 @@ namespace InventorySystem.Forms
                     };
                     page.Controls.Add(lblFinal);
 
-                    Label lblContactFooter = new Label {
+                    Label lblContactFooter = new Label
+                    {
                         Text = "Phone: +1 (555) 000-0000  |  Email: contact@a2z.com  |  Website: www.a2z.com",
                         Font = new Font("Segoe UI", 8.5F),
                         Location = new Point(0, 1085),
@@ -326,13 +364,14 @@ namespace InventorySystem.Forms
                         ForeColor = Color.Silver
                     };
                     page.Controls.Add(lblContactFooter);
-                    
+
                     break;
                 }
                 else
                 {
                     // Render minimalist continued marker on intermediate document footers
-                    Label lblPageFooter = new Label {
+                    Label lblPageFooter = new Label
+                    {
                         Text = $"Page {pageNumber}",
                         Font = new Font("Segoe UI", 8.5F, FontStyle.Italic),
                         ForeColor = Color.Silver,
@@ -368,7 +407,8 @@ namespace InventorySystem.Forms
                     pd.DocumentName = $"Quotation_{_orderId}";
                     pd.DefaultPageSettings.Margins = new Margins(50, 50, 50, 50);
 
-                    pd.PrintPage += (s, e) => {
+                    pd.PrintPage += (s, e) =>
+                    {
                         if (_currentPrintPageIndex < _generatedPages.Count)
                         {
                             DrawPageToGraphics(_generatedPages[_currentPrintPageIndex], e.Graphics, e.MarginBounds);
@@ -443,7 +483,8 @@ namespace InventorySystem.Forms
                             pd.DocumentName = $"Quotation_{_orderId}";
                             pd.DefaultPageSettings.Margins = new Margins(50, 50, 50, 50);
 
-                            pd.PrintPage += (s, e) => {
+                            pd.PrintPage += (s, e) =>
+                            {
                                 if (_currentPrintPageIndex < _generatedPages.Count)
                                 {
                                     DrawPageToGraphics(_generatedPages[_currentPrintPageIndex], e.Graphics, e.MarginBounds);
@@ -451,7 +492,7 @@ namespace InventorySystem.Forms
                                 }
                                 e.HasMorePages = (_currentPrintPageIndex < _generatedPages.Count);
                             };
-                            
+
                             pd.Print();
                             MessageHelper.ShowInfo("Quotation exported as PDF successfully!");
                         }
