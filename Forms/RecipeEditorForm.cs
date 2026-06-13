@@ -94,11 +94,7 @@ namespace InventorySystem.Forms
                 ReadOnly = true,
                 AutoGenerateColumns = false,
                 BorderStyle = BorderStyle.None,
-                CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal,
-                EnableHeadersVisualStyles = false,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                RowHeadersVisible = false,
                 Margin = new Padding(0, 10, 0, 0)
             };
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartNumber", HeaderText = "SKU", DataPropertyName = "PartNumber", FillWeight = 20 });
@@ -232,14 +228,18 @@ namespace InventorySystem.Forms
         private void DgvParts_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
         {
             if (e.RowIndex < 0) return;
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             if (dgvParts.Columns[e.ColumnIndex].Name == "colActions")
             {
-                e.Handled = true; e.PaintBackground(e.CellBounds, true);
+                var prevMode = e.Graphics.SmoothingMode;
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                e.Handled = true; e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
                 Image imgDel = ThemeConfig.GetNuricon("delete");
                 Rectangle delRect = new Rectangle(e.CellBounds.X + (e.CellBounds.Width - 32) / 2, e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
                 if (imgDel != null) e.Graphics.DrawImage(imgDel, delRect);
+
+                e.Graphics.SmoothingMode = prevMode;
             }
         }
 
