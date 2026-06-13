@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.Sqlite;
@@ -322,6 +322,23 @@ namespace InventorySystem
                         category_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         category_name TEXT NOT NULL UNIQUE
                     );
+
+                    CREATE TABLE IF NOT EXISTS recipes (
+                        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                        recipe_name     TEXT NOT NULL,
+                        description     TEXT,
+                        selling_price   REAL DEFAULT 0,
+                        status          TEXT DEFAULT 'Active',
+                        date_added      TEXT DEFAULT (datetime('now')),
+                        date_deleted    TEXT
+                    );
+
+                    CREATE TABLE IF NOT EXISTS recipe_parts (
+                        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                        recipe_id   INTEGER,
+                        part_id     INTEGER,
+                        quantity    REAL DEFAULT 1
+                    );
                 ";
 
                 // SQLite doesn't support multiple statements in one call -- split them
@@ -338,6 +355,12 @@ namespace InventorySystem
                 if (!ColumnExists("parts", "unit_of_measure")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN unit_of_measure TEXT;");
                 if (!ColumnExists("parts", "batch_number")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN batch_number TEXT;");
                 if (!ColumnExists("parts", "expiry_date")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN expiry_date TEXT;");
+                
+                // Add new recipe fields to order_items
+                if (!ColumnExists("order_items", "item_type")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN item_type TEXT DEFAULT 'Part';");
+                if (!ColumnExists("order_items", "recipe_id")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN recipe_id INTEGER;");
+                if (!ColumnExists("recipes", "recipe_image")) ExecuteNonQuery("ALTER TABLE recipes ADD COLUMN recipe_image TEXT;");
+                
                 if (!ColumnExists("parts", "is_sales_item")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_sales_item INTEGER DEFAULT 1;");
                 if (!ColumnExists("parts", "is_purchase_item")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_purchase_item INTEGER DEFAULT 0;");
                 if (!ColumnExists("parts", "is_inactive")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_inactive INTEGER DEFAULT 0;");

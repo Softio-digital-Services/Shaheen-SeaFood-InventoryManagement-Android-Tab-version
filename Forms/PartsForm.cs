@@ -412,6 +412,7 @@ namespace InventorySystem.Forms
             dgvParts.Columns.Add(colActions);
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_id",     DataPropertyName = "part_id",    Visible = false });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_image",  DataPropertyName = "part_image", Visible = false });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "expiry_date", DataPropertyName = "expiry_date", Visible = false });
 
             ThemeConfig.ApplyGridTheme(dgvParts);
             ThemeConfig.ApplyHeaderCheckBox(dgvParts, "colCheck");
@@ -783,7 +784,8 @@ namespace InventorySystem.Forms
 
             EventHandler addClick = (s, e) =>
             {
-                using (AddProductServiceForm form = new AddProductServiceForm())
+                string preset = (_activeCategory != null && _activeCategory != "All Items") ? _activeCategory : null;
+                using (AddProductServiceForm form = new AddProductServiceForm(preset))
                 {
                     if (form.ShowDialog() == DialogResult.OK) RefreshAll();
                 }
@@ -1139,13 +1141,45 @@ namespace InventorySystem.Forms
                 if (decimal.TryParse(e.Value.ToString(), out decimal p)) { e.Value = InventorySystem.Services.CurrencyService.Format(p); e.FormattingApplied = true; }
 
             var stockCell = row.Cells["colStock"]; var minCell = row.Cells["minimum_stock_level"];
-            if (!isService && stockCell.Value != null && minCell.Value != null)
+            bool isExpiring = false;
+            bool isExpired = false;
+            
+            var expiryCell = row.Cells["expiry_date"];
+            if (expiryCell != null && expiryCell.Value != null)
+            {
+                if (DateTime.TryParse(expiryCell.Value.ToString(), out DateTime expDate))
+                {
+                    int days = (expDate.Date - DateTime.Today).Days;
+                    if (days < 0) isExpired = true;
+                    else if (days <= 30) isExpiring = true;
+                }
+            }
+
+            if (isExpired)
+            {
+                row.DefaultCellStyle.BackColor = ThemeConfig.DangerBadgeBg; 
+                row.DefaultCellStyle.SelectionBackColor = ThemeConfig.DangerLight; 
+                row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark;
+            }
+            else if (isExpiring)
+            {
+                row.DefaultCellStyle.BackColor = Color.FromArgb(255, 243, 205); // light warning orange/yellow
+                row.DefaultCellStyle.SelectionBackColor = Color.FromArgb(255, 226, 168);
+                row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark;
+            }
+            else if (!isService && stockCell.Value != null && minCell.Value != null)
             {
                 if (int.TryParse(stockCell.Value.ToString(), out int stock) && int.TryParse(minCell.Value.ToString(), out int minS))
                 {
                     if (stock <= minS) { row.DefaultCellStyle.BackColor = ThemeConfig.DangerBadgeBg; row.DefaultCellStyle.SelectionBackColor = ThemeConfig.DangerLight; row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark; }
                     else { row.DefaultCellStyle.BackColor = ThemeConfig.SurfaceColor; row.DefaultCellStyle.SelectionBackColor = ThemeConfig.SelectionBackColor; row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark; }
                 }
+            }
+            else
+            {
+                row.DefaultCellStyle.BackColor = ThemeConfig.SurfaceColor; 
+                row.DefaultCellStyle.SelectionBackColor = ThemeConfig.SelectionBackColor; 
+                row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark;
             }
         }
 
@@ -1299,7 +1333,8 @@ namespace InventorySystem.Forms
         // ─────────────────────────────────────────────────────────────────
         private void BtnAdd_Click(object sender, EventArgs e)
         {
-            using (AddProductServiceForm form = new AddProductServiceForm())
+            string preset = (_activeCategory != null && _activeCategory != "All Items") ? _activeCategory : null;
+            using (AddProductServiceForm form = new AddProductServiceForm(preset))
             { if (form.ShowDialog() == DialogResult.OK) RefreshAll(); }
         }
 

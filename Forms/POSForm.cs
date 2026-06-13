@@ -554,7 +554,16 @@ namespace InventorySystem.Forms
                     if (r.RowState != DataRowState.Deleted)
                     {
                         totalAmount += (decimal)r["Total"];
-                        items.Add(new InventorySystem.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
+                        string itype = r.Table.Columns.Contains("ItemType") ? r["ItemType"].ToString() : "Part";
+                        int rId = (int)r["PartID"];
+                        items.Add(new InventorySystem.Services.OrderItem { 
+                            ItemType = itype,
+                            PartId = itype == "Part" ? rId : 0,
+                            RecipeId = itype == "Recipe" ? rId : (int?)null,
+                            PartName = r["PartName"].ToString(),
+                            Quantity = (int)r["Quantity"], 
+                            UnitPrice = (decimal)r["SellingPrice"] 
+                        });
                     }
                 }
                 decimal t = chkApplyVAT.Checked ? (totalAmount * 0.11m) : 0;
@@ -581,7 +590,16 @@ namespace InventorySystem.Forms
                     if (r.RowState != DataRowState.Deleted)
                     {
                         totalAmount += (decimal)r["Total"];
-                        items.Add(new InventorySystem.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
+                        string itype = r.Table.Columns.Contains("ItemType") ? r["ItemType"].ToString() : "Part";
+                        int rId = (int)r["PartID"];
+                        items.Add(new InventorySystem.Services.OrderItem { 
+                            ItemType = itype,
+                            PartId = itype == "Part" ? rId : 0,
+                            RecipeId = itype == "Recipe" ? rId : (int?)null,
+                            PartName = r["PartName"].ToString(),
+                            Quantity = (int)r["Quantity"], 
+                            UnitPrice = (decimal)r["SellingPrice"] 
+                        });
                     }
                 }
                 decimal tQuote = chkApplyVAT.Checked ? (totalAmount * 0.11m) : 0;
@@ -613,7 +631,16 @@ namespace InventorySystem.Forms
                     if (r.RowState != DataRowState.Deleted)
                     {
                         totalAmount += (decimal)r["Total"];
-                        items.Add(new InventorySystem.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
+                        string itype = r.Table.Columns.Contains("ItemType") ? r["ItemType"].ToString() : "Part";
+                        int rId = (int)r["PartID"];
+                        items.Add(new InventorySystem.Services.OrderItem { 
+                            ItemType = itype,
+                            PartId = itype == "Part" ? rId : 0,
+                            RecipeId = itype == "Recipe" ? rId : (int?)null,
+                            PartName = r["PartName"].ToString(),
+                            Quantity = (int)r["Quantity"], 
+                            UnitPrice = (decimal)r["SellingPrice"] 
+                        });
                     }
                 }
                 decimal tBill = chkApplyVAT.Checked ? (totalAmount * 0.11m) : 0;
@@ -1154,6 +1181,25 @@ namespace InventorySystem.Forms
                 all = string.IsNullOrWhiteSpace(search)
                     ? PartData.GetAllParts()
                     : PartData.SearchParts(search.Trim());
+
+                // Add Recipes
+                var recipes = RecipeData.GetAllRecipes();
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    search = search.Trim().ToLower();
+                    recipes = recipes.Where(r => r.RecipeName.ToLower().Contains(search) || (r.Description != null && r.Description.ToLower().Contains(search))).ToList();
+                }
+                foreach (var r in recipes)
+                {
+                    all.Add(new PartData {
+                        Id = r.Id,
+                        PartName = r.RecipeName,
+                        SellingPrice = r.SellingPrice,
+                        CategoryName = "Recipes",
+                        ItemType = "Recipe",
+                        QuantityInStock = 999 // Unlimited stock for recipes, validated at checkout
+                    });
+                }
             }
             catch
             {
@@ -1193,7 +1239,7 @@ namespace InventorySystem.Forms
         // ---------------------------------------------------------------------
         private Panel CreateProductCard(PartData part)
         {
-            bool outOfStock = part.QuantityInStock <= 0;
+            bool outOfStock = part.IsStockTracked && part.QuantityInStock <= 0;
             // cartQty is read live in Paint/layout so the border updates instantly
             int GetLiveQty() => GetCartQty(part.Id);
 
@@ -1237,7 +1283,7 @@ namespace InventorySystem.Forms
                 using (var path = RoundedPath(r, RADIUS))
                 {
                     Color fillColor = outOfStock
-                        ? Color.FromArgb(248, 248, 250)
+                        ? Color.FromArgb(254, 242, 242) // Light red for out of stock
                         : ThemeConfig.SurfaceColor;
                     using (var br = new SolidBrush(fillColor))
                         pe.Graphics.FillPath(br, path);
@@ -1572,7 +1618,7 @@ namespace InventorySystem.Forms
             // ------------------------------------------------------------------
             // CLICK HANDLERS � clicking image/text/card body adds to cart
             // ------------------------------------------------------------------
-            Action addToCart = () => { if (!outOfStock) AddToCart(part.Id, part.PartName, part.SellingPrice, part.QuantityInStock); };
+            Action addToCart = () => { if (!outOfStock) AddToCart(part.Id, part.PartName, part.SellingPrice, part.QuantityInStock, part.ItemType); };
 
             card.Click += (s, e) => addToCart();
             pnlImageSection.Click += (s, e) => addToCart();
@@ -1583,7 +1629,7 @@ namespace InventorySystem.Forms
             lblName.Click += (s, e) => addToCart();
             lblPrice.Click += (s, e) => addToCart();
 
-            btnPlus.Click += (s, e) => { if (!outOfStock) AddToCart(part.Id, part.PartName, part.SellingPrice, part.QuantityInStock); };
+            btnPlus.Click += (s, e) => { if (!outOfStock) AddToCart(part.Id, part.PartName, part.SellingPrice, part.QuantityInStock, part.ItemType); };
             btnMinus.Click += (s, e) => RemoveOneFromCart(part.Id);
 
             return card;
@@ -1989,6 +2035,7 @@ namespace InventorySystem.Forms
                 cartTable.Columns.Add("Quantity", typeof(int));
                 cartTable.Columns.Add("PrivatePrice", typeof(decimal));
                 cartTable.Columns.Add("SellingPrice", typeof(decimal));
+                cartTable.Columns.Add("ItemType", typeof(string));
                 cartTable.Columns.Add("Total", typeof(decimal), "Quantity * SellingPrice");
                 LoadCustomers();
             }
@@ -2065,13 +2112,13 @@ namespace InventorySystem.Forms
         // ---------------------------------------------------------------------
         // ADD TO CART  (preserved logic + RefreshCartDisplay)
         // ---------------------------------------------------------------------
-        private void AddToCart(int id, string name, decimal price, int stock)
+        private void AddToCart(int id, string name, decimal price, int stock, string itemType = "Part")
         {
             if (stock <= 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Error_OutOfStock")); return; }
             foreach (DataRow r in cartTable.Rows)
             {
                 if (r.RowState == DataRowState.Deleted) continue;
-                if ((int)r["PartID"] == id)
+                if ((int)r["PartID"] == id && r["ItemType"].ToString() == itemType)
                 {
                     int q = (int)r["Quantity"];
                     if (q + 1 > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock")); return; }
@@ -2080,7 +2127,7 @@ namespace InventorySystem.Forms
                     return;
                 }
             }
-            cartTable.Rows.Add(id, name, 1, 0, price);
+            cartTable.Rows.Add(id, name, 1, 0, price, itemType);
             RefreshCartDisplay();
         }
 
@@ -2139,7 +2186,18 @@ namespace InventorySystem.Forms
             {
                 List<OrderItem> items = new List<OrderItem>();
                 foreach (DataRow row in cartTable.Rows)
-                    items.Add(new OrderItem { PartId = (int)row["PartID"], Quantity = (int)row["Quantity"], UnitPrice = (decimal)row["SellingPrice"] });
+                {
+                    string itype = row.Table.Columns.Contains("ItemType") ? row["ItemType"].ToString() : "Part";
+                    int rId = (int)row["PartID"];
+                    items.Add(new OrderItem { 
+                        ItemType = itype,
+                        PartId = itype == "Part" ? rId : 0,
+                        RecipeId = itype == "Recipe" ? rId : (int?)null,
+                        PartName = row["PartName"].ToString(),
+                        Quantity = (int)row["Quantity"], 
+                        UnitPrice = (decimal)row["SellingPrice"] 
+                    });
+                }
                 int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
                 DateTime? dDateC = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.DeliveryDate : (DateTime?)null;
                 DateTime? pDateC = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.PaymentDueDate : (DateTime?)null;

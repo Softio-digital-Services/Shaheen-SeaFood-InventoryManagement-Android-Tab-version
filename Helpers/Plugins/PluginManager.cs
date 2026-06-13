@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -103,6 +103,7 @@ namespace InventorySystem.Helpers.Plugins
             TryRegister(new InventorySystem.Plugins.PurchaseOrdersPlugin());
             TryRegister(new InventorySystem.Plugins.MonthlyExpensesPlugin());
             TryRegister(new InventorySystem.Plugins.BarcodeLabelsPlugin());
+            TryRegister(new InventorySystem.Plugins.RecipesPlugin());
         }
 
         private static void LoadAssembly(string path)

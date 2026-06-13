@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using InventorySystem.Helpers;
@@ -283,6 +283,41 @@ namespace InventorySystem.Services
                         Target    = "btnInventory",
                         Timestamp = DateTime.Now
                     });
+                }
+
+                // 1.5 Expiring Items
+                var expiringParts = DatabaseHelper.ExecuteDataTable(@"
+                    SELECT part_name, expiry_date 
+                    FROM parts 
+                    WHERE expiry_date IS NOT NULL AND expiry_date != '' AND date_deleted IS NULL");
+                foreach (DataRow row in expiringParts.Rows)
+                {
+                    if (DateTime.TryParse(row["expiry_date"].ToString(), out DateTime expDate))
+                    {
+                        int daysUntilExpiry = (expDate.Date - DateTime.Today).Days;
+                        if (daysUntilExpiry < 0)
+                        {
+                            notifications.Add(new Notification
+                            {
+                                Type      = "Alert",
+                                Title     = LocalizationManager.GetString("Notif_Expired") ?? "Item Expired",
+                                Message   = string.Format(LocalizationManager.GetString("Notif_ExpiredMsg") ?? "The item '{0}' has expired!", row["part_name"]),
+                                Target    = "btnInventory",
+                                Timestamp = DateTime.Now
+                            });
+                        }
+                        else if (daysUntilExpiry <= 30)
+                        {
+                            notifications.Add(new Notification
+                            {
+                                Type      = "LowStock", // Reusing icon type
+                                Title     = LocalizationManager.GetString("Notif_ExpiringSoon") ?? "Expiring Soon",
+                                Message   = string.Format(LocalizationManager.GetString("Notif_ExpiringSoonMsg") ?? "The item '{0}' expires in {1} days.", row["part_name"], daysUntilExpiry),
+                                Target    = "btnInventory",
+                                Timestamp = DateTime.Now
+                            });
+                        }
+                    }
                 }
 
                 // 2. Recent Orders (last 24h)

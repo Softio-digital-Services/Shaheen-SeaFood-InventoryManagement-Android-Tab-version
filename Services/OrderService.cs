@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using InventorySystem.Helpers;
@@ -7,7 +7,9 @@ namespace InventorySystem.Services
 {
     public class OrderItem
     {
+        public string ItemType { get; set; } = "Part"; // "Part" or "Recipe"
         public int PartId { get; set; }
+        public int? RecipeId { get; set; }
         public string PartName { get; set; }
         public string Description { get; set; }
         public string PartImage { get; set; }
@@ -67,12 +69,14 @@ namespace InventorySystem.Services
                  // Still insert items so we can retrieve them, but DON'T update stock
                  foreach (var item in items)
                  {
-                    string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)";
+                    string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) VALUES (@oid, @pid, @qty, @price, @itype, @rid)";
                     DatabaseHelper.ExecuteNonQuery(sqlItem,
                         new SqliteParameter("@oid", orderId),
                         new SqliteParameter("@pid", item.PartId),
                         new SqliteParameter("@qty", item.Quantity),
-                        new SqliteParameter("@price", item.UnitPrice)
+                        new SqliteParameter("@price", item.UnitPrice),
+                        new SqliteParameter("@itype", item.ItemType),
+                        new SqliteParameter("@rid", item.RecipeId.HasValue ? (object)item.RecipeId.Value : DBNull.Value)
                     );
                  }
                  return orderId;
@@ -82,20 +86,44 @@ namespace InventorySystem.Services
             foreach (var item in items)
             {
                 // Insert Order Item
-                string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)";
+                string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) VALUES (@oid, @pid, @qty, @price, @itype, @rid)";
                 DatabaseHelper.ExecuteNonQuery(sqlItem,
                     new SqliteParameter("@oid", orderId),
                     new SqliteParameter("@pid", item.PartId),
                     new SqliteParameter("@qty", item.Quantity),
-                    new SqliteParameter("@price", item.UnitPrice)
+                    new SqliteParameter("@price", item.UnitPrice),
+                    new SqliteParameter("@itype", item.ItemType),
+                    new SqliteParameter("@rid", item.RecipeId.HasValue ? (object)item.RecipeId.Value : DBNull.Value)
                 );
 
                 // Update Stock
-                string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid";
-                DatabaseHelper.ExecuteNonQuery(sqlStock,
-                    new SqliteParameter("@qty", item.Quantity),
-                    new SqliteParameter("@pid", item.PartId)
-                );
+                if (item.ItemType == "Recipe" && item.RecipeId.HasValue)
+                {
+                    // Deduct components of the recipe
+                    string sqlRecipeParts = "SELECT part_id, quantity FROM recipe_parts WHERE recipe_id = @rid";
+                    var rParts = DatabaseHelper.ExecuteDataTable(sqlRecipeParts, new SqliteParameter("@rid", item.RecipeId.Value));
+                    foreach (System.Data.DataRow rp in rParts.Rows)
+                    {
+                        int pId = Convert.ToInt32(rp["part_id"]);
+                        double rpQty = Convert.ToDouble(rp["quantity"]);
+                        double totalDeduct = rpQty * item.Quantity;
+                        
+                        string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid";
+                        DatabaseHelper.ExecuteNonQuery(sqlStock,
+                            new SqliteParameter("@qty", totalDeduct),
+                            new SqliteParameter("@pid", pId)
+                        );
+                    }
+                }
+                else
+                {
+                    // Regular part
+                    string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid";
+                    DatabaseHelper.ExecuteNonQuery(sqlStock,
+                        new SqliteParameter("@qty", item.Quantity),
+                        new SqliteParameter("@pid", item.PartId)
+                    );
+                }
             }
 
             // 4. Update Customer Balance (if unpaid)
@@ -186,11 +214,32 @@ namespace InventorySystem.Services
                 // 2. Perform Stock Validation
                 foreach (var item in items)
                 {
-                    int currentStock = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id = {item.PartId}");
-                    if (currentStock < item.Quantity)
+                    if (item.ItemType == "Recipe" && item.RecipeId.HasValue)
                     {
-                        string partName = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {item.PartId}");
-                        throw new Exception($"Insufficient stock for {partName}. Available: {currentStock}, Required: {item.Quantity}");
+                        string sqlRecipeParts = "SELECT part_id, quantity FROM recipe_parts WHERE recipe_id = @rid";
+                        var rParts = DatabaseHelper.ExecuteDataTable(sqlRecipeParts, new SqliteParameter("@rid", item.RecipeId.Value));
+                        foreach (System.Data.DataRow rp in rParts.Rows)
+                        {
+                            int pId = Convert.ToInt32(rp["part_id"]);
+                            double rpQty = Convert.ToDouble(rp["quantity"]);
+                            double totalRequired = rpQty * item.Quantity;
+
+                            int currentStock = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id = {pId}");
+                            if (currentStock < totalRequired)
+                            {
+                                string partName = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {pId}");
+                                throw new Exception($"Insufficient stock for component {partName} of Recipe {item.PartName}. Available: {currentStock}, Required: {totalRequired}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int currentStock = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id = {item.PartId}");
+                        if (currentStock < item.Quantity)
+                        {
+                            string partName = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {item.PartId}");
+                            throw new Exception($"Insufficient stock for {partName}. Available: {currentStock}, Required: {item.Quantity}");
+                        }
                     }
                 }
 
@@ -201,9 +250,26 @@ namespace InventorySystem.Services
                 // 4. Update Stock
                 foreach (var item in items)
                 {
-                    DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid", 
-                        new SqliteParameter("@qty", item.Quantity), 
-                        new SqliteParameter("@pid", item.PartId));
+                    if (item.ItemType == "Recipe" && item.RecipeId.HasValue)
+                    {
+                        string sqlRecipeParts = "SELECT part_id, quantity FROM recipe_parts WHERE recipe_id = @rid";
+                        var rParts = DatabaseHelper.ExecuteDataTable(sqlRecipeParts, new SqliteParameter("@rid", item.RecipeId.Value));
+                        foreach (System.Data.DataRow rp in rParts.Rows)
+                        {
+                            int pId = Convert.ToInt32(rp["part_id"]);
+                            double rpQty = Convert.ToDouble(rp["quantity"]);
+                            double totalDeduct = rpQty * item.Quantity;
+                            DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid", 
+                                new SqliteParameter("@qty", totalDeduct), 
+                                new SqliteParameter("@pid", pId));
+                        }
+                    }
+                    else
+                    {
+                        DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid", 
+                            new SqliteParameter("@qty", item.Quantity), 
+                            new SqliteParameter("@pid", item.PartId));
+                    }
                 }
 
                 // 5. Log & Notify
@@ -233,19 +299,29 @@ namespace InventorySystem.Services
         public List<OrderItem> GetOrderItems(int orderId)
         {
              string sql = @"
-                SELECT i.part_id, p.part_name, i.quantity, i.price, p.description, p.part_image
+                SELECT i.part_id, i.recipe_id, i.item_type, i.quantity, i.price, 
+                       p.part_name, p.description, p.part_image,
+                       r.recipe_name, r.description as r_desc
                 FROM order_items i
-                JOIN parts p ON i.part_id = p.id
+                LEFT JOIN parts p ON i.part_id = p.id
+                LEFT JOIN recipes r ON i.recipe_id = r.id
                 WHERE i.order_id = @oid";
              
              return DatabaseHelper.ExecuteQuery(sql, reader => new OrderItem 
              {
-                 PartId = reader.GetInt32(0),
-                 PartName = reader.GetString(1),
-                 Quantity = reader.GetInt32(2),
-                 UnitPrice = reader.GetDecimal(3),
-                 Description = reader.IsDBNull(4) ? "" : reader.GetString(4),
-                 PartImage = reader.IsDBNull(5) ? "" : reader.GetString(5)
+                 PartId = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                 RecipeId = reader.IsDBNull(1) ? (int?)null : reader.GetInt32(1),
+                 ItemType = reader.IsDBNull(2) ? "Part" : reader.GetString(2),
+                 Quantity = reader.GetInt32(3),
+                 UnitPrice = reader.GetDecimal(4),
+                 PartName = (reader.IsDBNull(2) || reader.GetString(2) == "Part") ? 
+                            (reader.IsDBNull(5) ? "" : reader.GetString(5)) : 
+                            (reader.IsDBNull(8) ? "" : reader.GetString(8)),
+                 Description = (reader.IsDBNull(2) || reader.GetString(2) == "Part") ? 
+                               (reader.IsDBNull(6) ? "" : reader.GetString(6)) : 
+                               (reader.IsDBNull(9) ? "" : reader.GetString(9)),
+                 PartImage = (reader.IsDBNull(2) || reader.GetString(2) == "Part") ? 
+                             (reader.IsDBNull(7) ? "" : reader.GetString(7)) : ""
              }, new SqliteParameter("@oid", orderId));
         }
 

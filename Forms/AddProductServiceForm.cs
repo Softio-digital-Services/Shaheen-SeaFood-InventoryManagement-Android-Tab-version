@@ -48,8 +48,11 @@ namespace InventorySystem.Forms
         private int? _editPartId = null;
         private string _currentImagePath = null;
         
-        public AddProductServiceForm()
+        private string _presetCategory = null;
+
+        public AddProductServiceForm(string presetCategory = null)
         {
+            _presetCategory = presetCategory;
             this.ClientSize = new Size(1050, 800);
             this.TitleText = LocalizationManager.GetString("AddPart_TitleNew") ?? "Product / Service";
             
@@ -113,13 +116,9 @@ namespace InventorySystem.Forms
             gbSettings.Controls.AddRange(new Control[] { chkSales, chkPurchase, chkInactive });
             flpLeft.Controls.Add(gbSettings);
 
-            // Tax
-            cmbTaxRate = new ModernComboBox { LabelText = "Tax Rates:", Width = 280, Margin = new Padding(0,0,0,15), DropDownStyle = ComboBoxStyle.DropDownList };
-            flpLeft.Controls.Add(cmbTaxRate);
+            // Tax and Category moved to right pane
 
-            // Category
-            cmbCategory = new ModernComboBox { LabelText = "Category", Width = 280, Margin = new Padding(0,0,0,10), DropDownStyle = ComboBoxStyle.DropDownList };
-            flpLeft.Controls.Add(cmbCategory);
+
 
             // Expiry Date
             FlowLayoutPanel flpExp = new FlowLayoutPanel { Width = 280, Height = 67, Margin = new Padding(0,0,0,10), FlowDirection = FlowDirection.TopDown };
@@ -127,6 +126,11 @@ namespace InventorySystem.Forms
             dtpExpiry = new FlatDateTimePicker { Width = 270, Format = DateTimePickerFormat.Short, ShowCheckBox = true, Checked = false };
             flpExp.Controls.Add(lblExp); flpExp.Controls.Add(dtpExpiry);
             flpLeft.Controls.Add(flpExp);
+
+            txtUom = new ModernTextBox { LabelText = "Unit of Measure", Width = 280, Margin = new Padding(0,0,0,10) };
+            cmbTaxRate = new ModernComboBox { LabelText = "Tax Rates:", Width = 280, Margin = new Padding(0,0,0,10), DropDownStyle = ComboBoxStyle.DropDownList };
+            flpLeft.Controls.Add(txtUom);
+            flpLeft.Controls.Add(cmbTaxRate);
 
             tlpMain.Controls.Add(flpLeft, 0, 0);
             tlpMain.SetRowSpan(flpLeft, 3);
@@ -167,9 +171,10 @@ namespace InventorySystem.Forms
             txtBatch = new ModernTextBox { LabelText = "Batch No.", Width = halfW, Margin = new Padding(0,0,10,10) };
             txtLocation = new ModernTextBox { LabelText = "Location", Width = halfW, Margin = new Padding(0,0,10,10) };
             txtShelf = new ModernTextBox { LabelText = "Shelf", Width = halfW, Margin = new Padding(0,0,10,10) };
-            txtUom = new ModernTextBox { LabelText = "Unit of Measure", Width = halfW, Margin = new Padding(0,0,10,10) };
             
-            flpMiddle.Controls.AddRange(new Control[] { txtName, txtDescription, flpSku, flpBarcode, txtBatch, txtLocation, txtShelf, txtUom });
+            cmbCategory = new ModernComboBox { LabelText = "Category", Width = halfW, Margin = new Padding(0,0,10,10), DropDownStyle = ComboBoxStyle.DropDownList };
+
+            flpMiddle.Controls.AddRange(new Control[] { txtName, txtDescription, cmbCategory, flpSku, flpBarcode, txtBatch, txtLocation, txtShelf });
             tlpMain.Controls.Add(flpMiddle, 1, 0);
 
             // -- Right Pane Row 1: Stock & Supplier --
@@ -225,6 +230,12 @@ namespace InventorySystem.Forms
                 var cats = CategoryData.GetAllCategories();
                 cmbCategory.DisplayMember = "CategoryName"; cmbCategory.ValueMember = "CategoryName";
                 cmbCategory.DataSource = cats;
+
+                if (!string.IsNullOrEmpty(_presetCategory) && _presetCategory != "All Items")
+                {
+                    cmbCategory.Text = _presetCategory;
+                    cmbCategory.Enabled = false;
+                }
 
                 // Suppliers
                 var sups = DatabaseHelper.ExecuteDataTable("SELECT id, supplier_name FROM suppliers WHERE date_deleted IS NULL");
