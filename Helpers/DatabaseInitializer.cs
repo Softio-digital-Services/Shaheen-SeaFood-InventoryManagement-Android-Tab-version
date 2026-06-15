@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Windows.Forms;
 using Microsoft.Data.Sqlite;
@@ -25,9 +25,13 @@ namespace InventorySystem.Helpers
             DatabaseHelper.ExecuteNonQuery("ALTER TABLE categories ADD COLUMN category_image TEXT;");
 
             // Ensure admin user exists
-            DatabaseHelper.ExecuteNonQuery(
-                "INSERT OR IGNORE INTO users (username, password, full_name, role) VALUES ('Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin');"
-            );
+            int adminCount = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM users WHERE username = 'Softio.Admin'");
+            if (adminCount == 0)
+            {
+                DatabaseHelper.ExecuteNonQuery(
+                    "INSERT INTO users (username, password, full_name, role) VALUES ('Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin');"
+                );
+            }
 
             // Repair: Standardise status values (fix Arabic UI bug)
             DatabaseHelper.ExecuteNonQuery(
