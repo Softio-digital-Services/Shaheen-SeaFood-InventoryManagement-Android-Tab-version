@@ -13,7 +13,7 @@ namespace InventorySystem.Forms
     {
         private int _customerId;
         private string _customerName;
-        
+
         private Label lblName;
         private Label lblType;
         private Label lblBalance;
@@ -39,7 +39,8 @@ namespace InventorySystem.Forms
             this.TitleText = (LocalizationManager.IsArabic ? "\u062A\u0641\u0627\u0635\u064A\u0644 " : "Details - ") + _customerName;
 
             // Main Layout container
-            TableLayoutPanel tlpMain = new TableLayoutPanel {
+            TableLayoutPanel tlpMain = new TableLayoutPanel
+            {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
                 RowCount = 2,
@@ -47,9 +48,10 @@ namespace InventorySystem.Forms
             };
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); // Fixed height for header section
             tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Grid takes the rest
-            
+
             // --- HEADER ---
-            TableLayoutPanel pnlHeader = new TableLayoutPanel {
+            TableLayoutPanel pnlHeader = new TableLayoutPanel
+            {
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
                 RowCount = 1,
@@ -57,31 +59,33 @@ namespace InventorySystem.Forms
                 Padding = new Padding(5)
             };
             // Left column for Name (AutoSize), Right for Balance/Buttons (Percent)
-            pnlHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); 
+            pnlHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             pnlHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            
+
             // Header Left: Name & Type
-            FlowLayoutPanel flpLeft = new FlowLayoutPanel {
+            FlowLayoutPanel flpLeft = new FlowLayoutPanel
+            {
                 FlowDirection = FlowDirection.TopDown,
                 Dock = DockStyle.Fill,
                 AutoSize = true,
                 WrapContents = false,
                 Padding = new Padding(10)
             };
-            
-            lblName = new Label() { Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, AutoSize = true, Margin = new Padding(0,0,0,5) };
+
+            lblName = new Label() { Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
             lblType = new Label() { AutoSize = true, ForeColor = ThemeConfig.SecondaryColor, Font = ThemeConfig.StandardFont };
             flpLeft.Controls.Add(lblName);
             flpLeft.Controls.Add(lblType);
-            
+
             // Header Right: Balance + Buttons
-            FlowLayoutPanel flpRight = new FlowLayoutPanel {
+            FlowLayoutPanel flpRight = new FlowLayoutPanel
+            {
                 FlowDirection = FlowDirection.RightToLeft,
                 Dock = DockStyle.Fill,
                 Padding = new Padding(0, 10, 0, 0),
                 WrapContents = true // Allow wrapping if space is tight
             };
-            
+
             // 1. Balance Panel
             TableLayoutPanel tlpBalance = new TableLayoutPanel
             {
@@ -103,7 +107,7 @@ namespace InventorySystem.Forms
             tlpBalance.Controls.Add(lblBalance, 0, 0);
             tlpBalance.Controls.Add(lblBalTitle, 0, 1);
             tlpBalance.Controls.Add(lblDueDate, 0, 2);
-            
+
             // 2. Receive Payment Button
             btnReceivePayment = new ModernButton { Text = "\uD83D\uDCB5 " + (LocalizationManager.IsArabic ? "\u0642\u0628\u0636 \u062F\u0641\u0631\u0629" : "Receive Payment"), Size = new Size(165, 45) };
             ThemeConfig.ApplyEmojiButton(btnReceivePayment, ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, Color.White);
@@ -119,7 +123,7 @@ namespace InventorySystem.Forms
             flpRight.Controls.Add(tlpBalance);
             flpRight.Controls.Add(btnReceivePayment);
             flpRight.Controls.Add(btnRecordSale);
-            
+
             pnlHeader.Controls.Add(flpLeft, 0, 0);
             pnlHeader.Controls.Add(flpRight, 1, 0);
 
@@ -149,20 +153,20 @@ namespace InventorySystem.Forms
 
         private void LoadDetails()
         {
-            try 
+            try
             {
                 // Load Info
                 string sqlInfo = $"SELECT * FROM customers WHERE customer_id = {_customerId}";
                 DataTable dtInfo = DatabaseHelper.ExecuteDataTable(sqlInfo);
-                if(dtInfo.Rows.Count > 0)
+                if (dtInfo.Rows.Count > 0)
                 {
                     DataRow row = dtInfo.Rows[0];
                     lblName.Text = row["full_name"].ToString();
                     string typeVal = row.Table.Columns.Contains("type") && row["type"] != DBNull.Value ? row["type"].ToString() : "Individual";
                     string phone = row.Table.Columns.Contains("phone") && row["phone"] != DBNull.Value ? row["phone"].ToString() : "-";
                     lblType.Text = typeVal + " | " + phone;
-                    
-                    decimal bal = row.Table.Columns.Contains("current_balance") && row["current_balance"] != DBNull.Value 
+
+                    decimal bal = row.Table.Columns.Contains("current_balance") && row["current_balance"] != DBNull.Value
                         ? Convert.ToDecimal(row["current_balance"]) : 0m;
                     lblBalance.Text = $"${bal:N2}";
 
@@ -200,11 +204,11 @@ namespace InventorySystem.Forms
                     FROM payments 
                     WHERE entity_type = 'Customer' AND entity_id = {_customerId}
                     ORDER BY payment_date DESC";
-                
+
                 dgvHistory.DataSource = DatabaseHelper.ExecuteDataTable(sqlHistory);
                 ApplyGridLocalizations();
             }
-            catch(Exception ex) { MessageHelper.ShowError(ex.Message); }
+            catch (Exception ex) { MessageHelper.ShowError(ex.Message); }
         }
 
         private void ApplyLocalization()
@@ -224,11 +228,11 @@ namespace InventorySystem.Forms
 
             if (dgvHistory.Columns["Date"] != null) dgvHistory.Columns["Date"].HeaderText = LocalizationManager.GetString("Hist_ColDate");
             if (dgvHistory.Columns["Action"] != null) dgvHistory.Columns["Action"].HeaderText = LocalizationManager.GetString("Hist_ColAction");
-            if (dgvHistory.Columns["Amount"] != null) dgvHistory.Columns["Amount"].HeaderText = LocalizationManager.GetString("Hist_ColAmount");
-            if (dgvHistory.Columns["Due Date"] != null) dgvHistory.Columns["Due Date"].HeaderText = LocalizationManager.GetString("Tran_DueDateLabel") ?? "Due Date";
+            if (dgvHistory.Columns["Amount"] != null) dgvHistory.Columns["Amount"].HeaderText = LocalizationManager.IsArabic ? "الدفعة" : "Payment";
+            if (dgvHistory.Columns["Due Date"] != null) dgvHistory.Columns["Due Date"].HeaderText = LocalizationManager.GetString("Tran_DueDateLabel", "Due Date");
             if (dgvHistory.Columns["Details"] != null) dgvHistory.Columns["Details"].HeaderText = LocalizationManager.GetString("Hist_ColDetails");
         }
-        
+
         private void DgvHistory_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex < 0 || e.Value == null || e.Value == DBNull.Value || string.IsNullOrEmpty(e.Value.ToString())) return;
@@ -243,7 +247,7 @@ namespace InventorySystem.Forms
             else if (colName == "Details")
             {
                 string val = e.Value.ToString();
-                if (val == "None") e.Value = LocalizationManager.GetString("Tran_None") ?? val;
+                if (val == "None") e.Value = LocalizationManager.GetString("Tran_None", val);
             }
         }
 
@@ -257,8 +261,8 @@ namespace InventorySystem.Forms
                 string.Format(L("Prompt_RecordSale"), _customerName),
                 "0.00",
                 true);
-            
-            if(form.ShowDialog() == DialogResult.OK)
+
+            if (form.ShowDialog() == DialogResult.OK)
             {
                 decimal amount = form.Amount;
                 string userNotes = string.IsNullOrWhiteSpace(form.Notes) ? "None" : form.Notes;
@@ -283,7 +287,7 @@ namespace InventorySystem.Forms
 
                 // 2. Record transaction log
                 string sql2 = "INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes, due_date) VALUES ('Customer', @cid, @amount, datetime('now'), @notes, @ddate)";
-                DatabaseHelper.ExecuteNonQuery(sql2, 
+                DatabaseHelper.ExecuteNonQuery(sql2,
                     new Microsoft.Data.Sqlite.SqliteParameter("@cid", _customerId),
                     new Microsoft.Data.Sqlite.SqliteParameter("@amount", amount),
                     new Microsoft.Data.Sqlite.SqliteParameter("@notes", dbNotes),
@@ -302,16 +306,16 @@ namespace InventorySystem.Forms
             TransactionEntryForm form = new TransactionEntryForm(
                 L("Cust_ReceivePayment"),
                 string.Format(L("Prompt_ReceivePayment"), _customerName));
-            
-            if(form.ShowDialog() == DialogResult.OK)
+
+            if (form.ShowDialog() == DialogResult.OK)
             {
                 decimal amount = form.Amount;
                 string userNotes = string.IsNullOrWhiteSpace(form.Notes) ? "None" : form.Notes;
                 string dbNotes = "[Payment] " + userNotes;
 
-                if(amount > currentBalance)
+                if (amount > currentBalance)
                 {
-                    if(!MessageHelper.ConfirmAction($"Payment (${amount:N2}) exceeds balance (${currentBalance:N2}). Continue?"))
+                    if (!MessageHelper.ConfirmAction($"Payment (${amount:N2}) exceeds balance (${currentBalance:N2}). Continue?"))
                         return;
                 }
 
@@ -320,11 +324,11 @@ namespace InventorySystem.Forms
                 // 1. Update Balance - customers table uses current_balance
                 string sql1 = $"UPDATE customers SET current_balance = current_balance - {amountStr} WHERE customer_id = {_customerId}";
                 DatabaseHelper.ExecuteNonQuery(sql1);
- 
+
                 // 2. Record Payment
                 string sql2 = $"INSERT INTO payments (entity_type, entity_id, amount, payment_date, notes) VALUES ('Customer', {_customerId}, {amountStr}, datetime('now'), @notes)";
                 DatabaseHelper.ExecuteNonQuery(sql2, new Microsoft.Data.Sqlite.SqliteParameter("@notes", dbNotes));
- 
+
                 GlobalEvents.RaiseCustomersUpdated(); // Sync main grid
                 LoadDetails();
             }

@@ -14,16 +14,16 @@ namespace InventorySystem.Forms
         public ModernMessageBox(string text, string caption, MessageBoxButtons buttons, MessageBoxIcon icon)
         {
             InitializeModernUI();
-            
+
             this.TitleText = caption;
             this.lblMessage.Text = text;
-            
+
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
             SetIcon(icon);
             SetButtons(buttons, isArabic);
-            
+
             // Adjust size based on message length
             AdjustSize(text);
         }
@@ -61,7 +61,7 @@ namespace InventorySystem.Forms
                 ForeColor = ThemeConfig.TextColorDark,
                 Dock = DockStyle.Fill,
                 TextAlign = LocalizationManager.IsArabic ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft,
-                AutoSize = false 
+                AutoSize = false
             };
 
             tlpContent.Controls.Add(picIcon, 0, 0);
@@ -99,10 +99,10 @@ namespace InventorySystem.Forms
 
         private void SetButtons(MessageBoxButtons buttons, bool isArabic)
         {
-            string ok = LocalizationManager.GetString("Popup_OK") ?? "OK";
-            string cancel = LocalizationManager.GetString("Popup_Cancel") ?? "Cancel";
-            string yes = LocalizationManager.GetString("Popup_Yes") ?? "Yes";
-            string no = LocalizationManager.GetString("Popup_No") ?? "No";
+            string ok = LocalizationManager.GetString("Popup_OK", "OK");
+            string cancel = LocalizationManager.GetString("Popup_Cancel", "Cancel");
+            string yes = LocalizationManager.GetString("Popup_Yes", "Yes");
+            string no = LocalizationManager.GetString("Popup_No", "No");
 
             switch (buttons)
             {
@@ -111,20 +111,20 @@ namespace InventorySystem.Forms
                     break;
 
                 case MessageBoxButtons.OKCancel:
-                    SetFooterButtons(ok, cancel, 
-                        (s, e) => { this.DialogResult = DialogResult.OK; this.Close(); }, 
+                    SetFooterButtons(ok, cancel,
+                        (s, e) => { this.DialogResult = DialogResult.OK; this.Close(); },
                         (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); });
                     break;
 
                 case MessageBoxButtons.YesNo:
-                    SetFooterButtons(no, yes, 
-                        (s, e) => { this.DialogResult = DialogResult.No; this.Close(); }, 
+                    SetFooterButtons(no, yes,
+                        (s, e) => { this.DialogResult = DialogResult.No; this.Close(); },
                         (s, e) => { this.DialogResult = DialogResult.Yes; this.Close(); });
                     break;
 
                 case MessageBoxButtons.YesNoCancel:
-                    SetFooterButtons(no, yes, 
-                        (s, e) => { this.DialogResult = DialogResult.No; this.Close(); }, 
+                    SetFooterButtons(no, yes,
+                        (s, e) => { this.DialogResult = DialogResult.No; this.Close(); },
                         (s, e) => { this.DialogResult = DialogResult.Yes; this.Close(); },
                         cancel, (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); });
                     break;
@@ -135,7 +135,7 @@ namespace InventorySystem.Forms
         {
             // Initial size estimate - smaller for simple alerts
             this.Width = 380;
-            
+
             // Allow BaseModalForm.OnLoad to handle the final FitToContent
             // But we can trigger it early if we want immediate results
             FitToContent();

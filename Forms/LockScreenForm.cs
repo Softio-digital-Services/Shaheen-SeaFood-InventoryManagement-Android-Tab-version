@@ -32,7 +32,8 @@ namespace InventorySystem.Forms
             this.Controls.Add(pnlCenter);
 
             // Rounded corners for center panel using Paint event
-            pnlCenter.Paint += (s, e) => {
+            pnlCenter.Paint += (s, e) =>
+            {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 Rectangle r = new Rectangle(0, 0, pnlCenter.Width - 1, pnlCenter.Height - 1);
                 using (var path = ThemeConfig.GetRoundedPathPublic(r, 20))
@@ -42,68 +43,75 @@ namespace InventorySystem.Forms
                 }
             };
 
-            Label lblLocked = new Label { 
-                Text = LocalizationManager.GetString("Lock_Title") ?? "Session Locked", 
-                Font = new Font("Segoe UI", 24, FontStyle.Bold), 
-                ForeColor = ThemeConfig.TextColorDark, 
-                TextAlign = ContentAlignment.MiddleCenter, 
-                Dock = DockStyle.Top, 
-                Height = 100 
+            Label lblLocked = new Label
+            {
+                Text = LocalizationManager.GetString("Lock_Title", "Session Locked"),
+                Font = new Font("Segoe UI", 24, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Top,
+                Height = 100
             };
             pnlCenter.Controls.Add(lblLocked);
 
-            PictureBox picUser = new PictureBox { 
-                Image = ThemeConfig.GetNuricon("users"), 
-                SizeMode = PictureBoxSizeMode.CenterImage, 
-                Dock = DockStyle.Top, 
-                Height = 120 
+            PictureBox picUser = new PictureBox
+            {
+                Image = ThemeConfig.GetNuricon("users"),
+                SizeMode = PictureBoxSizeMode.CenterImage,
+                Dock = DockStyle.Top,
+                Height = 120
             };
             pnlCenter.Controls.Add(picUser);
 
-            lblUser = new Label { 
-                Text = UserSession.Username, 
-                Font = ThemeConfig.HeaderFont, 
-                ForeColor = ThemeConfig.TextColorDark, 
-                TextAlign = ContentAlignment.MiddleCenter, 
-                Dock = DockStyle.Top, 
-                Height = 35 
+            lblUser = new Label
+            {
+                Text = UserSession.Username,
+                Font = ThemeConfig.HeaderFont,
+                ForeColor = ThemeConfig.TextColorDark,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Top,
+                Height = 35
             };
             pnlCenter.Controls.Add(lblUser);
 
             Panel pnlInput = new Panel { Dock = DockStyle.Top, Height = 100, Padding = new Padding(40, 20, 40, 0) };
-            txtPassword = new TextBox { 
-                PasswordChar = '-', 
-                Font = ThemeConfig.SubHeaderFont, 
-                BorderStyle = BorderStyle.None, 
-                Dock = DockStyle.Fill 
+            txtPassword = new TextBox
+            {
+                PasswordChar = '-',
+                Font = ThemeConfig.SubHeaderFont,
+                BorderStyle = BorderStyle.None,
+                Dock = DockStyle.Fill
             };
             Panel txtWrapper = ThemeConfig.WrapInStyledInput(txtPassword, 50);
             txtWrapper.Dock = DockStyle.Top;
             pnlInput.Controls.Add(txtWrapper);
             pnlCenter.Controls.Add(pnlInput);
 
-            lblError = new Label { 
-                Text = "", 
-                ForeColor = ThemeConfig.DangerColor, 
-                TextAlign = ContentAlignment.MiddleCenter, 
-                Dock = DockStyle.Top, 
+            lblError = new Label
+            {
+                Text = "",
+                ForeColor = ThemeConfig.DangerColor,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Top,
                 Height = 30,
                 Font = ThemeConfig.SmallFont
             };
             pnlCenter.Controls.Add(lblError);
 
-            Button btnUnlock = new ModernButton { 
-                Text = LocalizationManager.GetString("Lock_Unlock") ?? "Unlock", 
-                Size = new Size(160, 45), 
-                Location = new Point(120, 420) 
+            Button btnUnlock = new ModernButton
+            {
+                Text = LocalizationManager.GetString("Lock_Unlock", "Unlock"),
+                Size = new Size(160, 45),
+                Location = new Point(120, 420)
             };
             ThemeConfig.ApplyPrimaryButton(btnUnlock);
             btnUnlock.Click += BtnUnlock_Click;
             pnlCenter.Controls.Add(btnUnlock);
 
             txtPassword.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) BtnUnlock_Click(s, e); };
-            
-            this.Resize += (s, e) => {
+
+            this.Resize += (s, e) =>
+            {
                 pnlCenter.Location = new Point((this.Width - pnlCenter.Width) / 2, (this.Height - pnlCenter.Height) / 2);
             };
         }
@@ -114,11 +122,11 @@ namespace InventorySystem.Forms
             // Real validation would use AuthService, but for now we check against a fixed value 
             // or better yet, since we don't store passwords in session, we assume any input 
             // for the current user is a placeholder in this demo or we'd need a re-auth service.
-            
+
             // Assuming we have an AuthService.VerifyPassword(...)
             // AuthService auth = new AuthService();
             // if (auth.Login(UserSession.Username, pass)) { this.Close(); }
-            
+
             // For now, let's treat "admin" or just non-empty as success if it's a demo
             if (!string.IsNullOrEmpty(pass))
             {
@@ -127,7 +135,7 @@ namespace InventorySystem.Forms
             }
             else
             {
-                lblError.Text = LocalizationManager.GetString("Lock_Invalid") ?? "Invalid password";
+                lblError.Text = LocalizationManager.GetString("Lock_Invalid", "Invalid password");
                 txtPassword.Clear();
             }
         }

@@ -17,7 +17,7 @@ namespace InventorySystem.Forms
     {
         private DataGridView dgvRates;
         private Label lblStatus;
-        private Button btnRefresh;
+        // private Button btnRefresh;
 
         public CurrencySettingsForm()
         {
@@ -29,7 +29,7 @@ namespace InventorySystem.Forms
         private void InitializeForm()
         {
             LocalizationManager.ApplyRTL(this);
-            
+
             // Adaptive sizing handled by BaseModalForm.OnLoad
             this.TitleText = LocalizationManager.GetString("Curr_SettingsTitle");
 
@@ -59,7 +59,8 @@ namespace InventorySystem.Forms
 
             Button btnRefresh = new Button
             {
-                Height = 45, Width = 150,
+                Height = 45,
+                Width = 150,
                 Cursor = Cursors.Hand,
                 Margin = new Padding(0, 10, 10, 0)
             };
@@ -69,7 +70,8 @@ namespace InventorySystem.Forms
 
             Button btnAdd = new Button
             {
-                Height = 45, Width = 160,
+                Height = 45,
+                Width = 160,
                 Cursor = Cursors.Hand,
                 Margin = new Padding(0, 10, 10, 0)
             };
@@ -182,9 +184,9 @@ namespace InventorySystem.Forms
 
         private async void BtnRefresh_Click(object sender, EventArgs e)
         {
-            btnRefresh.Enabled = false;
+            if (sender is Button btn) btn.Enabled = false;
             lblStatus.ForeColor = ThemeConfig.SecondaryColor;
-            lblStatus.Text     = LocalizationManager.IsArabic ? "جاري الاتصال بخدمة الأسعار..." : "Connecting to exchange rate service...";
+            lblStatus.Text = LocalizationManager.IsArabic ? "جاري الاتصال بخدمة الأسعار..." : "Connecting to exchange rate service...";
 
             var rates = await CurrencyService.FetchLiveRatesAsync();
 
@@ -193,15 +195,15 @@ namespace InventorySystem.Forms
                 CurrencyService.SaveRatesToDb(rates);
                 LoadRates();
                 lblStatus.ForeColor = ThemeConfig.SuccessColor;
-                lblStatus.Text      = string.Format(LocalizationManager.GetString("Curr_StatusLastUpdate"), DateTime.Now.ToString("g"));
+                lblStatus.Text = string.Format(LocalizationManager.GetString("Curr_StatusLastUpdate"), DateTime.Now.ToString("g"));
             }
             else
             {
                 lblStatus.ForeColor = ThemeConfig.DangerColor;
-                lblStatus.Text      = LocalizationManager.IsArabic ? "تعذر الاتصال. يتم استخدام الأسعار المخزنة." : "Could not reach server. Using cached rates.";
+                lblStatus.Text = LocalizationManager.IsArabic ? "تعذر الاتصال. يتم استخدام الأسعار المخزنة." : "Could not reach server. Using cached rates.";
             }
 
-            btnRefresh.Enabled = true;
+            if (sender is Button btn2) btn2.Enabled = true;
         }
 
         private void DgvRates_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
@@ -210,7 +212,7 @@ namespace InventorySystem.Forms
             {
                 e.Handled = true;
                 e.PaintBackground(e.CellBounds, true);
-                
+
                 Image imgDelete = ThemeConfig.GetNuricon("delete");
                 if (imgDelete != null)
                 {
@@ -255,7 +257,7 @@ namespace InventorySystem.Forms
                 string code = row.Cells["code"].Value?.ToString();
                 string name = row.Cells["name"].Value?.ToString();
                 string symbol = row.Cells["symbol"].Value?.ToString();
-                
+
                 if (decimal.TryParse(row.Cells["rate_vs_usd"].Value?.ToString(),
                     System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.InvariantCulture, out decimal rate))
@@ -263,7 +265,7 @@ namespace InventorySystem.Forms
                     CurrencyService.UpdateCurrency(code, name, symbol, rate);
                 }
             }
-            
+
             lblStatus.ForeColor = ThemeConfig.SuccessColor;
             lblStatus.Text = LocalizationManager.GetString("Msg_Saved");
             LoadRates();

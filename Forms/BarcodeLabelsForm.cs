@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -16,11 +16,12 @@ namespace InventorySystem.Forms
         private DataGridView dgvItems;
         private ModernTextBox txtSearch;
         private ModernButton btnGenerate;
-        private FlowLayoutPanel pnlButtons;
         private Label lblTitle;
         private DataTable _dtItems;
         private System.Windows.Forms.Timer _searchTimer;
+#pragma warning disable CS0649 // Field never assigned — used as an optional null-guarded hook
         private CheckBox _headerCheckBox;
+#pragma warning restore CS0649
 
         public BarcodeLabelsForm()
         {

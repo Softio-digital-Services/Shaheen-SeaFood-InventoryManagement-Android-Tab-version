@@ -18,7 +18,7 @@ namespace InventorySystem.Forms
         private ComboBox cmbRole;
         private Label lblSection;
         private Label lblRole;
-        
+
         private int? _userId = null; // Null = Add mode, Value = Edit mode
 
         public AddUserForm(int? userId = null)
@@ -26,7 +26,7 @@ namespace InventorySystem.Forms
             _userId = userId;
             InitializeComponent();
             ApplyTheme();
-            
+
             if (_userId.HasValue)
             {
                 LoadUserData(_userId.Value);
@@ -41,8 +41,8 @@ namespace InventorySystem.Forms
             this.TitleText = _userId.HasValue ? "Edit User" : "Add New User";
 
             this.txtUsername = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
-            this.txtPassword = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), UseSystemPasswordChar = true };
-            this.txtConfirmPassword = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), UseSystemPasswordChar = true };
+            this.txtPassword = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsPassword = true };
+            this.txtConfirmPassword = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsPassword = true };
             this.txtFullName = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
             this.cmbRole = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
             this.lblSection = new Label { Name = "lblSection", AutoSize = true, Margin = new Padding(0, 0, 0, 15) };
@@ -166,13 +166,13 @@ namespace InventorySystem.Forms
             {
                 string sql = $"SELECT username, full_name, role FROM users WHERE id = {userId}";
                 DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
-                
+
                 if (dt.Rows.Count > 0)
                 {
                     txtUsername.Text = dt.Rows[0]["username"].ToString();
                     txtFullName.Text = dt.Rows[0]["full_name"].ToString();
                     string role = dt.Rows[0]["role"].ToString();
-                    
+
                     int roleIndex = cmbRole.FindStringExact(role);
                     if (roleIndex >= 0) cmbRole.SelectedIndex = roleIndex;
                 }
@@ -257,7 +257,7 @@ namespace InventorySystem.Forms
                         new SqliteParameter("@fullname", string.IsNullOrEmpty(fullName) ? username : fullName),
                         new SqliteParameter("@role", role));
 
-                    string successMsg = LocalizationManager.IsArabic 
+                    string successMsg = LocalizationManager.IsArabic
                         ? $"تمت إضافة المستخدم بنجاح!\nاسم المستخدم: '{username}'"
                         : $"User added successfully!\nUsername: '{username}'";
                     MessageHelper.ShowSuccess(successMsg);

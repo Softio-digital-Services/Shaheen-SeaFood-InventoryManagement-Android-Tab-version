@@ -18,35 +18,35 @@ namespace InventorySystem.Forms
         private Button btnTabInventory;
         private Button btnTabCustomers;
         private Button btnTabSuppliers;
-        private Button btnTabOrders; 
+        private Button btnTabOrders;
         private Button btnTabQuotations; // NEW
         private Panel pnlIndicator; // Slide indicator
-        
+
         private Panel pnlContent;
         private Panel pnlInventoryCard;
         private Panel pnlCustomersCard;
         private Panel pnlSuppliersCard;
-        private Panel pnlOrdersCard; 
+        private Panel pnlOrdersCard;
         private Panel pnlQuotationsCard; // NEW
-        
+
         private DataGridView dgvInventory;
         private DataGridView dgvCustomers;
-        private DataGridView dgvOrders; 
+        private DataGridView dgvOrders;
         private DataGridView dgvSuppliers;
         private DataGridView dgvQuotations; // NEW
 
-        private ModernTextBox txtSearch; 
-        
+        private ModernTextBox txtSearch;
+
         // Stats
         private StatCard cardActions;
         private StatCard cardOrders;
         private StatCard cardPayments;
-        
+
         // Animation
         private System.Windows.Forms.Timer _refreshTimer;
         private float _refreshAngle = 0;
         private bool _isRefreshing = false;
-        
+
         private HistoryService _historyService;
 
         public HistoryForm()
@@ -54,7 +54,7 @@ namespace InventorySystem.Forms
             InitializeComponent();
             _historyService = new HistoryService(); // Ideally injected
             ApplyTheme();
-            
+
             InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
 
@@ -62,7 +62,8 @@ namespace InventorySystem.Forms
             SwitchTab(btnTabInventory);
             LoadHistory();
 
-            GlobalEvents.OnOrdersUpdated += () => {
+            GlobalEvents.OnOrdersUpdated += () =>
+            {
                 if (!this.IsDisposed) LoadHistory();
             };
         }
@@ -84,7 +85,7 @@ namespace InventorySystem.Forms
             if (btnTabOrders != null) btnTabOrders.Text = L("Hist_TabOrders");
             if (btnTabQuotations != null) btnTabQuotations.Text = L("Hist_TabQuotations");
 
-            if (txtSearch != null) 
+            if (txtSearch != null)
             {
                 txtSearch.PlaceholderText = L("Hist_Search");
             }
@@ -100,28 +101,32 @@ namespace InventorySystem.Forms
         {
             Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
 
-            foreach (DataGridViewColumn col in dgvInventory.Columns) {
+            foreach (DataGridViewColumn col in dgvInventory.Columns)
+            {
                 if (col.Name == "Date") col.HeaderText = L("Hist_ColDate");
                 if (col.Name == "Action") col.HeaderText = L("Hist_ColAction");
                 if (col.Name == "Item") col.HeaderText = L("Hist_ColItem");
                 if (col.Name == "Details") col.HeaderText = L("Hist_ColDetails");
                 if (col.Name == "User") col.HeaderText = L("Hist_ColUser");
             }
-            foreach (DataGridViewColumn col in dgvCustomers.Columns) {
+            foreach (DataGridViewColumn col in dgvCustomers.Columns)
+            {
                 if (col.Name == "Date") col.HeaderText = L("Hist_ColDate");
                 if (col.Name == "Type") col.HeaderText = L("Hist_ColType");
                 if (col.Name == "Customer") col.HeaderText = L("Hist_ColCustomer");
                 if (col.Name == "Amount") col.HeaderText = L("Hist_ColAmount");
                 if (col.Name == "Details") col.HeaderText = L("Hist_ColDetails");
             }
-            foreach (DataGridViewColumn col in dgvQuotations.Columns) {
+            foreach (DataGridViewColumn col in dgvQuotations.Columns)
+            {
                 if (col.Name == "ID") col.HeaderText = L("Hist_ColOrderID");
                 if (col.Name == "Date") col.HeaderText = L("Hist_ColDate");
                 if (col.Name == "Customer") col.HeaderText = L("Hist_ColCustomer");
                 if (col.Name == "Total") col.HeaderText = L("Hist_ColTotal");
                 if (col.Name == "Items") col.HeaderText = L("Hist_ColItems");
             }
-            foreach (DataGridViewColumn col in dgvOrders.Columns) {
+            foreach (DataGridViewColumn col in dgvOrders.Columns)
+            {
                 if (col.Name == "Order ID") col.HeaderText = L("Hist_ColOrderID");
                 if (col.Name == "Date") col.HeaderText = L("Hist_ColDate");
                 if (col.Name == "Customer") col.HeaderText = L("Hist_ColCustomer");
@@ -130,7 +135,8 @@ namespace InventorySystem.Forms
                 if (col.Name == "Items") col.HeaderText = L("Hist_ColItems");
                 if (col.Name == "colReturn") col.HeaderText = "";
             }
-            foreach (DataGridViewColumn col in dgvSuppliers.Columns) {
+            foreach (DataGridViewColumn col in dgvSuppliers.Columns)
+            {
                 if (col.Name == "Date") col.HeaderText = L("Hist_ColDate");
                 if (col.Name == "Type") col.HeaderText = L("Hist_ColType");
                 if (col.Name == "Supplier") col.HeaderText = L("Hist_ColSupplier");
@@ -152,9 +158,11 @@ namespace InventorySystem.Forms
             lblHistoryTitle = ThemeConfig.CreateStandardHeader("System History Logs");
             lblHistoryTitle.Name = "lblHistoryTitle";
 
-            txtSearch = new ModernTextBox {
-                IsSearch = true, ShowLabel = false,
-                PlaceholderText = LocalizationManager.GetString("Hist_Search") ?? "Search history...",
+            txtSearch = new ModernTextBox
+            {
+                IsSearch = true,
+                ShowLabel = false,
+                PlaceholderText = LocalizationManager.GetString("Hist_Search", "Search history..."),
                 Size = new Size(320, 35)
             };
             txtSearch.TextChanged += (s, e) => ApplyFilter();
@@ -169,14 +177,17 @@ namespace InventorySystem.Forms
             // Animation timer (must wire up after btnRefresh is created)
             _refreshTimer = new System.Windows.Forms.Timer { Interval = 30 };
             _refreshTimer.Tick += (s, e) => { _refreshAngle = (_refreshAngle + 15) % 360; btnRefresh.Invalidate(); };
-            btnRefresh.Paint += (s, e) => {
-                if (_isRefreshing) {
+            btnRefresh.Paint += (s, e) =>
+            {
+                if (_isRefreshing)
+                {
                     using (var pb = new SolidBrush(ThemeConfig.GetParentColor(btnRefresh)))
                         e.Graphics.FillRectangle(pb, -1, -1, btnRefresh.Width + 2, btnRefresh.Height + 2);
                     DrawRotatingRefreshIcon(btnRefresh, e.Graphics);
                 }
             };
-            btnRefresh.Click += async (s, e) => {
+            btnRefresh.Click += async (s, e) =>
+            {
                 if (_isRefreshing) return;
                 StartRefreshAnimation();
                 await System.Threading.Tasks.Task.Run(() => LoadHistory());
@@ -186,30 +197,32 @@ namespace InventorySystem.Forms
             // --- Stats row ---
             TableLayoutPanel tlpStats = new TableLayoutPanel
             {
-                Dock = DockStyle.Top, Height = 120,
-                ColumnCount = 3, RowCount = 1,
+                Dock = DockStyle.Top,
+                Height = 120,
+                ColumnCount = 3,
+                RowCount = 1,
                 Margin = new Padding(0, 0, 0, 12)
             };
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
 
-            cardActions  = new StatCard { Title = "Activity Today",  Value = "0", IconImage = ThemeConfig.GetNuricon("history_activity"), ThemeColor = ThemeConfig.PrimaryColor, Dock = DockStyle.Fill };
-            cardOrders   = new StatCard { Title = "Orders Today",    Value = "0", IconImage = ThemeConfig.GetNuricon("orders"),           ThemeColor = ThemeConfig.SuccessColor,  Dock = DockStyle.Fill };
-            cardPayments = new StatCard { Title = "Payments Today",  Value = "0", IconImage = ThemeConfig.GetNuricon("revenue"),          ThemeColor = ThemeConfig.WarningColor,  Dock = DockStyle.Fill };
-            tlpStats.Controls.Add(cardActions,  0, 0);
-            tlpStats.Controls.Add(cardOrders,   1, 0);
+            cardActions = new StatCard { Title = "Activity Today", Value = "0", IconImage = ThemeConfig.GetNuricon("history_activity"), ThemeColor = ThemeConfig.PrimaryColor, Dock = DockStyle.Fill };
+            cardOrders = new StatCard { Title = "Orders Today", Value = "0", IconImage = ThemeConfig.GetNuricon("orders"), ThemeColor = ThemeConfig.SuccessColor, Dock = DockStyle.Fill };
+            cardPayments = new StatCard { Title = "Payments Today", Value = "0", IconImage = ThemeConfig.GetNuricon("revenue"), ThemeColor = ThemeConfig.WarningColor, Dock = DockStyle.Fill };
+            tlpStats.Controls.Add(cardActions, 0, 0);
+            tlpStats.Controls.Add(cardOrders, 1, 0);
             tlpStats.Controls.Add(cardPayments, 2, 0);
 
             // --- Tabs row ---
             pnlTabs = new Panel { Dock = DockStyle.Top, Height = 55, Margin = new Padding(0, 0, 0, 8) };
             pnlIndicator = new Panel { Height = 3, Top = 44, Visible = false };
             pnlTabs.Controls.Add(pnlIndicator);
-            btnTabInventory  = CreateTabButton("Inventory Logs",   0);
-            btnTabCustomers  = CreateTabButton("Customer History", 150);
-            btnTabSuppliers  = CreateTabButton("Supplier History", 300);
-            btnTabOrders     = CreateTabButton("Orders History",   450);
-            btnTabQuotations = CreateTabButton("Quotation History",600);
+            btnTabInventory = CreateTabButton("Inventory Logs", 0);
+            btnTabCustomers = CreateTabButton("Customer History", 150);
+            btnTabSuppliers = CreateTabButton("Supplier History", 300);
+            btnTabOrders = CreateTabButton("Orders History", 450);
+            btnTabQuotations = CreateTabButton("Quotation History", 600);
             pnlTabs.Controls.Add(btnTabInventory);
             pnlTabs.Controls.Add(btnTabCustomers);
             pnlTabs.Controls.Add(btnTabSuppliers);
@@ -231,30 +244,30 @@ namespace InventorySystem.Forms
 
             dgvSuppliers = CreateGrid();
             dgvSuppliers.AutoGenerateColumns = false;
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date",     DataPropertyName = "Date",     Width = 150 });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Type",     DataPropertyName = "Type",     Width = 120 });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", DataPropertyName = "Date", Width = 150 });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Type", DataPropertyName = "Type", Width = 120 });
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Supplier", DataPropertyName = "Supplier", Width = 200 });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Amount",   DataPropertyName = "Amount",   Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Details",  DataPropertyName = "Details",  AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Amount", DataPropertyName = "Amount", Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "Details", DataPropertyName = "Details", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
 
             dgvOrders = CreateGrid();
-            dgvOrders.CellFormatting   += DgvOrders_CellFormatting;
+            dgvOrders.CellFormatting += DgvOrders_CellFormatting;
             dgvOrders.CellContentClick += DgvOrders_CellContentClick;
-            dgvOrders.CellDoubleClick  += DgvOrders_CellDoubleClick;
-            dgvOrders.CellPainting     += DgvOrders_CellPainting;
+            dgvOrders.CellDoubleClick += DgvOrders_CellDoubleClick;
+            dgvOrders.CellPainting += DgvOrders_CellPainting;
 
             dgvQuotations = CreateGrid();
 
-            pnlInventoryCard  = ThemeConfig.CreateCardPanel(dgvInventory);
-            pnlCustomersCard  = ThemeConfig.CreateCardPanel(dgvCustomers);
-            pnlSuppliersCard  = ThemeConfig.CreateCardPanel(dgvSuppliers);
-            pnlOrdersCard     = ThemeConfig.CreateCardPanel(dgvOrders);
+            pnlInventoryCard = ThemeConfig.CreateCardPanel(dgvInventory);
+            pnlCustomersCard = ThemeConfig.CreateCardPanel(dgvCustomers);
+            pnlSuppliersCard = ThemeConfig.CreateCardPanel(dgvSuppliers);
+            pnlOrdersCard = ThemeConfig.CreateCardPanel(dgvOrders);
             pnlQuotationsCard = ThemeConfig.CreateCardPanel(dgvQuotations);
 
-            pnlInventoryCard.Visible  = false;
-            pnlCustomersCard.Visible  = false;
-            pnlSuppliersCard.Visible  = false;
-            pnlOrdersCard.Visible     = false;
+            pnlInventoryCard.Visible = false;
+            pnlCustomersCard.Visible = false;
+            pnlSuppliersCard.Visible = false;
+            pnlOrdersCard.Visible = false;
             pnlQuotationsCard.Visible = false;
 
             pnlContent.Controls.Add(pnlInventoryCard);
@@ -272,7 +285,7 @@ namespace InventorySystem.Forms
             {
                 int orderId = Convert.ToInt32(dgvOrders.Rows[e.RowIndex].Cells["Order ID"].Value);
                 string status = dgvOrders.Rows[e.RowIndex].Cells["Status"].Value.ToString();
-                
+
                 if (status == "Quotation" || status == "Draft")
                 {
                     MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_OnlyCompleted"));
@@ -308,9 +321,9 @@ namespace InventorySystem.Forms
             {
                 e.Handled = true;
                 e.PaintBackground(e.CellBounds, true);
-                
+
                 // Draw return icon (reusing revenue or history icon or similar)
-                Image img = ThemeConfig.GetNuricon("history"); 
+                Image img = ThemeConfig.GetNuricon("history");
                 if (img != null)
                 {
                     int size = 20;
@@ -337,7 +350,7 @@ namespace InventorySystem.Forms
             }
         }
 
-                private Button CreateTabButton(string text, int x)
+        private Button CreateTabButton(string text, int x)
         {
             Button btn = new Button();
             btn.Text = text;
@@ -350,7 +363,7 @@ namespace InventorySystem.Forms
 
             btn.SetBounds(x, 0, 150, 40);
             btn.Cursor = Cursors.Hand;
-            
+
             // Hover effects
             btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 244, 248);
             btn.FlatAppearance.MouseDownBackColor = ThemeConfig.ActiveBackColor;
@@ -370,19 +383,20 @@ namespace InventorySystem.Forms
 
             dgv.BorderStyle = BorderStyle.None;
             dgv.RowHeadersVisible = false;
-            
+
             // Critical: Handle data errors to prevent "Red X" or dialog crashes
-            dgv.DataError += (s, e) => { 
+            dgv.DataError += (s, e) =>
+            {
                 Console.WriteLine($"Grid Error: {e.Exception?.Message}");
-                e.ThrowException = false; 
+                e.ThrowException = false;
             };
-            
+
             ThemeConfig.ApplyGridTheme(dgv);
             return dgv;
         }
 
 
-                private void SwitchTab(Button clickedBtn)
+        private void SwitchTab(Button clickedBtn)
         {
             // Reset Styles
             Button[] tabs = { btnTabInventory, btnTabCustomers, btnTabSuppliers, btnTabOrders, btnTabQuotations };
@@ -398,7 +412,7 @@ namespace InventorySystem.Forms
             clickedBtn.ForeColor = ThemeConfig.PrimaryColor;
             clickedBtn.BackColor = ThemeConfig.ActiveBackColor;
             clickedBtn.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-            
+
             // Move Indicator
             pnlIndicator.Visible = true;
             pnlIndicator.Width = clickedBtn.Width - 40;
@@ -430,103 +444,103 @@ namespace InventorySystem.Forms
 
         public void LoadHistory()
         {
-             if (this.InvokeRequired)
-             {
-                 this.Invoke(new Action(LoadHistory));
-                 return;
-             }
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(LoadHistory));
+                return;
+            }
 
-             try
-             {
-                 // Load Grids
-                 dgvInventory.DataSource = _historyService.GetInventoryLogs();
-                 dgvCustomers.DataSource = _historyService.GetCustomerHistory();
-                 dgvSuppliers.DataSource = _historyService.GetSupplierHistory();
-                 dgvOrders.DataSource = _historyService.GetOrderHistory(); 
-                 
-                 if (!dgvOrders.Columns.Contains("colReturn"))
-                 {
-                     DataGridViewButtonColumn btnReturn = new DataGridViewButtonColumn
-                     {
-                         Name = "colReturn",
-                         HeaderText = "",
-                         Width = 50,
-                         FlatStyle = FlatStyle.Flat
-                     };
-                     dgvOrders.Columns.Add(btnReturn);
-                 }
-                 
-                 dgvQuotations.DataSource = _historyService.GetQuotationHistory(); 
-                 
-                 // Load Stats
-                 var stats = _historyService.GetTodayStats();
-                 cardActions.Value = stats.actions.ToString();
-                 cardOrders.Value = stats.orders.ToString();
-                 cardPayments.Value = stats.payments.ToString();
-                 
-                 ApplyColumnHeaders();
-                 ApplyFilter(); // Ensure filter applies if data reloads
-             }
-             catch (Exception ex)
-             {
-                 MessageHelper.ShowError(LocalizationManager.GetString("Msg_HistoryLoadError") ?? ("Error loading history: " + ex.Message));
-             }
+            try
+            {
+                // Load Grids
+                dgvInventory.DataSource = _historyService.GetInventoryLogs();
+                dgvCustomers.DataSource = _historyService.GetCustomerHistory();
+                dgvSuppliers.DataSource = _historyService.GetSupplierHistory();
+                dgvOrders.DataSource = _historyService.GetOrderHistory();
+
+                if (!dgvOrders.Columns.Contains("colReturn"))
+                {
+                    DataGridViewButtonColumn btnReturn = new DataGridViewButtonColumn
+                    {
+                        Name = "colReturn",
+                        HeaderText = "",
+                        Width = 50,
+                        FlatStyle = FlatStyle.Flat
+                    };
+                    dgvOrders.Columns.Add(btnReturn);
+                }
+
+                dgvQuotations.DataSource = _historyService.GetQuotationHistory();
+
+                // Load Stats
+                var stats = _historyService.GetTodayStats();
+                cardActions.Value = stats.actions.ToString();
+                cardOrders.Value = stats.orders.ToString();
+                cardPayments.Value = stats.payments.ToString();
+
+                ApplyColumnHeaders();
+                ApplyFilter(); // Ensure filter applies if data reloads
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.ShowError(LocalizationManager.GetString("Msg_HistoryLoadError", ("Error loading history: " + ex.Message)));
+            }
         }
 
         private void ApplyFilter()
         {
-             if (txtSearch == null) return;
-             string ph = LocalizationManager.GetString("Hist_Search");
-             string filterText = txtSearch.Text.Trim();
-             
-             if (filterText == ph || filterText == "Search..." || filterText == LocalizationManager.GetString("Hist_Search")) 
-                 filterText = "";
+            if (txtSearch == null) return;
+            string ph = LocalizationManager.GetString("Hist_Search");
+            string filterText = txtSearch.Text.Trim();
 
-             filterText = filterText.Replace("'", "''");
-             
-             DataGridView activeDgv = null;
+            if (filterText == ph || filterText == "Search..." || filterText == LocalizationManager.GetString("Hist_Search"))
+                filterText = "";
 
-             if (pnlInventoryCard != null && pnlInventoryCard.Visible) activeDgv = dgvInventory;
-             else if (pnlCustomersCard != null && pnlCustomersCard.Visible) activeDgv = dgvCustomers;
-             else if (pnlSuppliersCard != null && pnlSuppliersCard.Visible) activeDgv = dgvSuppliers;
-             else if (pnlOrdersCard != null && pnlOrdersCard.Visible) activeDgv = dgvOrders;
-             else if (pnlQuotationsCard != null && pnlQuotationsCard.Visible) activeDgv = dgvQuotations;
+            filterText = filterText.Replace("'", "''");
 
-             if (activeDgv == null || activeDgv.DataSource == null) return;
+            DataGridView activeDgv = null;
 
-             DataTable dt = activeDgv.DataSource as DataTable;
-             if (dt == null) return;
+            if (pnlInventoryCard != null && pnlInventoryCard.Visible) activeDgv = dgvInventory;
+            else if (pnlCustomersCard != null && pnlCustomersCard.Visible) activeDgv = dgvCustomers;
+            else if (pnlSuppliersCard != null && pnlSuppliersCard.Visible) activeDgv = dgvSuppliers;
+            else if (pnlOrdersCard != null && pnlOrdersCard.Visible) activeDgv = dgvOrders;
+            else if (pnlQuotationsCard != null && pnlQuotationsCard.Visible) activeDgv = dgvQuotations;
 
-             if (string.IsNullOrWhiteSpace(filterText))
-             {
-                 dt.DefaultView.RowFilter = "";
-                 return;
-             }
+            if (activeDgv == null || activeDgv.DataSource == null) return;
 
-             // Build a generic RowFilter across all columns
-             System.Text.StringBuilder filterBuilder = new System.Text.StringBuilder();
-             bool first = true;
-             foreach (DataColumn col in dt.Columns)
-             {
-                 if (col.DataType == typeof(string))
-                 {
-                     if (!first) filterBuilder.Append(" OR ");
-                     filterBuilder.AppendFormat("[{0}] LIKE '%{1}%'", col.ColumnName, filterText);
-                     first = false;
-                 }
-                 else if (col.DataType == typeof(int) || col.DataType == typeof(decimal))
-                 {
-                     if (!first) filterBuilder.Append(" OR ");
-                     filterBuilder.AppendFormat("Convert([{0}], 'System.String') LIKE '%{1}%'", col.ColumnName, filterText);
-                     first = false;
-                 }
-             }
+            DataTable dt = activeDgv.DataSource as DataTable;
+            if (dt == null) return;
 
-             try
-             {
-                 dt.DefaultView.RowFilter = filterBuilder.ToString();
-             }
-             catch { /* Ignore invalid filter strings */ }
+            if (string.IsNullOrWhiteSpace(filterText))
+            {
+                dt.DefaultView.RowFilter = "";
+                return;
+            }
+
+            // Build a generic RowFilter across all columns
+            System.Text.StringBuilder filterBuilder = new System.Text.StringBuilder();
+            bool first = true;
+            foreach (DataColumn col in dt.Columns)
+            {
+                if (col.DataType == typeof(string))
+                {
+                    if (!first) filterBuilder.Append(" OR ");
+                    filterBuilder.AppendFormat("[{0}] LIKE '%{1}%'", col.ColumnName, filterText);
+                    first = false;
+                }
+                else if (col.DataType == typeof(int) || col.DataType == typeof(decimal))
+                {
+                    if (!first) filterBuilder.Append(" OR ");
+                    filterBuilder.AppendFormat("Convert([{0}], 'System.String') LIKE '%{1}%'", col.ColumnName, filterText);
+                    first = false;
+                }
+            }
+
+            try
+            {
+                dt.DefaultView.RowFilter = filterBuilder.ToString();
+            }
+            catch { /* Ignore invalid filter strings */ }
         }
 
         private void StartRefreshAnimation()
@@ -539,10 +553,12 @@ namespace InventorySystem.Forms
         private void StopRefreshAnimation()
         {
             // Give it a tiny moment to feel "real" if it was too fast
-            System.Threading.Tasks.Task.Delay(500).ContinueWith(_ => {
+            System.Threading.Tasks.Task.Delay(500).ContinueWith(_ =>
+            {
                 if (this.IsHandleCreated)
                 {
-                    this.BeginInvoke(new Action(() => {
+                    this.BeginInvoke(new Action(() =>
+                    {
                         _refreshTimer.Stop();
                         _isRefreshing = false;
                         _refreshAngle = 0;
@@ -558,7 +574,7 @@ namespace InventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             string text = LocalizationManager.GetString("Hist_Refresh");
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            
+
             Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
             using (var path = ThemeConfig.GetRoundedPathPublic(r, 12))
             {
@@ -592,7 +608,7 @@ namespace InventorySystem.Forms
             if (isArabic) flags |= TextFormatFlags.RightToLeft;
             TextRenderer.DrawText(g, text, btn.Font, textRect, ThemeConfig.SuccessColor, flags);
         }
-        
+
     }
 }
 

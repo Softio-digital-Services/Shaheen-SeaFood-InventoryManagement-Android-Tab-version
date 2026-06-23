@@ -18,7 +18,7 @@ namespace InventorySystem.Forms
             this.Width = 600;
             InitializeComponent();
             // Adaptive sizing handled by BaseModalForm.OnLoad
-            
+
             ApplyLocalization();
             LoadLicenseInfo();
             LocalizationManager.LanguageChanged += (s, e) => { ApplyLocalization(); LoadLicenseInfo(); };
@@ -55,15 +55,16 @@ namespace InventorySystem.Forms
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
             this.TitleText = LocalizationManager.GetString("Msg_LicenseInfo");
-            
+
             var currentLicense = LicenseManager.GetCurrentLicense();
             bool showActivate = currentLicense == null || currentLicense.IsTrial();
 
             SetFooterButtons(
                 LocalizationManager.GetString("Popup_Cancel"),
-                showActivate ? (LocalizationManager.GetString("Btn_ActivateLicense") ?? "Activate License") : "",
+                showActivate ? (LocalizationManager.GetString("Btn_ActivateLicense", "Activate License")) : "",
                 (s, e) => this.Close(),
-                showActivate ? new EventHandler((s, e) => {
+                showActivate ? new EventHandler((s, e) =>
+                {
                     this.Close();
                     new LicenseActivationForm().ShowDialog();
                 }) : null
@@ -86,8 +87,8 @@ namespace InventorySystem.Forms
             }
 
             // License Type
-            string typeDisplay = _license.IsTrial() 
-                ? ("Trial Version") 
+            string typeDisplay = _license.IsTrial()
+                ? ("Trial Version")
                 : ("Licensed Version");
             AddInfoRow(LocalizationManager.GetString("Msg_LicenseType"), typeDisplay, ThemeConfig.TextColorDark);
 
@@ -132,8 +133,8 @@ namespace InventorySystem.Forms
                 tlpInfo.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                 lblRenewal = new Label
                 {
-                    Text = isArabic 
-                        ? "يرجى تجديد اشتراكك قبل انتهاء الترخيص." 
+                    Text = isArabic
+                        ? "يرجى تجديد اشتراكك قبل انتهاء الترخيص."
                         : "Your license is expiring soon. Please renew.",
                     Font = ThemeConfig.StandardFont,
                     ForeColor = ThemeConfig.WarningColor,
@@ -152,7 +153,7 @@ namespace InventorySystem.Forms
 
             Label lblLabel = new Label { Text = label, Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill };
             Label lblValue = new Label { Text = value, Font = ThemeConfig.StandardFont, ForeColor = valueColor, AutoSize = true, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill };
-            
+
             tlpInfo.Controls.Add(lblLabel, 0, row);
             tlpInfo.Controls.Add(lblValue, 1, row);
         }

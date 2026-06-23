@@ -58,10 +58,10 @@ namespace InventorySystem.Forms
                 if (dgvSuppliers.Columns.Contains("colContact")) dgvSuppliers.Columns["colContact"].HeaderText = L("Sup_GridContact");
                 if (dgvSuppliers.Columns.Contains("colPhone")) dgvSuppliers.Columns["colPhone"].HeaderText = L("Sup_GridPhone");
                 if (dgvSuppliers.Columns.Contains("colEmail")) dgvSuppliers.Columns["colEmail"].HeaderText = L("Sup_GridEmail");
-                if (dgvSuppliers.Columns.Contains("colAddress")) dgvSuppliers.Columns["colAddress"].HeaderText = L("Cust_GridAddress") ?? "Address";
-                if (dgvSuppliers.Columns.Contains("colBalance")) dgvSuppliers.Columns["colBalance"].HeaderText = L("Cust_GridBalance") ?? "Balance Due";
-                if (dgvSuppliers.Columns.Contains("colActiveOrders")) dgvSuppliers.Columns["colActiveOrders"].HeaderText = L("Sup_GridActiveOrders");
-                if (dgvSuppliers.Columns.Contains("colDueDate")) dgvSuppliers.Columns["colDueDate"].HeaderText = L("AddSup_DueDate") ?? "Due Date";
+                if (dgvSuppliers.Columns.Contains("colAddress")) dgvSuppliers.Columns["colAddress"].HeaderText = LocalizationManager.GetString("Cust_GridAddress", "Address");
+                if (dgvSuppliers.Columns.Contains("colBalance")) dgvSuppliers.Columns["colBalance"].HeaderText = LocalizationManager.GetString("Cust_GridBalance", "Balance Due");
+                if (dgvSuppliers.Columns.Contains("colCreditLimit")) dgvSuppliers.Columns["colCreditLimit"].HeaderText = L("AddCust_CreditLimit");
+                if (dgvSuppliers.Columns.Contains("colDueDate")) dgvSuppliers.Columns["colDueDate"].HeaderText = LocalizationManager.GetString("AddSup_DueDate", "Due Date");
                 if (dgvSuppliers.Columns.Contains("colActions")) dgvSuppliers.Columns["colActions"].HeaderText = L("Sup_GridActions");
             }
         }

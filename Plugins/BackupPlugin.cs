@@ -13,19 +13,19 @@ namespace InventorySystem.Plugins
     /// </summary>
     public class BackupPlugin : ITabPlugin
     {
-        public string Id          => "com.carparts.backup";
-        public string Name        => "Backup & Restore";
-        public string Version     => "1.0.0";
+        public string Id => "com.carparts.backup";
+        public string Name => "Backup & Restore";
+        public string Version => "1.0.0";
         public string Description => "Backup and restore the inventory database";
-        public string Author      => "Car Parts Inventory System";
+        public string Author => "Car Parts Inventory System";
 
-        public bool   RequiresLicense   => false;
+        public bool RequiresLicense => false;
         public string LicenseFeatureKey => "";
 
-        public string TabId    => "btnBackup";
+        public string TabId => "btnBackup";
         public string TabTitle => LocalizationManager.IsArabic ? "\u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629" : "Backup";
-        public string TabIcon  => "backup";
-        public int    TabOrder => 120;
+        public string TabIcon => "backup";
+        public int TabOrder => 120;
 
         private PluginContext _ctx;
 
@@ -45,7 +45,7 @@ namespace InventorySystem.Plugins
         {
             _ctx = ctx;
             this.BackColor = ThemeConfig.BackgroundColor;
-            this.Dock      = DockStyle.Fill;
+            this.Dock = DockStyle.Fill;
             Build();
         }
 
@@ -58,14 +58,14 @@ namespace InventorySystem.Plugins
 
             // Card container
             Panel card = new Panel();
-            card.Width     = 480;
-            card.Height    = isAdmin ? 410 : 340;
+            card.Width = 480;
+            card.Height = isAdmin ? 480 : 410;
             card.BackColor = ThemeConfig.SurfaceColor;
             card.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 using (var path = RoundRect(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 16))
-                using (var pen  = new Pen(ThemeConfig.BorderColor, 1.5f))
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f))
                     e.Graphics.DrawPath(pen, path);
             };
             this.Resize += (s, e) => card.Location = new Point((this.Width - card.Width) / 2, 90);
@@ -76,13 +76,13 @@ namespace InventorySystem.Plugins
             // Last backup info
             _lblLastBackup = new Label
             {
-                AutoSize  = false,
-                Size      = new Size(440, 30),
-                Location  = new Point(20, y),
-                Font      = ThemeConfig.StandardFont,
+                AutoSize = false,
+                Size = new Size(440, 30),
+                Location = new Point(20, y),
+                Font = ThemeConfig.StandardFont,
                 ForeColor = ThemeConfig.SecondaryColor,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Text      = GetLastBackupText()
+                Text = GetLastBackupText()
             };
             card.Controls.Add(_lblLastBackup);
             y += 40;
@@ -108,6 +108,15 @@ namespace InventorySystem.Plugins
                 ar ? "فتح مجلد النسخ" : "Open Backup Folder",
                 "open_backup_folder", ThemeConfig.SecondaryColor, OpenBackupFolder);
 
+            y += 10;
+            AddActionButton(card, ref y,
+                ar ? "مسح ذاكرة التخزين المؤقت للصور" : "Clear Image Cache",
+                "refresh", ThemeConfig.SecondaryColor, () =>
+                {
+                    InventorySystem.Helpers.CacheManager.ClearImageCache();
+                    MessageHelper.ShowSuccess(ar ? "تم مسح الذاكرة بنجاح!" : "Image cache cleared successfully!");
+                });
+
             if (isAdmin)
             {
                 y += 10;
@@ -119,13 +128,13 @@ namespace InventorySystem.Plugins
             // Tip note
             Label note = new Label
             {
-                AutoSize  = false,
+                AutoSize = false,
                 Size = new Size(440, 35),
-                Location  = new Point(20, y + 15),
-                Font      = ThemeConfig.StandardFont,
+                Location = new Point(20, y + 15),
+                Font = ThemeConfig.StandardFont,
                 ForeColor = ThemeConfig.SecondaryColor,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Text      = ar
+                Text = ar
                     ? "\u062a\u0648\u0635\u064a\u0629: \u0642\u0645 \u0628\u0625\u0646\u0634\u0627\u0621 \u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629 \u064a\u0648\u0645\u064a\u064b\u0627 \u0644\u062d\u0645\u0627\u064a\u0629 \u0628\u064a\u0627\u0646\u0627\u062a\u0643."
                     : "Tip: Create a daily backup to protect your data from accidental loss."
             };
@@ -136,24 +145,24 @@ namespace InventorySystem.Plugins
         {
             Button btn = new Button
             {
-                Text      = "  " + text,
+                Text = "  " + text,
                 Size = new Size(440, 35),
-                Location  = new Point(20, y),
+                Location = new Point(20, y),
                 FlatStyle = FlatStyle.Flat,
-                Font      = ThemeConfig.ButtonFont,
+                Font = ThemeConfig.ButtonFont,
                 ForeColor = color,
                 BackColor = ThemeConfig.SurfaceColor,
-                Cursor    = Cursors.Hand,
+                Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(10, 0, 0, 0)
+                Padding = new Padding(10, 0, 0, 0)
             };
             btn.FlatAppearance.BorderColor = color;
-            btn.FlatAppearance.BorderSize  = 1;
+            btn.FlatAppearance.BorderSize = 1;
 
             Image img = ThemeConfig.GetNuricon(icon);
             if (img != null)
             {
-                btn.Image      = ResizeImg(img, 22, 22);
+                btn.Image = ResizeImg(img, 22, 22);
                 btn.ImageAlign = ContentAlignment.MiddleLeft;
                 btn.TextImageRelation = TextImageRelation.ImageBeforeText;
             }
@@ -200,7 +209,7 @@ namespace InventorySystem.Plugins
         {
             using (OpenFileDialog dlg = new OpenFileDialog())
             {
-                dlg.Title  = LocalizationManager.IsArabic ? "\u0627\u062e\u062a\u0631 \u0645\u0644\u0641 \u0627\u0644\u0646\u0633\u062e\u0629" : "Select Backup File";
+                dlg.Title = LocalizationManager.IsArabic ? "\u0627\u062e\u062a\u0631 \u0645\u0644\u0641 \u0627\u0644\u0646\u0633\u062e\u0629" : "Select Backup File";
                 dlg.Filter = "Database files (*.mdf;*.db;*.sqlite)|*.mdf;*.db;*.sqlite|All files (*.*)|*.*";
                 dlg.InitialDirectory = GetBackupDirectory();
 
@@ -245,11 +254,11 @@ namespace InventorySystem.Plugins
         private void DoResetDatabase()
         {
             bool ar = LocalizationManager.IsArabic;
-            
+
             bool confirm1 = MessageHelper.ConfirmAction(ar
                 ? "تحذير: سيتم حذف جميع البيانات (المخزون، المبيعات، العملاء)! هل أنت متأكد؟"
                 : "WARNING: This will permanently delete ALL data (inventory, sales, customers)! Are you sure?");
-                
+
             if (!confirm1) return;
 
             bool confirm2 = MessageHelper.ConfirmAction(ar
@@ -267,8 +276,8 @@ namespace InventorySystem.Plugins
             try
             {
                 // Drop all tables
-                string[] tables = { "categories", "suppliers", "customers", "parts", "transactions", 
-                                    "users", "orders", "order_items", "payments", "purchase_orders", 
+                string[] tables = { "categories", "suppliers", "customers", "parts", "transactions",
+                                    "users", "orders", "order_items", "payments", "purchase_orders",
                                     "purchase_order_items", "returns", "return_items", "expenses", "expense_categories" };
 
                 foreach (string table in tables)
@@ -298,17 +307,17 @@ namespace InventorySystem.Plugins
                 prompt.EnforceMinWidth = false;
                 prompt.Width = 450;
 
-                var textLabel = new Label 
-                { 
+                var textLabel = new Label
+                {
                     AutoSize = true,
                     Text = ar ? "الرجاء إدخال كلمة مرور المسؤول للمتابعة:" : "Please enter your admin password to continue:",
                     Font = ThemeConfig.StandardFont,
                     ForeColor = ThemeConfig.TextColorDark,
                     Location = new Point(20, 20)
                 };
-                
-                var txtPassword = new InventorySystem.Controls.ModernTextBox 
-                { 
+
+                var txtPassword = new InventorySystem.Controls.ModernTextBox
+                {
                     LabelText = ar ? "كلمة المرور" : "Password",
                     IsPassword = true,
                     Width = 350,
@@ -319,21 +328,22 @@ namespace InventorySystem.Plugins
                 prompt.ContentPanel.Controls.Add(txtPassword);
 
                 bool result = false;
-                
+
                 prompt.SetFooterButtons(
                     ar ? "تأكيد" : "Verify",
                     ar ? "إلغاء" : "Cancel",
-                    (s, e) => {
+                    (s, e) =>
+                    {
                         string input = txtPassword.Text.Trim();
                         if (string.IsNullOrEmpty(input)) return;
 
                         if (UserSession.Username == "Softio.Admin" && input == "Softio@2026!") { result = true; prompt.Close(); return; }
-                        
+
                         string sql = "SELECT COUNT(*) FROM users WHERE username = @username AND password = @password";
-                        var count = DatabaseHelper.ExecuteScalar<long>(sql, 
+                        var count = DatabaseHelper.ExecuteScalar<long>(sql,
                             new Microsoft.Data.Sqlite.SqliteParameter("@username", UserSession.Username),
                             new Microsoft.Data.Sqlite.SqliteParameter("@password", input));
-                        
+
                         if (count > 0)
                         {
                             result = true;
@@ -341,10 +351,11 @@ namespace InventorySystem.Plugins
                         }
                         else
                         {
-                            MessageHelper.ShowError(LocalizationManager.GetString("Login_Error") ?? "Invalid password.");
+                            MessageHelper.ShowError(LocalizationManager.GetString("Login_Error", "Invalid password."));
                         }
                     },
-                    (s, e) => {
+                    (s, e) =>
+                    {
                         result = false;
                         prompt.Close();
                     }
@@ -363,7 +374,7 @@ namespace InventorySystem.Plugins
         {
             string dbPath = DatabaseConfig.DatabasePath;
             if (File.Exists(dbPath)) return dbPath;
-            
+
             // Fallback for older versions or different structures
             string[] candidates =
             {

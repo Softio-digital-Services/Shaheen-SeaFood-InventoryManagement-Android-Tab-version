@@ -271,6 +271,12 @@ namespace InventorySystem.Forms
                 return;
             }
 
+            if (RecipeData.RecipeNameExists(txtName.Text.Trim(), _recipeId))
+            {
+                MessageHelper.ShowWarning("A Recipe with this exact name already exists.");
+                return;
+            }
+
             if (_partsList.Count == 0)
             {
                 MessageHelper.ShowWarning("A recipe must have at least one component part.");

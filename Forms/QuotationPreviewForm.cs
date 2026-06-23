@@ -35,11 +35,11 @@ namespace InventorySystem.Forms
             this.ContentPanel.AutoScroll = true;
 
             SetFooterButtons(
-                LocalizationManager.GetString("Tran_Print") ?? "Print",
-                LocalizationManager.GetString("Tran_Export") ?? "Export",
+                LocalizationManager.GetString("Tran_Print", "Print"),
+                LocalizationManager.GetString("Tran_Export", "Export"),
                 (s, e) => HandlePrint(),
                 (s, e) => HandleExport(),
-                LocalizationManager.GetString("Popup_Cancel") ?? "Close",
+                LocalizationManager.GetString("Popup_Cancel", "Close"),
                 (s, e) => this.Close()
             );
 
@@ -136,10 +136,10 @@ namespace InventorySystem.Forms
                     hy += 45;
                     Label lblCompInfo = new Label
                     {
-                        Text = "[Street Address] | [Beirut - Lebanon]\n | Phone: [000-000-0000]",
+                        Text = "Jnah- Rihab Road | Beirut - Lebanon | Phone: +961 76 117731",
                         Font = new Font("Segoe UI", 9),
                         Location = new Point(130, hy),
-                        Size = new Size(400, 35),
+                        Size = new Size(500, 35),
                         ForeColor = Color.Gray
                     };
                     page.Controls.Add(lblCompInfo);
@@ -165,7 +165,7 @@ namespace InventorySystem.Forms
                     hy += 25;
 
                     string custQuery = $@"
-                        SELECT c.full_name, c.address, c.phone 
+                        SELECT COALESCE(c.full_name, 'Walk-in Customer') AS full_name, c.address, c.phone 
                         FROM orders o 
                         LEFT JOIN customers c ON o.customer_id = c.customer_id 
                         WHERE o.order_id = {_orderId}";
@@ -233,11 +233,13 @@ namespace InventorySystem.Forms
                 grid.ColumnHeadersHeight = 35;
                 grid.RowTemplate.Height = 60;
 
-                grid.Columns.Add(new DataGridViewImageColumn { Name = "Photo", HeaderText = "PHOTO", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom });
-                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Desc", HeaderText = "ITEM DESCRIPTION", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+                grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+
+                grid.Columns.Add(new DataGridViewImageColumn { Name = "Photo", HeaderText = "PHOTO", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Desc", HeaderText = "ITEM DESCRIPTION", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
                 grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Qty", HeaderText = "QTY", Width = 60, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
-                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Price", HeaderText = "PRICE", Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
-                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = "TOTAL", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9.5F, FontStyle.Bold) } });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Price", HeaderText = "PRICE", Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = "TOTAL", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 9.5F, FontStyle.Bold) } });
 
                 // Calculate available grid height depending on whether this can be the final page
                 int remainingItems = items.Count - currentItemIndex;

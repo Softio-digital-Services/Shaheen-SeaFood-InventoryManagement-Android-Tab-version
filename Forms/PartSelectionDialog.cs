@@ -14,7 +14,6 @@ namespace InventorySystem.Forms
         private ModernTextBox txtSearch;
         private DataGridView dgvParts;
         private ModernNumericUpDown numQuantity;
-        private ModernButton btnAdd;
 
         public PartData SelectedPart { get; private set; }
         public double SelectedQuantity { get; private set; }

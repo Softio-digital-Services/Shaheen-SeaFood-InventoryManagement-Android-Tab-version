@@ -13,7 +13,7 @@ namespace InventorySystem.Forms
         private Label lblStatus;
         private LinkLabel lnkCopyHardwareId;
 
-        private Label lblTitle;
+        // private Label lblTitle;
         private Label lblSubtitle;
         private Label lblHwIdTitle;
         public bool LicenseActivated { get; private set; }

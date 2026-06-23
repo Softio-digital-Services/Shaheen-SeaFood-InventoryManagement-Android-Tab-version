@@ -50,6 +50,7 @@ namespace InventorySystem.Forms
             // 2. Header Info Panel
             Panel pnlHeader = ThemeConfig.CreateCardPanel(CreateHeaderGrid(header));
             pnlHeader.Margin = new Padding(0, 0, 0, 15);
+            pnlHeader.Height = 160; // Force height to prevent clipping
             mainLayout.Controls.Add(pnlHeader, 0, 0);
 
             // 3. Shipping Info Panel (if exists)
@@ -58,6 +59,7 @@ namespace InventorySystem.Forms
             {
                 Panel pnlShipping = ThemeConfig.CreateCardPanel(CreateShippingGrid(header));
                 pnlShipping.Margin = new Padding(0, 0, 0, 15);
+                pnlShipping.Height = 130; // Force height to prevent clipping
                 mainLayout.Controls.Add(pnlShipping, 0, 1);
             }
 
@@ -93,10 +95,10 @@ namespace InventorySystem.Forms
             tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
 
             AddRow(tlp, 0, "Shipping To:", header["shipping_address"]?.ToString());
-            
+
             string delDate = header["delivery_date"] != DBNull.Value ? Convert.ToDateTime(header["delivery_date"]).ToString("g") : "N/A";
             AddRow(tlp, 1, "Delivery Date:", delDate);
-            
+
             string dueDate = header["due_date"] != DBNull.Value ? Convert.ToDateTime(header["due_date"]).ToString("g") : "N/A";
             AddRow(tlp, 2, "Payment Due:", dueDate);
 
@@ -133,7 +135,7 @@ namespace InventorySystem.Forms
 
             var items = _orderService.GetOrderItems(_orderId);
             dgv.DataSource = items;
-            
+
             return dgv;
         }
     }

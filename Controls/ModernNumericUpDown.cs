@@ -12,16 +12,16 @@ namespace InventorySystem.Controls
         private TextBox txtInput;
         private Label lblTitle;
         private Panel pnlContainer;
-        private Button btnUp;
-        private Button btnDown;
+        // private Button btnUp;
+        // private Button btnDown;
 
         private decimal _value = 0;
         [Category("Appearance")]
         public decimal Value
         {
             get => _value;
-            set 
-            { 
+            set
+            {
                 _value = Math.Max(_minimum, Math.Min(_maximum, value));
                 UpdateText();
                 ValueChanged?.Invoke(this, EventArgs.Empty);
@@ -30,40 +30,40 @@ namespace InventorySystem.Controls
 
         private decimal _minimum = 0;
         [Category("Appearance")]
-        public decimal Minimum 
-        { 
-            get => _minimum; 
-            set { _minimum = value; if (_value < value) Value = value; } 
+        public decimal Minimum
+        {
+            get => _minimum;
+            set { _minimum = value; if (_value < value) Value = value; }
         }
 
         private decimal _maximum = 100;
         [Category("Appearance")]
-        public decimal Maximum 
-        { 
-            get => _maximum; 
-            set { _maximum = value; if (_value > value) Value = value; } 
+        public decimal Maximum
+        {
+            get => _maximum;
+            set { _maximum = value; if (_value > value) Value = value; }
         }
 
         private int _decimalPlaces = 0;
         [Category("Appearance")]
-        public int DecimalPlaces 
-        { 
-            get => _decimalPlaces; 
-            set { _decimalPlaces = value; UpdateText(); } 
+        public int DecimalPlaces
+        {
+            get => _decimalPlaces;
+            set { _decimalPlaces = value; UpdateText(); }
         }
 
         private decimal _increment = 1;
         [Category("Appearance")]
-        public decimal Increment 
-        { 
-            get => _increment; 
-            set => _increment = value; 
+        public decimal Increment
+        {
+            get => _increment;
+            set => _increment = value;
         }
 
         [Category("Appearance")]
-        public string LabelText 
-        { 
-            get => lblTitle.Text; 
+        public string LabelText
+        {
+            get => lblTitle.Text;
             set { lblTitle.Text = value; UpdateLayout(); }
         }
 
@@ -88,24 +88,26 @@ namespace InventorySystem.Controls
             this.DoubleBuffered = true;
             this.BackColor = Color.Transparent;
             this.Size = new Size(150, 67);
-            
+
             InitializeControls();
         }
 
         private void InitializeControls()
         {
             // Label
-            lblTitle = new Label { 
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold), 
-                ForeColor = ThemeConfig.TextColorDark, 
-                AutoSize = true, 
-                Location = new Point(5, 0) 
+            lblTitle = new Label
+            {
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                AutoSize = true,
+                Location = new Point(5, 0)
             };
             this.Controls.Add(lblTitle);
 
             // Container Panel
             bool isAr = LocalizationManager.IsArabic;
-            pnlContainer = new Panel { 
+            pnlContainer = new Panel
+            {
                 BackColor = Color.Transparent,
                 Padding = isAr ? new Padding(26, 6, 10, 5) : new Padding(10, 6, 26, 5)
             };
@@ -113,28 +115,33 @@ namespace InventorySystem.Controls
             this.Controls.Add(pnlContainer);
 
             // Input TextBox
-            txtInput = new TextBox { 
-                BorderStyle = BorderStyle.None, 
-                Font = new Font("Segoe UI", 10F), 
-                ForeColor = ThemeConfig.TextColorDark, 
+            txtInput = new TextBox
+            {
+                BorderStyle = BorderStyle.None,
+                Font = new Font("Segoe UI", 10F),
+                ForeColor = ThemeConfig.TextColorDark,
                 BackColor = ThemeConfig.SurfaceColor,
                 Dock = DockStyle.Fill,
                 RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No
             };
             txtInput.KeyPress += TxtInput_KeyPress;
-            txtInput.Enter += (s, e) => {
+            txtInput.Enter += (s, e) =>
+            {
                 if (txtInput.IsHandleCreated) txtInput.BeginInvoke(new Action(() => { txtInput.Select(0, 0); txtInput.SelectionLength = 0; }));
             };
-            txtInput.GotFocus += (s, e) => {
+            txtInput.GotFocus += (s, e) =>
+            {
                 if (txtInput.IsHandleCreated) txtInput.BeginInvoke(new Action(() => { txtInput.Select(0, 0); txtInput.SelectionLength = 0; }));
             };
-            txtInput.LostFocus += (s, e) => {
+            txtInput.LostFocus += (s, e) =>
+            {
                 if (decimal.TryParse(txtInput.Text, out decimal val)) Value = val;
                 else UpdateText();
             };
             pnlContainer.Controls.Add(txtInput);
 
-            pnlContainer.MouseClick += (s, e) => {
+            pnlContainer.MouseClick += (s, e) =>
+            {
                 bool isAr = LocalizationManager.IsArabic;
                 int btnZoneX = isAr ? 0 : pnlContainer.Width - 25;
                 if (e.X >= btnZoneX && e.X <= btnZoneX + 25)
@@ -144,7 +151,8 @@ namespace InventorySystem.Controls
                 }
             };
 
-            pnlContainer.MouseMove += (s, e) => {
+            pnlContainer.MouseMove += (s, e) =>
+            {
                 bool isAr = LocalizationManager.IsArabic;
                 int btnZoneX = isAr ? 0 : pnlContainer.Width - 25;
                 if (e.X >= btnZoneX && e.X <= btnZoneX + 25)
@@ -230,7 +238,7 @@ namespace InventorySystem.Controls
             // Separator for buttons
             bool isAr = LocalizationManager.IsArabic;
             int btnZoneX = isAr ? 25 : pnlContainer.Width - 25;
-            
+
             // Draw lines for button area
             e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), btnZoneX, 5, btnZoneX, pnlContainer.Height - 5);
             e.Graphics.DrawLine(new Pen(ThemeConfig.BorderColor, 1f), isAr ? 1 : btnZoneX, pnlContainer.Height / 2, isAr ? 25 : pnlContainer.Width - 2, pnlContainer.Height / 2);

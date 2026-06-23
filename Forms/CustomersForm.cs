@@ -55,10 +55,10 @@ namespace InventorySystem.Forms
         private void ApplyLocalization()
         {
             LocalizationManager.ApplyRTL(this);
-            var L = LocalizationManager.GetString;
+            Func<string, string> L = LocalizationManager.GetString;
 
-            if (lblCustomersTitle != null) lblCustomersTitle.Text = L("Cust_Title") ?? "Customers management";
-            if (txtSearch != null) txtSearch.PlaceholderText = L("Cust_Search") ?? "Search customers...";
+            if (lblCustomersTitle != null) lblCustomersTitle.Text = LocalizationManager.GetString("Cust_Title", "Customers management");
+            if (txtSearch != null) txtSearch.PlaceholderText = LocalizationManager.GetString("Cust_Search", "Search customers...");
 
             if (btnAddNew != null) ThemeConfig.ApplyStandardAddButton(btnAddNew, "Cust_AddCustomer");
             if (btnImport != null) btnImport.Invalidate();
@@ -186,7 +186,7 @@ namespace InventorySystem.Forms
             this.lblCustomersTitle = ThemeConfig.CreateStandardHeader("Customers management");
             this.lblCustomersTitle.Name = "lblCustomersTitle";
 
-                        // Search Bar
+            // Search Bar
             this.txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
@@ -436,7 +436,7 @@ namespace InventorySystem.Forms
 
         private void DeleteCustomer(int id)
         {
-            if (MessageHelper.ConfirmAction(LocalizationManager.GetString("Customers_DeleteConfirm") ?? "Are you sure you want to delete this customer?"))
+            if (MessageHelper.ConfirmAction(LocalizationManager.GetString("Customers_DeleteConfirm", "Are you sure you want to delete this customer?")))
             {
                 try
                 {

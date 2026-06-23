@@ -14,22 +14,22 @@ namespace InventorySystem.Forms
     {
         // Service
         private DashboardService _dashboardService;
-        
+
         // Layout
         private TableLayoutPanel _mainLayout;
         private TableLayoutPanel _cardsLayout;
         private TableLayoutPanel _middleLayout;
-        
+
         // Controls
         private StatCard _cardInventory;
         private StatCard _cardRevenue;
         private StatCard _cardOrders;
         private StatCard _cardLowStock;
-        
+
         private Chart _chartWeeklyRevenue;
         private Chart _chartTrends; // Bottom Chart
-        
-        private Panel _feedPanel; // For Recent Activity or Top Items
+
+        // private Panel _feedPanel; // For Recent Activity or Top Items
         private DataGridView _gridTopItems; // If using grid
         private Label lblDashboardTitle;
         private Label _lblTop;
@@ -57,7 +57,7 @@ namespace InventorySystem.Forms
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Size = new System.Drawing.Size(1200, 800);
 
-            
+
             InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
         }
 
@@ -67,7 +67,7 @@ namespace InventorySystem.Forms
             Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
 
             if (this.lblDashboardTitle != null) this.lblDashboardTitle.Text = L("Dash_Title");
-            
+
             // Re-detect controls if they were created dynamically
             var btnScan = this.Controls.Find("btnScan", true).FirstOrDefault() as Button;
             if (btnScan != null) btnScan.Text = L("Dash_ScanToConnect");
@@ -86,10 +86,10 @@ namespace InventorySystem.Forms
             var lblTrendTitle = this.Controls.Find("lblTitleTrend", true).FirstOrDefault() as Label;
             if (lblTrendTitle != null) lblTrendTitle.Text = L("Dash_SalesTrends");
 
-            if (_chartWeeklyRevenue != null && _chartWeeklyRevenue.Titles.Count > 0) 
+            if (_chartWeeklyRevenue != null && _chartWeeklyRevenue.Titles.Count > 0)
                 _chartWeeklyRevenue.Titles[0].Text = L("Dash_WeeklyRevenue");
-            
-            if (_chartTrends != null && _chartTrends.Titles.Count > 0) 
+
+            if (_chartTrends != null && _chartTrends.Titles.Count > 0)
                 _chartTrends.Titles[0].Text = L("Dash_MonthlyTrends");
 
             LoadData(); // refresh data strings
@@ -114,14 +114,14 @@ namespace InventorySystem.Forms
                 BackColor = ThemeConfig.BackgroundColor // Horizon Light Gray
             };
 
-            
+
             // Row Styles
             // Row Styles
             _mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));       // Header
             _mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130F)); // Cards
             _mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 55F));   // Middle (Bar Chart + List)
             _mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));   // Bottom (Line Chart)
-            
+
             this.Controls.Add(_mainLayout);
 
             lblDashboardTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Dash_Title"));
@@ -139,15 +139,17 @@ namespace InventorySystem.Forms
                 Padding = new Padding(0, 10, 8, 0),
                 Cursor = Cursors.Hand
             };
-            
-            lblServerUrl.Click += (s, e) => {
+
+            lblServerUrl.Click += (s, e) =>
+            {
                 Clipboard.SetText(serverUrl);
                 string originalText = lblServerUrl.Text;
-                lblServerUrl.Text = "✅ " + (LocalizationManager.GetString("Msg_Copied") ?? "Copied!");
+                lblServerUrl.Text = "✅ " + (LocalizationManager.GetString("Msg_Copied", "Copied!"));
                 lblServerUrl.ForeColor = ThemeConfig.PrimaryColor;
-                
+
                 System.Windows.Forms.Timer t = new System.Windows.Forms.Timer { Interval = 1500 };
-                t.Tick += (ts, te) => {
+                t.Tick += (ts, te) =>
+                {
                     lblServerUrl.Text = originalText;
                     lblServerUrl.ForeColor = ThemeConfig.PrimaryColor;
                     t.Stop();
@@ -159,7 +161,7 @@ namespace InventorySystem.Forms
             // Scan-to-Connect button
             var btnScan = new ModernButton
             {
-                Name = "btnScan", 
+                Name = "btnScan",
                 Text = LocalizationManager.GetString("Dash_ScanToConnect"),
                 Width = 145,
                 Height = 35
@@ -182,19 +184,19 @@ namespace InventorySystem.Forms
                 BackColor = Color.Transparent
             };
             for (int i = 0; i < 4; i++) _cardsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
-            
+
             // Create Cards
-            _cardInventory = CreateStatCard(LocalizationManager.GetString("Dash_TotalInventory"), "inventory_dashboard", ThemeConfig.PrimaryColor); 
-            _cardRevenue = CreateStatCard(LocalizationManager.GetString("Dash_TotalRevenue"), "revenue", ThemeConfig.SuccessColor); 
-            _cardOrders = CreateStatCard(LocalizationManager.GetString("Dash_TotalOrders"), "orders", ThemeConfig.WarningColor); 
-            _cardLowStock = CreateStatCard(LocalizationManager.GetString("Dash_LowStock"), "bell_dashboard", ThemeConfig.DangerColor); 
+            _cardInventory = CreateStatCard(LocalizationManager.GetString("Dash_TotalInventory"), "inventory_dashboard", ThemeConfig.PrimaryColor);
+            _cardRevenue = CreateStatCard(LocalizationManager.GetString("Dash_TotalRevenue"), "revenue", ThemeConfig.SuccessColor);
+            _cardOrders = CreateStatCard(LocalizationManager.GetString("Dash_TotalOrders"), "orders", ThemeConfig.WarningColor);
+            _cardLowStock = CreateStatCard(LocalizationManager.GetString("Dash_LowStock"), "bell_dashboard", ThemeConfig.DangerColor);
 
 
             _cardsLayout.Controls.Add(_cardInventory, 0, 0);
             _cardsLayout.Controls.Add(_cardRevenue, 1, 0);
             _cardsLayout.Controls.Add(_cardOrders, 2, 0);
             _cardsLayout.Controls.Add(_cardLowStock, 3, 0);
-            
+
             _mainLayout.Controls.Add(_cardsLayout, 0, 1);
 
             // 2. Middle Section (Charts + Feed)
@@ -206,9 +208,9 @@ namespace InventorySystem.Forms
                 Margin = new Padding(0, 0, 0, 15),
                 BackColor = Color.Transparent
             };
-            _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F)); 
-            _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F)); 
-            
+            _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F));
+            _middleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
+
             // Bar Chart Card  (with title label above the chart)
             _chartWeeklyRevenue = CreateModernChart();
             Panel pnlWeeklyContent = new Panel { Dock = DockStyle.Fill };
@@ -227,35 +229,35 @@ namespace InventorySystem.Forms
             Panel pnlWeeklyCard = ThemeConfig.CreateCardPanel(pnlWeeklyContent);
             pnlWeeklyCard.Margin = new Padding(0, 0, 10, 0);
             _middleLayout.Controls.Add(pnlWeeklyCard, 0, 0);
-            
+
             // Top Items Grid Card
             Panel rightContent = new Panel { Dock = DockStyle.Fill };
-            _lblTop = new Label 
-            { 
+            _lblTop = new Label
+            {
                 Name = "lblTitleTop",
-                Text = LocalizationManager.GetString("Dash_TopSelling"), 
-                Font = ThemeConfig.SubHeaderFont, 
-                Dock = DockStyle.Top, 
+                Text = LocalizationManager.GetString("Dash_TopSelling"),
+                Font = ThemeConfig.SubHeaderFont,
+                Dock = DockStyle.Top,
                 Height = 30,
-                ForeColor = ThemeConfig.TextColorDark 
+                ForeColor = ThemeConfig.TextColorDark
             };
             rightContent.Controls.Add(_lblTop);
-            
+
             _gridTopItems = new DataGridView();
             _gridTopItems.DataError += (s, e) => { e.ThrowException = false; };
             _gridTopItems.AllowUserToAddRows = false;
             _gridTopItems.ReadOnly = true;
             ThemeConfig.ApplyGridTheme(_gridTopItems);
             _gridTopItems.Dock = DockStyle.Fill;
-            _gridTopItems.ColumnHeadersVisible = true; 
-            _gridTopItems.ScrollBars = ScrollBars.Vertical; 
+            _gridTopItems.ColumnHeadersVisible = true;
+            _gridTopItems.ScrollBars = ScrollBars.Vertical;
             rightContent.Controls.Add(_gridTopItems);
             _lblTop.BringToFront();
 
             Panel pnlTopItemsCard = ThemeConfig.CreateCardPanel(rightContent);
             pnlTopItemsCard.Margin = new Padding(10, 0, 0, 0);
             _middleLayout.Controls.Add(pnlTopItemsCard, 1, 0);
-            
+
             _mainLayout.Controls.Add(_middleLayout, 0, 2);
 
             // 3. Bottom Section (Line Chart)
@@ -264,7 +266,7 @@ namespace InventorySystem.Forms
             bottomContent.Controls.Add(_lblTrend);
 
             _chartTrends = CreateModernChart();
-            _chartTrends.Series.Clear(); 
+            _chartTrends.Series.Clear();
             _chartTrends.Dock = DockStyle.Fill;
             bottomContent.Controls.Add(_chartTrends);
             _lblTrend.BringToFront();
@@ -293,9 +295,9 @@ namespace InventorySystem.Forms
             Chart chart = new Chart { Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor };
             ChartArea area = new ChartArea("Default");
             chart.ChartAreas.Add(area);
-            
+
             ThemeConfig.ApplyChartTheme(chart);
-            
+
             return chart;
         }
 
@@ -318,30 +320,30 @@ namespace InventorySystem.Forms
                     _cardInventory.Subtitle = string.Format(L("Dash_ValuedAt"), $"{totalValue:C}");
                     _cardInventory.FinalizeLayout();
                 }
-                
+
                 if (_cardRevenue != null)
                 {
                     _cardRevenue.Value = _dashboardService.GetSales("Today").ToString("C");
                     _cardRevenue.Subtitle = L("Dash_TodayRevenue");
                     _cardRevenue.FinalizeLayout();
                 }
-                
+
                 if (_cardOrders != null)
                 {
                     _cardOrders.Value = orders.ToString("N0");
                     _cardOrders.Subtitle = L("Dash_NewOrders");
                     _cardOrders.FinalizeLayout();
                 }
-                
+
                 if (_cardLowStock != null)
                 {
                     _cardLowStock.Value = lowStock.ToString("N0");
                     _cardLowStock.Subtitle = L("Dash_NeedsReordering");
                     _cardLowStock.FinalizeLayout();
-                    if(lowStock > 0) _cardLowStock.ThemeColor = ThemeConfig.DangerColorBright; // Alert color
+                    if (lowStock > 0) _cardLowStock.ThemeColor = ThemeConfig.DangerColorBright; // Alert color
                 }
 
-                
+
                 // 2. Bar Chart (Weekly Revenue)
                 try
                 {
@@ -351,12 +353,12 @@ namespace InventorySystem.Forms
                     seriesBar.Color = ThemeConfig.PrimaryColor;
                     seriesBar["PointWidth"] = "0.25";
                     seriesBar.ChartArea = "Default"; // Explicit link to the area we forced in ThemeConfig
-                    
+
                     // Add series first, then points (safer for some Chart versions)
                     _chartWeeklyRevenue.Series.Add(seriesBar);
 
                     var weeklyData = _dashboardService.GetWeeklyRevenue();
-                    foreach(var kvp in weeklyData)
+                    foreach (var kvp in weeklyData)
                     {
                         seriesBar.Points.AddXY(kvp.Key, kvp.Value);
                     }
@@ -368,13 +370,13 @@ namespace InventorySystem.Forms
                 // 3. Top Items Grid
                 _gridTopItems.ScrollBars = ScrollBars.Both; // Ensure horizontal scroll if needed too
                 _gridTopItems.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None; // Enforce fixed height
-                
+
                 var topItems = _dashboardService.GetTopSellingItems(50); // Fetch MORE to enable scrolling
-                if(topItems != null)
+                if (topItems != null)
                 {
                     _gridTopItems.DataSource = topItems;
-                    if(_gridTopItems.Columns.Contains("part_name")) _gridTopItems.Columns["part_name"].HeaderText = L("Parts_GridProduct");
-                    if(_gridTopItems.Columns.Contains("total_sold")) _gridTopItems.Columns["total_sold"].HeaderText = L("Dash_Sold");
+                    if (_gridTopItems.Columns.Contains("part_name")) _gridTopItems.Columns["part_name"].HeaderText = L("Parts_GridProduct");
+                    if (_gridTopItems.Columns.Contains("total_sold")) _gridTopItems.Columns["total_sold"].HeaderText = L("Dash_Sold");
                 }
 
                 // 4. Line Chart (Trends)
@@ -384,10 +386,10 @@ namespace InventorySystem.Forms
                     Series seriesSpline = new Series(L("Dash_SalesTrends"));
                     seriesSpline.ChartArea = "Default";
                     seriesSpline.ChartType = SeriesChartType.SplineArea;
-                    seriesSpline.Color = Color.FromArgb(40, ThemeConfig.SuccessColor); 
+                    seriesSpline.Color = Color.FromArgb(40, ThemeConfig.SuccessColor);
                     seriesSpline.BorderWidth = 4;
                     seriesSpline.BorderColor = ThemeConfig.SuccessColor;
-                    
+
                     _chartTrends.Series.Add(seriesSpline);
 
                     var trendData = _dashboardService.GetMonthlySalesTrend();

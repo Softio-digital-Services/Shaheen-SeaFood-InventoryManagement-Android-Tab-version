@@ -187,17 +187,19 @@ namespace InventorySystem.Forms
 
                 if (status == "Received")
                 {
-                    MessageHelper.ShowInfo(LocalizationManager.GetString("PO_AlreadyReceived") ?? "This order has already been received.");
+                    MessageHelper.ShowInfo(LocalizationManager.GetString("PO_AlreadyReceived", "This order has already been received."));
                     return;
                 }
 
                 if (MessageHelper.ConfirmAction(LocalizationManager.GetString("PO_ConfirmReceive")))
                 {
-                    try {
+                    try
+                    {
                         _purchaseService.MarkAsReceived(poId);
                         MessageHelper.ShowSuccess(LocalizationManager.GetString("Msg_StockUpdated"));
                         LoadPurchaseOrders();
-                    } catch(Exception ex) { MessageHelper.ShowError(ex.Message); }
+                    }
+                    catch (Exception ex) { MessageHelper.ShowError(ex.Message); }
                 }
             }
         }
@@ -211,9 +213,10 @@ namespace InventorySystem.Forms
         {
             string title = autoPopulateLowStock ? (LocalizationManager.GetString("Msg_PredictivePO")) : LocalizationManager.GetString("PO_New");
             BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(1100, 700) }; // Decreased height to remove whitespace
-            
+
             // Root Container
-            TableLayoutPanel tlpRoot = new TableLayoutPanel {
+            TableLayoutPanel tlpRoot = new TableLayoutPanel
+            {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
                 RowCount = 3,
@@ -225,7 +228,8 @@ namespace InventorySystem.Forms
             f.ContentPanel.Controls.Add(tlpRoot);
 
             // --- HEADER SECTION ---
-            TableLayoutPanel tlpHeader = new TableLayoutPanel {
+            TableLayoutPanel tlpHeader = new TableLayoutPanel
+            {
                 Dock = DockStyle.Fill,
                 ColumnCount = 4,
                 RowCount = 1,
@@ -237,9 +241,10 @@ namespace InventorySystem.Forms
             tlpHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F)); // Add Button
 
             // 1. Supplier
-            ModernComboBox cmbSup = new ModernComboBox { 
+            ModernComboBox cmbSup = new ModernComboBox
+            {
                 Height = 75, // Increased to ensure no clipping
-                Dock = DockStyle.Bottom, 
+                Dock = DockStyle.Bottom,
                 LabelText = LocalizationManager.GetString("PO_Supplier") + ":",
                 Margin = new Padding(0, 0, 10, 5), // Bottom margin to prevent clipping
                 DropDownStyle = ComboBoxStyle.DropDownList
@@ -249,9 +254,10 @@ namespace InventorySystem.Forms
             tlpHeader.Controls.Add(cmbSup, 0, 0);
 
             // 2. Part Search
-            ModernComboBox cmbParts = new ModernComboBox { 
+            ModernComboBox cmbParts = new ModernComboBox
+            {
                 Height = 75, // Increased to ensure no clipping
-                Dock = DockStyle.Bottom, 
+                Dock = DockStyle.Bottom,
                 LabelText = LocalizationManager.GetString("PO_QuickAdd"),
                 Margin = new Padding(0, 0, 10, 5), // Bottom margin to prevent clipping
                 DropDownStyle = ComboBoxStyle.DropDownList
@@ -261,8 +267,9 @@ namespace InventorySystem.Forms
             tlpHeader.Controls.Add(cmbParts, 1, 0);
 
             // 3. Add Button (Right Aligned & Level)
-            Button btnAddRow = new Button { 
-                Text = "", 
+            Button btnAddRow = new Button
+            {
+                Text = "",
                 Size = new Size(180, 42),
                 Dock = DockStyle.Bottom,
                 Margin = new Padding(0, 0, 0, 5), // Match dropdown bottom margin
@@ -271,16 +278,17 @@ namespace InventorySystem.Forms
             };
             btnAddRow.FlatAppearance.BorderSize = 0;
             btnAddRow.Paint += (s, e) => ThemeConfig.DrawIconButton(btnAddRow, e.Graphics, "add", "PO_AddItem", Color.White, ThemeConfig.PrimaryColor, false);
-            tlpHeader.Controls.Add(btnAddRow, 3, 0); 
+            tlpHeader.Controls.Add(btnAddRow, 3, 0);
 
             tlpRoot.Controls.Add(tlpHeader, 0, 0);
 
             // --- GRID SECTION ---
-            DataGridView dgvItems = new DataGridView { 
-                Dock = DockStyle.Fill, 
-                AllowUserToAddRows = false, 
+            DataGridView dgvItems = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                AllowUserToAddRows = false,
                 BackgroundColor = Color.White,
-                Margin = new Padding(0, 20, 0, 0) 
+                Margin = new Padding(0, 20, 0, 0)
             };
             ThemeConfig.ApplyGridTheme(dgvItems);
             dgvItems.Columns.Add("PartID", "ID"); dgvItems.Columns["PartID"].ReadOnly = true; dgvItems.Columns["PartID"].Width = 60;
@@ -292,39 +300,45 @@ namespace InventorySystem.Forms
 
             // --- FOOTER SECTION ---
             Panel pnlFooter = new Panel { Dock = DockStyle.Fill, Margin = new Padding(0) };
-            
-            Label lblGrandTotal = new Label { 
-                Text = LocalizationManager.GetString("PO_GrandTotal") + " " + CurrencyService.Format(0), 
-                AutoSize = true, 
-                Font = ThemeConfig.HeaderFont, 
+
+            Label lblGrandTotal = new Label
+            {
+                Text = LocalizationManager.GetString("PO_GrandTotal") + " " + CurrencyService.Format(0),
+                AutoSize = true,
+                Font = ThemeConfig.HeaderFont,
                 ForeColor = ThemeConfig.TextColorDark,
                 TextAlign = ContentAlignment.MiddleRight // Ensure right alignment
             };
             pnlFooter.Controls.Add(lblGrandTotal);
 
-            Button btnSave = new ModernButton { 
-                Text = (LocalizationManager.GetString("Msg_FinalizePO")), 
+            Button btnSave = new ModernButton
+            {
+                Text = (LocalizationManager.GetString("Msg_FinalizePO")),
                 Size = new Size(280, 45), // Increased width to prevent text clipping
             };
             ThemeConfig.ApplyPrimaryButton(btnSave);
             pnlFooter.Controls.Add(btnSave);
-            
-            pnlFooter.Resize += (s, e) => {
+
+            pnlFooter.Resize += (s, e) =>
+            {
                 lblGrandTotal.Location = new Point(pnlFooter.Width - lblGrandTotal.Width - 5, 10); // Moved down (10) and slight right margin
                 btnSave.Location = new Point(pnlFooter.Width - btnSave.Width, 52); // Moved lower (52)
             };
-            
+
             tlpRoot.Controls.Add(pnlFooter, 0, 2);
 
             // --- EVENTS ---
-            btnAddRow.Click += (s, e) => {
+            btnAddRow.Click += (s, e) =>
+            {
                 if (cmbParts.SelectedValue == null) return;
                 DataRowView drv = cmbParts.SelectedItem as DataRowView;
                 decimal cost = drv["purchase_price"] != DBNull.Value ? Convert.ToDecimal(drv["purchase_price"]) : 0;
-                
+
                 bool found = false;
-                foreach(DataGridViewRow row in dgvItems.Rows) {
-                    if (row.Cells["PartID"].Value?.ToString() == drv["id"].ToString()) {
+                foreach (DataGridViewRow row in dgvItems.Rows)
+                {
+                    if (row.Cells["PartID"].Value?.ToString() == drv["id"].ToString())
+                    {
                         row.Cells["Qty"].Value = Convert.ToInt32(row.Cells["Qty"].Value ?? 1) + 1;
                         found = true; break;
                     }
@@ -333,9 +347,11 @@ namespace InventorySystem.Forms
                 UpdatePOTotal(dgvItems, lblGrandTotal);
             };
 
-            dgvItems.CellValueChanged += (s, e) => {
+            dgvItems.CellValueChanged += (s, e) =>
+            {
                 if (e.RowIndex < 0) return;
-                if (dgvItems.Columns[e.ColumnIndex].Name == "Qty" || dgvItems.Columns[e.ColumnIndex].Name == "Cost") {
+                if (dgvItems.Columns[e.ColumnIndex].Name == "Qty" || dgvItems.Columns[e.ColumnIndex].Name == "Cost")
+                {
                     decimal qty = 0; decimal.TryParse(dgvItems.Rows[e.RowIndex].Cells["Qty"].Value?.ToString(), out qty);
                     decimal cost = 0; decimal.TryParse(dgvItems.Rows[e.RowIndex].Cells["Cost"].Value?.ToString(), out cost);
                     dgvItems.Rows[e.RowIndex].Cells["Subtotal"].Value = qty * cost;
@@ -343,14 +359,19 @@ namespace InventorySystem.Forms
                 }
             };
 
-            if (autoPopulateLowStock) {
+            if (autoPopulateLowStock)
+            {
                 DataTable lowStock = DatabaseHelper.ExecuteDataTable("SELECT id, part_name, (minimum_stock_level - quantity_in_stock + reorder_quantity) as req_qty, purchase_price, supplier_id FROM parts WHERE quantity_in_stock <= minimum_stock_level AND status = 'Active'");
-                
-                cmbSup.InnerComboBox.SelectedIndexChanged += (s, e) => {
+
+                cmbSup.InnerComboBox.SelectedIndexChanged += (s, e) =>
+                {
                     dgvItems.Rows.Clear();
-                    if (cmbSup.SelectedValue != null && int.TryParse(cmbSup.SelectedValue.ToString(), out int supId)) {
-                        foreach (DataRow r in lowStock.Rows) {
-                            if (r["supplier_id"] != DBNull.Value && Convert.ToInt32(r["supplier_id"]) == supId) {
+                    if (cmbSup.SelectedValue != null && int.TryParse(cmbSup.SelectedValue.ToString(), out int supId))
+                    {
+                        foreach (DataRow r in lowStock.Rows)
+                        {
+                            if (r["supplier_id"] != DBNull.Value && Convert.ToInt32(r["supplier_id"]) == supId)
+                            {
                                 dgvItems.Rows.Add(r["id"], r["part_name"], r["req_qty"], r["purchase_price"], Convert.ToDecimal(r["req_qty"]) * Convert.ToDecimal(r["purchase_price"]));
                             }
                         }
@@ -369,21 +390,26 @@ namespace InventorySystem.Forms
                 }
             }
 
-            btnSave.Click += (s, e) => {
-                if (cmbSup.SelectedValue == null) {
+            btnSave.Click += (s, e) =>
+            {
+                if (cmbSup.SelectedValue == null)
+                {
                     MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_SelectSupplier"));
                     return;
                 }
                 List<PurchaseItemInfo> items = new List<PurchaseItemInfo>();
-                foreach (DataGridViewRow row in dgvItems.Rows) {
+                foreach (DataGridViewRow row in dgvItems.Rows)
+                {
                     if (row.Cells["PartID"].Value != null)
-                        items.Add(new PurchaseItemInfo { 
-                            PartId = int.Parse(row.Cells["PartID"].Value.ToString()), 
-                            Quantity = int.Parse(row.Cells["Qty"].Value.ToString()), 
-                            CostPrice = decimal.Parse(row.Cells["Cost"].Value?.ToString() ?? "0") 
+                        items.Add(new PurchaseItemInfo
+                        {
+                            PartId = int.Parse(row.Cells["PartID"].Value.ToString()),
+                            Quantity = int.Parse(row.Cells["Qty"].Value.ToString()),
+                            CostPrice = decimal.Parse(row.Cells["Cost"].Value?.ToString() ?? "0")
                         });
                 }
-                if (items.Count == 0) {
+                if (items.Count == 0)
+                {
                     MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_AddItemsFirst"));
                     return;
                 }
@@ -391,25 +417,32 @@ namespace InventorySystem.Forms
                 f.DialogResult = DialogResult.OK; f.Close(); LoadPurchaseOrders();
             };
 
-            f.Shown += (s, e) => {
+            f.Shown += (s, e) =>
+            {
                 f.ActiveControl = null;
                 dgvItems.Focus();
                 cmbSup.InnerComboBox.Select(0, 0);
                 cmbParts.InnerComboBox.Select(0, 0);
             };
 
-            cmbSup.InnerComboBox.SelectedIndexChanged += (s, e) => {
-                if (cmbSup.InnerComboBox.IsHandleCreated) {
-                    cmbSup.InnerComboBox.BeginInvoke(new Action(() => {
+            cmbSup.InnerComboBox.SelectedIndexChanged += (s, e) =>
+            {
+                if (cmbSup.InnerComboBox.IsHandleCreated)
+                {
+                    cmbSup.InnerComboBox.BeginInvoke(new Action(() =>
+                    {
                         cmbSup.InnerComboBox.Select(0, 0);
                         dgvItems.Focus();
                     }));
                 }
             };
 
-            cmbParts.InnerComboBox.SelectedIndexChanged += (s, e) => {
-                if (cmbParts.InnerComboBox.IsHandleCreated) {
-                    cmbParts.InnerComboBox.BeginInvoke(new Action(() => {
+            cmbParts.InnerComboBox.SelectedIndexChanged += (s, e) =>
+            {
+                if (cmbParts.InnerComboBox.IsHandleCreated)
+                {
+                    cmbParts.InnerComboBox.BeginInvoke(new Action(() =>
+                    {
                         cmbParts.InnerComboBox.Select(0, 0);
                         dgvItems.Focus();
                     }));
@@ -419,7 +452,8 @@ namespace InventorySystem.Forms
             f.ShowDialog();
         }
 
-        private void UpdatePOTotal(DataGridView dgv, Label lbl) {
+        private void UpdatePOTotal(DataGridView dgv, Label lbl)
+        {
             decimal total = 0;
             foreach (DataGridViewRow row in dgv.Rows) total += Convert.ToDecimal(row.Cells["Subtotal"].Value ?? 0);
             lbl.Text = LocalizationManager.GetString("PO_GrandTotal") + " " + CurrencyService.Format(total);

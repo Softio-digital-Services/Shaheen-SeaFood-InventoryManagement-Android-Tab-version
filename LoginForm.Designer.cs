@@ -124,7 +124,7 @@ namespace InventorySystem
             this.txtUsername.IsRequired = true;
 
 
-            this.txtPassword.Location = new System.Drawing.Point(35, 220);
+            this.txtPassword.Location = new System.Drawing.Point(35, 240);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.Size = new System.Drawing.Size(280, 67);
             this.txtPassword.LabelText = "Password";
@@ -136,7 +136,7 @@ namespace InventorySystem
             // 
             this.chkShowPass.AutoSize = true;
             this.chkShowPass.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.chkShowPass.Location = new System.Drawing.Point(35, 265);
+            this.chkShowPass.Location = new System.Drawing.Point(35, 285);
             this.chkShowPass.Name = "showPass";
             this.chkShowPass.Text = "Show Password";
             this.chkShowPass.CheckedChanged += new System.EventHandler(this.showPass_CheckedChanged);
@@ -148,7 +148,7 @@ namespace InventorySystem
             this.btnLogin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnLogin.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             this.btnLogin.ForeColor = System.Drawing.Color.White;
-            this.btnLogin.Location = new System.Drawing.Point(35, 320);
+            this.btnLogin.Location = new System.Drawing.Point(35, 340);
             this.btnLogin.Name = "btnLogin";
             this.btnLogin.Size = new System.Drawing.Size(280, 45);
             this.btnLogin.Text = "LOGIN";

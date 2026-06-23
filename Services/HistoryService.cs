@@ -34,26 +34,30 @@ namespace InventorySystem.Services
 
         public DataTable GetOrderHistory()
         {
-             string sql = @"
-                SELECT o.order_id as 'Order ID', o.order_date as 'Date', COALESCE(c.full_name, 'Walk-in') as 'Customer', o.total_amount as 'Total', o.status as 'Status', 
-                       (SELECT COUNT(*) FROM order_items i WHERE i.order_id = o.order_id) as 'Items'
+            string sql = @"
+                SELECT o.order_id as 'Order ID', o.order_date as 'Date', 
+                       CAST(COALESCE(c.full_name, 'Walk-in') AS TEXT) as 'Customer', 
+                       o.total_amount as 'Total', o.status as 'Status', 
+                       CAST((SELECT COUNT(*) FROM order_items i WHERE i.order_id = o.order_id) AS INTEGER) as 'Items'
                 FROM orders o
                 LEFT JOIN customers c ON o.customer_id = c.customer_id
                 WHERE o.status != 'Quotation' AND o.status != 'Draft'
                 ORDER BY o.order_date DESC";
-             return DatabaseHelper.ExecuteDataTable(sql);
+            return DatabaseHelper.ExecuteDataTable(sql);
         }
 
         public DataTable GetQuotationHistory()
         {
-             string sql = @"
-                SELECT o.order_id as 'ID', o.order_date as 'Date', COALESCE(c.full_name, 'Walk-in') as 'Customer', o.total_amount as 'Total', 
-                       (SELECT COUNT(*) FROM order_items i WHERE i.order_id = o.order_id) as 'Items'
+            string sql = @"
+                SELECT o.order_id as 'ID', o.order_date as 'Date', 
+                       CAST(COALESCE(c.full_name, 'Walk-in') AS TEXT) as 'Customer', 
+                       o.total_amount as 'Total', 
+                       CAST((SELECT COUNT(*) FROM order_items i WHERE i.order_id = o.order_id) AS INTEGER) as 'Items'
                 FROM orders o
                 LEFT JOIN customers c ON o.customer_id = c.customer_id
                 WHERE o.status = 'Quotation'
                 ORDER BY o.order_date DESC";
-             return DatabaseHelper.ExecuteDataTable(sql);
+            return DatabaseHelper.ExecuteDataTable(sql);
         }
 
         public DataTable GetSupplierHistory()

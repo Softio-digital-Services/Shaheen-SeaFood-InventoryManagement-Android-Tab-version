@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using System.Drawing;
 using InventorySystem.Data;
 using InventorySystem.Controls;
+using InventorySystem.Helpers;
 
 namespace InventorySystem.Forms
 {
@@ -17,7 +18,7 @@ namespace InventorySystem.Forms
         private FlatDateTimePicker dtDueDate;
         private ModernNumericUpDown numReminderDays;
         private CheckBox chkEnableReminder;
-        
+
         public string SupplierName => rdoCompany.Checked ? txtName.Text.Trim() : ContactPerson;
         public string ContactPerson => $"{txtFirstName.Text.Trim()} {txtLastName.Text.Trim()}".Trim();
         public string Phone => txtPhone.Text.Trim();
@@ -39,7 +40,7 @@ namespace InventorySystem.Forms
                 btnSave_Click,
                 btnCancel_Click
             );
-            
+
             ApplyTheme();
             InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
@@ -65,7 +66,7 @@ namespace InventorySystem.Forms
             if (!ValidationHelper.ValidatePhoneNumber(txtPhone.Text)) return;
             if (!string.IsNullOrWhiteSpace(txtEmail.Text) && !ValidationHelper.ValidateEmail(txtEmail.Text)) return;
 
-            DialogResult = DialogResult.OK; 
+            DialogResult = DialogResult.OK;
             Close();
         }
 
@@ -76,30 +77,30 @@ namespace InventorySystem.Forms
 
             bool isEdit = this.TitleText != null && (this.TitleText.Contains("Edit") || this.TitleText.Contains(L("AddSup_TitleEdit")));
             this.TitleText = isEdit ? L("AddSup_TitleEdit") : L("AddSup_TitleNew");
-            
-            var lblSection = this.Controls.Find("lblSection", true);
-            if(lblSection.Length > 0) lblSection[0].Text = L("AddSup_Section");
 
-            if(txtName != null) txtName.LabelText = L("AddSup_CompanyName");
-            if(txtFirstName != null) txtFirstName.LabelText = L("Add_FirstName");
-            if(txtLastName != null) txtLastName.LabelText = L("Add_LastName");
-            if(txtPhone != null) txtPhone.LabelText = L("Popup_Phone");
-            if(txtEmail != null) txtEmail.LabelText = L("AddSup_Email");
-            if(txtAddress != null) txtAddress.LabelText = L("Popup_Address");
-            
+            var lblSection = this.Controls.Find("lblSection", true);
+            if (lblSection.Length > 0) lblSection[0].Text = L("AddSup_Section");
+
+            if (txtName != null) txtName.LabelText = L("AddSup_CompanyName");
+            if (txtFirstName != null) txtFirstName.LabelText = L("Add_FirstName");
+            if (txtLastName != null) txtLastName.LabelText = L("Add_LastName");
+            if (txtPhone != null) txtPhone.LabelText = L("Popup_Phone");
+            if (txtEmail != null) txtEmail.LabelText = L("AddSup_Email");
+            if (txtAddress != null) txtAddress.LabelText = L("Popup_Address");
+
             var lblDue = this.Controls.Find("lblDueDate", true);
-            if(lblDue.Length > 0) lblDue[0].Text = L("AddSup_DueDate") ?? "Payment Due Date";
-            
+            if (lblDue.Length > 0) lblDue[0].Text = LocalizationManager.GetString("AddSup_DueDate", "Payment Due Date");
+
             var lblRem = this.Controls.Find("lblRemDays", true);
-            if(lblRem.Length > 0) lblRem[0].Text = L("AddSup_ReminderDays") ?? "Reminder (Days Before)";
-            
-            if(chkEnableReminder != null) chkEnableReminder.Text = L("AddSup_EnableReminder") ?? "Enable Reminder";
+            if (lblRem.Length > 0) lblRem[0].Text = LocalizationManager.GetString("AddSup_ReminderDays", "Reminder (Days Before)");
+            if (numReminderDays != null) { numReminderDays.Minimum = 0; numReminderDays.Maximum = 365; }
+            if (chkEnableReminder != null) chkEnableReminder.Text = LocalizationManager.GetString("AddSup_EnableReminder", "Enable Reminder");
 
             var lblType = this.Controls.Find("lblType", true);
-            if(lblType.Length > 0) lblType[0].Text = L("AddSup_Type");
+            if (lblType.Length > 0) lblType[0].Text = L("AddSup_Type");
 
-            if(rdoCompany != null) rdoCompany.Text = L("Popup_Company");
-            if(rdoIndividual != null) rdoIndividual.Text = L("Popup_Individual");
+            if (rdoCompany != null) rdoCompany.Text = L("Popup_Company");
+            if (rdoIndividual != null) rdoIndividual.Text = L("Popup_Individual");
 
             UpdateValidationUI();
 
@@ -121,9 +122,9 @@ namespace InventorySystem.Forms
                 btnSave_Click,
                 btnCancel_Click
             );
-            
+
             txtName.Text = name;
-            
+
             // Split contact person name
             if (!string.IsNullOrEmpty(contactPerson))
             {
@@ -153,7 +154,7 @@ namespace InventorySystem.Forms
             this.Size = new System.Drawing.Size(550, 900);
 
             TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 1, RowCount = 10, AutoSize = true, Padding = new Padding(20) };
-            for(int i=0; i<10; i++) tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            for (int i = 0; i < 10; i++) tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             // Section Title
             Label lblSection = new Label { Name = "lblSection", Text = "Supplier Details", Font = ThemeConfig.SubHeaderFont, AutoSize = true, ForeColor = ThemeConfig.SecondaryColor, Margin = new Padding(0, 0, 0, 15) };
@@ -168,7 +169,7 @@ namespace InventorySystem.Forms
             Label lblType = new Label { Name = "lblType", Text = "Supplier Type", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Anchor = AnchorStyles.Left };
             rdoCompany = new RadioButton { Text = "Company", Font = ThemeConfig.StandardFont, AutoSize = true, Anchor = AnchorStyles.Left, Checked = true };
             rdoIndividual = new RadioButton { Text = "Individual", Font = ThemeConfig.StandardFont, AutoSize = true, Anchor = AnchorStyles.Left };
-            
+
             pnlType.Controls.Add(lblType, 0, 0);
             pnlType.Controls.Add(rdoCompany, 1, 0);
             pnlType.Controls.Add(rdoIndividual, 2, 0);
@@ -198,7 +199,8 @@ namespace InventorySystem.Forms
 
             // Reminder Card
             Panel cardReminders = new Panel { Dock = DockStyle.Fill, AutoSize = true, Padding = new Padding(15), Margin = new Padding(0, 5, 0, 15) };
-            cardReminders.Paint += (s, e) => {
+            cardReminders.Paint += (s, e) =>
+            {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 Rectangle rect = new Rectangle(0, 0, cardReminders.Width - 1, cardReminders.Height - 1);
                 using (var path = ThemeConfig.GetRoundedPathPublic(rect, 12))
@@ -215,21 +217,21 @@ namespace InventorySystem.Forms
             tlpRemContent.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
 
             chkEnableReminder = new CheckBox { Text = "Enable Payment Reminder", AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 15) };
-            
+
             Label lblDueDate = new Label { Name = "lblDueDate", Text = "Payment Due Date", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
             dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Enabled = false, Height = 35 };
-            
+
             numReminderDays = new ModernNumericUpDown { LabelText = "Reminder (Days Before)", Dock = DockStyle.Fill, Minimum = 0, Maximum = 365, Enabled = false, Increment = 1 };
-            
+
             tlpRemContent.Controls.Add(lblDueDate, 0, 0);
             tlpRemContent.Controls.Add(dtDueDate, 0, 1);
             tlpRemContent.Controls.Add(numReminderDays, 1, 0);
             tlpRemContent.SetRowSpan(numReminderDays, 2);
-            
+
             FlowLayoutPanel flpRemWrapper = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true };
             flpRemWrapper.Controls.Add(chkEnableReminder);
             flpRemWrapper.Controls.Add(tlpRemContent);
-            
+
             cardReminders.Controls.Add(flpRemWrapper);
             tlpMain.Controls.Add(cardReminders, 0, 7);
 
@@ -256,7 +258,7 @@ namespace InventorySystem.Forms
             txtName.Visible = isCompany;
             txtName.IsRequired = isCompany;
             txtName.LabelText = L("Add_CompanyName");
-            
+
             txtFirstName.IsRequired = !isCompany;
             txtFirstName.LabelText = isCompany ? L("Add_ContactFirstName") : L("Add_FirstName");
 

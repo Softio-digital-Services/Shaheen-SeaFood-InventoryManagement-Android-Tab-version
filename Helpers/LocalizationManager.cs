@@ -135,6 +135,27 @@ namespace InventorySystem.Helpers
             }
         }
 
+        public static string GetString(string key, string fallback)
+        {
+            if (string.IsNullOrEmpty(key)) return fallback;
+
+            if (IsArabic && _arabicResourcesLoaded && _arabicDictionary != null)
+            {
+                if (_arabicDictionary.TryGetValue(key, out string value) && !string.IsNullOrEmpty(value))
+                    return value;
+            }
+
+            try
+            {
+                string res = Properties.Resources.ResourceManager.GetString(key);
+                return string.IsNullOrEmpty(res) ? fallback : res;
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+
         public static void TranslateControl(Control parent)
         {
             if (parent == null) return;
@@ -147,7 +168,7 @@ namespace InventorySystem.Helpers
                 {
                     // Skip setting native text for custom-painted standard buttons
                     bool isStandardButton = c is Button && c.Tag != null && c.Tag.ToString().StartsWith("standard_");
-                    
+
                     if (!isStandardButton)
                     {
                         string translated = GetString(c.Name);
@@ -268,7 +289,7 @@ namespace InventorySystem.Helpers
                     }
                 }
             }
-            
+
 
 
 
@@ -281,10 +302,10 @@ namespace InventorySystem.Helpers
                 {
                     title.Alignment = isAr ? ContentAlignment.TopRight : ContentAlignment.TopLeft;
                 }
-                
+
                 foreach (var legend in chart.Legends)
                 {
-                    if (legend.Docking == System.Windows.Forms.DataVisualization.Charting.Docking.Top || 
+                    if (legend.Docking == System.Windows.Forms.DataVisualization.Charting.Docking.Top ||
                         legend.Docking == System.Windows.Forms.DataVisualization.Charting.Docking.Bottom)
                     {
                         legend.Alignment = isAr ? StringAlignment.Far : StringAlignment.Near;

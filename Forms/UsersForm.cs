@@ -40,10 +40,11 @@ namespace InventorySystem.Forms
             lblUsersTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Msg_UserManagement"));
             lblUsersTitle.Name = "lblUsersTitle";
 
-            txtSearch = new ModernTextBox { 
-                IsSearch = true, 
-                ShowLabel = false, 
-                PlaceholderText = LocalizationManager.GetString("Msg_SearchUsers") ?? "Search users...", 
+            txtSearch = new ModernTextBox
+            {
+                IsSearch = true,
+                ShowLabel = false,
+                PlaceholderText = LocalizationManager.GetString("Msg_SearchUsers", "Search users..."),
                 Size = new Size(320, 35)
             };
             txtSearch.TextChanged += (s, e) => LoadData(txtSearch.Text);
@@ -64,8 +65,19 @@ namespace InventorySystem.Forms
             dgvUsers.CellMouseLeave += DgvUsers_CellMouseLeave;
             dgvUsers.CellPainting += DgvUsers_CellPainting;
 
-            dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "id", HeaderText = "ID", DataPropertyName = "id", Width = 80 });
+            dgvUsers.CellFormatting += (s, e) =>
+            {
+                if (e.RowIndex >= 0 && dgvUsers.Columns[e.ColumnIndex].Name == "id")
+                {
+                    e.Value = (e.RowIndex + 1).ToString();
+                    e.FormattingApplied = true;
+                }
+            };
+
+            dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "db_id", DataPropertyName = "id", Visible = false });
+            dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "id", HeaderText = "ID", Width = 80 });
             dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "username", HeaderText = "Username", DataPropertyName = "username", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+            dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "role", HeaderText = "Role", DataPropertyName = "role", Width = 150 });
             dgvUsers.Columns.Add(new DataGridViewButtonColumn { Name = "actions", HeaderText = "Actions", Text = "", UseColumnTextForButtonValue = true, Width = 140, FlatStyle = FlatStyle.Flat });
 
             Panel pnlGridCard = ThemeConfig.CreateCardPanel(dgvUsers);
@@ -86,8 +98,10 @@ namespace InventorySystem.Forms
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
             lblUsersTitle.Text = LocalizationManager.GetString("Msg_UserManagement");
             ThemeConfig.ApplyStandardAddButton(btnAddUser, "User_AddUser");
-            if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = LocalizationManager.GetString("Users_GridID");
-            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = LocalizationManager.GetString("Users_GridUsername");
+            if (txtSearch != null) txtSearch.PlaceholderText = LocalizationManager.GetString("Parts_Search");
+            if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = LocalizationManager.GetString("Users_GridID", "ID");
+            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = LocalizationManager.GetString("User_Username");
+            if (dgvUsers.Columns["role"] != null) dgvUsers.Columns["role"].HeaderText = LocalizationManager.GetString("User_Role", "Role");
             if (dgvUsers.Columns["actions"] != null) dgvUsers.Columns["actions"].HeaderText = LocalizationManager.GetString("Parts_GridActions");
         }
 
@@ -95,7 +109,7 @@ namespace InventorySystem.Forms
         {
             try
             {
-                string sql = "SELECT id, username FROM users";
+                string sql = "SELECT id, username, role FROM users";
                 if (!string.IsNullOrEmpty(search))
                 {
                     sql += $" WHERE username LIKE '%{search}%'";
@@ -120,7 +134,7 @@ namespace InventorySystem.Forms
 
         private void PerformEdit(int rowIndex)
         {
-            int userId = Convert.ToInt32(dgvUsers.Rows[rowIndex].Cells["id"].Value);
+            int userId = Convert.ToInt32(dgvUsers.Rows[rowIndex].Cells["db_id"].Value);
             string username = dgvUsers.Rows[rowIndex].Cells["username"].Value.ToString();
 
             if (username.ToLower() == "softio.admin")
@@ -139,10 +153,10 @@ namespace InventorySystem.Forms
         private void DgvUsers_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
-            
+
             if (dgvUsers.Columns[e.ColumnIndex].Name == "actions")
             {
-                var id = dgvUsers.Rows[e.RowIndex].Cells["id"].Value;
+                var id = dgvUsers.Rows[e.RowIndex].Cells["db_id"].Value;
                 var username = dgvUsers.Rows[e.RowIndex].Cells["username"].Value.ToString();
 
                 var mousePos = dgvUsers.PointToClient(Cursor.Position);
@@ -183,24 +197,24 @@ namespace InventorySystem.Forms
                 }
             }
         }
-        
+
         private void DgvUsers_CellMouseMove(object sender, DataGridViewCellMouseEventArgs e)
         {
-             if (e.RowIndex >= 0 && dgvUsers.Columns[e.ColumnIndex].Name == "actions")
-             {
-                 dgvUsers.Cursor = Cursors.Hand;
-             }
-             else
-             {
-                 dgvUsers.Cursor = Cursors.Default;
-             }
+            if (e.RowIndex >= 0 && dgvUsers.Columns[e.ColumnIndex].Name == "actions")
+            {
+                dgvUsers.Cursor = Cursors.Hand;
+            }
+            else
+            {
+                dgvUsers.Cursor = Cursors.Default;
+            }
         }
 
         private void DgvUsers_CellMouseLeave(object sender, DataGridViewCellEventArgs e)
         {
-             dgvUsers.Cursor = Cursors.Default;
+            dgvUsers.Cursor = Cursors.Default;
         }
-        
+
         private void DgvUsers_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0) return;

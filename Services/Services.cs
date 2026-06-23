@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using InventorySystem.Helpers;
@@ -7,7 +7,7 @@ namespace InventorySystem.Services
 {
     public class InventoryService
     {
-        public DataTable GetAllParts(string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null)
+        public DataTable GetAllParts(string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null, int limit = 0, int offset = 0)
         {
             string sql = @"SELECT p.id as part_id, p.part_number, p.part_name, p.description,
                            COALESCE(c.category_name, 'Category') as category_name,
@@ -30,10 +30,43 @@ namespace InventorySystem.Services
             if (activeOnly)
                 sql += " AND p.status = 'Active'";
             if (!string.IsNullOrEmpty(category))
-                sql += $" AND c.category_name = '{category}'";
+            {
+                if (category == "Others")
+                    sql += " AND (c.category_name IS NULL OR p.category_id = 0 OR c.category_name = '')";
+                else
+                    sql += $" AND c.category_name = '{category}'";
+            }
 
             sql += " ORDER BY p.id";
+            if (limit > 0)
+            {
+                sql += $" LIMIT {limit} OFFSET {offset}";
+            }
             return DatabaseHelper.ExecuteDataTable(sql);
+        }
+
+        public int GetPartsCount(string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null)
+        {
+            string sql = @"SELECT COUNT(*)
+                           FROM parts p
+                           LEFT JOIN categories c ON p.category_id = c.id
+                           WHERE p.date_deleted IS NULL";
+
+            if (!string.IsNullOrEmpty(search))
+                sql += $" AND (p.part_name LIKE '%{search}%' OR p.part_number LIKE '%{search}%')";
+            if (lowStockOnly)
+                sql += " AND p.quantity_in_stock <= p.minimum_stock_level";
+            if (activeOnly)
+                sql += " AND p.status = 'Active'";
+            if (!string.IsNullOrEmpty(category))
+            {
+                if (category == "Others")
+                    sql += " AND (c.category_name IS NULL OR p.category_id = 0 OR c.category_name = '')";
+                else
+                    sql += $" AND c.category_name = '{category}'";
+            }
+
+            return Convert.ToInt32(DatabaseHelper.ExecuteScalar<object>(sql) ?? 0);
         }
 
         public void AddPart(string name, string number, string categoryName, int stock, decimal price, int minStock, string imagePath, string barcode, string location, string shelf, string status)
@@ -42,17 +75,17 @@ namespace InventorySystem.Services
             string sql = "INSERT INTO parts (part_name, part_number, category_id, quantity_in_stock, selling_price, minimum_stock_level, part_image, status, barcode, location, shelf, date_added) " +
                          "VALUES (@name, @num, @cat, @stock, @price, @min, @img, @status, @barcode, @loc, @shelf, datetime('now'))";
             if (!DatabaseHelper.ExecuteNonQuery(sql,
-                new SqliteParameter("@name",   name),
-                new SqliteParameter("@num",    number),
-                new SqliteParameter("@cat",    categoryId),
-                new SqliteParameter("@stock",  stock),
-                new SqliteParameter("@price",  price),
-                new SqliteParameter("@min",    minStock),
-                new SqliteParameter("@img",    imagePath ?? (object)DBNull.Value),
+                new SqliteParameter("@name", name),
+                new SqliteParameter("@num", number),
+                new SqliteParameter("@cat", categoryId),
+                new SqliteParameter("@stock", stock),
+                new SqliteParameter("@price", price),
+                new SqliteParameter("@min", minStock),
+                new SqliteParameter("@img", imagePath ?? (object)DBNull.Value),
                 new SqliteParameter("@status", status ?? "Active"),
-                new SqliteParameter("@barcode",barcode ?? ""),
-                new SqliteParameter("@loc",    location ?? ""),
-                new SqliteParameter("@shelf",  shelf ?? "")))
+                new SqliteParameter("@barcode", barcode ?? ""),
+                new SqliteParameter("@loc", location ?? ""),
+                new SqliteParameter("@shelf", shelf ?? "")))
             {
                 throw new Exception("Failed to add part. Database operation failed.");
             }
@@ -95,7 +128,7 @@ namespace InventorySystem.Services
         {
             int categoryId = GetCategoryId(p.CategoryName);
             bool isNew = p.Id == 0;
-            
+
             string sql;
             if (isNew)
             {
@@ -173,8 +206,8 @@ namespace InventorySystem.Services
                 DatabaseHelper.ExecuteNonQuery(
                     "INSERT INTO transactions (action_type, part_name, description, username, timestamp) VALUES (@action, @part, @desc, 'System', datetime('now'))",
                     new SqliteParameter("@action", action),
-                    new SqliteParameter("@part",   partName),
-                    new SqliteParameter("@desc",   description));
+                    new SqliteParameter("@part", partName),
+                    new SqliteParameter("@desc", description));
             }
             catch { }
         }
@@ -229,13 +262,13 @@ namespace InventorySystem.Services
                 string sql = "INSERT INTO parts (part_number, part_name, category_id, quantity_in_stock, minimum_stock_level, selling_price, location, status, date_added) " +
                              "VALUES (@pn, @name, @cat, @qty, @min, @price, @loc, @status, datetime('now'))";
                 DatabaseHelper.ExecuteNonQuery(sql,
-                    new SqliteParameter("@pn",     partNumber),
-                    new SqliteParameter("@name",   partName),
-                    new SqliteParameter("@cat",    categoryId),
-                    new SqliteParameter("@qty",    quantity),
-                    new SqliteParameter("@min",    minStock),
-                    new SqliteParameter("@price",  unitPrice),
-                    new SqliteParameter("@loc",    location ?? ""),
+                    new SqliteParameter("@pn", partNumber),
+                    new SqliteParameter("@name", partName),
+                    new SqliteParameter("@cat", categoryId),
+                    new SqliteParameter("@qty", quantity),
+                    new SqliteParameter("@min", minStock),
+                    new SqliteParameter("@price", unitPrice),
+                    new SqliteParameter("@loc", location ?? ""),
                     new SqliteParameter("@status", status ?? "Active"));
                 GlobalEvents.RaiseInventoryUpdated();
             }
@@ -253,7 +286,7 @@ namespace InventorySystem.Services
                 DatabaseHelper.ExecuteNonQuery(
                     "UPDATE parts SET quantity_in_stock = quantity_in_stock + @change WHERE id = @id",
                     new SqliteParameter("@change", change),
-                    new SqliteParameter("@id",     partId));
+                    new SqliteParameter("@id", partId));
 
                 string partNameResult = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {partId}") ?? "Unknown";
                 string action = change > 0 ? "ADJUST_IN" : "ADJUST_OUT";
@@ -288,14 +321,14 @@ namespace InventorySystem.Services
             string sql = "INSERT INTO customers (full_name, phone, email, address, current_balance, type, credit_limit, payment_due_date, reminder_days) " +
                          "VALUES (@name, @phone, @email, @addr, 0, @type, @credit, @due, @rem); SELECT last_insert_rowid();";
             long id = DatabaseHelper.ExecuteScalar<long>(sql,
-                new SqliteParameter("@name",   name),
-                new SqliteParameter("@phone",  phone),
-                new SqliteParameter("@email",  email),
-                new SqliteParameter("@addr",   address),
-                new SqliteParameter("@type",   type),
+                new SqliteParameter("@name", name),
+                new SqliteParameter("@phone", phone),
+                new SqliteParameter("@email", email),
+                new SqliteParameter("@addr", address),
+                new SqliteParameter("@type", type),
                 new SqliteParameter("@credit", creditLimit),
-                new SqliteParameter("@due",    dueDate.HasValue ? (object)dueDate.Value.ToString("s") : DBNull.Value),
-                new SqliteParameter("@rem",    reminderDays));
+                new SqliteParameter("@due", dueDate.HasValue ? (object)dueDate.Value.ToString("s") : DBNull.Value),
+                new SqliteParameter("@rem", reminderDays));
             LogTransaction("CUSTOMER_ADD", $"Added Customer: {name} (Limit: {creditLimit})", name);
             GlobalEvents.RaiseCustomersUpdated();
             return (int)id;
@@ -312,15 +345,15 @@ namespace InventorySystem.Services
             string sql = "UPDATE customers SET full_name=@name, phone=@phone, email=@email, address=@addr, type=@type, " +
                          "credit_limit=@credit, payment_due_date=@due, reminder_days=@rem WHERE customer_id=@id";
             DatabaseHelper.ExecuteNonQuery(sql,
-                new SqliteParameter("@name",   name),
-                new SqliteParameter("@phone",  phone),
-                new SqliteParameter("@email",  email),
-                new SqliteParameter("@addr",   address),
-                new SqliteParameter("@type",   type),
+                new SqliteParameter("@name", name),
+                new SqliteParameter("@phone", phone),
+                new SqliteParameter("@email", email),
+                new SqliteParameter("@addr", address),
+                new SqliteParameter("@type", type),
                 new SqliteParameter("@credit", creditLimit),
-                new SqliteParameter("@due",    dueDate.HasValue ? (object)dueDate.Value.ToString("s") : DBNull.Value),
-                new SqliteParameter("@rem",    reminderDays),
-                new SqliteParameter("@id",     id));
+                new SqliteParameter("@due", dueDate.HasValue ? (object)dueDate.Value.ToString("s") : DBNull.Value),
+                new SqliteParameter("@rem", reminderDays),
+                new SqliteParameter("@id", id));
             LogTransaction("CUSTOMER_UPDATE", $"Updated Customer: {name} (ID: {id})", name);
             GlobalEvents.RaiseCustomersUpdated();
         }
@@ -340,7 +373,7 @@ namespace InventorySystem.Services
             try
             {
                 stats.TotalCustomers = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM customers");
-                stats.TotalDebt      = DatabaseHelper.ExecuteScalar<decimal>("SELECT COALESCE(SUM(current_balance), 0) FROM customers");
+                stats.TotalDebt = DatabaseHelper.ExecuteScalar<decimal>("SELECT COALESCE(SUM(current_balance), 0) FROM customers");
             }
             catch { }
             return stats;
@@ -358,14 +391,14 @@ namespace InventorySystem.Services
             try
             {
                 string fullAddress = (address ?? "") +
-                    (string.IsNullOrEmpty(city)       ? "" : ", " + city) +
+                    (string.IsNullOrEmpty(city) ? "" : ", " + city) +
                     (string.IsNullOrEmpty(postalCode) ? "" : " " + postalCode);
                 DatabaseHelper.ExecuteNonQuery(
                     "INSERT INTO customers (full_name, email, phone, address, current_balance, type, date_added) " +
                     "VALUES (@name, @email, @phone, @address, 0, 'Regular', datetime('now'))",
-                    new SqliteParameter("@name",    customerName),
-                    new SqliteParameter("@email",   email ?? ""),
-                    new SqliteParameter("@phone",   phone ?? ""),
+                    new SqliteParameter("@name", customerName),
+                    new SqliteParameter("@email", email ?? ""),
+                    new SqliteParameter("@phone", phone ?? ""),
                     new SqliteParameter("@address", fullAddress));
                 GlobalEvents.RaiseCustomersUpdated();
             }
@@ -424,14 +457,14 @@ namespace InventorySystem.Services
             try
             {
                 string full = (address ?? "") +
-                    (string.IsNullOrEmpty(city)       ? "" : ", " + city) +
+                    (string.IsNullOrEmpty(city) ? "" : ", " + city) +
                     (string.IsNullOrEmpty(postalCode) ? "" : " " + postalCode);
                 DatabaseHelper.ExecuteNonQuery(
                     "INSERT INTO suppliers (supplier_name, phone, email, address, balance_due, date_added) " +
                     "VALUES (@name, @phone, @email, @address, 0, datetime('now'))",
-                    new SqliteParameter("@name",    supplierName),
-                    new SqliteParameter("@phone",   phone ?? ""),
-                    new SqliteParameter("@email",   email ?? ""),
+                    new SqliteParameter("@name", supplierName),
+                    new SqliteParameter("@phone", phone ?? ""),
+                    new SqliteParameter("@email", email ?? ""),
                     new SqliteParameter("@address", full));
             }
             catch (Exception ex)
@@ -446,13 +479,13 @@ namespace InventorySystem.Services
             DatabaseHelper.ExecuteNonQuery(
                 "INSERT INTO suppliers (supplier_name, phone, email, address, type, balance_due, payment_due_date, reminder_days) " +
                 "VALUES (@name, @phone, @email, @addr, @type, 0, @due, @rem)",
-                new SqliteParameter("@name",  name),
+                new SqliteParameter("@name", name),
                 new SqliteParameter("@phone", phone),
                 new SqliteParameter("@email", email),
-                new SqliteParameter("@addr",  address),
-                new SqliteParameter("@type",  type),
-                new SqliteParameter("@due",   dueDate.HasValue ? (object)dueDate.Value.ToString("s") : DBNull.Value),
-                new SqliteParameter("@rem",   reminderDays));
+                new SqliteParameter("@addr", address),
+                new SqliteParameter("@type", type),
+                new SqliteParameter("@due", dueDate.HasValue ? (object)dueDate.Value.ToString("s") : DBNull.Value),
+                new SqliteParameter("@rem", reminderDays));
             GlobalEvents.RaiseSuppliersUpdated();
         }
 
@@ -460,14 +493,14 @@ namespace InventorySystem.Services
         {
             DatabaseHelper.ExecuteNonQuery(
                 "UPDATE suppliers SET supplier_name=@name, phone=@phone, email=@email, address=@addr, type=@type, payment_due_date=@due, reminder_days=@rem WHERE id=@id",
-                new SqliteParameter("@name",  name),
+                new SqliteParameter("@name", name),
                 new SqliteParameter("@phone", phone),
                 new SqliteParameter("@email", email),
-                new SqliteParameter("@addr",  address),
-                new SqliteParameter("@type",  type),
-                new SqliteParameter("@due",   dueDate.HasValue ? (object)dueDate.Value.ToString("s") : DBNull.Value),
-                new SqliteParameter("@rem",   reminderDays),
-                new SqliteParameter("@id",    id));
+                new SqliteParameter("@addr", address),
+                new SqliteParameter("@type", type),
+                new SqliteParameter("@due", dueDate.HasValue ? (object)dueDate.Value.ToString("s") : DBNull.Value),
+                new SqliteParameter("@rem", reminderDays),
+                new SqliteParameter("@id", id));
             GlobalEvents.RaiseSuppliersUpdated();
         }
 

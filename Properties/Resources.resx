@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--     Microsoft ResX Schema         Version 2.0        The primary goals of this format is to allow a simple XML format     that is mostly human readable. The generation and parsing of the     various data types are done through the TypeConverter classes     associated with the data types.        Example:        ... ado.net/XML headers & schema ...    <resheader name="resmimetype">text/microsoft-resx</resheader>    <resheader name="version">2.0</resheader>    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">        <value>[base64 mime encoded serialized .NET Framework object]</value>    </data>    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>        <comment>This is a comment</comment>    </data>                    There are any number of "resheader" rows that contain simple     name/value pairs.        Each data row contains a name, and value. The row also contains a     type or mimetype. Type corresponds to a .NET class that support     text/value conversion through the TypeConverter architecture.     Classes that don't support this are serialized and stored with the     mimetype set.        The mimetype is used for serialized objects, and tells the     ResXResourceReader how to depersist the object. This is currently not     extensible. For a given mimetype the value must be set accordingly:        Note - application/x-microsoft.net.object.binary.base64 is the format     that the ResXResourceWriter will generate, however the reader can     read any of the formats listed below.        mimetype: application/x-microsoft.net.object.binary.base64    value   : The object must be serialized with             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter            : and then encoded with base64 encoding.        mimetype: application/x-microsoft.net.object.soap.base64    value   : The object must be serialized with             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter            : and then encoded with base64 encoding.    mimetype: application/x-microsoft.net.object.bytearray.base64    value   : The object must be serialized into a byte array             : using a System.ComponentModel.TypeConverter            : and then encoded with base64 encoding.    -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
@@ -579,21 +579,6 @@
   <data name="Add_ReqLastName" xml:space="preserve">
     <value>Last Name is required.</value>
   </data>
-  <data name="Popup_Phone" xml:space="preserve">
-    <value>Phone Number</value>
-  </data>
-  <data name="Popup_Address" xml:space="preserve">
-    <value>Address</value>
-  </data>
-  <data name="Popup_Company" xml:space="preserve">
-    <value>Company</value>
-  </data>
-  <data name="Popup_Individual" xml:space="preserve">
-    <value>Individual</value>
-  </data>
-  <data name="Popup_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
   <data name="Popup_ReqPhone" xml:space="preserve">
     <value>Phone Number is required and must be valid.</value>
   </data>
@@ -768,54 +753,6 @@
   <data name="Status_Inactive" xml:space="preserve">
     <value>Inactive</value>
   </data>
-  <data name="AddCust_TitleNew" xml:space="preserve">
-    <value>Add New Customer</value>
-  </data>
-  <data name="AddCust_TitleEdit" xml:space="preserve">
-    <value>Edit Customer</value>
-  </data>
-  <data name="AddCust_Section" xml:space="preserve">
-    <value>Customer Details</value>
-  </data>
-  <data name="AddCust_Email" xml:space="preserve">
-    <value>Email Address</value>
-  </data>
-  <data name="AddCust_Type" xml:space="preserve">
-    <value>Customer Type</value>
-  </data>
-  <data name="AddCust_UpdateBtn" xml:space="preserve">
-    <value>Update Customer</value>
-  </data>
-  <data name="AddCust_Save" xml:space="preserve">
-    <value>Save Customer</value>
-  </data>
-  <data name="AddSup_TitleNew" xml:space="preserve">
-    <value>Add New Supplier</value>
-  </data>
-  <data name="AddSup_TitleEdit" xml:space="preserve">
-    <value>Edit Supplier</value>
-  </data>
-  <data name="AddSup_Section" xml:space="preserve">
-    <value>Supplier Details</value>
-  </data>
-  <data name="AddSup_CompanyName" xml:space="preserve">
-    <value>Company Name</value>
-  </data>
-  <data name="AddSup_Email" xml:space="preserve">
-    <value>Email / Contact Person</value>
-  </data>
-  <data name="AddSup_Type" xml:space="preserve">
-    <value>Supplier Type</value>
-  </data>
-  <data name="AddSup_UpdateBtn" xml:space="preserve">
-    <value>Update Supplier</value>
-  </data>
-  <data name="AddSup_Save" xml:space="preserve">
-    <value>Save Supplier</value>
-  </data>
-  <data name="AddSup_ReqName" xml:space="preserve">
-    <value>Supplier Name is required.</value>
-  </data>
   <data name="AddCat_Title" xml:space="preserve">
     <value>Add New Category</value>
   </data>
@@ -944,9 +881,6 @@
   </data>
   <data name="POS_ScanPlaceholder" xml:space="preserve">
     <value>Scan item...</value>
-  </data>
-  <data name="Dash_Sold" xml:space="preserve">
-    <value>Sold</value>
   </data>
   <data name="lblTitle" xml:space="preserve">
     <value>Performance Dashboard</value>
@@ -1294,9 +1228,6 @@
   <data name="Title_ItemReturn" xml:space="preserve">
     <value>Return Items (No Receipt)</value>
   </data>
-  <data name="Return_Qty" xml:space="preserve">
-    <value>Return Qty</value>
-  </data>
   <data name="Dash_ScanHint" xml:space="preserve">
     <value>Open Camera on your device -&gt; Point towards QR code -&gt; Click the link
 Or click the link above to copy it</value>
@@ -1504,9 +1435,6 @@ Or click the link above to copy it</value>
   <data name="Popup_OK" xml:space="preserve">
     <value>OK</value>
   </data>
-  <data name="Popup_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
   <data name="Popup_Yes" xml:space="preserve">
     <value>Yes</value>
   </data>
@@ -1514,21 +1442,6 @@ Or click the link above to copy it</value>
     <value>No</value>
   </data>
   <!-- Return Forms -->
-  <data name="Title_ItemReturn" xml:space="preserve">
-    <value>Item Return</value>
-  </data>
-  <data name="Return_Title" xml:space="preserve">
-    <value>Item Return</value>
-  </data>
-  <data name="Return_Action" xml:space="preserve">
-    <value>Return Items</value>
-  </data>
-  <data name="Return_Qty" xml:space="preserve">
-    <value>Return Qty</value>
-  </data>
-  <data name="Return_ReadyToScan" xml:space="preserve">
-    <value>Ready to scan barcode...</value>
-  </data>
   <data name="Msg_ReturnReason" xml:space="preserve">
     <value>Return Reason</value>
   </data>

@@ -39,11 +39,11 @@ namespace InventorySystem.Forms
 
             if (txtAmount != null) txtAmount.LabelText = L("Tran_AmountLabel");
             if (txtNotes != null) txtNotes.LabelText = L("Tran_NotesLabel");
-            if (lblDueDate != null) lblDueDate.Text = L("Tran_DueDateLabel") ?? "Payment Due Date";
-            
+            if (lblDueDate != null) lblDueDate.Text = LocalizationManager.GetString("Tran_DueDateLabel", "Payment Due Date");
+
             SetFooterButtons(
-                L("Tran_Confirm") ?? "Confirm",
-                L("Tran_Cancel") ?? "Cancel",
+                LocalizationManager.GetString("Tran_Confirm", "Confirm"),
+                LocalizationManager.GetString("Tran_Cancel", "Cancel"),
                 BtnSave_Click,
                 (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); }
             );
@@ -51,12 +51,12 @@ namespace InventorySystem.Forms
 
         private void InitializeComponent()
         {
-            
+
             lblPrompt = new Label { AutoSize = true, Font = ThemeConfig.SubHeaderFont, ForeColor = ThemeConfig.SecondaryColor, Margin = new Padding(0, 0, 0, 10) };
             txtAmount = new ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
             txtNotes = new ModernTextBox { Dock = DockStyle.Fill, Multiline = true, Height = 120, Margin = new Padding(0, 0, 0, 15) };
             lblError = new Label { AutoSize = true, ForeColor = ThemeConfig.DangerColor, Visible = false, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 5, 0, 5) };
-            
+
             this.SuspendLayout();
 
             TableLayoutPanel tlpMain = new TableLayoutPanel
@@ -77,7 +77,7 @@ namespace InventorySystem.Forms
             {
                 lblDueDate = new Label { AutoSize = true, Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, Margin = new Padding(0, 5, 0, 5) };
                 dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Height = 35, Margin = new Padding(0, 0, 0, 15), Value = DateTime.Today.AddDays(30) };
-                
+
                 tlpMain.Controls.Add(lblDueDate, 0, nextRow++);
                 tlpMain.Controls.Add(dtDueDate, 0, nextRow++);
             }
@@ -91,7 +91,7 @@ namespace InventorySystem.Forms
 
             this.ResumeLayout(false);
             this.PerformLayout();
-            
+
             ApplyTheme();
         }
 

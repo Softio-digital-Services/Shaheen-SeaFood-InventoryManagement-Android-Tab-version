@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Windows.Forms;
 using InventorySystem.Data;
 using InventorySystem.Helpers;
@@ -16,31 +17,47 @@ namespace InventorySystem.Forms
     /// </summary>
     public partial class PartsForm : UserControl
     {
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                CreateParams cp = base.CreateParams;
+                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
+                return cp;
+            }
+        }
         // ── Toolbar buttons ──────────────────────────────────────────────
         private InventorySystem.Controls.ModernButton btnAdd;
         private Button btnAddCategory;
-        private Button btnFilter;
+        // private Button btnFilter;
         private Button btnImport;
         private Button btnExport;
         private ModernTextBox txtSearch;
+        private ModernTextBox txtCategorySearch;
 
         // ── Layout containers ────────────────────────────────────────────
-        private Panel          pnlCategoryList;   // scrollable category rows
+        private Panel pnlCategoryList;   // scrollable category rows
         private FlowLayoutPanel pnlCardFlow;       // card grid
-        private DataGridView   dgvParts;           // list (table) view
-        private Panel          pnlGridView;        // wraps dgvParts
-        private Panel          pnlCardView;        // wraps pnlCardFlow + header
-        private Label          lblItemCount;       // "Desserts (19)"
-        private Panel          btnToggleGrid;
-        private Panel          btnToggleCard;
+        private DataGridView dgvParts;           // list (table) view
+        private Panel pnlGridView;        // wraps dgvParts
+        private Panel pnlCardView;        // wraps pnlCardFlow + header
+        private Label lblItemCount;       // "Desserts (19)"
+        private Panel btnToggleGrid;
+        private Panel btnToggleCard;
 
         // ── State ─────────────────────────────────────────────────────────
         private InventoryService _inventoryService;
-        private bool   _isCardView   = true;
+        private bool _isCardView = true;
         private string _activeCategory = null;   // null = "All Items"
-        private string _searchText      = "";
-        private bool   _lowStockOnly    = false;
-        private bool   _activeOnly      = false;
+        private string _searchText = "";
+        private bool _lowStockOnly = false;
+        private bool _activeOnly = false;
+        private int _categorySortMode = 0; // 0=Default, 1=NameAsc, 2=NameDesc, 3=CountDesc, 4=CountAsc
+        private int _currentPage = 1;
+        private int _pageSize = 50;
+        private Label lblPageInfo;
+        private InventorySystem.Controls.ModernButton btnPrevPage;
+        private InventorySystem.Controls.ModernButton btnNextPage;
 
         // ── Card layout constants ─────────────────────────────────────────
         private const int CardW = 160;
@@ -52,26 +69,21 @@ namespace InventorySystem.Forms
             InitializeComponent();
             _inventoryService = new InventoryService();
 
-            EventHandler langHandler    = (s, e) => ApplyLocalization();
-            EventHandler currHandler    = (s, e) => { if (_isCardView) LoadCards(); else dgvParts?.Invalidate(); };
-            EventHandler invHandler     = (s, e) => { if (this.Visible) RefreshAll(); };
+            EventHandler langHandler = (s, e) => ApplyLocalization();
+            EventHandler currHandler = (s, e) => { if (_isCardView) LoadCards(); else dgvParts?.Invalidate(); };
+            EventHandler invHandler = (s, e) => { if (this.Visible) RefreshAll(); };
 
             InventorySystem.Helpers.LocalizationManager.LanguageChanged += langHandler;
-            InventorySystem.Services.CurrencyService.CurrencyChanged    += currHandler;
+            InventorySystem.Services.CurrencyService.CurrencyChanged += currHandler;
 
             ApplyLocalization();
             ApplyPermissions();
             RefreshAll();
 
-            var syncTimer = new System.Windows.Forms.Timer { Interval = 30000 };
-            syncTimer.Tick += (s, e) => { if (this.Visible) RefreshAll(); };
-            syncTimer.Start();
-
             this.Disposed += (s, e) =>
             {
-                syncTimer.Stop(); syncTimer.Dispose();
                 InventorySystem.Helpers.LocalizationManager.LanguageChanged -= langHandler;
-                InventorySystem.Services.CurrencyService.CurrencyChanged    -= currHandler;
+                InventorySystem.Services.CurrencyService.CurrencyChanged -= currHandler;
             };
         }
 
@@ -80,11 +92,11 @@ namespace InventorySystem.Forms
         // ─────────────────────────────────────────────────────────────────
         private void InitializeComponent()
         {
-            this.btnAdd         = new InventorySystem.Controls.ModernButton();
-            this.btnImport      = new Button();
-            this.btnExport      = new Button();
-            this.txtSearch      = new ModernTextBox();
-            this.dgvParts       = new DataGridView();
+            this.btnAdd = new InventorySystem.Controls.ModernButton();
+            this.btnImport = new Button();
+            this.btnExport = new Button();
+            this.txtSearch = new ModernTextBox();
+            this.dgvParts = new DataGridView();
 
             ((System.ComponentModel.ISupportInitialize)(this.dgvParts)).BeginInit();
             this.SuspendLayout();
@@ -92,7 +104,9 @@ namespace InventorySystem.Forms
             // ── Root: full-width column for header + body ─────────────────
             TableLayoutPanel tlpRoot = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2,
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
                 Padding = new Padding(20, 16, 20, 16)
             };
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -105,7 +119,8 @@ namespace InventorySystem.Forms
 
             txtSearch = new ModernTextBox
             {
-                IsSearch = true, ShowLabel = false,
+                IsSearch = true,
+                ShowLabel = false,
                 PlaceholderText = LocalizationManager.GetString("Parts_Search"),
                 Size = new Size(280, 35)
             };
@@ -155,16 +170,16 @@ namespace InventorySystem.Forms
                     }
                 }
 
-                if (checkedIds.Count == 0) 
-                { 
+                if (checkedIds.Count == 0)
+                {
                     string msg = LocalizationManager.GetString("Msg_SelectOne");
-                    MessageHelper.ShowWarning(string.IsNullOrEmpty(msg) ? "Please select at least one item." : msg); 
-                    return; 
+                    MessageHelper.ShowWarning(string.IsNullOrEmpty(msg) ? "Please select at least one item." : msg);
+                    return;
                 }
-                
+
                 string confirmMsg = LocalizationManager.GetString("Msg_ConfirmDelete");
                 if (string.IsNullOrEmpty(confirmMsg)) confirmMsg = "Are you sure you want to delete {0} items?";
-                
+
                 if (MessageHelper.ConfirmAction(string.Format(confirmMsg, checkedIds.Count)))
                 {
                     foreach (int i in checkedIds) _inventoryService.DeletePart(i);
@@ -194,17 +209,20 @@ namespace InventorySystem.Forms
             // ── Body: sidebar + content ───────────────────────────────────
             TableLayoutPanel tlpBody = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1,
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
                 Margin = new Padding(0, 8, 0, 0)
             };
-            tlpBody.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 230F));
+            tlpBody.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280F));
             tlpBody.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tlpRoot.Controls.Add(tlpBody, 0, 1);
 
             // ── Left: Category Sidebar ────────────────────────────────────
             Panel pnlSidebarOuter = new Panel
             {
-                Dock = DockStyle.Fill, BackColor = Color.Transparent,
+                Dock = DockStyle.Fill,
+                BackColor = Color.Transparent,
                 Margin = new Padding(0, 0, 12, 0),
                 Tag = "surface"
             };
@@ -224,13 +242,22 @@ namespace InventorySystem.Forms
             // Sidebar inner layout
             TableLayoutPanel tlpSidebar = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
-                BackColor = Color.Transparent, Padding = new Padding(0)
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 4,
+                BackColor = Color.Transparent,
+                Padding = new Padding(0)
             };
+            tlpSidebar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tlpSidebar.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));  // Title
+            tlpSidebar.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));  // Search
             tlpSidebar.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Category rows
             tlpSidebar.RowStyles.Add(new RowStyle(SizeType.Absolute, 64F));  // Add Category btn
             pnlSidebarOuter.Controls.Add(tlpSidebar);
+
+            // Sidebar title Header Panel
+            Panel pnlSidebarHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+            tlpSidebar.Controls.Add(pnlSidebarHeader, 0, 0);
 
             // Sidebar title
             Label lblCatTitle = new Label
@@ -238,12 +265,75 @@ namespace InventorySystem.Forms
                 Text = LocalizationManager.GetString("Parts_Categories") == "Parts_Categories" ? "Categories" : LocalizationManager.GetString("Parts_Categories"),
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
-                Dock = DockStyle.Fill,
+                Dock = DockStyle.Left,
                 TextAlign = ContentAlignment.MiddleLeft,
                 BackColor = Color.Transparent,
-                Padding = new Padding(16, 0, 8, 0)
+                Padding = new Padding(16, 0, 8, 0),
+                AutoSize = true
             };
-            tlpSidebar.Controls.Add(lblCatTitle, 0, 0);
+            pnlSidebarHeader.Controls.Add(lblCatTitle);
+
+            Panel pbSortCat = new Panel
+            {
+                Size = new Size(26, 26),
+                Location = new Point(230, 9),
+                Anchor = AnchorStyles.Right | AnchorStyles.Top,
+                Cursor = Cursors.Hand,
+                BackColor = Color.Transparent
+            };
+            pbSortCat.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var path = ThemeConfig.GetRoundedPathPublic(new Rectangle(0, 0, pbSortCat.Width - 1, pbSortCat.Height - 1), 6))
+                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
+                    e.Graphics.DrawPath(pen, path);
+
+                Image img = ThemeConfig.GetNuricon("filter") ?? ThemeConfig.GetNuricon("sort");
+                if (img != null)
+                {
+                    using (var tinted = ThemeConfig.TintImage(img, ThemeConfig.SecondaryColor))
+                    {
+                        int iconSize = 16;
+                        e.Graphics.DrawImage(tinted, new Rectangle((pbSortCat.Width - iconSize) / 2, (pbSortCat.Height - iconSize) / 2, iconSize, iconSize));
+                    }
+                }
+            };
+            pbSortCat.Click += (s, e) =>
+            {
+                var menu = new ContextMenuStrip();
+                ThemeConfig.ApplyModernMenuTheme(menu);
+                var m1 = menu.Items.Add("Default Order", null, (ms, me) => { _categorySortMode = 0; RefreshCategorySidebar(); });
+                var m2 = menu.Items.Add("Name (A-Z)", null, (ms, me) => { _categorySortMode = 1; RefreshCategorySidebar(); });
+                var m3 = menu.Items.Add("Name (Z-A)", null, (ms, me) => { _categorySortMode = 2; RefreshCategorySidebar(); });
+                var m4 = menu.Items.Add("Highest Item Count", null, (ms, me) => { _categorySortMode = 3; RefreshCategorySidebar(); });
+                var m5 = menu.Items.Add("Lowest Item Count", null, (ms, me) => { _categorySortMode = 4; RefreshCategorySidebar(); });
+
+                if (_categorySortMode == 0) ((ToolStripMenuItem)m1).Checked = true;
+                if (_categorySortMode == 1) ((ToolStripMenuItem)m2).Checked = true;
+                if (_categorySortMode == 2) ((ToolStripMenuItem)m3).Checked = true;
+                if (_categorySortMode == 3) ((ToolStripMenuItem)m4).Checked = true;
+                if (_categorySortMode == 4) ((ToolStripMenuItem)m5).Checked = true;
+
+                menu.Show(pbSortCat, new Point(0, pbSortCat.Height));
+            };
+            pnlSidebarHeader.Controls.Add(pbSortCat);
+
+            // Category Search Box
+            txtCategorySearch = new ModernTextBox
+            {
+                IsSearch = true,
+                ShowLabel = false,
+                PlaceholderText = "Search Categories...",
+                Dock = DockStyle.Fill,
+                Margin = new Padding(12, 0, 12, 8)
+            };
+            txtCategorySearch.TextChanged += (s, e) =>
+            {
+                string text = txtCategorySearch.Text;
+                if (text != "Search Categories...")
+                    RefreshCategorySidebar();
+            };
+            tlpSidebar.Controls.Add(txtCategorySearch, 0, 1);
 
             // Scrollable category list
             pnlCategoryList = new Panel
@@ -253,7 +343,7 @@ namespace InventorySystem.Forms
                 BackColor = Color.Transparent,
                 Padding = new Padding(8, 4, 8, 4)
             };
-            tlpSidebar.Controls.Add(pnlCategoryList, 0, 1);
+            tlpSidebar.Controls.Add(pnlCategoryList, 0, 2);
 
             // Add Category button at bottom of sidebar
             Panel pnlAddCatWrapper = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12), BackColor = Color.Transparent };
@@ -262,15 +352,16 @@ namespace InventorySystem.Forms
                 Dock = DockStyle.Fill,
                 Height = 38
             };
-            ThemeConfig.ApplyStandardAddButton(btnSidebarAddCat, LocalizationManager.GetString("Parts_AddCategory") ?? "Add Category");
+            ThemeConfig.ApplyStandardAddButton(btnSidebarAddCat, LocalizationManager.GetString("Parts_AddCategory", "Add Category"));
             btnSidebarAddCat.Click += BtnAddCategory_Click;
             pnlAddCatWrapper.Controls.Add(btnSidebarAddCat);
-            tlpSidebar.Controls.Add(pnlAddCatWrapper, 0, 2);
+            tlpSidebar.Controls.Add(pnlAddCatWrapper, 0, 3);
 
             // ── Right: Content area ────────────────────────────────────────
             Panel pnlContent = new Panel
             {
-                Dock = DockStyle.Fill, BackColor = Color.Transparent,
+                Dock = DockStyle.Fill,
+                BackColor = Color.Transparent,
                 Margin = new Padding(0),
                 Tag = "surface"
             };
@@ -290,11 +381,32 @@ namespace InventorySystem.Forms
             // Content layout
             TableLayoutPanel tlpContent = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent,
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 3,
+                BackColor = Color.Transparent,
                 Padding = new Padding(16)
             };
             tlpContent.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));  // sub-header
             tlpContent.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // cards / grid
+            tlpContent.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // pagination footer
+
+            Panel pnlPagination = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+            btnPrevPage = new InventorySystem.Controls.ModernButton { Text = "< Prev", Size = new Size(80, 30), Location = new Point(0, 10), Cursor = Cursors.Hand };
+            btnPrevPage.Click += (s, e) => { if (_currentPage > 1) { _currentPage--; RefreshAll(); } };
+            ThemeConfig.ApplySecondaryButton(btnPrevPage);
+
+            btnNextPage = new InventorySystem.Controls.ModernButton { Text = "Next >", Size = new Size(80, 30), Location = new Point(200, 10), Cursor = Cursors.Hand };
+            btnNextPage.Click += (s, e) => { _currentPage++; RefreshAll(); };
+            ThemeConfig.ApplySecondaryButton(btnNextPage);
+
+            lblPageInfo = new Label { Text = "Page 1", AutoSize = false, Size = new Size(100, 30), Location = new Point(90, 10), TextAlign = ContentAlignment.MiddleCenter, Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.TextColorDark };
+
+            pnlPagination.Controls.Add(btnPrevPage);
+            pnlPagination.Controls.Add(lblPageInfo);
+            pnlPagination.Controls.Add(btnNextPage);
+            tlpContent.Controls.Add(pnlPagination, 0, 2);
+
             pnlContent.Controls.Add(tlpContent);
 
             // Content sub-header (title + count + view toggles)
@@ -303,8 +415,10 @@ namespace InventorySystem.Forms
 
             lblItemCount = new Label
             {
-                AutoSize = true, Font = new Font("Segoe UI", 13F, FontStyle.Bold),
-                ForeColor = ThemeConfig.TextColorDark, BackColor = Color.Transparent,
+                AutoSize = true,
+                Font = new Font("Segoe UI", 13F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                BackColor = Color.Transparent,
                 Location = new Point(4, 8)
             };
             pnlContentHeader.Controls.Add(lblItemCount);
@@ -313,8 +427,10 @@ namespace InventorySystem.Forms
             // Combined right-side control panel (FlowLayoutPanel for easier alignment)
             FlowLayoutPanel pnlRightControls = new FlowLayoutPanel
             {
-                Size = new Size(110, 30), Anchor = AnchorStyles.Right | AnchorStyles.Top,
-                BackColor = Color.Transparent, FlowDirection = FlowDirection.LeftToRight,
+                Size = new Size(110, 30),
+                Anchor = AnchorStyles.Right | AnchorStyles.Top,
+                BackColor = Color.Transparent,
+                FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false
             };
 
@@ -345,7 +461,7 @@ namespace InventorySystem.Forms
                     using (var tinted = ThemeConfig.TintImage(img, ThemeConfig.SecondaryColor))
                     {
                         int iconSize = 16;
-                        e.Graphics.DrawImage(tinted, new Rectangle((btnContentFilter.Width - iconSize)/2, (btnContentFilter.Height - iconSize)/2, iconSize, iconSize));
+                        e.Graphics.DrawImage(tinted, new Rectangle((btnContentFilter.Width - iconSize) / 2, (btnContentFilter.Height - iconSize) / 2, iconSize, iconSize));
                     }
                 }
             };
@@ -364,10 +480,12 @@ namespace InventorySystem.Forms
 
             pnlCardFlow = new FlowLayoutPanel
             {
-                Dock = DockStyle.Fill, AutoScroll = true,
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
                 Padding = new Padding(4, 4, 4, 4),
                 BackColor = Color.Transparent,
-                WrapContents = true, FlowDirection = FlowDirection.LeftToRight
+                WrapContents = true,
+                FlowDirection = FlowDirection.LeftToRight
             };
             pnlCardView.Controls.Add(pnlCardFlow);
             tlpContent.Controls.Add(pnlCardView, 0, 1);
@@ -381,12 +499,12 @@ namespace InventorySystem.Forms
             dgvParts.BorderStyle = BorderStyle.None;
             dgvParts.BackgroundColor = ThemeConfig.SurfaceColor;
             dgvParts.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dgvParts.CellPainting   += DgvParts_CellPainting;
+            dgvParts.CellPainting += DgvParts_CellPainting;
             dgvParts.CellFormatting += DgvParts_CellFormatting;
             dgvParts.CellMouseClick += DgvParts_CellMouseClick;
-            dgvParts.CellMouseMove  += DgvParts_CellMouseMove;
+            dgvParts.CellMouseMove += DgvParts_CellMouseMove;
             dgvParts.CellMouseLeave += DgvParts_CellMouseLeave;
-            dgvParts.DataError      += (s, e) => e.ThrowException = false;
+            dgvParts.DataError += (s, e) => e.ThrowException = false;
 
             Panel pnlGridCard = ThemeConfig.CreateCardPanel(dgvParts);
             pnlGridCard.Dock = DockStyle.Fill;
@@ -398,21 +516,20 @@ namespace InventorySystem.Forms
             var colImage = new DataGridViewImageColumn { Name = "colImage", HeaderText = "Image", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom, FillWeight = 6, ReadOnly = true };
             colImage.DefaultCellStyle.Padding = new Padding(12);
             dgvParts.Columns.Add(colImage);
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSKU",      HeaderText = "SKU",      DataPropertyName = "part_number",          FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBarcode",  HeaderText = "Barcode",  DataPropertyName = "barcode",              FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName",     HeaderText = "Product",  DataPropertyName = "part_name",            FillWeight = 18, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCategory", HeaderText = "Category", DataPropertyName = "category_name",        FillWeight = 12, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colLocation", HeaderText = "Location", DataPropertyName = "location",             FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colShelf",    HeaderText = "Shelf",    DataPropertyName = "shelf",                FillWeight = 8,  ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStock",    HeaderText = "Stock",    DataPropertyName = "quantity_in_stock",    FillWeight = 8,  ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSKU", HeaderText = "SKU", DataPropertyName = "part_number", FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBarcode", HeaderText = "Barcode", DataPropertyName = "barcode", FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", HeaderText = "Product", DataPropertyName = "part_name", FillWeight = 18, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCategory", HeaderText = "Category", DataPropertyName = "category_name", FillWeight = 12, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colLocation", HeaderText = "Location", DataPropertyName = "location", FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colShelf", HeaderText = "Shelf", DataPropertyName = "shelf", FillWeight = 8, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStock", HeaderText = "Stock", DataPropertyName = "quantity_in_stock", FillWeight = 8, ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "minimum_stock_level", HeaderText = "Min Stock", DataPropertyName = "minimum_stock_level", FillWeight = 8, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPrice",    HeaderText = "Price",    DataPropertyName = "selling_price",        FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus",   HeaderText = "Status",   DataPropertyName = "status",               FillWeight = 9,  ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPrice", HeaderText = "Price", DataPropertyName = "selling_price", FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus", HeaderText = "Status", DataPropertyName = "status", FillWeight = 9, ReadOnly = true });
             var colActions = new DataGridViewButtonColumn { Name = "colActions", HeaderText = "Actions", ReadOnly = true, MinimumWidth = 130, Width = 130, AutoSizeMode = DataGridViewAutoSizeColumnMode.None };
             dgvParts.Columns.Add(colActions);
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_id",     DataPropertyName = "part_id",    Visible = false });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_image",  DataPropertyName = "part_image", Visible = false });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "expiry_date", DataPropertyName = "expiry_date", Visible = false });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_id", DataPropertyName = "part_id", Visible = false });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_image", DataPropertyName = "part_image", Visible = false });
 
             ThemeConfig.ApplyGridTheme(dgvParts);
             ThemeConfig.ApplyHeaderCheckBox(dgvParts, "colCheck");
@@ -465,7 +582,7 @@ namespace InventorySystem.Forms
                     using (var tinted = ThemeConfig.TintImage(img, tint))
                     {
                         int iconSize = 16;
-                        e.Graphics.DrawImage(tinted, new Rectangle((pnl.Width - iconSize)/2, (pnl.Height - iconSize)/2, iconSize, iconSize));
+                        e.Graphics.DrawImage(tinted, new Rectangle((pnl.Width - iconSize) / 2, (pnl.Height - iconSize) / 2, iconSize, iconSize));
                     }
                 }
             };
@@ -475,8 +592,8 @@ namespace InventorySystem.Forms
         private void SwitchView(bool toCard)
         {
             _isCardView = toCard;
-            pnlCardView.Visible  = toCard;
-            pnlGridView.Visible  = !toCard;
+            pnlCardView.Visible = toCard;
+            pnlGridView.Visible = !toCard;
 
             btnToggleCard.Tag = toCard;
             btnToggleGrid.Tag = !toCard;
@@ -485,7 +602,7 @@ namespace InventorySystem.Forms
             btnToggleGrid.Invalidate();
 
             if (toCard) LoadCards();
-            else        LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
+            else LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
         }
 
         // ─────────────────────────────────────────────────────────────────
@@ -495,7 +612,7 @@ namespace InventorySystem.Forms
         {
             RefreshCategorySidebar();
             if (_isCardView) LoadCards();
-            else             LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
+            else LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
         }
 
         // ─────────────────────────────────────────────────────────────────
@@ -513,10 +630,34 @@ namespace InventorySystem.Forms
             try
             {
                 var cats = CategoryData.GetAllCategories();
-                foreach (var cat in cats)
+
+                string search = txtCategorySearch?.Text?.Trim().ToLower() ?? "";
+                if (!string.IsNullOrEmpty(search) && search != "search categories...")
                 {
-                    int count = CategoryData.GetItemCount(cat.CategoryName);
-                    pnlCategoryList.Controls.Add(BuildCategoryRow(cat, cat.CategoryName, count));
+                    cats = cats.Where(c => c.CategoryName.ToLower().Contains(search)).ToList();
+                }
+
+                var catWithCounts = cats.Select(c => new { Cat = c, Count = CategoryData.GetItemCount(c.CategoryName) }).ToList();
+
+                if (_categorySortMode == 1)
+                    catWithCounts = catWithCounts.OrderBy(x => x.Cat.CategoryName).ToList();
+                else if (_categorySortMode == 2)
+                    catWithCounts = catWithCounts.OrderByDescending(x => x.Cat.CategoryName).ToList();
+                else if (_categorySortMode == 3)
+                    catWithCounts = catWithCounts.OrderByDescending(x => x.Count).ThenBy(x => x.Cat.CategoryName).ToList();
+                else if (_categorySortMode == 4)
+                    catWithCounts = catWithCounts.OrderBy(x => x.Count).ThenBy(x => x.Cat.CategoryName).ToList();
+
+                foreach (var item in catWithCounts)
+                {
+                    pnlCategoryList.Controls.Add(BuildCategoryRow(item.Cat, item.Cat.CategoryName, item.Count));
+                }
+
+                int othersCount = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM parts p LEFT JOIN categories c ON p.category_id = c.id WHERE p.date_deleted IS NULL AND (c.category_name IS NULL OR p.category_id = 0 OR c.category_name = '')");
+                if (othersCount > 0)
+                {
+                    var othersCat = new CategoryData { CategoryName = "Others" };
+                    pnlCategoryList.Controls.Add(BuildCategoryRow(othersCat, "Others", othersCount));
                 }
             }
             catch { }
@@ -531,15 +672,19 @@ namespace InventorySystem.Forms
             // Wrapper for spacing
             Panel wrapper = new Panel
             {
-                Height = 52, Dock = DockStyle.Top,
-                Padding = new Padding(0, 0, 0, 8), BackColor = Color.Transparent
+                Height = 52,
+                Dock = DockStyle.Top,
+                Padding = new Padding(0, 0, 0, 8),
+                BackColor = Color.Transparent
             };
 
             // The actual card
             Panel card = new Panel
             {
-                Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor,
-                Cursor = Cursors.Hand, Tag = cat
+                Dock = DockStyle.Fill,
+                BackColor = ThemeConfig.SurfaceColor,
+                Cursor = Cursors.Hand,
+                Tag = cat
             };
             wrapper.Controls.Add(card);
 
@@ -576,8 +721,10 @@ namespace InventorySystem.Forms
             // Fake Icon / Image placeholder on the left
             PictureBox pbIcon = new PictureBox
             {
-                Size = new Size(24, 24), Location = new Point(12, 10),
-                SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Transparent,
+                Size = new Size(24, 24),
+                Location = new Point(12, 10),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                BackColor = Color.Transparent,
                 Image = iconImage
             };
             if (pbIcon.Image == null) { pbIcon.BackColor = ThemeConfig.BorderColor; }
@@ -589,8 +736,10 @@ namespace InventorySystem.Forms
                 Text = displayName,
                 Font = isActive ? new Font("Segoe UI", 9F, FontStyle.Bold) : new Font("Segoe UI", 9F),
                 ForeColor = ThemeConfig.TextColorDark,
-                AutoSize = false, Size = new Size(110, 44),
-                Location = new Point(44, 0), TextAlign = ContentAlignment.MiddleLeft,
+                AutoSize = false,
+                Size = new Size(160, 44),
+                Location = new Point(44, 0),
+                TextAlign = ContentAlignment.MiddleLeft,
                 BackColor = Color.Transparent
             };
             card.Controls.Add(lblName);
@@ -601,8 +750,10 @@ namespace InventorySystem.Forms
                 Text = count.ToString(),
                 Font = new Font("Segoe UI", 8F, FontStyle.Bold),
                 ForeColor = isActive ? Color.White : ThemeConfig.TextColorDark,
-                AutoSize = false, Size = new Size(24, 24),
-                Location = new Point(164, 10), TextAlign = ContentAlignment.MiddleCenter,
+                AutoSize = false,
+                Size = new Size(24, 24),
+                Location = new Point(214, 10),
+                TextAlign = ContentAlignment.MiddleCenter,
                 BackColor = isActive ? ThemeConfig.PrimaryColor : ThemeConfig.BackgroundColor
             };
             lblCount.Paint += (s, pe) =>
@@ -650,10 +801,10 @@ namespace InventorySystem.Forms
                 Action deleteCategory = () =>
                 {
                     int itemCount = CategoryData.GetItemCount(cat.CategoryName);
-                    string warningMsg = itemCount > 0 
+                    string warningMsg = itemCount > 0
                         ? $"Warning: There are {itemCount} items in this category.\n\nAre you sure you want to delete the category \"{cat.CategoryName}\"?"
                         : $"Delete category \"{cat.CategoryName}\"?";
-                        
+
                     if (MessageHelper.ConfirmAction(warningMsg))
                     {
                         try { CategoryData.DeleteCategory(cat.Id); }
@@ -666,13 +817,15 @@ namespace InventorySystem.Forms
                 // Add Edit / Delete buttons that appear on hover
                 PictureBox pbEdit = new PictureBox { Size = new Size(18, 18), Location = new Point(116, 13), Cursor = Cursors.Hand, Visible = false, BackColor = Color.Transparent };
                 PictureBox pbDelete = new PictureBox { Size = new Size(18, 18), Location = new Point(140, 13), Cursor = Cursors.Hand, Visible = false, BackColor = Color.Transparent };
-                
-                pbEdit.Paint += (s, e) => {
+
+                pbEdit.Paint += (s, e) =>
+                {
                     e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                     var img = ThemeConfig.TintImage(ThemeConfig.GetNuricon("edit"), ThemeConfig.SecondaryColor);
                     if (img != null) e.Graphics.DrawImage(img, new Rectangle(0, 0, pbEdit.Width, pbEdit.Height));
                 };
-                pbDelete.Paint += (s, e) => {
+                pbDelete.Paint += (s, e) =>
+                {
                     e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                     var img = ThemeConfig.TintImage(ThemeConfig.GetNuricon("delete"), ThemeConfig.DangerColor);
                     if (img != null) e.Graphics.DrawImage(img, new Rectangle(0, 0, pbDelete.Width, pbDelete.Height));
@@ -687,11 +840,11 @@ namespace InventorySystem.Forms
                 pbDelete.BringToFront();
 
                 void ShowActions(object s, EventArgs e) { pbEdit.Visible = true; pbDelete.Visible = true; }
-                void HideActions(object s, EventArgs e) 
-                { 
+                void HideActions(object s, EventArgs e)
+                {
                     if (!card.ClientRectangle.Contains(card.PointToClient(Cursor.Position)))
                     {
-                        pbEdit.Visible = false; pbDelete.Visible = false; 
+                        pbEdit.Visible = false; pbDelete.Visible = false;
                     }
                 }
 
@@ -699,7 +852,7 @@ namespace InventorySystem.Forms
                 pbIcon.MouseEnter += ShowActions;
                 lblName.MouseEnter += ShowActions;
                 lblCount.MouseEnter += ShowActions;
-                
+
                 card.MouseLeave += HideActions;
                 pbIcon.MouseLeave += HideActions;
                 lblName.MouseLeave += HideActions;
@@ -725,7 +878,7 @@ namespace InventorySystem.Forms
         // ─────────────────────────────────────────────────────────────────
         // CARD VIEW — LoadCards
         // ─────────────────────────────────────────────────────────────────
-        private void LoadCards()
+        private async void LoadCards()
         {
             pnlCardFlow.SuspendLayout();
             foreach (Control c in pnlCardFlow.Controls) c.Dispose();
@@ -736,15 +889,31 @@ namespace InventorySystem.Forms
 
             try
             {
-                DataTable dt = _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
+                int totalCount = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetPartsCount(_searchText, _lowStockOnly, _activeOnly, _activeCategory));
+                int totalPages = (int)Math.Ceiling(totalCount / (double)_pageSize);
+                if (totalPages == 0) totalPages = 1;
+                if (_currentPage > totalPages) _currentPage = totalPages;
+
+                if (lblPageInfo != null) lblPageInfo.Text = $"Page {_currentPage} of {totalPages}";
+                if (btnPrevPage != null) btnPrevPage.Enabled = _currentPage > 1;
+                if (btnNextPage != null) btnNextPage.Enabled = _currentPage < totalPages;
+
+                int offset = (_currentPage - 1) * _pageSize;
+
+                DataTable dt = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory, _pageSize, offset));
 
                 // Update count label
                 string catLabel = _activeCategory ?? "All Items";
                 if (lblItemCount != null)
-                    lblItemCount.Text = $"{catLabel} ({dt.Rows.Count})";
+                    lblItemCount.Text = $"{catLabel} ({totalCount})";
 
+                var controlsList = new System.Collections.Generic.List<Control>();
                 foreach (DataRow row in dt.Rows)
-                    pnlCardFlow.Controls.Add(BuildProductCard(row));
+                {
+                    controlsList.Add(BuildProductCard(row));
+                }
+
+                pnlCardFlow.Controls.AddRange(controlsList.ToArray());
             }
             catch (Exception ex)
             {
@@ -758,8 +927,10 @@ namespace InventorySystem.Forms
         {
             Panel card = new Panel
             {
-                Size = new Size(CardW, CardH), Margin = new Padding(CardGap / 2),
-                BackColor = Color.Transparent, Cursor = Cursors.Hand,
+                Size = new Size(CardW, CardH),
+                Margin = new Padding(CardGap / 2),
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
                 Tag = "surface"
             };
             card.Paint += (s, pe) =>
@@ -784,13 +955,12 @@ namespace InventorySystem.Forms
 
             EventHandler addClick = (s, e) =>
             {
-                string preset = (_activeCategory != null && _activeCategory != "All Items") ? _activeCategory : null;
-                using (AddProductServiceForm form = new AddProductServiceForm(preset))
+                using (AddProductServiceForm form = new AddProductServiceForm())
                 {
                     if (form.ShowDialog() == DialogResult.OK) RefreshAll();
                 }
             };
-            card.Click  += addClick;
+            card.Click += addClick;
             btnAdd.Click += addClick;
 
             card.Controls.Add(btnAdd);
@@ -799,19 +969,23 @@ namespace InventorySystem.Forms
 
         private Panel BuildProductCard(DataRow row)
         {
-            int     partId   = Convert.ToInt32(row["part_id"]);
-            string  name     = row["part_name"]?.ToString() ?? "";
-            string  sku      = row["part_number"]?.ToString() ?? "";
-            string  category = row["category_name"]?.ToString() ?? "";
-            decimal price    = row["selling_price"] == DBNull.Value ? 0 : Convert.ToDecimal(row["selling_price"]);
-            string  status   = row["status"]?.ToString() ?? "Active";
-            string  imgPath  = row["part_image"]?.ToString() ?? "";
-            bool    isActive = status.Equals("Active", StringComparison.OrdinalIgnoreCase);
+            int partId = Convert.ToInt32(row["part_id"]);
+            string name = row["part_name"]?.ToString() ?? "";
+            string sku = row["part_number"]?.ToString() ?? "";
+            string category = row["category_name"]?.ToString() ?? "";
+            decimal price = row["selling_price"] == DBNull.Value ? 0 : Convert.ToDecimal(row["selling_price"]);
+            string status = row["status"]?.ToString() ?? "Active";
+            string imgPath = row["part_image"]?.ToString() ?? "";
+            string description = row["description"]?.ToString() ?? "";
+            bool isActive = status.Equals("Active", StringComparison.OrdinalIgnoreCase);
 
             Panel card = new Panel
             {
-                Size = new Size(CardW, CardH), Margin = new Padding(CardGap / 2),
-                BackColor = ThemeConfig.SurfaceColor, Cursor = Cursors.Hand, Tag = partId
+                Size = new Size(CardW, CardH),
+                Margin = new Padding(CardGap / 2),
+                BackColor = ThemeConfig.SurfaceColor,
+                Cursor = Cursors.Hand,
+                Tag = partId
             };
             card.Paint += (s, pe) =>
             {
@@ -828,8 +1002,10 @@ namespace InventorySystem.Forms
             // Circular image
             PictureBox pb = new PictureBox
             {
-                Size = new Size(64, 64), Location = new Point((CardW - 64) / 2, 18),
-                BackColor = Color.Transparent, SizeMode = PictureBoxSizeMode.Zoom
+                Size = new Size(64, 64),
+                Location = new Point((CardW - 64) / 2, 18),
+                BackColor = Color.Transparent,
+                SizeMode = PictureBoxSizeMode.Zoom
             };
             pb.Paint += (s, pe) =>
             {
@@ -854,19 +1030,40 @@ namespace InventorySystem.Forms
             // Category label (muted)
             Label lblCat = new Label
             {
-                Text = category, Font = new Font("Segoe UI", 7.5F),
-                ForeColor = ThemeConfig.SecondaryColor, BackColor = Color.Transparent,
-                AutoSize = false, Size = new Size(CardW - 12, 18), Location = new Point(6, 88),
+                Text = category,
+                Font = new Font("Segoe UI", 7.5F),
+                ForeColor = ThemeConfig.SecondaryColor,
+                BackColor = Color.Transparent,
+                AutoSize = false,
+                Size = new Size(CardW - 12, 18),
+                Location = new Point(6, 88),
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
             // Product name (bold)
             Label lblName = new Label
             {
-                Text = name, Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                ForeColor = ThemeConfig.TextColorDark, BackColor = Color.Transparent,
-                AutoSize = false, Size = new Size(CardW - 12, 36), Location = new Point(6, 106),
-                TextAlign = ContentAlignment.MiddleCenter
+                Text = name,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                BackColor = Color.Transparent,
+                AutoSize = false,
+                Size = new Size(CardW - 12, 18),
+                Location = new Point(6, 106),
+                TextAlign = ContentAlignment.TopCenter
+            };
+
+            // Product description
+            Label lblDesc = new Label
+            {
+                Text = description,
+                Font = new Font("Segoe UI", 7.5F),
+                ForeColor = Color.Gray,
+                BackColor = Color.Transparent,
+                AutoSize = false,
+                Size = new Size(CardW - 12, 16),
+                Location = new Point(6, 124),
+                TextAlign = ContentAlignment.TopCenter
             };
 
             // Price
@@ -874,20 +1071,25 @@ namespace InventorySystem.Forms
             {
                 Text = InventorySystem.Services.CurrencyService.Format(price),
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
-                ForeColor = ThemeConfig.PrimaryColor, BackColor = Color.Transparent,
-                AutoSize = false, Size = new Size(CardW - 12, 22), Location = new Point(6, 143),
+                ForeColor = ThemeConfig.PrimaryColor,
+                BackColor = Color.Transparent,
+                AutoSize = false,
+                Size = new Size(CardW - 12, 22),
+                Location = new Point(6, 143),
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
             // Status badge
             Label lblStatus = new Label
             {
-                Text = isActive ? (LocalizationManager.GetString("Status_Active") ?? "Active")
-                                : (LocalizationManager.GetString("Status_Inactive") ?? "Inactive"),
+                Text = isActive ? (LocalizationManager.GetString("Status_Active", "Active"))
+                                : (LocalizationManager.GetString("Status_Inactive", "Inactive")),
                 Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
                 ForeColor = isActive ? ThemeConfig.SuccessBadgeText : ThemeConfig.DangerBadgeText,
                 BackColor = isActive ? ThemeConfig.SuccessBadgeBg : ThemeConfig.DangerBadgeBg,
-                AutoSize = false, Size = new Size(60, 20), Location = new Point((CardW - 60) / 2, 168),
+                AutoSize = false,
+                Size = new Size(60, 20),
+                Location = new Point((CardW - 60) / 2, 168),
                 TextAlign = ContentAlignment.MiddleCenter
             };
             lblStatus.Paint += (s, pe) =>
@@ -904,16 +1106,22 @@ namespace InventorySystem.Forms
             // Edit / Delete icons
             PictureBox pbEdit = new PictureBox
             {
-                Size = new Size(22, 22), Location = new Point(CardW - 52, 5),
-                BackColor = Color.Transparent, Cursor = Cursors.Hand, SizeMode = PictureBoxSizeMode.Zoom,
+                Size = new Size(22, 22),
+                Location = new Point(CardW - 52, 5),
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                SizeMode = PictureBoxSizeMode.Zoom,
                 Image = ThemeConfig.GetNuricon("edit")
             };
             pbEdit.Click += (s, e) => OpenEditForm(row);
 
             PictureBox pbDelete = new PictureBox
             {
-                Size = new Size(22, 22), Location = new Point(CardW - 28, 5),
-                BackColor = Color.Transparent, Cursor = Cursors.Hand, SizeMode = PictureBoxSizeMode.Zoom,
+                Size = new Size(22, 22),
+                Location = new Point(CardW - 28, 5),
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                SizeMode = PictureBoxSizeMode.Zoom,
                 Image = ThemeConfig.GetNuricon("delete")
             };
             pbDelete.Click += (s, e) =>
@@ -928,15 +1136,16 @@ namespace InventorySystem.Forms
 
             // Click on card = edit
             EventHandler editClick = (s, e) => OpenEditForm(row);
-            card.Click   += editClick;
-            pb.Click     += editClick;
+            card.Click += editClick;
+            pb.Click += editClick;
             lblName.Click += editClick;
-            lblCat.Click  += editClick;
+            lblCat.Click += editClick;
             lblPrice.Click += editClick;
 
             card.Controls.Add(pb);
             card.Controls.Add(lblCat);
             card.Controls.Add(lblName);
+            card.Controls.Add(lblDesc);
             card.Controls.Add(lblPrice);
             card.Controls.Add(lblStatus);
             card.Controls.Add(pbEdit);
@@ -963,8 +1172,8 @@ namespace InventorySystem.Forms
                 card.BackColor = ThemeConfig.SurfaceColor;
                 card.Invalidate();
             }
-            card.MouseEnter   += HoverEnter; card.MouseLeave   += HoverLeave;
-            pb.MouseEnter     += HoverEnter; pb.MouseLeave     += HoverLeave;
+            card.MouseEnter += HoverEnter; card.MouseLeave += HoverLeave;
+            pb.MouseEnter += HoverEnter; pb.MouseLeave += HoverLeave;
             lblName.MouseEnter += HoverEnter; lblName.MouseLeave += HoverLeave;
 
             return card;
@@ -974,19 +1183,19 @@ namespace InventorySystem.Forms
         {
             if (!UserSession.IsAdmin) { MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoPermissionEdit")); return; }
 
-            string id       = row["part_id"]?.ToString();
-            string name     = row["part_name"]?.ToString() ?? "";
-            string sku      = row["part_number"]?.ToString() ?? "";
+            string id = row["part_id"]?.ToString();
+            string name = row["part_name"]?.ToString() ?? "";
+            string sku = row["part_number"]?.ToString() ?? "";
             string category = row["category_name"]?.ToString() ?? "";
-            string status   = row["status"]?.ToString() ?? "Active";
-            string barcode  = row["barcode"]?.ToString() ?? "";
+            string status = row["status"]?.ToString() ?? "Active";
+            string barcode = row["barcode"]?.ToString() ?? "";
             string location = row["location"]?.ToString() ?? "";
-            string shelf    = row["shelf"]?.ToString() ?? "";
-            string image    = row["part_image"]?.ToString() ?? "";
+            string shelf = row["shelf"]?.ToString() ?? "";
+            string image = row["part_image"]?.ToString() ?? "";
 
-            int qty      = row["quantity_in_stock"] == DBNull.Value ? 0 : Convert.ToInt32(row["quantity_in_stock"]);
+            int qty = row["quantity_in_stock"] == DBNull.Value ? 0 : Convert.ToInt32(row["quantity_in_stock"]);
             decimal price = row["selling_price"] == DBNull.Value ? 0 : Convert.ToDecimal(row["selling_price"]);
-            int minStock  = row["minimum_stock_level"] == DBNull.Value ? 0 : Convert.ToInt32(row["minimum_stock_level"]);
+            int minStock = row["minimum_stock_level"] == DBNull.Value ? 0 : Convert.ToInt32(row["minimum_stock_level"]);
 
             var fullPart = PartData.GetAllParts().Find(p => p.Id == int.Parse(id));
             if (fullPart != null)
@@ -1002,20 +1211,33 @@ namespace InventorySystem.Forms
         // ─────────────────────────────────────────────────────────────────
         // LIST VIEW — LoadData (existing DataGridView approach)
         // ─────────────────────────────────────────────────────────────────
-        private void LoadData(string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null)
+        private async void LoadData(string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null)
         {
             try
             {
                 dgvParts.DataSource = null;
-                DataTable dt = _inventoryService.GetAllParts(search, lowStockOnly, activeOnly, category);
+
+                int totalCount = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetPartsCount(search, lowStockOnly, activeOnly, category));
+                int totalPages = (int)Math.Ceiling(totalCount / (double)_pageSize);
+                if (totalPages == 0) totalPages = 1;
+                if (_currentPage > totalPages) _currentPage = totalPages;
+
+                if (lblPageInfo != null) lblPageInfo.Text = $"Page {_currentPage} of {totalPages}";
+                if (btnPrevPage != null) btnPrevPage.Enabled = _currentPage > 1;
+                if (btnNextPage != null) btnNextPage.Enabled = _currentPage < totalPages;
+
+                int offset = (_currentPage - 1) * _pageSize;
+
+                DataTable dt = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetAllParts(search, lowStockOnly, activeOnly, category, _pageSize, offset));
+
                 dgvParts.DataSource = dt;
 
                 if (lblItemCount != null)
-                    lblItemCount.Text = $"{(category ?? "All Items")} ({dt.Rows.Count})";
+                    lblItemCount.Text = $"{(category ?? "All Items")} ({totalCount})";
 
                 foreach (DataGridViewRow r in dgvParts.Rows)
                 {
-                    string imagePath   = r.Cells["part_image"].Value?.ToString();
+                    string imagePath = r.Cells["part_image"].Value?.ToString();
                     string categoryName = r.Cells["colCategory"].Value?.ToString();
                     r.Cells["colImage"].Value = CreateProductImage(imagePath, categoryName);
                 }
@@ -1036,9 +1258,9 @@ namespace InventorySystem.Forms
             if (txtSearch != null) txtSearch.PlaceholderText = L("Parts_Search");
 
             if (btnAdd != null) ThemeConfig.ApplyStandardAddButton(btnAdd, "New");
-            if (btnFilter != null)  btnFilter.Invalidate();
-            if (btnImport != null)  btnImport.Invalidate();
-            if (btnExport != null)  btnExport.Invalidate();
+            // if (btnFilter != null)  btnFilter.Invalidate();
+            if (btnImport != null) btnImport.Invalidate();
+            if (btnExport != null) btnExport.Invalidate();
 
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
             if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Parts_Delete");
@@ -1047,18 +1269,18 @@ namespace InventorySystem.Forms
 
             if (dgvParts != null && dgvParts.Columns.Count > 0)
             {
-                if (dgvParts.Columns.Contains("colImage"))          dgvParts.Columns["colImage"].HeaderText          = L("Parts_GridImage");
-                if (dgvParts.Columns.Contains("colSKU"))            dgvParts.Columns["colSKU"].HeaderText            = L("Parts_GridSKU");
-                if (dgvParts.Columns.Contains("colBarcode"))        dgvParts.Columns["colBarcode"].HeaderText        = L("Parts_GridBarcode");
-                if (dgvParts.Columns.Contains("colName"))           dgvParts.Columns["colName"].HeaderText           = L("Parts_GridProduct");
-                if (dgvParts.Columns.Contains("colCategory"))       dgvParts.Columns["colCategory"].HeaderText       = L("Parts_GridCategory");
-                if (dgvParts.Columns.Contains("colLocation"))       dgvParts.Columns["colLocation"].HeaderText       = L("Parts_GridLocation");
-                if (dgvParts.Columns.Contains("colShelf"))          dgvParts.Columns["colShelf"].HeaderText          = L("Parts_GridShelf");
-                if (dgvParts.Columns.Contains("colStock"))          dgvParts.Columns["colStock"].HeaderText          = L("Parts_GridStock");
+                if (dgvParts.Columns.Contains("colImage")) dgvParts.Columns["colImage"].HeaderText = L("Parts_GridImage");
+                if (dgvParts.Columns.Contains("colSKU")) dgvParts.Columns["colSKU"].HeaderText = L("Parts_GridSKU");
+                if (dgvParts.Columns.Contains("colBarcode")) dgvParts.Columns["colBarcode"].HeaderText = L("Parts_GridBarcode");
+                if (dgvParts.Columns.Contains("colName")) dgvParts.Columns["colName"].HeaderText = L("Parts_GridProduct");
+                if (dgvParts.Columns.Contains("colCategory")) dgvParts.Columns["colCategory"].HeaderText = L("Parts_GridCategory");
+                if (dgvParts.Columns.Contains("colLocation")) dgvParts.Columns["colLocation"].HeaderText = L("Parts_GridLocation");
+                if (dgvParts.Columns.Contains("colShelf")) dgvParts.Columns["colShelf"].HeaderText = L("Parts_GridShelf");
+                if (dgvParts.Columns.Contains("colStock")) dgvParts.Columns["colStock"].HeaderText = L("Parts_GridStock");
                 if (dgvParts.Columns.Contains("minimum_stock_level")) dgvParts.Columns["minimum_stock_level"].HeaderText = L("Parts_GridMinStock");
-                if (dgvParts.Columns.Contains("colPrice"))          dgvParts.Columns["colPrice"].HeaderText          = L("Parts_GridPrice");
-                if (dgvParts.Columns.Contains("colStatus"))         dgvParts.Columns["colStatus"].HeaderText         = L("Parts_GridStatus");
-                if (dgvParts.Columns.Contains("colActions"))        dgvParts.Columns["colActions"].HeaderText        = L("Parts_GridActions");
+                if (dgvParts.Columns.Contains("colPrice")) dgvParts.Columns["colPrice"].HeaderText = L("Parts_GridPrice");
+                if (dgvParts.Columns.Contains("colStatus")) dgvParts.Columns["colStatus"].HeaderText = L("Parts_GridStatus");
+                if (dgvParts.Columns.Contains("colActions")) dgvParts.Columns["colActions"].HeaderText = L("Parts_GridActions");
             }
         }
 
@@ -1077,48 +1299,9 @@ namespace InventorySystem.Forms
         // ─────────────────────────────────────────────────────────────────
         private Bitmap CreateProductImage(string imagePath = null, string category = null)
         {
-            if (!string.IsNullOrEmpty(imagePath))
-            {
-                try
-                {
-                    string fullPath = System.IO.Path.Combine(Application.StartupPath, imagePath);
-                    if (!System.IO.File.Exists(fullPath))
-                        fullPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "Products", System.IO.Path.GetFileName(imagePath));
-                    if (System.IO.File.Exists(fullPath))
-                    {
-                        byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
-                        using (var ms = new System.IO.MemoryStream(bytes))
-                        using (var original = Image.FromStream(ms))
-                            return new Bitmap(original, new Size(56, 56));
-                    }
-                }
-                catch { }
-            }
-
-            Bitmap img = new Bitmap(56, 56);
-            using (Graphics g = Graphics.FromImage(img))
-            {
-                g.Clear(Color.Transparent);
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-                string iconName = "inventory";
-                if (category != null)
-                {
-                    string cat = category.ToLower();
-                    if (cat.Contains("engine"))                               iconName = "engine";
-                    else if (cat.Contains("brake"))                           iconName = "brakes";
-                    else if (cat.Contains("service"))                         iconName = "services";
-                    else if (cat.Contains("accessory") || cat.Contains("accessories")) iconName = "accessories";
-                    else if (cat.Contains("oil") || cat.Contains("fuel"))    iconName = "oil";
-                }
-                Image icon = ThemeConfig.GetNuricon(iconName);
-                if (icon != null)
-                {
-                    int sz = 28, pad = (56 - sz) / 2;
-                    g.DrawImage(icon, new Rectangle(pad, pad, sz, sz));
-                }
-            }
-            return img;
+            return InventorySystem.Helpers.CacheManager.GetProductImage(imagePath, category, 56);
         }
+
 
         // ─────────────────────────────────────────────────────────────────
         // DATAGRIDVIEW PAINTING (for list view)
@@ -1129,11 +1312,11 @@ namespace InventorySystem.Forms
             var row = dgvParts.Rows[e.RowIndex];
             string category = row.Cells["colCategory"].Value?.ToString() ?? "";
             bool isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase) ||
-                             category.Equals("Service",  StringComparison.OrdinalIgnoreCase);
+                             category.Equals("Service", StringComparison.OrdinalIgnoreCase);
 
             if (isService)
             {
-                if (dgvParts.Columns[e.ColumnIndex].Name == "colStock")            { e.Value = "-"; e.FormattingApplied = true; }
+                if (dgvParts.Columns[e.ColumnIndex].Name == "colStock") { e.Value = "-"; e.FormattingApplied = true; }
                 if (dgvParts.Columns[e.ColumnIndex].Name == "minimum_stock_level") { e.Value = "-"; e.FormattingApplied = true; }
             }
 
@@ -1141,45 +1324,13 @@ namespace InventorySystem.Forms
                 if (decimal.TryParse(e.Value.ToString(), out decimal p)) { e.Value = InventorySystem.Services.CurrencyService.Format(p); e.FormattingApplied = true; }
 
             var stockCell = row.Cells["colStock"]; var minCell = row.Cells["minimum_stock_level"];
-            bool isExpiring = false;
-            bool isExpired = false;
-            
-            var expiryCell = row.Cells["expiry_date"];
-            if (expiryCell != null && expiryCell.Value != null)
-            {
-                if (DateTime.TryParse(expiryCell.Value.ToString(), out DateTime expDate))
-                {
-                    int days = (expDate.Date - DateTime.Today).Days;
-                    if (days < 0) isExpired = true;
-                    else if (days <= 30) isExpiring = true;
-                }
-            }
-
-            if (isExpired)
-            {
-                row.DefaultCellStyle.BackColor = ThemeConfig.DangerBadgeBg; 
-                row.DefaultCellStyle.SelectionBackColor = ThemeConfig.DangerLight; 
-                row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark;
-            }
-            else if (isExpiring)
-            {
-                row.DefaultCellStyle.BackColor = Color.FromArgb(255, 243, 205); // light warning orange/yellow
-                row.DefaultCellStyle.SelectionBackColor = Color.FromArgb(255, 226, 168);
-                row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark;
-            }
-            else if (!isService && stockCell.Value != null && minCell.Value != null)
+            if (!isService && stockCell.Value != null && minCell.Value != null)
             {
                 if (int.TryParse(stockCell.Value.ToString(), out int stock) && int.TryParse(minCell.Value.ToString(), out int minS))
                 {
                     if (stock <= minS) { row.DefaultCellStyle.BackColor = ThemeConfig.DangerBadgeBg; row.DefaultCellStyle.SelectionBackColor = ThemeConfig.DangerLight; row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark; }
                     else { row.DefaultCellStyle.BackColor = ThemeConfig.SurfaceColor; row.DefaultCellStyle.SelectionBackColor = ThemeConfig.SelectionBackColor; row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark; }
                 }
-            }
-            else
-            {
-                row.DefaultCellStyle.BackColor = ThemeConfig.SurfaceColor; 
-                row.DefaultCellStyle.SelectionBackColor = ThemeConfig.SelectionBackColor; 
-                row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark;
             }
         }
 
@@ -1222,8 +1373,8 @@ namespace InventorySystem.Forms
                 bool isAct = status.Equals("Active", StringComparison.OrdinalIgnoreCase);
                 string dispStatus = isAct ? LocalizationManager.GetString("Status_Active") : LocalizationManager.GetString("Status_Inactive");
                 Color borderC = isAct ? ThemeConfig.SuccessBorder : ThemeConfig.DangerBorder;
-                Color txtC    = isAct ? ThemeConfig.SuccessBadgeText : ThemeConfig.DangerBadgeText;
-                Color fillC   = isAct ? ThemeConfig.SuccessBadgeBg : ThemeConfig.DangerBadgeBg;
+                Color txtC = isAct ? ThemeConfig.SuccessBadgeText : ThemeConfig.DangerBadgeText;
+                Color fillC = isAct ? ThemeConfig.SuccessBadgeBg : ThemeConfig.DangerBadgeBg;
                 Rectangle badgeRect = new Rectangle(e.CellBounds.X + 5, e.CellBounds.Y + 13, 60, 24);
                 using (var path = GetRoundedRect(badgeRect, 10))
                 using (var pen = new Pen(borderC, 1))
@@ -1239,11 +1390,11 @@ namespace InventorySystem.Forms
             {
                 e.Handled = true; e.PaintBackground(e.CellBounds, true);
                 Image imgEdit = ThemeConfig.GetNuricon("edit"); Image imgDel = ThemeConfig.GetNuricon("delete");
-                Rectangle editRect = new Rectangle(e.CellBounds.X + 8,      e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
-                Rectangle delRect  = new Rectangle(e.CellBounds.X + 48,     e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
-                Rectangle adjRect  = new Rectangle(e.CellBounds.X + 88 + 2, e.CellBounds.Y + (e.CellBounds.Height - 28) / 2, 28, 28);
-                if (imgEdit != null)  e.Graphics.DrawImage(imgEdit, editRect);
-                if (imgDel != null)   e.Graphics.DrawImage(imgDel,  delRect);
+                Rectangle editRect = new Rectangle(e.CellBounds.X + 8, e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
+                Rectangle delRect = new Rectangle(e.CellBounds.X + 48, e.CellBounds.Y + (e.CellBounds.Height - 32) / 2, 32, 32);
+                Rectangle adjRect = new Rectangle(e.CellBounds.X + 88 + 2, e.CellBounds.Y + (e.CellBounds.Height - 28) / 2, 28, 28);
+                if (imgEdit != null) e.Graphics.DrawImage(imgEdit, editRect);
+                if (imgDel != null) e.Graphics.DrawImage(imgDel, delRect);
                 Image imgAdj = ThemeConfig.GetNuricon("item_adjustment");
                 if (imgAdj != null) e.Graphics.DrawImage(imgAdj, adjRect);
             }
@@ -1261,16 +1412,16 @@ namespace InventorySystem.Forms
                     string id = row.Cells["part_id"].Value?.ToString();
                     if (string.IsNullOrEmpty(id)) return;
                     string name = row.Cells["colName"].Value?.ToString() ?? "";
-                    string sku  = row.Cells["colSKU"].Value?.ToString() ?? "";
-                    int qty     = Convert.ToInt32(row.Cells["colStock"].Value ?? 0);
+                    string sku = row.Cells["colSKU"].Value?.ToString() ?? "";
+                    int qty = Convert.ToInt32(row.Cells["colStock"].Value ?? 0);
                     decimal price = Convert.ToDecimal(row.Cells["colPrice"].Value ?? 0);
-                    string status   = row.Cells["colStatus"].Value?.ToString() ?? "Active";
-                    string barcode  = row.Cells["colBarcode"].Value?.ToString() ?? "";
+                    string status = row.Cells["colStatus"].Value?.ToString() ?? "Active";
+                    string barcode = row.Cells["colBarcode"].Value?.ToString() ?? "";
                     string location = row.Cells["colLocation"].Value?.ToString() ?? "";
-                    string shelf    = row.Cells["colShelf"].Value?.ToString() ?? "";
-                    string image    = row.Cells["part_image"].Value?.ToString() ?? "";
+                    string shelf = row.Cells["colShelf"].Value?.ToString() ?? "";
+                    string image = row.Cells["part_image"].Value?.ToString() ?? "";
                     string category = row.Cells["colCategory"].Value?.ToString() ?? "";
-                    int minStock    = Convert.ToInt32(row.Cells["minimum_stock_level"].Value ?? 0);
+                    int minStock = Convert.ToInt32(row.Cells["minimum_stock_level"].Value ?? 0);
 
                     var fullPart = PartData.GetAllParts().Find(p => p.Id == int.Parse(id));
                     if (fullPart != null)
@@ -1310,7 +1461,7 @@ namespace InventorySystem.Forms
             BaseModalForm f = new BaseModalForm { TitleText = title, Size = new Size(450, 280) };
             TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 1, RowCount = 5, AutoSize = true, Padding = new Padding(10) };
             for (int i = 0; i < 5; i++) tlp.RowStyles.Add(i < 4 ? new RowStyle(SizeType.AutoSize) : new RowStyle(SizeType.Absolute, 60F));
-            ModernNumericUpDown numQty = new ModernNumericUpDown { LabelText = LocalizationManager.GetString("Msg_AdjustInstr") ?? "Enter quantity to add (+) or subtract (-):", Width = 380, Minimum = -99999, Maximum = 99999, Margin = new Padding(0, 0, 0, 20) };
+            ModernNumericUpDown numQty = new ModernNumericUpDown { LabelText = LocalizationManager.GetString("Msg_AdjustInstr", "Enter quantity to add (+) or subtract (-):"), Width = 380, Minimum = -99999, Maximum = 99999, Margin = new Padding(0, 0, 0, 20) };
             Label lblReason = new Label { Text = LocalizationManager.GetString("Msg_Reason"), AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 5) };
             TextBox txtReason = new TextBox { Width = 380, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 20), Multiline = true, Height = 80 };
             Button btnSave = new ModernButton { Text = LocalizationManager.GetString("Msg_Adjust"), Size = new Size(120, 35), Anchor = AnchorStyles.Right };
@@ -1333,8 +1484,7 @@ namespace InventorySystem.Forms
         // ─────────────────────────────────────────────────────────────────
         private void BtnAdd_Click(object sender, EventArgs e)
         {
-            string preset = (_activeCategory != null && _activeCategory != "All Items") ? _activeCategory : null;
-            using (AddProductServiceForm form = new AddProductServiceForm(preset))
+            using (AddProductServiceForm form = new AddProductServiceForm())
             { if (form.ShowDialog() == DialogResult.OK) RefreshAll(); }
         }
 
@@ -1342,9 +1492,9 @@ namespace InventorySystem.Forms
         {
             ContextMenuStrip menu = new ContextMenuStrip();
             ThemeConfig.ApplyModernMenuTheme(menu);
-            menu.Items.Add("All Items",       null, (s, a) => { _lowStockOnly = false; _activeOnly = false; _activeCategory = null; RefreshAll(); });
-            menu.Items.Add("Low Stock Only",  null, (s, a) => { _lowStockOnly = true;  _activeOnly = false; RefreshAll(); });
-            menu.Items.Add("Active Only",     null, (s, a) => { _lowStockOnly = false; _activeOnly = true;  RefreshAll(); });
+            menu.Items.Add("All Items", null, (s, a) => { _lowStockOnly = false; _activeOnly = false; _activeCategory = null; RefreshAll(); });
+            menu.Items.Add("Low Stock Only", null, (s, a) => { _lowStockOnly = true; _activeOnly = false; RefreshAll(); });
+            menu.Items.Add("Active Only", null, (s, a) => { _lowStockOnly = false; _activeOnly = true; RefreshAll(); });
             menu.Items.Add(new ToolStripSeparator());
             try
             {
@@ -1363,7 +1513,7 @@ namespace InventorySystem.Forms
                 }
             }
             catch { }
-            
+
             if (sender is Control btn)
             {
                 menu.Show(btn, new Point(0, btn.Height));
@@ -1386,7 +1536,7 @@ namespace InventorySystem.Forms
         {
             if (!UserSession.IsAdmin)
             {
-                if (btnAdd != null)    btnAdd.Visible = false;
+                if (btnAdd != null) btnAdd.Visible = false;
                 if (btnImport != null) btnImport.Visible = false;
                 var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
                 if (ctrlDel.Length > 0) ctrlDel[0].Visible = false;
@@ -1399,10 +1549,10 @@ namespace InventorySystem.Forms
         private static GraphicsPath RoundedPath(Rectangle r, int rad)
         {
             var p = new GraphicsPath();
-            p.AddArc(r.X,             r.Y,              rad, rad, 180, 90);
-            p.AddArc(r.Right - rad,   r.Y,              rad, rad, 270, 90);
-            p.AddArc(r.Right - rad,   r.Bottom - rad,   rad, rad,   0, 90);
-            p.AddArc(r.X,             r.Bottom - rad,   rad, rad,  90, 90);
+            p.AddArc(r.X, r.Y, rad, rad, 180, 90);
+            p.AddArc(r.Right - rad, r.Y, rad, rad, 270, 90);
+            p.AddArc(r.Right - rad, r.Bottom - rad, rad, rad, 0, 90);
+            p.AddArc(r.X, r.Bottom - rad, rad, rad, 90, 90);
             p.CloseFigure();
             return p;
         }
@@ -1432,10 +1582,10 @@ namespace InventorySystem.Forms
                 if (dlg.ShowDialog() != DialogResult.OK) return;
                 DataTable dt = _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
                 if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data to export."); return; }
-                
+
                 // Keep the exact same columns as the actual database query
                 DataTable exportDt = dt.Copy();
-                
+
                 // Clear any inherited constraints (like Primary Key on part_id) so we can remove columns
                 exportDt.PrimaryKey = null;
                 exportDt.Constraints.Clear();
@@ -1460,13 +1610,13 @@ namespace InventorySystem.Forms
                 if (dlg.ShowDialog() != DialogResult.OK) return;
                 DataTable dt = Helpers.ImportExportHelper.ImportFromCsv(dlg.FileName);
                 if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data found in the file."); return; }
-                
+
                 // Allow both old format and new format by checking for either
                 bool isNewFormat = dt.Columns.Contains("part_name");
                 bool isOldFormat = dt.Columns.Contains("PartName");
-                
+
                 if (!isNewFormat && !isOldFormat) { MessageHelper.ShowError("Invalid file format. Could not find part name column."); return; }
-                
+
                 int imported = 0, skipped = 0;
                 foreach (DataRow row in dt.Rows)
                 {
@@ -1474,14 +1624,14 @@ namespace InventorySystem.Forms
                     {
                         string name = isNewFormat ? row["part_name"].ToString() : row["PartName"].ToString();
                         string pn = isNewFormat && dt.Columns.Contains("part_number") ? row["part_number"].ToString() : (isOldFormat && dt.Columns.Contains("PartNumber") ? row["PartNumber"].ToString() : "");
-                        
+
                         if (string.IsNullOrWhiteSpace(name)) { skipped++; continue; }
                         if (!string.IsNullOrWhiteSpace(pn) && _inventoryService.PartExists(pn)) { skipped++; continue; }
 
                         var p = new InventorySystem.Data.PartData();
                         p.PartName = name;
                         p.PartNumber = pn;
-                        
+
                         if (isNewFormat)
                         {
                             if (dt.Columns.Contains("category_name")) p.CategoryName = row["category_name"].ToString();
@@ -1517,7 +1667,7 @@ namespace InventorySystem.Forms
                             if (dt.Columns.Contains("Location")) p.Location = row["Location"].ToString();
                             if (dt.Columns.Contains("Status")) p.Status = row["Status"].ToString();
                         }
-                        
+
                         _inventoryService.SaveProductService(p);
                         imported++;
                     }

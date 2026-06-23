@@ -35,7 +35,7 @@ namespace InventorySystem
             try
             {
                 using var conn = OpenConnection();
-                using var cmd  = new SqliteCommand(sql, conn);
+                using var cmd = new SqliteCommand(sql, conn);
                 AddParams(cmd, parameters);
                 using var reader = cmd.ExecuteReader();
                 while (reader.Read())
@@ -54,7 +54,7 @@ namespace InventorySystem
             try
             {
                 using var conn = OpenConnection();
-                using var cmd  = new SqliteCommand(sql, conn);
+                using var cmd = new SqliteCommand(sql, conn);
                 AddParams(cmd, parameters);
                 cmd.ExecuteNonQuery();
                 return true;
@@ -71,7 +71,7 @@ namespace InventorySystem
             try
             {
                 using var conn = OpenConnection();
-                using var cmd  = new SqliteCommand(sql, conn);
+                using var cmd = new SqliteCommand(sql, conn);
                 AddParams(cmd, parameters);
                 object result = cmd.ExecuteScalar();
                 if (result == null || result == DBNull.Value)
@@ -108,12 +108,56 @@ namespace InventorySystem
             var dt = new DataTable();
             try
             {
-                using var conn   = OpenConnection();
-                using var cmd    = new SqliteCommand(sql, conn);
+                using var conn = OpenConnection();
+                using var cmd = new SqliteCommand(sql, conn);
                 AddParams(cmd, parameters);
                 using var reader = cmd.ExecuteReader();
-                // Load schema + data
-                dt.Load(reader);
+
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    Type t = reader.GetFieldType(i) ?? typeof(object);
+                    dt.Columns.Add(reader.GetName(i), t);
+                }
+
+                while (reader.Read())
+                {
+                    DataRow row = dt.NewRow();
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        object val = reader.GetValue(i);
+                        if (val == DBNull.Value)
+                        {
+                            row[i] = DBNull.Value;
+                        }
+                        else
+                        {
+                            Type targetType = dt.Columns[i].DataType;
+                            if (val.GetType() == targetType || targetType == typeof(object))
+                            {
+                                row[i] = val;
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    if (val is string s && string.IsNullOrWhiteSpace(s))
+                                    {
+                                        row[i] = targetType.IsValueType ? Activator.CreateInstance(targetType) : DBNull.Value;
+                                    }
+                                    else
+                                    {
+                                        row[i] = Convert.ChangeType(val, targetType);
+                                    }
+                                }
+                                catch
+                                {
+                                    row[i] = targetType.IsValueType ? Activator.CreateInstance(targetType) : DBNull.Value;
+                                }
+                            }
+                        }
+                    }
+                    dt.Rows.Add(row);
+                }
             }
             catch (Exception ex)
             {
@@ -131,9 +175,9 @@ namespace InventorySystem
                              "VALUES (@action, @part, @desc, @user, datetime('now'))";
                 ExecuteNonQuery(sql,
                     new SqliteParameter("@action", action),
-                    new SqliteParameter("@part",   partName),
-                    new SqliteParameter("@desc",   description),
-                    new SqliteParameter("@user",   "Admin"));
+                    new SqliteParameter("@part", partName),
+                    new SqliteParameter("@desc", description),
+                    new SqliteParameter("@user", "Admin"));
             }
             catch { }
         }
@@ -322,23 +366,6 @@ namespace InventorySystem
                         category_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         category_name TEXT NOT NULL UNIQUE
                     );
-
-                    CREATE TABLE IF NOT EXISTS recipes (
-                        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                        recipe_name     TEXT NOT NULL,
-                        description     TEXT,
-                        selling_price   REAL DEFAULT 0,
-                        status          TEXT DEFAULT 'Active',
-                        date_added      TEXT DEFAULT (datetime('now')),
-                        date_deleted    TEXT
-                    );
-
-                    CREATE TABLE IF NOT EXISTS recipe_parts (
-                        id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                        recipe_id   INTEGER,
-                        part_id     INTEGER,
-                        quantity    REAL DEFAULT 1
-                    );
                 ";
 
                 // SQLite doesn't support multiple statements in one call -- split them
@@ -355,12 +382,6 @@ namespace InventorySystem
                 if (!ColumnExists("parts", "unit_of_measure")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN unit_of_measure TEXT;");
                 if (!ColumnExists("parts", "batch_number")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN batch_number TEXT;");
                 if (!ColumnExists("parts", "expiry_date")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN expiry_date TEXT;");
-                
-                // Add new recipe fields to order_items
-                if (!ColumnExists("order_items", "item_type")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN item_type TEXT DEFAULT 'Part';");
-                if (!ColumnExists("order_items", "recipe_id")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN recipe_id INTEGER;");
-                if (!ColumnExists("recipes", "recipe_image")) ExecuteNonQuery("ALTER TABLE recipes ADD COLUMN recipe_image TEXT;");
-                
                 if (!ColumnExists("parts", "is_sales_item")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_sales_item INTEGER DEFAULT 1;");
                 if (!ColumnExists("parts", "is_purchase_item")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_purchase_item INTEGER DEFAULT 0;");
                 if (!ColumnExists("parts", "is_inactive")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_inactive INTEGER DEFAULT 0;");

@@ -121,6 +121,19 @@ namespace InventorySystem.Data
             DatabaseHelper.ExecuteNonQuery(sql, new SqliteParameter("@id", id));
         }
 
+        public static bool RecipeNameExists(string recipeName, int? excludeId = null)
+        {
+            if (string.IsNullOrWhiteSpace(recipeName)) return false;
+            string sql = "SELECT COUNT(*) FROM recipes WHERE LOWER(recipe_name) = LOWER(@name) AND date_deleted IS NULL";
+            var parameters = new System.Collections.Generic.List<SqliteParameter> { new SqliteParameter("@name", recipeName) };
+            if (excludeId.HasValue)
+            {
+                sql += " AND id != @id";
+                parameters.Add(new SqliteParameter("@id", excludeId.Value));
+            }
+            return DatabaseHelper.ExecuteScalar<int>(sql, parameters.ToArray()) > 0;
+        }
+
         private static T Safe<T>(SqliteDataReader r, string col, T fallback = default)
         {
             try
