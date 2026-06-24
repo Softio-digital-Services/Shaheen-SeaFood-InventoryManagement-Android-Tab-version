@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("InventorySystem")]
-[assembly: AssemblyCopyright("Copyright (c)  2023")]
+[assembly: AssemblyCopyright("Copyright (c)  2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
