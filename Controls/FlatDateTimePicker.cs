@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 
-namespace InventorySystem.Controls
+namespace Shaheen_InventoryManagement_Android.Controls
 {
     // Replaces the previous inheritance from DateTimePicker to a full Custom Control
     public class FlatDateTimePicker : UserControl
@@ -73,7 +73,7 @@ namespace InventorySystem.Controls
             lblDate.Click += OpenCalendar;
             
             Label lblIcon = new Label();
-            lblIcon.Text = "📅";
+            lblIcon.Text = "ðŸ“…";
             lblIcon.Dock = DockStyle.Right;
             lblIcon.Width = 30;
             lblIcon.TextAlign = ContentAlignment.MiddleCenter;

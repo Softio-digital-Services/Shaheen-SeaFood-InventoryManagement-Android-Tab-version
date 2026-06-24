@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Linq;
-using InventorySystem.Controls;
-using InventorySystem.Helpers;
-using InventorySystem.Services;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Services;
 
-namespace InventorySystem
+namespace Shaheen_InventoryManagement_Android
 {
     public partial class MainForm : Form
     {
@@ -14,9 +14,9 @@ namespace InventorySystem
         // on borderless maximized WinForms windows (other apps show behind the form).
         private Forms.PartsForm partsForm;
         private Forms.UsersForm usersForm;
-        private InventorySystem.Forms.DashboardForm dashboardForm;
-        private InventorySystem.Forms.ReportsForm reportsForm;
-        private InventorySystem.Forms.HistoryForm historyForm;
+        private Shaheen_InventoryManagement_Android.Forms.DashboardForm dashboardForm;
+        private Shaheen_InventoryManagement_Android.Forms.ReportsForm reportsForm;
+        private Shaheen_InventoryManagement_Android.Forms.HistoryForm historyForm;
         private Forms.POSForm posForm;
 
         // Header Controls
@@ -226,13 +226,13 @@ namespace InventorySystem
             // Dashboard - wrapped in try/catch so a DB error never crashes MainForm
             try
             {
-                dashboardForm = new InventorySystem.Forms.DashboardForm { Dock = DockStyle.Fill };
+                dashboardForm = new Shaheen_InventoryManagement_Android.Forms.DashboardForm { Dock = DockStyle.Fill };
                 ThemeConfig.ApplyGlobalTheme(dashboardForm);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("Dashboard init error: " + ex.Message);
-                dashboardForm = new InventorySystem.Forms.DashboardForm();
+                dashboardForm = new Shaheen_InventoryManagement_Android.Forms.DashboardForm();
                 dashboardForm.Dock = DockStyle.Fill;
             }
             panel3.Controls.Add(dashboardForm);
@@ -619,7 +619,7 @@ namespace InventorySystem
             foreach (Control c in panel3.Controls) if (c is UserControl) c.Visible = false;
             form.Visible = true; form.BringToFront();
             panel3.Focus(); // Focus the main panel to prevent auto-selecting the first control (like search bar) in the UserControl
-            if (form is InventorySystem.Forms.DashboardForm dash) dash.RefreshDashboard();
+            if (form is Shaheen_InventoryManagement_Android.Forms.DashboardForm dash) dash.RefreshDashboard();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

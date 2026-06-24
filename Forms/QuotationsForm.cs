@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using InventorySystem.Controls;
-using InventorySystem.Helpers;
-using InventorySystem.Services;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Services;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public class QuotationsForm : UserControl
     {
@@ -27,7 +27,7 @@ namespace InventorySystem.Forms
             ApplyLocalization();
 
             // Currency Sync
-            InventorySystem.Services.CurrencyService.CurrencyChanged += (s, e) => { dgvQuotes.Invalidate(); };
+            Shaheen_InventoryManagement_Android.Services.CurrencyService.CurrencyChanged += (s, e) => { dgvQuotes.Invalidate(); };
 
             GlobalEvents.OnOrdersUpdated += () => {
                 if (!this.IsDisposed) LoadQuotations();
@@ -116,7 +116,7 @@ namespace InventorySystem.Forms
             {
                 if (decimal.TryParse(e.Value.ToString(), out decimal usdTotal))
                 {
-                    e.Value = InventorySystem.Services.CurrencyService.Format(usdTotal);
+                    e.Value = Shaheen_InventoryManagement_Android.Services.CurrencyService.Format(usdTotal);
                     e.FormattingApplied = true;
                 }
             }

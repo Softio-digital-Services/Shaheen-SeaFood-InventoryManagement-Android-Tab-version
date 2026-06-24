@@ -2,13 +2,13 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting; // Standard Charting
-using InventorySystem.Services;
-using InventorySystem.Controls;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Services;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
 using System.Collections.Generic;
 using System.Data;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class DashboardForm : UserControl
     {
@@ -58,13 +58,13 @@ namespace InventorySystem.Forms
             this.Size = new System.Drawing.Size(1200, 800);
 
 
-            InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
         }
 
         private void ApplyLocalization()
         {
-            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
 
             if (this.lblDashboardTitle != null) this.lblDashboardTitle.Text = L("Dash_Title");
 
@@ -131,7 +131,7 @@ namespace InventorySystem.Forms
             string serverUrl = ScanToConnectForm.GetServerUrl();
             var lblServerUrl = new Label
             {
-                Text = "📶 " + serverUrl,
+                Text = "ðŸ“¶ " + serverUrl,
                 Font = new Font("Segoe UI", 10f),
                 ForeColor = ThemeConfig.PrimaryColor,
                 AutoSize = true,
@@ -144,7 +144,7 @@ namespace InventorySystem.Forms
             {
                 Clipboard.SetText(serverUrl);
                 string originalText = lblServerUrl.Text;
-                lblServerUrl.Text = "✅ " + (LocalizationManager.GetString("Msg_Copied", "Copied!"));
+                lblServerUrl.Text = "âœ… " + (LocalizationManager.GetString("Msg_Copied", "Copied!"));
                 lblServerUrl.ForeColor = ThemeConfig.PrimaryColor;
 
                 System.Windows.Forms.Timer t = new System.Windows.Forms.Timer { Interval = 1500 };
@@ -312,7 +312,7 @@ namespace InventorySystem.Forms
                 int lowStock = _dashboardService.GetLowStockCount();
                 int orders = _dashboardService.GetOrdersCount(); // Default today
 
-                Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+                Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
 
                 if (_cardInventory != null)
                 {

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Data
+namespace Shaheen_InventoryManagement_Android.Data
 {
     public class RecipeData
     {

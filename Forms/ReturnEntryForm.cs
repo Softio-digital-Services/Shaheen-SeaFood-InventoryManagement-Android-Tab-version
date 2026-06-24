@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
-using InventorySystem.Helpers;
-using InventorySystem.Services;
-using InventorySystem.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Services;
+using Shaheen_InventoryManagement_Android.Controls;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class ReturnEntryForm : BaseModalForm
     {

@@ -1,9 +1,9 @@
 using System;
 using System.Windows.Forms;
-using InventorySystem.Helpers.Plugins;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers.Plugins;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Plugins
+namespace Shaheen_InventoryManagement_Android.Plugins
 {
     public class PurchaseOrdersPlugin : ITabPlugin
     {
@@ -37,7 +37,7 @@ namespace InventorySystem.Plugins
 
             if (allowed)
             {
-                var form = new InventorySystem.Forms.PurchaseOrdersForm();
+                var form = new Shaheen_InventoryManagement_Android.Forms.PurchaseOrdersForm();
                 var loadMethod = form.GetType().GetMethod("LoadData") ?? form.GetType().GetMethod("LoadQuotations");
                 if (loadMethod != null) { if (loadMethod.GetParameters().Length == 1) loadMethod.Invoke(form, new object[] { "" }); else loadMethod.Invoke(form, null); }
                 return form;

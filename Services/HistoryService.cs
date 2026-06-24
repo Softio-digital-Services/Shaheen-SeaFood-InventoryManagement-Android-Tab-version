@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Data;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Services
+namespace Shaheen_InventoryManagement_Android.Services
 {
     public class HistoryService
     {

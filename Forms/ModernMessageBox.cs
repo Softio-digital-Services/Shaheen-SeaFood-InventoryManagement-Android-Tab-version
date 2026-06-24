@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
-using InventorySystem.Controls;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class ModernMessageBox : BaseModalForm
     {

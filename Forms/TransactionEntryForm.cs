@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
-using InventorySystem.Controls;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class TransactionEntryForm : BaseModalForm
     {
@@ -28,14 +28,14 @@ namespace InventorySystem.Forms
             lblPrompt.Text = prompt;
             txtAmount.Text = initialValue;
             ApplyTheme();
-            InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
         }
 
         private void ApplyLocalization()
         {
-            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
 
             if (txtAmount != null) txtAmount.LabelText = L("Tran_AmountLabel");
             if (txtNotes != null) txtNotes.LabelText = L("Tran_NotesLabel");

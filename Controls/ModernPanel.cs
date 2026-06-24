@@ -2,9 +2,9 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using InventorySystem; // Correct namespace for ThemeConfig
+using Shaheen_InventoryManagement_Android; // Correct namespace for ThemeConfig
 
-namespace InventorySystem.Controls
+namespace Shaheen_InventoryManagement_Android.Controls
 {
     public class ModernPanel : Panel
     {

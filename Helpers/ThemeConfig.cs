@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.IO;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem
+namespace Shaheen_InventoryManagement_Android
 {
     /// <summary>
     /// Centralized configuration for UI Theming and Branding.
@@ -21,7 +21,7 @@ namespace InventorySystem
         // BRANDING
         // ==========================================
         public static string CompanyName { get; set; } = "Generic Solutions";
-        public static string AppTitle { get; set; } = "GenericInventorySystem1.1";
+        public static string AppTitle { get; set; } = "GenericShaheen-InventoryManagement-Android1.1";
 
         static ThemeConfig()
         {
@@ -235,8 +235,8 @@ namespace InventorySystem
                     {
                         FlowDirection = FlowDirection.LeftToRight,
                         AutoSize = true,
-                        // In RTL, buttons are in col-1 (left side) — anchor LEFT to hug the left edge.
-                        // In LTR, buttons are in col-1 (right side) — anchor RIGHT to hug the right edge.
+                        // In RTL, buttons are in col-1 (left side) â€” anchor LEFT to hug the left edge.
+                        // In LTR, buttons are in col-1 (right side) â€” anchor RIGHT to hug the right edge.
                         Anchor = isRTL
                             ? (AnchorStyles.Left  | AnchorStyles.Top)
                             : (AnchorStyles.Right | AnchorStyles.Top),
@@ -468,8 +468,8 @@ namespace InventorySystem
         public static void DrawIconButton(Button btn, Graphics g, string iconName, string localizationKey, Color textColor, Color accentColor, bool isOutline)
         {
             if (btn == null) return;
-            bool isArabic = InventorySystem.Helpers.LocalizationManager.IsArabic;
-            string text = InventorySystem.Helpers.LocalizationManager.GetString(localizationKey);
+            bool isArabic = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.IsArabic;
+            string text = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString(localizationKey);
             if (string.IsNullOrEmpty(text) || text == localizationKey)
             {
                 if (!string.IsNullOrEmpty(btn.Text)) text = btn.Text;
@@ -961,13 +961,13 @@ namespace InventorySystem
                 int textX = startX + iconSize + gap;
                 Rectangle textRect = new Rectangle(textX, 0, textSize.Width + 4, btn.Height);
                 TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.NoPadding | TextFormatFlags.EndEllipsis;
-                if (InventorySystem.Helpers.LocalizationManager.IsArabic)
+                if (Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.IsArabic)
                     flags |= TextFormatFlags.RightToLeft;
                 TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor, flags);
             }
             else
             {
-                // No image — just draw text centered
+                // No image â€” just draw text centered
                 if (btn.Image != null)
                 {
                     Rectangle imgRect = GetImageRectangle(btn);
@@ -976,7 +976,7 @@ namespace InventorySystem
                 }
 
                 TextFormatFlags flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
-                if (InventorySystem.Helpers.LocalizationManager.IsArabic)
+                if (Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.IsArabic)
                     flags |= TextFormatFlags.RightToLeft;
                 TextRenderer.DrawText(g, btn.Text, btn.Font, Rectangle.Round(r), btn.ForeColor, flags);
             }
@@ -1908,9 +1908,9 @@ namespace InventorySystem
         public override Color ToolStripDropDownBackground => Color.White;
     }
 
-    // ────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // POS HELPER UTILITIES
-    // ────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     internal static class POSThemeHelpers
     {
         /// <summary>Creates a rounded card Panel that paints its own border and clears corners.</summary>

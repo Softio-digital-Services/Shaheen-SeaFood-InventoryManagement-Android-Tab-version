@@ -5,12 +5,12 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
-using InventorySystem.Controls;
-using InventorySystem.Data;
-using InventorySystem.Helpers;
-using InventorySystem.Services;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Data;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Services;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class POSForm : UserControl
     {
@@ -26,11 +26,11 @@ namespace InventorySystem.Forms
         // -- LEFT PANEL CONTROLS ----------------------------------------------
         private FlowLayoutPanel pnlProducts;   // product card grid
         private FlowLayoutPanel pnlChips;      // category chip strip
-        private InventorySystem.Controls.ModernTextBox txtProductSearch;
+        private Shaheen_InventoryManagement_Android.Controls.ModernTextBox txtProductSearch;
 
         // -- RIGHT PANEL CONTROLS ---------------------------------------------
         private Panel pnlCartItems;        // scrollable cart rows
-        private InventorySystem.Controls.ModernComboBox cmbCustomers;
+        private Shaheen_InventoryManagement_Android.Controls.ModernComboBox cmbCustomers;
         private Label lblOrderNum;
         private Label lblSubtotalVal, lblTaxVal, lblShippingVal, lblTotalVal;
         private CheckBox chkApplyVAT, chkApplyShipping;
@@ -46,8 +46,8 @@ namespace InventorySystem.Forms
         private int _currentPage = 1;
         private int _pageSize = 50;
         private Label lblPageInfo;
-        private InventorySystem.Controls.ModernButton btnPrevPage;
-        private InventorySystem.Controls.ModernButton btnNextPage;
+        private Shaheen_InventoryManagement_Android.Controls.ModernButton btnPrevPage;
+        private Shaheen_InventoryManagement_Android.Controls.ModernButton btnNextPage;
         private DateTime _lastScanTime = DateTime.Now;
         private string _scanBuffer = "";
         private ShippingDetailsForm _shippingDetails = null;
@@ -116,9 +116,9 @@ namespace InventorySystem.Forms
             this.Controls.Add(tlpRoot);
 
             // ------------------------------------------------------------------
-            // LEFT PANEL � product browser
+            // LEFT PANEL ï¿½ product browser
             // ------------------------------------------------------------------
-            // LEFT PANEL � product browser
+            // LEFT PANEL ï¿½ product browser
             // ------------------------------------------------------------------
             TableLayoutPanel tlpLeft = new TableLayoutPanel
             {
@@ -144,7 +144,7 @@ namespace InventorySystem.Forms
             string pageTitle = LocalizationManager.GetString("POS_PageTitle");
             Label lblPageTitle = ThemeConfig.CreateStandardHeader(pageTitle == "POS_PageTitle" ? "Checkout" : pageTitle);
 
-            txtProductSearch = new InventorySystem.Controls.ModernTextBox
+            txtProductSearch = new Shaheen_InventoryManagement_Android.Controls.ModernTextBox
             {
                 IsSearch = true,
                 ShowLabel = false,
@@ -153,8 +153,8 @@ namespace InventorySystem.Forms
             };
             txtProductSearch.TextChanged += (s, ev) => LoadProducts(txtProductSearch.Text);
 
-            Button btnManageDrafts = new InventorySystem.Controls.ModernButton { Text = "Manage Drafts", Cursor = Cursors.Hand, Height = 35, Width = 160 };
-            Button btnAddShipping = new InventorySystem.Controls.ModernButton { Text = "Add Shipping Details", Cursor = Cursors.Hand, Height = 35, Width = 200 };
+            Button btnManageDrafts = new Shaheen_InventoryManagement_Android.Controls.ModernButton { Text = "Manage Drafts", Cursor = Cursors.Hand, Height = 35, Width = 160 };
+            Button btnAddShipping = new Shaheen_InventoryManagement_Android.Controls.ModernButton { Text = "Add Shipping Details", Cursor = Cursors.Hand, Height = 35, Width = 200 };
 
             ThemeConfig.ApplyPaletteButton(btnManageDrafts, Color.FromArgb(99, 102, 241)); // Indigo
             ThemeConfig.ApplyPaletteButton(btnAddShipping, Color.FromArgb(16, 185, 129)); // Emerald Green
@@ -210,7 +210,7 @@ namespace InventorySystem.Forms
             };
             tlpLeft.Controls.Add(pnlCategorySection, 0, 2);
 
-            // Title row � "Menu" label + prev/next arrows
+            // Title row ï¿½ "Menu" label + prev/next arrows
             Panel pnlCatHeader = new Panel
             {
                 Height = 30,
@@ -320,11 +320,11 @@ namespace InventorySystem.Forms
             tlpLeft.Controls.Add(pnlProducts, 0, 3);
 
             Panel pnlPagination = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
-            btnPrevPage = new InventorySystem.Controls.ModernButton { Text = "< Prev", Size = new Size(80, 30), Location = new Point(0, 10), Cursor = Cursors.Hand };
+            btnPrevPage = new Shaheen_InventoryManagement_Android.Controls.ModernButton { Text = "< Prev", Size = new Size(80, 30), Location = new Point(0, 10), Cursor = Cursors.Hand };
             btnPrevPage.Click += (s, e) => { if (_currentPage > 1) { _currentPage--; LoadProducts(txtProductSearch.Text); } };
             ThemeConfig.ApplySecondaryButton(btnPrevPage);
 
-            btnNextPage = new InventorySystem.Controls.ModernButton { Text = "Next >", Size = new Size(80, 30), Location = new Point(200, 10), Cursor = Cursors.Hand };
+            btnNextPage = new Shaheen_InventoryManagement_Android.Controls.ModernButton { Text = "Next >", Size = new Size(80, 30), Location = new Point(200, 10), Cursor = Cursors.Hand };
             btnNextPage.Click += (s, e) => { _currentPage++; LoadProducts(txtProductSearch.Text); };
             ThemeConfig.ApplySecondaryButton(btnNextPage);
 
@@ -336,7 +336,7 @@ namespace InventorySystem.Forms
             tlpLeft.Controls.Add(pnlPagination, 0, 4);
 
             // ------------------------------------------------------------------
-            // RIGHT PANEL � cart & summary
+            // RIGHT PANEL ï¿½ cart & summary
             // ------------------------------------------------------------------
             // RIGHT PANEL - cards layout
             // ------------------------------------------------------------------
@@ -420,7 +420,7 @@ namespace InventorySystem.Forms
             };
             pnlOrderHeader.Controls.Add(btnTrash);
 
-            cmbCustomers = new InventorySystem.Controls.ModernComboBox { DropDownStyle = ComboBoxStyle.DropDownList, ShowLabel = false };
+            cmbCustomers = new Shaheen_InventoryManagement_Android.Controls.ModernComboBox { DropDownStyle = ComboBoxStyle.DropDownList, ShowLabel = false };
             pnlOrderHeader.Controls.Add(cmbCustomers);
 
             Button btnAddCustomer = new Button
@@ -580,13 +580,13 @@ namespace InventorySystem.Forms
                 if (cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
                 int cid = cmbCustomers.SelectedValue != null ? Convert.ToInt32(cmbCustomers.SelectedValue) : -1;
                 decimal totalAmount = 0;
-                List<InventorySystem.Services.OrderItem> items = new List<InventorySystem.Services.OrderItem>();
+                List<Shaheen_InventoryManagement_Android.Services.OrderItem> items = new List<Shaheen_InventoryManagement_Android.Services.OrderItem>();
                 foreach (DataRow r in cartTable.Rows)
                 {
                     if (r.RowState != DataRowState.Deleted)
                     {
                         totalAmount += (decimal)r["Total"];
-                        items.Add(new InventorySystem.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
+                        items.Add(new Shaheen_InventoryManagement_Android.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
                     }
                 }
                 decimal t = chkApplyVAT.Checked ? (totalAmount * 0.11m) : 0;
@@ -595,7 +595,7 @@ namespace InventorySystem.Forms
                 DateTime? dDate = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.DeliveryDate : (DateTime?)null;
                 DateTime? pDate = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.PaymentDueDate : (DateTime?)null;
                 string sAddr = _shippingDetails?.ShippingTo;
-                if (new InventorySystem.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Draft", pDate, sAddr, dDate) > 0)
+                if (new Shaheen_InventoryManagement_Android.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Draft", pDate, sAddr, dDate) > 0)
                 {
                     MessageHelper.ShowInfo(LocalizationManager.GetString("Msg_DraftSaved", "Draft saved successfully!"));
                     cartTable.Rows.Clear();
@@ -607,13 +607,13 @@ namespace InventorySystem.Forms
                 if (cartTable.Rows.Count == 0) { MessageHelper.ShowWarning("Cart is empty!"); return; }
                 int cid = cmbCustomers.SelectedValue != null ? Convert.ToInt32(cmbCustomers.SelectedValue) : -1;
                 decimal totalAmount = 0;
-                List<InventorySystem.Services.OrderItem> items = new List<InventorySystem.Services.OrderItem>();
+                List<Shaheen_InventoryManagement_Android.Services.OrderItem> items = new List<Shaheen_InventoryManagement_Android.Services.OrderItem>();
                 foreach (DataRow r in cartTable.Rows)
                 {
                     if (r.RowState != DataRowState.Deleted)
                     {
                         totalAmount += (decimal)r["Total"];
-                        items.Add(new InventorySystem.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
+                        items.Add(new Shaheen_InventoryManagement_Android.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
                     }
                 }
                 decimal tQuote = chkApplyVAT.Checked ? (totalAmount * 0.11m) : 0;
@@ -622,7 +622,7 @@ namespace InventorySystem.Forms
                 DateTime? dDateQ = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.DeliveryDate : (DateTime?)null;
                 DateTime? pDateQ = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.PaymentDueDate : (DateTime?)null;
                 string sAddrQ = _shippingDetails?.ShippingTo;
-                if (new InventorySystem.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Quotation", pDateQ, sAddrQ, dDateQ) > 0)
+                if (new Shaheen_InventoryManagement_Android.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Quotation", pDateQ, sAddrQ, dDateQ) > 0)
                 {
                     MessageHelper.ShowInfo(LocalizationManager.GetString("Msg_QuotationSaved", "Quotation saved successfully!"));
                     cartTable.Rows.Clear();
@@ -639,13 +639,13 @@ namespace InventorySystem.Forms
                     return;
                 }
                 decimal totalAmount = 0;
-                List<InventorySystem.Services.OrderItem> items = new List<InventorySystem.Services.OrderItem>();
+                List<Shaheen_InventoryManagement_Android.Services.OrderItem> items = new List<Shaheen_InventoryManagement_Android.Services.OrderItem>();
                 foreach (DataRow r in cartTable.Rows)
                 {
                     if (r.RowState != DataRowState.Deleted)
                     {
                         totalAmount += (decimal)r["Total"];
-                        items.Add(new InventorySystem.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
+                        items.Add(new Shaheen_InventoryManagement_Android.Services.OrderItem { PartId = (int)r["PartID"], Quantity = (int)r["Quantity"], UnitPrice = (decimal)r["SellingPrice"] });
                     }
                 }
                 decimal tBill = chkApplyVAT.Checked ? (totalAmount * 0.11m) : 0;
@@ -654,7 +654,7 @@ namespace InventorySystem.Forms
                 DateTime? dDateB = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.DeliveryDate : (DateTime?)null;
                 DateTime? pDateB = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.PaymentDueDate : (DateTime?)null;
                 string sAddrB = _shippingDetails?.ShippingTo;
-                if (new InventorySystem.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Completed", pDateB, sAddrB, dDateB) > 0)
+                if (new Shaheen_InventoryManagement_Android.Services.OrderService().PlaceOrder(cid, items, totalAmount, false, "Completed", pDateB, sAddrB, dDateB) > 0)
                 {
                     MessageHelper.ShowInfo(LocalizationManager.GetString("Msg_AddedToBill", "Successfully added to customer bill!"));
                     cartTable.Rows.Clear();
@@ -828,11 +828,11 @@ namespace InventorySystem.Forms
         }
 
         // ---------------------------------------------------------------------
-        // CURRENCY SELECTOR PANEL � ComboBox dropdown
+        // CURRENCY SELECTOR PANEL ï¿½ ComboBox dropdown
         // ---------------------------------------------------------------------
         private void BuildCurrencySelectorPanel(Panel pnl)
         {
-            var currencies = InventorySystem.Services.CurrencyService.SupportedCurrencies;
+            var currencies = Shaheen_InventoryManagement_Android.Services.CurrencyService.SupportedCurrencies;
 
             string curTrans = LocalizationManager.GetString("POS_Currency");
             Label lblCurrLabel = new Label
@@ -844,7 +844,7 @@ namespace InventorySystem.Forms
                 BackColor = Color.Transparent
             };
 
-            InventorySystem.Controls.ModernComboBox cmbCurrency = new InventorySystem.Controls.ModernComboBox
+            Shaheen_InventoryManagement_Android.Controls.ModernComboBox cmbCurrency = new Shaheen_InventoryManagement_Android.Controls.ModernComboBox
             {
                 Font = ThemeConfig.StandardFont,
                 Cursor = Cursors.Hand,
@@ -855,7 +855,7 @@ namespace InventorySystem.Forms
                 cmbCurrency.Items.Add(curr.Code);
 
             // Select current active
-            string active = InventorySystem.Services.CurrencyService.ActiveCurrency;
+            string active = Shaheen_InventoryManagement_Android.Services.CurrencyService.ActiveCurrency;
             int idx = cmbCurrency.Items.IndexOf(active);
             cmbCurrency.SelectedIndex = idx >= 0 ? idx : 0;
 
@@ -864,7 +864,7 @@ namespace InventorySystem.Forms
                 string selected = cmbCurrency.SelectedItem?.ToString();
                 if (!string.IsNullOrEmpty(selected))
                 {
-                    InventorySystem.Services.CurrencyService.ActiveCurrency = selected;
+                    Shaheen_InventoryManagement_Android.Services.CurrencyService.ActiveCurrency = selected;
                     if (cartTable != null)
                     {
                         LoadProducts(_activeCategory);
@@ -874,9 +874,9 @@ namespace InventorySystem.Forms
                 }
             };
 
-            InventorySystem.Services.CurrencyService.CurrencyChanged += (s, e) =>
+            Shaheen_InventoryManagement_Android.Services.CurrencyService.CurrencyChanged += (s, e) =>
             {
-                string cur = InventorySystem.Services.CurrencyService.ActiveCurrency;
+                string cur = Shaheen_InventoryManagement_Android.Services.CurrencyService.ActiveCurrency;
                 int i = cmbCurrency.Items.IndexOf(cur);
                 if (i >= 0 && cmbCurrency.SelectedIndex != i)
                     cmbCurrency.SelectedIndex = i;
@@ -992,7 +992,7 @@ namespace InventorySystem.Forms
         }
 
         // ---------------------------------------------------------------------
-        // CATEGORY CHIPS  � reference card style
+        // CATEGORY CHIPS  ï¿½ reference card style
         // ---------------------------------------------------------------------
         private void BuildCategoryChips()
         {
@@ -1063,7 +1063,7 @@ namespace InventorySystem.Forms
                 catch { }
             }
 
-            // Card dimensions � wider to accommodate icon + text
+            // Card dimensions ï¿½ wider to accommodate icon + text
             var nameFont = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold);
             var countFont = new Font("Segoe UI", 7.5F);
             int nameW = TextRenderer.MeasureText(label, nameFont).Width;
@@ -1073,7 +1073,7 @@ namespace InventorySystem.Forms
             const int CARD_H = 64;
             // const int ICON_AREA = 32; // width reserved for the emoji circle
 
-            // Active border color � teal/primary on top edge (like reference)
+            // Active border color ï¿½ teal/primary on top edge (like reference)
             Color activeBorder = ThemeConfig.POS_ChipActiveBorder;
             Color inactiveBg = ThemeConfig.SurfaceColor;
 
@@ -1153,12 +1153,12 @@ namespace InventorySystem.Forms
                 // Title and Subtitle block is vertically centered together
                 int textBlockY = cy + 2;
 
-                // Category name � always dark, bold
+                // Category name ï¿½ always dark, bold
                 TextRenderer.DrawText(g, label, nameFont,
                     new Rectangle(textX, textBlockY, textW, 16), ThemeConfig.TextColorDark,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
 
-                // Item count � always small grey below name
+                // Item count ï¿½ always small grey below name
                 using (var cf = new Font("Segoe UI", 7.5F))
                     TextRenderer.DrawText(g, countText, cf,
                         new Rectangle(textX, textBlockY + 18, textW, 16), ThemeConfig.SecondaryColor,
@@ -1293,10 +1293,10 @@ namespace InventorySystem.Forms
                         pe.Graphics.DrawPath(pen, path);
                 }
             };
-            // Hover wiring deferred � applied after all children are built (see PropagateHover below)
+            // Hover wiring deferred ï¿½ applied after all children are built (see PropagateHover below)
 
             // ------------------------------------------------------------------
-            // SECTION 1 � Image container  (div.card-image)
+            // SECTION 1 ï¿½ Image container  (div.card-image)
             // A transparent panel that centres the circular image
             // ------------------------------------------------------------------
             const int IMG_SECTION_H = 128; // height of image zone
@@ -1308,7 +1308,7 @@ namespace InventorySystem.Forms
             };
             card.Controls.Add(pnlImageSection);
 
-            // Circular background disc � centred in the image section
+            // Circular background disc ï¿½ centred in the image section
             int circleDiameter = IMG_SIZE + 6;
             int circleX = (CARD_W - circleDiameter) / 2;
             int circleY = (IMG_SECTION_H - circleDiameter) / 2;
@@ -1320,7 +1320,7 @@ namespace InventorySystem.Forms
                 BackColor = Color.Transparent   // parent handles clearing
             };
 
-            // Load image once � drawn directly in Paint (no PictureBox needed)
+            // Load image once ï¿½ drawn directly in Paint (no PictureBox needed)
             var bmp = LoadProductImage(part.PartImage, part.CategoryName, IMG_SIZE);
 
             pnlImgBg.Paint += (s, pe) =>
@@ -1345,7 +1345,7 @@ namespace InventorySystem.Forms
                     float avail = Math.Min(w, h) - PAD * 2f;   // usable diameter
                     float scale = Math.Min(avail / bmp.Width, avail / bmp.Height);
 
-                    // Use float throughout � integer truncation causes systematic 1px error
+                    // Use float throughout ï¿½ integer truncation causes systematic 1px error
                     float scaledW = bmp.Width * scale;
                     float scaledH = bmp.Height * scale;
 
@@ -1365,7 +1365,7 @@ namespace InventorySystem.Forms
             pnlImageSection.Controls.Add(pnlImgBg);
 
             // ------------------------------------------------------------------
-            // SECTION 2 � Text container  (div.card-body)
+            // SECTION 2 ï¿½ Text container  (div.card-body)
             // Category italic label + bold product name, both centred
             // ------------------------------------------------------------------
             const int TEXT_SECTION_H = 56;
@@ -1379,7 +1379,7 @@ namespace InventorySystem.Forms
             };
             card.Controls.Add(pnlTextSection);
 
-            // Category � small italic grey (like reference)
+            // Category ï¿½ small italic grey (like reference)
             Label lblCat = new Label
             {
                 Text = part.CategoryName,
@@ -1674,7 +1674,7 @@ namespace InventorySystem.Forms
 
 
         // ---------------------------------------------------------------------
-        // CART DISPLAY � simple text rows matching reference design
+        // CART DISPLAY ï¿½ simple text rows matching reference design
         // ---------------------------------------------------------------------
         public void RefreshCartDisplay()
         {
@@ -1736,7 +1736,7 @@ namespace InventorySystem.Forms
 
                 Label lblQtyTxt = new Label
                 {
-                    Text = $"{qty} × ",
+                    Text = $"{qty} Ã— ",
                     Font = new Font(ThemeConfig.AppFontFamily, 11F, FontStyle.Bold),
                     ForeColor = ThemeConfig.PrimaryColor,
                     AutoSize = true,
@@ -2039,11 +2039,11 @@ namespace InventorySystem.Forms
         // ---------------------------------------------------------------------
         private static Bitmap LoadProductImage(string imagePath, string categoryName, int size = 80)
         {
-            return InventorySystem.Helpers.CacheManager.GetProductImage(imagePath, categoryName, size);
+            return Shaheen_InventoryManagement_Android.Helpers.CacheManager.GetProductImage(imagePath, categoryName, size);
         }
 
         // ---------------------------------------------------------------------
-        // INITIALIZE CART  (business logic � preserved)
+        // INITIALIZE CART  (business logic ï¿½ preserved)
         // ---------------------------------------------------------------------
         private void InitializeCart()
         {
@@ -2152,7 +2152,7 @@ namespace InventorySystem.Forms
         }
 
         // ---------------------------------------------------------------------
-        // UPDATE TOTAL  (preserved � works with lblSubtotalVal, lblTaxVal, etc.)
+        // UPDATE TOTAL  (preserved ï¿½ works with lblSubtotalVal, lblTaxVal, etc.)
         // ---------------------------------------------------------------------
         private void UpdateTotal()
         {
@@ -2281,7 +2281,7 @@ namespace InventorySystem.Forms
 
                 if (_shippingDetails.SelectedCustomerId > 0)
                 {
-                    string customerName = InventorySystem.DatabaseHelper.ExecuteScalar<string>($"SELECT COALESCE(full_name, '') FROM customers WHERE customer_id = {_shippingDetails.SelectedCustomerId}");
+                    string customerName = Shaheen_InventoryManagement_Android.DatabaseHelper.ExecuteScalar<string>($"SELECT COALESCE(full_name, '') FROM customers WHERE customer_id = {_shippingDetails.SelectedCustomerId}");
                     if (!string.IsNullOrEmpty(customerName))
                     {
                         g.DrawString("Customer: " + customerName, fS, Brushes.Black, new Rectangle(m, y, w, 20)); y += 20;

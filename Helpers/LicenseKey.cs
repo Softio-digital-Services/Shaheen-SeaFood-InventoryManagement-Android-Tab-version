@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace InventorySystem.Helpers
+namespace Shaheen_InventoryManagement_Android.Helpers
 {
     /// <summary>
     /// Represents a software license

@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 
-namespace InventorySystem.Controls
+namespace Shaheen_InventoryManagement_Android.Controls
 {
     public class SidebarButton : Button
     {

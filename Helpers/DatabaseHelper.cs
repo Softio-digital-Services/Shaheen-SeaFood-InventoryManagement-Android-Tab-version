@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.Sqlite;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem
+namespace Shaheen_InventoryManagement_Android
 {
     /// <summary>
     /// Centralized database operations helper -- SQLite backend.

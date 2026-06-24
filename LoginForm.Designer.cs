@@ -1,5 +1,5 @@
-﻿
-namespace InventorySystem
+
+namespace Shaheen_InventoryManagement_Android
 {
     partial class LoginForm
     {
@@ -35,9 +35,9 @@ namespace InventorySystem
             this.panelLoginCard = new System.Windows.Forms.Panel();
             this.labelTitle = new System.Windows.Forms.Label();
             this.labelSubtitle = new System.Windows.Forms.Label();
-            this.txtUsername = new InventorySystem.Controls.ModernTextBox();
-            this.txtPassword = new InventorySystem.Controls.ModernTextBox();
-            this.btnLogin = new InventorySystem.Controls.ModernButton();
+            this.txtUsername = new Shaheen_InventoryManagement_Android.Controls.ModernTextBox();
+            this.txtPassword = new Shaheen_InventoryManagement_Android.Controls.ModernTextBox();
+            this.btnLogin = new Shaheen_InventoryManagement_Android.Controls.ModernButton();
             this.chkShowPass = new System.Windows.Forms.CheckBox();
             this.btnClose = new System.Windows.Forms.Button();
             this.btnMinimize = new System.Windows.Forms.Button();
@@ -179,9 +179,9 @@ namespace InventorySystem
         private System.Windows.Forms.Button btnClose;
         private System.Windows.Forms.Label labelTitle;
         private System.Windows.Forms.Label labelSubtitle;
-        private InventorySystem.Controls.ModernTextBox txtUsername;
-        private InventorySystem.Controls.ModernTextBox txtPassword;
-        private InventorySystem.Controls.ModernButton btnLogin;
+        private Shaheen_InventoryManagement_Android.Controls.ModernTextBox txtUsername;
+        private Shaheen_InventoryManagement_Android.Controls.ModernTextBox txtPassword;
+        private Shaheen_InventoryManagement_Android.Controls.ModernButton btnLogin;
         private System.Windows.Forms.CheckBox chkShowPass;
         private System.Windows.Forms.Button btnMinimize;
 

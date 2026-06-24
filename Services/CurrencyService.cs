@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using InventorySystem;
+using Shaheen_InventoryManagement_Android;
 
-namespace InventorySystem.Services
+namespace Shaheen_InventoryManagement_Android.Services
 {
     /// <summary>
     /// Manages supported currencies and exchange-rate conversions.

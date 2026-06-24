@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
-using InventorySystem.Helpers;
-using InventorySystem.Services;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Services;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class AddCurrencyForm : BaseModalForm
     {

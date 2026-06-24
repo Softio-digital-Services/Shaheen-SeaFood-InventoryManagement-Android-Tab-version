@@ -1,15 +1,15 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("InventorySystem")]
+[assembly: AssemblyTitle("Shaheen-InventoryManagement-Android")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("InventorySystem")]
+[assembly: AssemblyProduct("Shaheen-InventoryManagement-Android")]
 [assembly: AssemblyCopyright("Copyright (c)  2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

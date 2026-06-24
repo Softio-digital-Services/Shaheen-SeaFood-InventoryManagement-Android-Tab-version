@@ -4,12 +4,12 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using InventorySystem.Helpers;
-using InventorySystem.Data;
-using InventorySystem.Controls;
-using InventorySystem.Services;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Data;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Services;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class BarcodeLabelsForm : UserControl
     {
@@ -19,7 +19,7 @@ namespace InventorySystem.Forms
         private Label lblTitle;
         private DataTable _dtItems;
         private System.Windows.Forms.Timer _searchTimer;
-#pragma warning disable CS0649 // Field never assigned — used as an optional null-guarded hook
+#pragma warning disable CS0649 // Field never assigned â€” used as an optional null-guarded hook
         private CheckBox _headerCheckBox;
 #pragma warning restore CS0649
 
@@ -249,12 +249,12 @@ namespace InventorySystem.Forms
         private void btnGenerate_Click(object sender, EventArgs e)
         {
             dgvItems.EndEdit();
-            var selectedItems = new List<InventorySystem.Helpers.LabelPrintItem>();
+            var selectedItems = new List<Shaheen_InventoryManagement_Android.Helpers.LabelPrintItem>();
             foreach (DataGridViewRow row in dgvItems.Rows)
             {
                 if (Convert.ToBoolean(row.Cells["colSelect"].Value))
                 {
-                    selectedItems.Add(new InventorySystem.Helpers.LabelPrintItem {
+                    selectedItems.Add(new Shaheen_InventoryManagement_Android.Helpers.LabelPrintItem {
                         Name = row.Cells["colName"].Value.ToString(),
                         SKU = row.Cells["colSku"].Value?.ToString() ?? "",
                         Price = row.Cells["colPrice"].Value != null ? Convert.ToDecimal(row.Cells["colPrice"].Value) : 0m,

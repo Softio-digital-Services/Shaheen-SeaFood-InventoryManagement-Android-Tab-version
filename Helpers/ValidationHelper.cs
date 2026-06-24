@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
-using InventorySystem.Helpers;
-using InventorySystem.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Controls;
 
-namespace InventorySystem
+namespace Shaheen_InventoryManagement_Android
 {
     /// <summary>
     /// Centralized validation helper

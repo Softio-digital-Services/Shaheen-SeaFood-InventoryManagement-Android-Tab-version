@@ -1,6 +1,6 @@
 using System;
 
-namespace InventorySystem.Helpers
+namespace Shaheen_InventoryManagement_Android.Helpers
 {
     public static class UserSession
     {

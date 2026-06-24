@@ -3,10 +3,10 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using InventorySystem.Helpers;
-using InventorySystem;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android;
 
-namespace InventorySystem.Controls
+namespace Shaheen_InventoryManagement_Android.Controls
 {
     public class ModernComboBox : UserControl
     {

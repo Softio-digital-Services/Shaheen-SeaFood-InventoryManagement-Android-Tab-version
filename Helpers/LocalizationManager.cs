@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Runtime.CompilerServices;
 
-namespace InventorySystem.Helpers
+namespace Shaheen_InventoryManagement_Android.Helpers
 {
     public static class LocalizationManager
     {
@@ -66,8 +66,8 @@ namespace InventorySystem.Helpers
             {
                 // Load from embedded resource stream
                 var assembly = Assembly.GetExecutingAssembly();
-                // The resource is embedded as "InventorySystem.Properties.Resources.ar.resx"
-                using (var stream = assembly.GetManifestResourceStream("InventorySystem.Properties.Resources.ar"))
+                // The resource is embedded as "Shaheen_InventoryManagement_Android.Properties.Resources.ar.resx"
+                using (var stream = assembly.GetManifestResourceStream("Shaheen_InventoryManagement_Android.Properties.Resources.ar"))
                 {
                     if (stream != null)
                     {

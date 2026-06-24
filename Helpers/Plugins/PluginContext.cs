@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 
-namespace InventorySystem.Helpers.Plugins
+namespace Shaheen_InventoryManagement_Android.Helpers.Plugins
 {
     /// <summary>
     /// Safe API surface that the core app exposes to every plugin.
@@ -19,7 +19,7 @@ namespace InventorySystem.Helpers.Plugins
         public bool   IsAdmin     { get; set; }
 
         // - Localization -
-        public bool IsArabic => InventorySystem.Helpers.LocalizationManager.IsArabic;
+        public bool IsArabic => Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.IsArabic;
 
         // - License -
         /// <summary>

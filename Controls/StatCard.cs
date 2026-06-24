@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace InventorySystem.Controls
+namespace Shaheen_InventoryManagement_Android.Controls
 {
     public class StatCard : Panel
     {
@@ -154,7 +154,7 @@ namespace InventorySystem.Controls
             // Guard: may be called before InitializeControls finishes
             if (_iconPanel == null || _lblTitle == null || _lblValue == null || _lblSubtitle == null) return;
 
-            // Use IsArabic as the source of truth — the inherited RightToLeft property
+            // Use IsArabic as the source of truth â€” the inherited RightToLeft property
             // may not have propagated yet when OnResize fires during initialization.
             bool isRtl = Helpers.LocalizationManager.IsArabic;
             
@@ -165,7 +165,7 @@ namespace InventorySystem.Controls
             int labelX, labelWidth;
             if (isRtl)
             {
-                // In RTL: icon is on the LEFT (15–65). Labels span from 75 to (Width - 15).
+                // In RTL: icon is on the LEFT (15â€“65). Labels span from 75 to (Width - 15).
                 labelX    = 75;
                 labelWidth = Math.Max(0, this.Width - labelX - 15);
                 
@@ -193,10 +193,10 @@ namespace InventorySystem.Controls
             _lblValue.Location    = new Point(labelX - 2, 40);
             _lblSubtitle.Location = new Point(labelX + 2, 85);
 
-            // ── TEXT ALIGNMENT ─────────────────────────────────────────────────────
+            // â”€â”€ TEXT ALIGNMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             // WinForms mirrors ContentAlignment when a Label's RightToLeft == Yes.
-            //   MiddleRight + RightToLeft.Yes → renders on the LEFT  (wrong)
-            //   MiddleRight + RightToLeft.No  → renders on the RIGHT (correct)
+            //   MiddleRight + RightToLeft.Yes â†’ renders on the LEFT  (wrong)
+            //   MiddleRight + RightToLeft.No  â†’ renders on the RIGHT (correct)
             // We pin each label to RightToLeft.No so ContentAlignment.MiddleRight
             // always means "right edge of the label box" regardless of the parent
             // form's RTL setting.
@@ -252,7 +252,7 @@ namespace InventorySystem.Controls
                         RectangleF drawingRect = _iconPanel.ClientRectangle;
                         
                         // Targeted fix for Alert Icon which often visually renders lower than other emojis
-                        if (this.Icon == "⚠️") 
+                        if (this.Icon == "âš ï¸") 
                         {
                             drawingRect.Offset(0, -2); // Nudge up
                         }

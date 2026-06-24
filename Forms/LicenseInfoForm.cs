@@ -1,10 +1,10 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using InventorySystem.Controls;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class LicenseInfoForm : BaseModalForm
     {
@@ -114,7 +114,7 @@ namespace InventorySystem.Forms
             // Days Remaining
             int daysLeft = _license.DaysRemaining();
             Color daysColor = daysLeft <= 30 ? ThemeConfig.DangerColor : ThemeConfig.SuccessColor;
-            string daysText = isArabic ? $"{daysLeft} يوماً" : $"{daysLeft} days";
+            string daysText = isArabic ? $"{daysLeft} ÙŠÙˆÙ…Ø§Ù‹" : $"{daysLeft} days";
             AddInfoRow(LocalizationManager.GetString("Msg_DaysRemaining"), daysText, daysColor);
 
             // Status
@@ -134,7 +134,7 @@ namespace InventorySystem.Forms
                 lblRenewal = new Label
                 {
                     Text = isArabic
-                        ? "يرجى تجديد اشتراكك قبل انتهاء الترخيص."
+                        ? "ÙŠØ±Ø¬Ù‰ ØªØ¬Ø¯ÙŠØ¯ Ø§Ø´ØªØ±Ø§ÙƒÙƒ Ù‚Ø¨Ù„ Ø§Ù†ØªÙ‡Ø§Ø¡ Ø§Ù„ØªØ±Ø®ÙŠØµ."
                         : "Your license is expiring soon. Please renew.",
                     Font = ThemeConfig.StandardFont,
                     ForeColor = ThemeConfig.WarningColor,

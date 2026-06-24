@@ -1,4 +1,4 @@
-﻿namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     partial class UsersForm
     {

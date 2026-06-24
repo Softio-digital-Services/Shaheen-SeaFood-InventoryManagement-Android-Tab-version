@@ -1,10 +1,10 @@
 # Car Parts Inventory Management System
 
-## 📋 Overview
+## ðŸ“‹ Overview
 
 Complete inventory management system for car parts businesses with POS, customer management, supplier tracking, and comprehensive reporting.
 
-## 🚀 Quick Start
+## ðŸš€ Quick Start
 
 ### Prerequisites
 - Windows 7 or later
@@ -15,12 +15,12 @@ Complete inventory management system for car parts businesses with POS, customer
 
 **Option 1: Run Executable (Recommended)**
 ```
-bin\Debug\CarPartsInventorySystem.exe
+bin\Debug\CarPartsShaheen_InventoryManagement_Android.exe
 ```
 
 **Option 2: Build from Source**
 ```powershell
-dotnet build CarPartsInventorySystem.csproj
+dotnet build CarPartsShaheen_InventoryManagement_Android.csproj
 ```
 
 ### First-Time Setup
@@ -39,7 +39,7 @@ dotnet build CarPartsInventorySystem.csproj
    - Location: `bin\Debug\Data\carparts.mdf`
    - To reset database, run: `Database\SetupDatabase.bat`
 
-## ✨ Features
+## âœ¨ Features
 
 ### Core Modules
 - **Dashboard** - Real-time analytics and KPIs
@@ -63,29 +63,29 @@ dotnet build CarPartsInventorySystem.csproj
 - **Hardware-Locked** - Prevents casual copying
 - **Offline Activation** - No internet required
 
-## 📁 Project Structure
+## ðŸ“ Project Structure
 
 ```
-InventorySystem-Final/
-├── bin/Debug/
-│   ├── CarPartsInventorySystem.exe    ← Main Application
-│   ├── Data/carparts.mdf              ← Database
-│   ├── Assets/                        ← UI Icons
-│   └── Logs/                          ← Error Logs
-├── Database/
-│   ├── SetupDatabase.bat              ← Database Setup
-│   ├── CreateCarPartsDatabase.sql     ← Schema
-│   └── *.ps1                          ← Helper Scripts
-├── Forms/                             ← UI Forms
-├── Helpers/                           ← Utility Classes
-├── Services/                          ← Business Logic
-├── Controls/                          ← Custom Controls
-├── Data/                              ← Data Models
-└── Templates/
-    └── Parts_Import_Template.csv      ← Import Template
+Shaheen-InventoryManagement-Android-Final/
+â”œâ”€â”€ bin/Debug/
+â”‚   â”œâ”€â”€ CarPartsShaheen_InventoryManagement_Android.exe    â† Main Application
+â”‚   â”œâ”€â”€ Data/carparts.mdf              â† Database
+â”‚   â”œâ”€â”€ Assets/                        â† UI Icons
+â”‚   â””â”€â”€ Logs/                          â† Error Logs
+â”œâ”€â”€ Database/
+â”‚   â”œâ”€â”€ SetupDatabase.bat              â† Database Setup
+â”‚   â”œâ”€â”€ CreateCarPartsDatabase.sql     â† Schema
+â”‚   â””â”€â”€ *.ps1                          â† Helper Scripts
+â”œâ”€â”€ Forms/                             â† UI Forms
+â”œâ”€â”€ Helpers/                           â† Utility Classes
+â”œâ”€â”€ Services/                          â† Business Logic
+â”œâ”€â”€ Controls/                          â† Custom Controls
+â”œâ”€â”€ Data/                              â† Data Models
+â””â”€â”€ Templates/
+    â””â”€â”€ Parts_Import_Template.csv      â† Import Template
 ```
 
-## 🔧 Configuration
+## ðŸ”§ Configuration
 
 ### Database Connection
 Edit `Helpers\DatabaseConfig.cs`:
@@ -103,12 +103,12 @@ public static Color PrimaryColor = Color.FromArgb(59, 130, 246);
 public static Color AccentColor = Color.FromArgb(16, 185, 129);
 ```
 
-## 📊 Import/Export Guide
+## ðŸ“Š Import/Export Guide
 
 ### Exporting Data
 
 1. Navigate to Parts/Customers/Suppliers tab
-2. Click **📤 Export** button
+2. Click **ðŸ“¤ Export** button
 3. Choose **Export to CSV** or **Export to Excel**
 4. Select save location
 5. File is created with timestamp
@@ -120,7 +120,7 @@ public static Color AccentColor = Color.FromArgb(16, 185, 129);
    - **Customers**: CustomerName, Email, Phone, Address, City, PostalCode, Notes
    - **Suppliers**: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes
 
-2. Click **📥 Import** button
+2. Click **ðŸ“¥ Import** button
 3. Choose **Import from CSV** or **Import from Excel**
 4. Select file
 5. Review import summary (imported/skipped counts)
@@ -132,11 +132,11 @@ P001,Brake Pad Set,Brakes,50,10,45.99,A1-Shelf2,Active
 P002,Oil Filter,Filters,100,20,8.99,B2-Shelf1,Active
 ```
 
-## 🔑 License Management
+## ðŸ”‘ License Management
 
 ### Viewing License Info
 1. Click user avatar (top-right)
-2. Select "📄 License Info"
+2. Select "ðŸ“„ License Info"
 3. View license type, expiration, and status
 
 ### Renewing License
@@ -150,7 +150,7 @@ P002,Oil Filter,Filters,100,20,8.99,B2-Shelf1,Active
 - All features unlocked
 - Upgrade to full license anytime
 
-## 🗄️ Database Management
+## ðŸ—„ï¸ Database Management
 
 ### Backup Database
 ```powershell
@@ -169,7 +169,7 @@ cd Database
 .\InitCategories.ps1
 ```
 
-## 🐛 Troubleshooting
+## ðŸ› Troubleshooting
 
 ### "Database connection failed"
 - Ensure SQL Server LocalDB is installed
@@ -191,11 +191,11 @@ cd Database
 - Verify .NET Framework 4.7.2+ is installed
 - Run as Administrator if needed
 
-## 📝 Development
+## ðŸ“ Development
 
 ### Building
 ```powershell
-dotnet build CarPartsInventorySystem.csproj
+dotnet build CarPartsShaheen_InventoryManagement_Android.csproj
 ```
 
 ### Running Tests
@@ -215,14 +215,14 @@ dotnet build CarPartsInventorySystem.csproj
 5. Test thoroughly
 6. Build and verify
 
-## 📚 Documentation
+## ðŸ“š Documentation
 
 - **User Guide**: See `README.md` (this file)
 - **Database Schema**: `Database\CreateCarPartsDatabase.sql`
 - **Import Templates**: `Templates\Parts_Import_Template.csv`
 - **Error Logs**: `bin\Debug\Logs\`
 
-## 🔐 Security
+## ðŸ” Security
 
 - Passwords hashed with SHA256
 - License data encrypted (AES)
@@ -230,14 +230,14 @@ dotnet build CarPartsInventorySystem.csproj
 - Role-based access control
 - Audit logging for critical operations
 
-## 📞 Support
+## ðŸ“ž Support
 
 For issues or questions:
 1. Check error logs: `bin\Debug\Logs\`
 2. Review troubleshooting section above
 3. Contact system administrator
 
-## 📄 License
+## ðŸ“„ License
 
 This software requires a valid license key for commercial use.
 - Trial: 30 days

@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 using System.Net.NetworkInformation;
 
-namespace InventorySystem.Helpers
+namespace Shaheen_InventoryManagement_Android.Helpers
 {
     /// <summary>
     /// Retrieves unique hardware information for license binding

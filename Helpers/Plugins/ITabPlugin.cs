@@ -1,6 +1,6 @@
-﻿using System.Windows.Forms;
+using System.Windows.Forms;
 
-namespace InventorySystem.Helpers.Plugins
+namespace Shaheen_InventoryManagement_Android.Helpers.Plugins
 {
     /// <summary>
     /// Implement this on top of IPlugin to add a tab to the main sidebar navigation.

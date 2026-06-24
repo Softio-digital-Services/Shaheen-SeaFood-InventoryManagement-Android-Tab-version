@@ -1,18 +1,18 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Windows.Forms;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     partial class AddCurrencyForm
     {
         private void InitializeComponent()
         {
-            this.txtCode = new InventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
-            this.txtName = new InventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
-            this.txtSymbol = new InventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
-            this.numRate = new InventorySystem.Controls.ModernNumericUpDown { DecimalPlaces = 4, Maximum = 1000000, Dock = DockStyle.Fill, Margin = new Padding(0) };
-            this.btnFetch = new InventorySystem.Controls.ModernButton { Text = "Fetch", Width = 110, Height = 42, Anchor = AnchorStyles.Bottom | AnchorStyles.Right, Margin = new Padding(0, 0, 0, 0) };
+            this.txtCode = new Shaheen_InventoryManagement_Android.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
+            this.txtName = new Shaheen_InventoryManagement_Android.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15), IsRequired = true };
+            this.txtSymbol = new Shaheen_InventoryManagement_Android.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 15) };
+            this.numRate = new Shaheen_InventoryManagement_Android.Controls.ModernNumericUpDown { DecimalPlaces = 4, Maximum = 1000000, Dock = DockStyle.Fill, Margin = new Padding(0) };
+            this.btnFetch = new Shaheen_InventoryManagement_Android.Controls.ModernButton { Text = "Fetch", Width = 110, Height = 42, Anchor = AnchorStyles.Bottom | AnchorStyles.Right, Margin = new Padding(0, 0, 0, 0) };
             ThemeConfig.ApplyPrimaryButton(btnFetch);
             
             this.SuspendLayout();
@@ -46,10 +46,10 @@ namespace InventorySystem.Forms
             this.PerformLayout();
         }
 
-        private InventorySystem.Controls.ModernTextBox txtCode;
-        private InventorySystem.Controls.ModernTextBox txtName;
-        private InventorySystem.Controls.ModernTextBox txtSymbol;
-        private InventorySystem.Controls.ModernNumericUpDown numRate;
-        private InventorySystem.Controls.ModernButton btnFetch;
+        private Shaheen_InventoryManagement_Android.Controls.ModernTextBox txtCode;
+        private Shaheen_InventoryManagement_Android.Controls.ModernTextBox txtName;
+        private Shaheen_InventoryManagement_Android.Controls.ModernTextBox txtSymbol;
+        private Shaheen_InventoryManagement_Android.Controls.ModernNumericUpDown numRate;
+        private Shaheen_InventoryManagement_Android.Controls.ModernButton btnFetch;
     }
 }

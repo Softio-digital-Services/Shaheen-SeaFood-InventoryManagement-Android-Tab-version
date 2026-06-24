@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 
-namespace InventorySystem.Helpers.Plugins
+namespace Shaheen_InventoryManagement_Android.Helpers.Plugins
 {
     /// <summary>
     /// Scans the /Plugins folder, loads qualifying DLLs, and registers them
@@ -93,17 +93,17 @@ namespace InventorySystem.Helpers.Plugins
         private static void LoadInternalPlugins()
         {
             // Free built-in plugins -- always visible
-            TryRegister(new InventorySystem.Plugins.CalculatorPlugin());
-            TryRegister(new InventorySystem.Plugins.BackupPlugin());
+            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.CalculatorPlugin());
+            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.BackupPlugin());
 
             // Paid internal plugins (visibility toggled via license)
-            TryRegister(new InventorySystem.Plugins.CustomersPlugin());
-            TryRegister(new InventorySystem.Plugins.SuppliersPlugin());
-            TryRegister(new InventorySystem.Plugins.QuotationsPlugin());
-            TryRegister(new InventorySystem.Plugins.PurchaseOrdersPlugin());
-            TryRegister(new InventorySystem.Plugins.MonthlyExpensesPlugin());
-            TryRegister(new InventorySystem.Plugins.BarcodeLabelsPlugin());
-            TryRegister(new InventorySystem.Plugins.RecipesPlugin());
+            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.CustomersPlugin());
+            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.SuppliersPlugin());
+            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.QuotationsPlugin());
+            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.PurchaseOrdersPlugin());
+            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.MonthlyExpensesPlugin());
+            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.BarcodeLabelsPlugin());
+            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.RecipesPlugin());
         }
 
         private static void LoadAssembly(string path)

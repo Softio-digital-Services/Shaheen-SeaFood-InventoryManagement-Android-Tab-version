@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 
-namespace InventorySystem.Data
+namespace Shaheen_InventoryManagement_Android.Data
 {
     public class SupplierData
     {

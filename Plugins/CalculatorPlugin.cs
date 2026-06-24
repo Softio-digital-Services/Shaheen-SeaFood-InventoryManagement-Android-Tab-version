@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using InventorySystem.Helpers;
-using InventorySystem.Helpers.Plugins;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers.Plugins;
 
-namespace InventorySystem.Plugins
+namespace Shaheen_InventoryManagement_Android.Plugins
 {
     /// <summary>
     /// Free built-in plugin -- adds a full-featured calculator to the sidebar.

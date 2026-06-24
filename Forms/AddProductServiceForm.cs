@@ -2,12 +2,12 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Collections.Generic;
-using InventorySystem.Data;
-using InventorySystem.Controls;
-using InventorySystem.Services;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Data;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Services;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public class AddProductServiceForm : BaseModalForm
     {

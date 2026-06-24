@@ -1,10 +1,10 @@
-﻿@echo off
+@echo off
 echo ============================================
-echo  InventorySystem - Publish Script
+echo  Shaheen-InventoryManagement-Android - Publish Script
 echo ============================================
 echo.
 
-set PROJECT=c:\Users\Khale\Desktop\Personal\Service Company\InventorySystem
+set PROJECT=c:\Users\Khale\Desktop\Personal\Service Company\Shaheen-InventoryManagement-Android
 set OUTPUT=%PROJECT%\publish-output
 
 echo [1/4] Cleaning previous publish output...

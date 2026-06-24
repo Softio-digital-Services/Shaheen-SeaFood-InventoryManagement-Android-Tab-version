@@ -5,15 +5,15 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
-using InventorySystem.Data;
-using InventorySystem.Helpers;
-using InventorySystem.Controls;
-using InventorySystem.Services;
+using Shaheen_InventoryManagement_Android.Data;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Services;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     /// <summary>
-    /// Inventory Management Screen — card-view + category sidebar layout.
+    /// Inventory Management Screen â€” card-view + category sidebar layout.
     /// </summary>
     public partial class PartsForm : UserControl
     {
@@ -26,8 +26,8 @@ namespace InventorySystem.Forms
                 return cp;
             }
         }
-        // ── Toolbar buttons ──────────────────────────────────────────────
-        private InventorySystem.Controls.ModernButton btnAdd;
+        // â”€â”€ Toolbar buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        private Shaheen_InventoryManagement_Android.Controls.ModernButton btnAdd;
         private Button btnAddCategory;
         // private Button btnFilter;
         private Button btnImport;
@@ -35,7 +35,7 @@ namespace InventorySystem.Forms
         private ModernTextBox txtSearch;
         private ModernTextBox txtCategorySearch;
 
-        // ── Layout containers ────────────────────────────────────────────
+        // â”€â”€ Layout containers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private Panel pnlCategoryList;   // scrollable category rows
         private FlowLayoutPanel pnlCardFlow;       // card grid
         private DataGridView dgvParts;           // list (table) view
@@ -45,7 +45,7 @@ namespace InventorySystem.Forms
         private Panel btnToggleGrid;
         private Panel btnToggleCard;
 
-        // ── State ─────────────────────────────────────────────────────────
+        // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private InventoryService _inventoryService;
         private bool _isCardView = true;
         private string _activeCategory = null;   // null = "All Items"
@@ -56,10 +56,10 @@ namespace InventorySystem.Forms
         private int _currentPage = 1;
         private int _pageSize = 50;
         private Label lblPageInfo;
-        private InventorySystem.Controls.ModernButton btnPrevPage;
-        private InventorySystem.Controls.ModernButton btnNextPage;
+        private Shaheen_InventoryManagement_Android.Controls.ModernButton btnPrevPage;
+        private Shaheen_InventoryManagement_Android.Controls.ModernButton btnNextPage;
 
-        // ── Card layout constants ─────────────────────────────────────────
+        // â”€â”€ Card layout constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private const int CardW = 160;
         private const int CardH = 200;
         private const int CardGap = 14;
@@ -73,8 +73,8 @@ namespace InventorySystem.Forms
             EventHandler currHandler = (s, e) => { if (_isCardView) LoadCards(); else dgvParts?.Invalidate(); };
             EventHandler invHandler = (s, e) => { if (this.Visible) RefreshAll(); };
 
-            InventorySystem.Helpers.LocalizationManager.LanguageChanged += langHandler;
-            InventorySystem.Services.CurrencyService.CurrencyChanged += currHandler;
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.LanguageChanged += langHandler;
+            Shaheen_InventoryManagement_Android.Services.CurrencyService.CurrencyChanged += currHandler;
 
             ApplyLocalization();
             ApplyPermissions();
@@ -82,17 +82,17 @@ namespace InventorySystem.Forms
 
             this.Disposed += (s, e) =>
             {
-                InventorySystem.Helpers.LocalizationManager.LanguageChanged -= langHandler;
-                InventorySystem.Services.CurrencyService.CurrencyChanged -= currHandler;
+                Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.LanguageChanged -= langHandler;
+                Shaheen_InventoryManagement_Android.Services.CurrencyService.CurrencyChanged -= currHandler;
             };
         }
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // INITIALIZATION
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void InitializeComponent()
         {
-            this.btnAdd = new InventorySystem.Controls.ModernButton();
+            this.btnAdd = new Shaheen_InventoryManagement_Android.Controls.ModernButton();
             this.btnImport = new Button();
             this.btnExport = new Button();
             this.txtSearch = new ModernTextBox();
@@ -101,7 +101,7 @@ namespace InventorySystem.Forms
             ((System.ComponentModel.ISupportInitialize)(this.dgvParts)).BeginInit();
             this.SuspendLayout();
 
-            // ── Root: full-width column for header + body ─────────────────
+            // â”€â”€ Root: full-width column for header + body â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             TableLayoutPanel tlpRoot = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -112,7 +112,7 @@ namespace InventorySystem.Forms
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
-            // ── Header ────────────────────────────────────────────────────
+            // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Label lblInventoryTitle = ThemeConfig.CreateStandardHeader(
                 LocalizationManager.GetString("Parts_Title"));
             lblInventoryTitle.Name = "lblInventoryTitle";
@@ -206,7 +206,7 @@ namespace InventorySystem.Forms
             TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblInventoryTitle, txtSearch, actionButtons);
             tlpRoot.Controls.Add(tlpHeader, 0, 0);
 
-            // ── Body: sidebar + content ───────────────────────────────────
+            // â”€â”€ Body: sidebar + content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             TableLayoutPanel tlpBody = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -218,7 +218,7 @@ namespace InventorySystem.Forms
             tlpBody.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tlpRoot.Controls.Add(tlpBody, 0, 1);
 
-            // ── Left: Category Sidebar ────────────────────────────────────
+            // â”€â”€ Left: Category Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Panel pnlSidebarOuter = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -347,7 +347,7 @@ namespace InventorySystem.Forms
 
             // Add Category button at bottom of sidebar
             Panel pnlAddCatWrapper = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12), BackColor = Color.Transparent };
-            var btnSidebarAddCat = new InventorySystem.Controls.ModernButton
+            var btnSidebarAddCat = new Shaheen_InventoryManagement_Android.Controls.ModernButton
             {
                 Dock = DockStyle.Fill,
                 Height = 38
@@ -357,7 +357,7 @@ namespace InventorySystem.Forms
             pnlAddCatWrapper.Controls.Add(btnSidebarAddCat);
             tlpSidebar.Controls.Add(pnlAddCatWrapper, 0, 3);
 
-            // ── Right: Content area ────────────────────────────────────────
+            // â”€â”€ Right: Content area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Panel pnlContent = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -392,11 +392,11 @@ namespace InventorySystem.Forms
             tlpContent.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // pagination footer
 
             Panel pnlPagination = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
-            btnPrevPage = new InventorySystem.Controls.ModernButton { Text = "< Prev", Size = new Size(80, 30), Location = new Point(0, 10), Cursor = Cursors.Hand };
+            btnPrevPage = new Shaheen_InventoryManagement_Android.Controls.ModernButton { Text = "< Prev", Size = new Size(80, 30), Location = new Point(0, 10), Cursor = Cursors.Hand };
             btnPrevPage.Click += (s, e) => { if (_currentPage > 1) { _currentPage--; RefreshAll(); } };
             ThemeConfig.ApplySecondaryButton(btnPrevPage);
 
-            btnNextPage = new InventorySystem.Controls.ModernButton { Text = "Next >", Size = new Size(80, 30), Location = new Point(200, 10), Cursor = Cursors.Hand };
+            btnNextPage = new Shaheen_InventoryManagement_Android.Controls.ModernButton { Text = "Next >", Size = new Size(80, 30), Location = new Point(200, 10), Cursor = Cursors.Hand };
             btnNextPage.Click += (s, e) => { _currentPage++; RefreshAll(); };
             ThemeConfig.ApplySecondaryButton(btnNextPage);
 
@@ -423,7 +423,7 @@ namespace InventorySystem.Forms
             };
             pnlContentHeader.Controls.Add(lblItemCount);
 
-            // ── Right toolbar: view toggles + filter button (matching green reference) ─────
+            // â”€â”€ Right toolbar: view toggles + filter button (matching green reference) â”€â”€â”€â”€â”€
             // Combined right-side control panel (FlowLayoutPanel for easier alignment)
             FlowLayoutPanel pnlRightControls = new FlowLayoutPanel
             {
@@ -434,13 +434,13 @@ namespace InventorySystem.Forms
                 WrapContents = false
             };
 
-            // View toggle group (card ⊞ / list ≡)
+            // View toggle group (card âŠž / list â‰¡)
             btnToggleCard = CreateToggleBtn("grid", true);
             btnToggleGrid = CreateToggleBtn("list", false);
             btnToggleCard.Click += (s, e) => SwitchView(true);
             btnToggleGrid.Click += (s, e) => SwitchView(false);
 
-            // Filter button — panel-based for true transparency
+            // Filter button â€” panel-based for true transparency
             Panel btnContentFilter = new Panel
             {
                 Size = new Size(26, 26),
@@ -475,7 +475,7 @@ namespace InventorySystem.Forms
                 pnlRightControls.Location = new Point(pnlContentHeader.Width - pnlRightControls.Width - 8, 4);
             pnlContentHeader.Controls.Add(pnlRightControls);
 
-            // ── Card view ──────────────────────────────────────────────────
+            // â”€â”€ Card view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             pnlCardView = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
 
             pnlCardFlow = new FlowLayoutPanel
@@ -490,7 +490,7 @@ namespace InventorySystem.Forms
             pnlCardView.Controls.Add(pnlCardFlow);
             tlpContent.Controls.Add(pnlCardView, 0, 1);
 
-            // ── List (DataGridView) view ──────────────────────────────────
+            // â”€â”€ List (DataGridView) view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             pnlGridView = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Visible = false };
 
             dgvParts.AllowUserToAddRows = false;
@@ -541,9 +541,9 @@ namespace InventorySystem.Forms
             this.ResumeLayout(false);
         }
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // VIEW TOGGLE
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private Panel CreateToggleBtn(string iconName, bool startActive)
         {
             bool isActive = startActive;
@@ -605,9 +605,9 @@ namespace InventorySystem.Forms
             else LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
         }
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // REFRESH ALL
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void RefreshAll()
         {
             RefreshCategorySidebar();
@@ -615,9 +615,9 @@ namespace InventorySystem.Forms
             else LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
         }
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // CATEGORY SIDEBAR
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void RefreshCategorySidebar()
         {
             pnlCategoryList.SuspendLayout();
@@ -769,7 +769,7 @@ namespace InventorySystem.Forms
             };
             card.Controls.Add(lblCount);
 
-            // Click — filter by category
+            // Click â€” filter by category
             EventHandler select = (s, e) =>
             {
                 _activeCategory = cat?.CategoryName;
@@ -782,7 +782,7 @@ namespace InventorySystem.Forms
             lblName.Click += select;
             lblCount.Click += select;
 
-            // Right-click on real categories → Edit
+            // Right-click on real categories â†’ Edit
             if (cat != null)
             {
                 Action editCategory = () =>
@@ -875,9 +875,9 @@ namespace InventorySystem.Forms
             return wrapper;
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // CARD VIEW — LoadCards
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // CARD VIEW â€” LoadCards
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private async void LoadCards()
         {
             pnlCardFlow.SuspendLayout();
@@ -946,7 +946,7 @@ namespace InventorySystem.Forms
                 : $"Add to {_activeCategory}";
 
             // Use a proper standard add button centered in the card
-            var btnAdd = new InventorySystem.Controls.ModernButton
+            var btnAdd = new Shaheen_InventoryManagement_Android.Controls.ModernButton
             {
                 Size = new Size(CardW - 24, 40),
                 Location = new Point(12, (CardH - 40) / 2)
@@ -1069,7 +1069,7 @@ namespace InventorySystem.Forms
             // Price
             Label lblPrice = new Label
             {
-                Text = InventorySystem.Services.CurrencyService.Format(price),
+                Text = Shaheen_InventoryManagement_Android.Services.CurrencyService.Format(price),
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                 ForeColor = ThemeConfig.PrimaryColor,
                 BackColor = Color.Transparent,
@@ -1208,9 +1208,9 @@ namespace InventorySystem.Forms
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // LIST VIEW — LoadData (existing DataGridView approach)
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // LIST VIEW â€” LoadData (existing DataGridView approach)
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private async void LoadData(string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null)
         {
             try
@@ -1245,13 +1245,13 @@ namespace InventorySystem.Forms
             catch (Exception ex) { MessageHelper.ShowError($"Error: {ex.Message}"); }
         }
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // LOCALIZATION
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void ApplyLocalization()
         {
-            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
 
             var ctrlTitle = this.Controls.Find("lblInventoryTitle", true);
             if (ctrlTitle.Length > 0) ctrlTitle[0].Text = L("Parts_Title");
@@ -1265,7 +1265,7 @@ namespace InventorySystem.Forms
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
             if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Parts_Delete");
 
-            InventorySystem.Helpers.LocalizationManager.TranslateControl(this);
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.TranslateControl(this);
 
             if (dgvParts != null && dgvParts.Columns.Count > 0)
             {
@@ -1294,18 +1294,18 @@ namespace InventorySystem.Forms
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // IMAGE HELPER
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private Bitmap CreateProductImage(string imagePath = null, string category = null)
         {
-            return InventorySystem.Helpers.CacheManager.GetProductImage(imagePath, category, 56);
+            return Shaheen_InventoryManagement_Android.Helpers.CacheManager.GetProductImage(imagePath, category, 56);
         }
 
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // DATAGRIDVIEW PAINTING (for list view)
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void DgvParts_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex < 0) return;
@@ -1321,7 +1321,7 @@ namespace InventorySystem.Forms
             }
 
             if (dgvParts.Columns[e.ColumnIndex].Name == "colPrice" && e.Value != null)
-                if (decimal.TryParse(e.Value.ToString(), out decimal p)) { e.Value = InventorySystem.Services.CurrencyService.Format(p); e.FormattingApplied = true; }
+                if (decimal.TryParse(e.Value.ToString(), out decimal p)) { e.Value = Shaheen_InventoryManagement_Android.Services.CurrencyService.Format(p); e.FormattingApplied = true; }
 
             var stockCell = row.Cells["colStock"]; var minCell = row.Cells["minimum_stock_level"];
             if (!isService && stockCell.Value != null && minCell.Value != null)
@@ -1452,9 +1452,9 @@ namespace InventorySystem.Forms
 
         private void DgvParts_CellMouseLeave(object sender, DataGridViewCellEventArgs e) => dgvParts.Cursor = Cursors.Default;
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // ADJUSTMENT DIALOG
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void ShowAdjustmentDialog(int partId, string partName)
         {
             string title = LocalizationManager.GetString("Msg_AdjustStock") + partName;
@@ -1479,9 +1479,9 @@ namespace InventorySystem.Forms
             f.ShowDialog();
         }
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // BUTTON HANDLERS (unchanged)
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void BtnAdd_Click(object sender, EventArgs e)
         {
             using (AddProductServiceForm form = new AddProductServiceForm())
@@ -1529,9 +1529,9 @@ namespace InventorySystem.Forms
         private void BtnExport_Click(object sender, EventArgs e) => ExportToCsv();
         private void BtnImport_Click(object sender, EventArgs e) => ImportFromCsv();
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // PERMISSIONS
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void ApplyPermissions()
         {
             if (!UserSession.IsAdmin)
@@ -1543,9 +1543,9 @@ namespace InventorySystem.Forms
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // DRAWING HELPERS
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private static GraphicsPath RoundedPath(Rectangle r, int rad)
         {
             var p = new GraphicsPath();
@@ -1571,9 +1571,9 @@ namespace InventorySystem.Forms
             return bmp;
         }
 
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // EXPORT / IMPORT (preserved exactly)
-        // ─────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void ExportToCsv()
         {
             try
@@ -1628,7 +1628,7 @@ namespace InventorySystem.Forms
                         if (string.IsNullOrWhiteSpace(name)) { skipped++; continue; }
                         if (!string.IsNullOrWhiteSpace(pn) && _inventoryService.PartExists(pn)) { skipped++; continue; }
 
-                        var p = new InventorySystem.Data.PartData();
+                        var p = new Shaheen_InventoryManagement_Android.Data.PartData();
                         p.PartName = name;
                         p.PartNumber = pn;
 

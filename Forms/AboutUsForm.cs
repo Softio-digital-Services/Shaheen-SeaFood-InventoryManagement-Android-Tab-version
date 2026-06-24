@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
-using InventorySystem.Helpers;
-using InventorySystem.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Controls;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public class AboutUsForm : BaseModalForm
     {
@@ -34,7 +34,7 @@ namespace InventorySystem.Forms
 
             // App Name
             Label lblName = new Label {
-                Text = "InventorySystem",
+                Text = "Shaheen-InventoryManagement-Android",
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 ForeColor = ThemeConfig.PrimaryColor,
                 TextAlign = ContentAlignment.MiddleCenter,

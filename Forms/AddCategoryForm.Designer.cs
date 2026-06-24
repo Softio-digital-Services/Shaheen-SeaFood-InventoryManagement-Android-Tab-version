@@ -1,4 +1,4 @@
-﻿namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     partial class AddCategoryForm
     {
@@ -12,10 +12,10 @@
 
         private void InitializeComponent()
         {
-            this.txtName = new InventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsRequired = true };
-            this.txtDesc = new InventorySystem.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
+            this.txtName = new Shaheen_InventoryManagement_Android.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10), IsRequired = true };
+            this.txtDesc = new Shaheen_InventoryManagement_Android.Controls.ModernTextBox { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 10) };
             this.pbImage = new System.Windows.Forms.PictureBox { Width = 150, Height = 150, BorderStyle = BorderStyle.FixedSingle, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.WhiteSmoke, Anchor = AnchorStyles.Top };
-            this.btnUpload = new InventorySystem.Controls.ModernButton { Text = "Upload Image", Height = 35, Width = 150, Anchor = AnchorStyles.Top };
+            this.btnUpload = new Shaheen_InventoryManagement_Android.Controls.ModernButton { Text = "Upload Image", Height = 35, Width = 150, Anchor = AnchorStyles.Top };
             
             this.SuspendLayout();
 
@@ -50,9 +50,9 @@
             this.PerformLayout();
         }
 
-        private InventorySystem.Controls.ModernTextBox txtName;
-        private InventorySystem.Controls.ModernTextBox txtDesc;
+        private Shaheen_InventoryManagement_Android.Controls.ModernTextBox txtName;
+        private Shaheen_InventoryManagement_Android.Controls.ModernTextBox txtDesc;
         private System.Windows.Forms.PictureBox pbImage;
-        private InventorySystem.Controls.ModernButton btnUpload;
+        private Shaheen_InventoryManagement_Android.Controls.ModernButton btnUpload;
     }
 }

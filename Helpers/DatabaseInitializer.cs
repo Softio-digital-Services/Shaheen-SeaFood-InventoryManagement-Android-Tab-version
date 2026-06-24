@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows.Forms;
 using Microsoft.Data.Sqlite;
 
-namespace InventorySystem.Helpers
+namespace Shaheen_InventoryManagement_Android.Helpers
 {
     public static class DatabaseInitializer
     {

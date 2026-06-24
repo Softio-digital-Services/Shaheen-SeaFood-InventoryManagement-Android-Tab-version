@@ -1,9 +1,9 @@
 using System;
 using System.Windows.Forms;
-using InventorySystem.Helpers.Plugins;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers.Plugins;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Plugins
+namespace Shaheen_InventoryManagement_Android.Plugins
 {
     public class CustomersPlugin : ITabPlugin
     {
@@ -19,7 +19,7 @@ namespace InventorySystem.Plugins
         public string LicenseFeatureKey => "Plugin_Customers";
 
         public string TabId => "btnCustomers";
-        public string TabTitle => LocalizationManager.IsArabic ? "العملاء" : "Customers";
+        public string TabTitle => LocalizationManager.IsArabic ? "Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡" : "Customers";
         public string TabIcon => "customers";
         public int TabOrder => 30; // After POS
 
@@ -34,7 +34,7 @@ namespace InventorySystem.Plugins
             // Worker can see Customers, Admins can see Customers, Accountants can see Customers
             if (_context.UserRole == "Staff" || _context.UserRole == "Accountant" || _context.IsAdmin)
             {
-                return new InventorySystem.Forms.CustomersForm();
+                return new Shaheen_InventoryManagement_Android.Forms.CustomersForm();
             }
             
             // Return an empty access denied control or null.

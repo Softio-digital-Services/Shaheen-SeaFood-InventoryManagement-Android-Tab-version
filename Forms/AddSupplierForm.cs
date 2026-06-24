@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using System.Drawing;
-using InventorySystem.Data;
-using InventorySystem.Controls;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Data;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class AddSupplierForm : BaseModalForm
     {
@@ -35,14 +35,14 @@ namespace InventorySystem.Forms
         {
             InitializeComponent();
             SetFooterButtons(
-                InventorySystem.Helpers.LocalizationManager.GetString("AddSup_Save"),
-                InventorySystem.Helpers.LocalizationManager.GetString("Popup_Cancel"),
+                Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString("AddSup_Save"),
+                Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString("Popup_Cancel"),
                 btnSave_Click,
                 btnCancel_Click
             );
 
             ApplyTheme();
-            InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
         }
 
@@ -72,8 +72,8 @@ namespace InventorySystem.Forms
 
         private void ApplyLocalization()
         {
-            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
 
             bool isEdit = this.TitleText != null && (this.TitleText.Contains("Edit") || this.TitleText.Contains(L("AddSup_TitleEdit")));
             this.TitleText = isEdit ? L("AddSup_TitleEdit") : L("AddSup_TitleNew");
@@ -115,10 +115,10 @@ namespace InventorySystem.Forms
         // Edit Mode Constructor
         public AddSupplierForm(int id, string name, string phone, string email, string address, string type, DateTime? dueDate = null, int reminderDays = 0, string contactPerson = "") : this()
         {
-            this.TitleText = InventorySystem.Helpers.LocalizationManager.GetString("AddSup_TitleEdit");
+            this.TitleText = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString("AddSup_TitleEdit");
             SetFooterButtons(
-                InventorySystem.Helpers.LocalizationManager.GetString("AddSup_UpdateBtn"),
-                InventorySystem.Helpers.LocalizationManager.GetString("Popup_Cancel"),
+                Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString("AddSup_UpdateBtn"),
+                Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString("Popup_Cancel"),
                 btnSave_Click,
                 btnCancel_Click
             );
@@ -252,7 +252,7 @@ namespace InventorySystem.Forms
 
         private void UpdateValidationUI()
         {
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
             bool isCompany = rdoCompany.Checked;
 
             txtName.Visible = isCompany;

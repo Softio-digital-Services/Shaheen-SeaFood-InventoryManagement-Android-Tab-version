@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using Microsoft.Data.Sqlite;
 using System.Windows.Forms;
 using System.Drawing;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem
+namespace Shaheen_InventoryManagement_Android
 {
     public partial class LoginForm : Form
     {

@@ -1,9 +1,9 @@
 using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Services
+namespace Shaheen_InventoryManagement_Android.Services
 {
     public class InventoryService
     {
@@ -124,7 +124,7 @@ namespace InventorySystem.Services
             GlobalEvents.RaiseInventoryUpdated();
         }
 
-        public void SaveProductService(InventorySystem.Data.PartData p)
+        public void SaveProductService(Shaheen_InventoryManagement_Android.Data.PartData p)
         {
             int categoryId = GetCategoryId(p.CategoryName);
             bool isNew = p.Id == 0;

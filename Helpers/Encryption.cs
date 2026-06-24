@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace InventorySystem.Helpers
+namespace Shaheen_InventoryManagement_Android.Helpers
 {
     /// <summary>
     /// Provides AES encryption and decryption utilities for license storage

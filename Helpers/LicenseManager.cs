@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 
-namespace InventorySystem.Helpers
+namespace Shaheen_InventoryManagement_Android.Helpers
 {
     /// <summary>
     /// Manages license validation, activation, and generation

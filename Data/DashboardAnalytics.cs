@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Collections.Generic;
 
-namespace InventorySystem.Data
+namespace Shaheen_InventoryManagement_Android.Data
 {
     public static class DashboardAnalytics
     {

@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Globalization;
 using System.Windows.Forms;
-using InventorySystem.Data;
-using InventorySystem.Helpers;
-using InventorySystem.Controls;
+using Shaheen_InventoryManagement_Android.Data;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Controls;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class CustomerDetailsForm : BaseModalForm
     {
@@ -255,7 +255,7 @@ namespace InventorySystem.Forms
         {
             decimal currentBalance = ParseBalance();
 
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
             TransactionEntryForm form = new TransactionEntryForm(
                 L("Cust_RecordSale"),
                 string.Format(L("Prompt_RecordSale"), _customerName),
@@ -302,7 +302,7 @@ namespace InventorySystem.Forms
         {
             decimal currentBalance = ParseBalance();
 
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
             TransactionEntryForm form = new TransactionEntryForm(
                 L("Cust_ReceivePayment"),
                 string.Format(L("Prompt_ReceivePayment"), _customerName));

@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
-using InventorySystem.Data;
+using Shaheen_InventoryManagement_Android.Data;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class ReportsForm : UserControl
     {
@@ -15,14 +15,14 @@ namespace InventorySystem.Forms
         private Panel pnlKPIContainer;
         private Label lblKPI1Value;
         private Label lblKPI2Value;
-        private InventorySystem.Services.DashboardService _dashboardService;
+        private Shaheen_InventoryManagement_Android.Services.DashboardService _dashboardService;
 
         public ReportsForm()
         {
-            _dashboardService = new InventorySystem.Services.DashboardService();
+            _dashboardService = new Shaheen_InventoryManagement_Android.Services.DashboardService();
             InitializeComponent();
             ApplyTheme();
-            InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -34,9 +34,9 @@ namespace InventorySystem.Forms
 
         private void ApplyLocalization()
         {
-            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
-            bool isRTL = InventorySystem.Helpers.LocalizationManager.IsArabic;
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
+            bool isRTL = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.IsArabic;
 
             var titleAlign  = isRTL ? ContentAlignment.BottomRight : ContentAlignment.BottomLeft;
             var valueAlign  = isRTL ? ContentAlignment.TopRight    : ContentAlignment.TopLeft;
@@ -251,7 +251,7 @@ namespace InventorySystem.Forms
         private void ApplyTheme()
         {
             // Adding Titles before applying theme
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
             
             chartValuation.Titles.Clear();
             ThemeConfig.ApplyChartTheme(chartValuation);
@@ -290,7 +290,7 @@ namespace InventorySystem.Forms
 
         private void LoadValuationChart()
         {
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
             chartValuation.Series.Clear();
             var s = new Series(L("Rep_ChartValuation"));
             s.ChartArea = "Default";
@@ -339,7 +339,7 @@ namespace InventorySystem.Forms
 
         private void LoadTopProductsChart()
         {
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
             chartBar.Series.Clear();
             var s = new Series(L("Rep_ChartSales"));
             s.ChartArea = "Default";

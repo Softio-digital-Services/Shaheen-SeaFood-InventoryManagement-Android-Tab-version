@@ -7,10 +7,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using InventorySystem.Services;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Services;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem
+namespace Shaheen_InventoryManagement_Android
 {
     static class Program
     {
@@ -24,10 +24,10 @@ namespace InventorySystem
             Application.SetCompatibleTextRenderingDefault(false);
 
             // Set initial language to Arabic for testing
-            InventorySystem.Helpers.LocalizationManager.SetLanguage("en-US");
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.SetLanguage("en-US");
 
             // Set initial language to English
-            //InventorySystem.Helpers.LocalizationManager.SetLanguage("ar");
+            //Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.SetLanguage("ar");
 
             // Expose background task for server hosting without blocking UI thread
             _ = Task.Run(() => StartApiServer());
@@ -44,19 +44,19 @@ namespace InventorySystem
             try
             {
                 // Initialize Database (Create if missing)
-                InventorySystem.Helpers.DatabaseInitializer.Initialize();
+                Shaheen_InventoryManagement_Android.Helpers.DatabaseInitializer.Initialize();
 
                 // Ensure schema is up to date (add missing columns)
                 DatabaseHelper.EnsureSchema();
 
                 // Initialize currency tables and load cached rates
-                InventorySystem.Services.CurrencyService.EnsureTable();
+                Shaheen_InventoryManagement_Android.Services.CurrencyService.EnsureTable();
 
                 // Check License
-                if (!InventorySystem.Helpers.LicenseManager.HasValidLicense())
+                if (!Shaheen_InventoryManagement_Android.Helpers.LicenseManager.HasValidLicense())
                 {
                     // Show activation form
-                    InventorySystem.Forms.LicenseActivationForm activationForm = new InventorySystem.Forms.LicenseActivationForm();
+                    Shaheen_InventoryManagement_Android.Forms.LicenseActivationForm activationForm = new Shaheen_InventoryManagement_Android.Forms.LicenseActivationForm();
                     if (activationForm.ShowDialog() != System.Windows.Forms.DialogResult.OK)
                     {
                         // User cancelled activation - exit application
@@ -65,11 +65,11 @@ namespace InventorySystem
                 }
 
                 // Check for expiring license and show warning
-                var license = InventorySystem.Helpers.LicenseManager.GetCurrentLicense();
+                var license = Shaheen_InventoryManagement_Android.Helpers.LicenseManager.GetCurrentLicense();
                 if (license != null && license.IsExpiringSoon() && !license.IsTrial())
                 {
                     int daysLeft = license.DaysRemaining();
-                    InventorySystem.Forms.ModernMessageBox.Show(
+                    Shaheen_InventoryManagement_Android.Forms.ModernMessageBox.Show(
                         string.Format(LocalizationManager.GetString("Msg_LicExpiringSoonBody"), daysLeft),
                         LocalizationManager.GetString("Msg_LicExpiringSoon"),
                         MessageBoxButtons.OK,
@@ -81,7 +81,7 @@ namespace InventorySystem
             }
             catch (Exception ex)
             {
-                InventorySystem.Forms.ModernMessageBox.Show(
+                Shaheen_InventoryManagement_Android.Forms.ModernMessageBox.Show(
                     string.Format(LocalizationManager.GetString("Msg_CriticalError"), ex.Message) + $"\n\n{LocalizationManager.GetString("Msg_StackTrace")}\n{ex.StackTrace}",
                     LocalizationManager.GetString("Error_AppCrash"),
                     MessageBoxButtons.OK,
@@ -603,7 +603,7 @@ namespace InventorySystem
 // ============================================================
 //  SignalR Hub -- manages real-time WebSocket connections
 // ============================================================
-namespace InventorySystem
+namespace Shaheen_InventoryManagement_Android
 {
     using Microsoft.AspNetCore.SignalR;
 

@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using InventorySystem.Data;
-using InventorySystem.Controls;
-using InventorySystem.Helpers;
-using InventorySystem.Services;
+using Shaheen_InventoryManagement_Android.Data;
+using Shaheen_InventoryManagement_Android.Controls;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Services;
 
-namespace InventorySystem.Forms
+namespace Shaheen_InventoryManagement_Android.Forms
 {
     public partial class HistoryForm : UserControl
     {
@@ -55,7 +55,7 @@ namespace InventorySystem.Forms
             _historyService = new HistoryService(); // Ideally injected
             ApplyTheme();
 
-            InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
 
             // Default Tab
@@ -70,8 +70,8 @@ namespace InventorySystem.Forms
 
         private void ApplyLocalization()
         {
-            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.ApplyRTL(this);
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
 
             if (lblHistoryTitle != null) lblHistoryTitle.Text = L("Hist_Title");
 
@@ -99,7 +99,7 @@ namespace InventorySystem.Forms
 
         private void ApplyColumnHeaders()
         {
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
+            Func<string, string> L = Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.GetString;
 
             foreach (DataGridViewColumn col in dgvInventory.Columns)
             {
@@ -341,7 +341,7 @@ namespace InventorySystem.Forms
                 if (col.Name == "Status" && e.Value != null)
                 {
                     string statusStr = e.Value.ToString();
-                    if (statusStr == "Completed" && InventorySystem.Helpers.LocalizationManager.IsArabic)
+                    if (statusStr == "Completed" && Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.IsArabic)
                     {
                         e.Value = "\u0645\u0643\u062A\u0645\u0644";
                         e.FormattingApplied = true;

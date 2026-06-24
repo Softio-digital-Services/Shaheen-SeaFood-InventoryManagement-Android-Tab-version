@@ -2,10 +2,10 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
-using InventorySystem.Helpers;
-using InventorySystem.Helpers.Plugins;
+using Shaheen_InventoryManagement_Android.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers.Plugins;
 
-namespace InventorySystem.Plugins
+namespace Shaheen_InventoryManagement_Android.Plugins
 {
     /// <summary>
     /// Free built-in plugin -- adds Database Backup &amp; Restore via the sidebar.
@@ -105,23 +105,23 @@ namespace InventorySystem.Plugins
             y += 10;
 
             AddActionButton(card, ref y,
-                ar ? "فتح مجلد النسخ" : "Open Backup Folder",
+                ar ? "ÙØªØ­ Ù…Ø¬Ù„Ø¯ Ø§Ù„Ù†Ø³Ø®" : "Open Backup Folder",
                 "open_backup_folder", ThemeConfig.SecondaryColor, OpenBackupFolder);
 
             y += 10;
             AddActionButton(card, ref y,
-                ar ? "مسح ذاكرة التخزين المؤقت للصور" : "Clear Image Cache",
+                ar ? "Ù…Ø³Ø­ Ø°Ø§ÙƒØ±Ø© Ø§Ù„ØªØ®Ø²ÙŠÙ† Ø§Ù„Ù…Ø¤Ù‚Øª Ù„Ù„ØµÙˆØ±" : "Clear Image Cache",
                 "refresh", ThemeConfig.SecondaryColor, () =>
                 {
-                    InventorySystem.Helpers.CacheManager.ClearImageCache();
-                    MessageHelper.ShowSuccess(ar ? "تم مسح الذاكرة بنجاح!" : "Image cache cleared successfully!");
+                    Shaheen_InventoryManagement_Android.Helpers.CacheManager.ClearImageCache();
+                    MessageHelper.ShowSuccess(ar ? "ØªÙ… Ù…Ø³Ø­ Ø§Ù„Ø°Ø§ÙƒØ±Ø© Ø¨Ù†Ø¬Ø§Ø­!" : "Image cache cleared successfully!");
                 });
 
             if (isAdmin)
             {
                 y += 10;
                 AddActionButton(card, ref y,
-                    ar ? "إعادة ضبط قاعدة البيانات (حذف الكل)" : "Reset Database (Wipe All Data)",
+                    ar ? "Ø¥Ø¹Ø§Ø¯Ø© Ø¶Ø¨Ø· Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª (Ø­Ø°Ù Ø§Ù„ÙƒÙ„)" : "Reset Database (Wipe All Data)",
                     "delete", Color.FromArgb(231, 76, 60), DoResetDatabase);
             }
 
@@ -256,20 +256,20 @@ namespace InventorySystem.Plugins
             bool ar = LocalizationManager.IsArabic;
 
             bool confirm1 = MessageHelper.ConfirmAction(ar
-                ? "تحذير: سيتم حذف جميع البيانات (المخزون، المبيعات، العملاء)! هل أنت متأكد؟"
+                ? "ØªØ­Ø°ÙŠØ±: Ø³ÙŠØªÙ… Ø­Ø°Ù Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª (Ø§Ù„Ù…Ø®Ø²ÙˆÙ†ØŒ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§ØªØŒ Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡)! Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ØŸ"
                 : "WARNING: This will permanently delete ALL data (inventory, sales, customers)! Are you sure?");
 
             if (!confirm1) return;
 
             bool confirm2 = MessageHelper.ConfirmAction(ar
-                ? "تأكيد نهائي: لا يمكن التراجع عن هذه العملية. هل تريد مسح قاعدة البيانات حقاً؟"
+                ? "ØªØ£ÙƒÙŠØ¯ Ù†Ù‡Ø§Ø¦ÙŠ: Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø§Ù„ØªØ±Ø§Ø¬Ø¹ Ø¹Ù† Ù‡Ø°Ù‡ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©. Ù‡Ù„ ØªØ±ÙŠØ¯ Ù…Ø³Ø­ Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø­Ù‚Ø§Ù‹ØŸ"
                 : "FINAL WARNING: This cannot be undone. Are you absolutely sure you want to wipe the database?");
 
             if (!confirm2) return;
 
             if (!PromptForAdminPassword())
             {
-                MessageHelper.ShowError(ar ? "فشلت عملية التحقق من كلمة المرور." : "Password verification failed.");
+                MessageHelper.ShowError(ar ? "ÙØ´Ù„Øª Ø¹Ù…Ù„ÙŠØ© Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±." : "Password verification failed.");
                 return;
             }
 
@@ -286,10 +286,10 @@ namespace InventorySystem.Plugins
                 }
 
                 // Re-initialize
-                InventorySystem.Helpers.DatabaseInitializer.Initialize();
+                Shaheen_InventoryManagement_Android.Helpers.DatabaseInitializer.Initialize();
 
                 MessageHelper.ShowSuccess(ar
-                    ? "تم إعادة ضبط قاعدة البيانات بنجاح. يرجى إعادة تشغيل التطبيق."
+                    ? "ØªÙ… Ø¥Ø¹Ø§Ø¯Ø© Ø¶Ø¨Ø· Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø¨Ù†Ø¬Ø§Ø­. ÙŠØ±Ø¬Ù‰ Ø¥Ø¹Ø§Ø¯Ø© ØªØ´ØºÙŠÙ„ Ø§Ù„ØªØ·Ø¨ÙŠÙ‚."
                     : "Database reset successfully. Please restart the application.");
             }
             catch (Exception ex)
@@ -300,25 +300,25 @@ namespace InventorySystem.Plugins
 
         private bool PromptForAdminPassword()
         {
-            using (var prompt = new InventorySystem.Forms.BaseModalForm())
+            using (var prompt = new Shaheen_InventoryManagement_Android.Forms.BaseModalForm())
             {
                 bool ar = LocalizationManager.IsArabic;
-                prompt.TitleText = ar ? "التحقق من المسؤول" : "Admin Verification Required";
+                prompt.TitleText = ar ? "Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ù…Ø³Ø¤ÙˆÙ„" : "Admin Verification Required";
                 prompt.EnforceMinWidth = false;
                 prompt.Width = 450;
 
                 var textLabel = new Label
                 {
                     AutoSize = true,
-                    Text = ar ? "الرجاء إدخال كلمة مرور المسؤول للمتابعة:" : "Please enter your admin password to continue:",
+                    Text = ar ? "Ø§Ù„Ø±Ø¬Ø§Ø¡ Ø¥Ø¯Ø®Ø§Ù„ ÙƒÙ„Ù…Ø© Ù…Ø±ÙˆØ± Ø§Ù„Ù…Ø³Ø¤ÙˆÙ„ Ù„Ù„Ù…ØªØ§Ø¨Ø¹Ø©:" : "Please enter your admin password to continue:",
                     Font = ThemeConfig.StandardFont,
                     ForeColor = ThemeConfig.TextColorDark,
                     Location = new Point(20, 20)
                 };
 
-                var txtPassword = new InventorySystem.Controls.ModernTextBox
+                var txtPassword = new Shaheen_InventoryManagement_Android.Controls.ModernTextBox
                 {
-                    LabelText = ar ? "كلمة المرور" : "Password",
+                    LabelText = ar ? "ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±" : "Password",
                     IsPassword = true,
                     Width = 350,
                     Location = new Point(20, 60)
@@ -330,8 +330,8 @@ namespace InventorySystem.Plugins
                 bool result = false;
 
                 prompt.SetFooterButtons(
-                    ar ? "تأكيد" : "Verify",
-                    ar ? "إلغاء" : "Cancel",
+                    ar ? "ØªØ£ÙƒÙŠØ¯" : "Verify",
+                    ar ? "Ø¥Ù„ØºØ§Ø¡" : "Cancel",
                     (s, e) =>
                     {
                         string input = txtPassword.Text.Trim();

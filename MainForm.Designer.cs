@@ -1,5 +1,5 @@
-﻿
-namespace InventorySystem
+
+namespace Shaheen_InventoryManagement_Android
 {
     partial class MainForm
     {
@@ -35,7 +35,7 @@ namespace InventorySystem
             this.panel2 = new System.Windows.Forms.Panel();
             this.label4 = new System.Windows.Forms.Label();
             this.button3 = new System.Windows.Forms.Button();
-            this.Dashboard_btn = new InventorySystem.Controls.SidebarButton();
+            this.Dashboard_btn = new Shaheen_InventoryManagement_Android.Controls.SidebarButton();
             this.label1 = new System.Windows.Forms.Label();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.panel3 = new System.Windows.Forms.Panel();
@@ -224,7 +224,7 @@ namespace InventorySystem
 
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Panel panel2;
-        private InventorySystem.Controls.SidebarButton Dashboard_btn;
+        private Shaheen_InventoryManagement_Android.Controls.SidebarButton Dashboard_btn;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Button button3;

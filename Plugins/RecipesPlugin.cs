@@ -1,9 +1,9 @@
 using System;
 using System.Windows.Forms;
-using InventorySystem.Helpers.Plugins;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers.Plugins;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Plugins
+namespace Shaheen_InventoryManagement_Android.Plugins
 {
     public class RecipesPlugin : ITabPlugin
     {
@@ -37,7 +37,7 @@ namespace InventorySystem.Plugins
 
             if (allowed)
             {
-                var form = new InventorySystem.Forms.RecipesForm();
+                var form = new Shaheen_InventoryManagement_Android.Forms.RecipesForm();
                 return form;
             }
             

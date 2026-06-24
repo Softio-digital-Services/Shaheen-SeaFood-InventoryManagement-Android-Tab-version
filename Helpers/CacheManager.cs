@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
-using InventorySystem.Data;
+using Shaheen_InventoryManagement_Android.Data;
 
-namespace InventorySystem.Helpers
+namespace Shaheen_InventoryManagement_Android.Helpers
 {
     public static class CacheManager
     {

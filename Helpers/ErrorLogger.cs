@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Windows.Forms;
 
-namespace InventorySystem
+namespace Shaheen_InventoryManagement_Android
 {
     /// <summary>
     /// Centralized error logging utility

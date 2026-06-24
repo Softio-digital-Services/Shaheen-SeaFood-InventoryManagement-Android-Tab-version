@@ -3,9 +3,9 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers;
 
-namespace InventorySystem.Controls
+namespace Shaheen_InventoryManagement_Android.Controls
 {
     public class ModernNumericUpDown : UserControl
     {
@@ -172,7 +172,7 @@ namespace InventorySystem.Controls
             int labelHeight = _showLabel ? 25 : 0;
             int totalHeight = labelHeight + 35;
 
-            // Pin our own height — never let a parent stretch us beyond our natural size
+            // Pin our own height â€” never let a parent stretch us beyond our natural size
             this.Height = totalHeight;
 
             pnlContainer.Location = new Point(0, labelHeight);

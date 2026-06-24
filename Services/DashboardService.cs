@@ -1,11 +1,11 @@
 using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
-using InventorySystem.Helpers;
+using Shaheen_InventoryManagement_Android.Helpers;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace InventorySystem.Services
+namespace Shaheen_InventoryManagement_Android.Services
 {
     public class Notification
     {

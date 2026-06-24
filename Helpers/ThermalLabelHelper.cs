@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Windows.Forms;
-using InventorySystem.Services;
-using InventorySystem.Forms;
+using Shaheen_InventoryManagement_Android.Services;
+using Shaheen_InventoryManagement_Android.Forms;
 using System.IO;
 
-namespace InventorySystem.Helpers
+namespace Shaheen_InventoryManagement_Android.Helpers
 {
     public class LabelPrintItem
     {
