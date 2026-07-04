@@ -181,6 +181,126 @@ const DEFAULT_PRODUCTS = [
     { id: 10, name: 'Full Engine Service', price: 150.00, stock: 999, category: 'Services', image: '🛠️', isService: true }
 ];
 
+// Mock fetch for local browser testing/verification
+if (typeof window !== 'undefined' && !window.AndroidBridge) {
+    console.log("Mocking fetch API for offline browser testing");
+    const mockDb = {
+        products: [
+            { id: 1, name: 'Brake Pads - Front', price: 85.00, stock: 12, category: 'Brakes', image: '🛑' },
+            { id: 2, name: 'Oil Filter (Premium)', price: 15.50, stock: 4, category: 'Engine', image: '🛢️' },
+            { id: 3, name: 'Spark Plug Platinum', price: 8.99, stock: 25, category: 'Engine', image: '⚡' },
+            { id: 4, name: 'Fresh Salmon Fillet', price: 18.50, stock: 40, category: 'Seafood', image: '🐟' },
+            { id: 5, name: 'Garlic Butter', price: 4.25, stock: 15, category: 'Groceries', image: '🧈' }
+        ],
+        categories: ['Brakes', 'Engine', 'Seafood', 'Groceries'],
+        recipes: [
+            {
+                id: 1,
+                name: 'Garlic Butter Salmon',
+                description: 'Salmon fillet cooked in fresh butter sauce',
+                price: 24.99,
+                totalCost: 11.25,
+                parts: [
+                    { partId: 4, partName: 'Fresh Salmon Fillet', qty: 1.0, unitCost: 10.00 },
+                    { partId: 5, partName: 'Garlic Butter', qty: 0.5, unitCost: 2.50 }
+                ]
+            }
+        ],
+        reports: {
+            revenue: 1250.50,
+            orders: 45,
+            outOfStock: 2,
+            lowStock: 4,
+            categorySales: [
+                { category: 'Seafood', sales: 750.00 },
+                { category: 'Engine', sales: 300.00 },
+                { category: 'Brakes', sales: 200.50 }
+            ],
+            transactions: [
+                { action: 'SALE', item: 'POS Sale', desc: 'Order #101 -- Total: $24.99', user: 'Admin', time: '2026-07-02 14:15' },
+                { action: 'STOCK_ADD', item: 'Fresh Salmon Fillet', desc: 'Added via Import (Qty: 50)', user: 'Admin', time: '2026-07-02 13:00' }
+            ]
+        }
+    };
+
+    window.fetch = async (url, options = {}) => {
+        const path = url.replace(/https?:\/\/[^\/]+/, '').replace(/^\//, '');
+        console.log("Mock Fetch Request:", path, options);
+        
+        let responseData = {};
+        let status = 200;
+
+        if (path === 'api/config') {
+            responseData = { language: 'en', isArabic: false, primaryColor: '#0ea5e9', primaryRgb: '14, 165, 233' };
+        } else if (path === 'api/login') {
+            responseData = { username: 'Softio.Admin', fullName: 'Softio Admin' };
+        } else if (path === 'api/products') {
+            responseData = mockDb.products;
+        } else if (path === 'api/categories') {
+            responseData = mockDb.categories;
+        } else if (path === 'api/currencies') {
+            responseData = [{ code: 'USD', symbol: '$', rate: 1 }];
+        } else if (path === 'api/recipes') {
+            if (options.method === 'POST') {
+                const body = JSON.parse(options.body);
+                if (body.id) {
+                    const r = mockDb.recipes.find(x => x.id === parseInt(body.id));
+                    if (r) Object.assign(r, body);
+                } else {
+                    body.id = mockDb.recipes.length + 1;
+                    mockDb.recipes.push(body);
+                }
+            }
+            responseData = mockDb.recipes;
+        } else if (path.startsWith('api/recipes/') && options.method === 'DELETE') {
+            const id = parseInt(path.split('/').pop());
+            mockDb.recipes = mockDb.recipes.filter(r => r.id !== id);
+            responseData = { success: true };
+        } else if (path.startsWith('api/products/') && options.method === 'DELETE') {
+            const id = parseInt(path.split('/').pop());
+            mockDb.products = mockDb.products.filter(p => p.id !== id);
+            responseData = { success: true };
+        } else if (path === 'api/add-item') {
+            const body = JSON.parse(options.body);
+            if (body.id) {
+                const p = mockDb.products.find(x => x.id === parseInt(body.id));
+                if (p) Object.assign(p, body);
+            } else {
+                body.id = mockDb.products.length + 1;
+                mockDb.products.push(body);
+            }
+            responseData = { success: true };
+        } else if (path === 'api/checkout') {
+            responseData = { success: true, orderId: 102, total: 45.00 };
+        } else if (path === 'api/import-items') {
+            const body = JSON.parse(options.body);
+            body.items.forEach((item, idx) => {
+                mockDb.products.push({
+                    id: mockDb.products.length + 1,
+                    name: item.name,
+                    price: item.price,
+                    stock: item.stock,
+                    category: item.category,
+                    barcode: item.barcode,
+                    sku: item.sku
+                });
+            });
+            responseData = { success: true, imported: body.items.length, skipped: 0 };
+        } else if (path === 'api/export-csv') {
+            responseData = { success: true, path: 'Downloads/mock_export.csv' };
+        } else if (path === 'api/reports') {
+            responseData = mockDb.reports;
+        }
+
+        return {
+            ok: status >= 200 && status < 300,
+            status: status,
+            json: async () => responseData,
+            text: async () => JSON.stringify(responseData)
+        };
+    };
+}
+
 let allProducts = [...DEFAULT_PRODUCTS];
 let cart = [];
 let currentCategory = 'All';
@@ -190,6 +310,18 @@ const API_BASE = '';
 
 // CORE INITIALIZATION
 document.addEventListener('DOMContentLoaded', async () => {
+    // Layout Mode Detection for Mobile & Android devices
+    const checkLayoutMode = () => {
+        const isMobile = window.innerWidth <= 1024 || !!window.AndroidBridge;
+        if (isMobile) {
+            document.body.classList.add('is-mobile-layout');
+        } else {
+            document.body.classList.remove('is-mobile-layout');
+        }
+    };
+    checkLayoutMode();
+    window.addEventListener('resize', checkLayoutMode);
+
     // 0. Fetch backend language config immediately to sync web portal language with desktop app natively before UI renders
     await fetchLanguageConfig();
     applyLanguage();
@@ -333,12 +465,15 @@ async function fetchLanguageConfig() {
     } catch (e) { console.error("Language config fetch failed", e); }
 }
 
+let allRecipes = [];
+
 async function initApp() {
     try {
         await fetchLanguageConfig();
         await fetchInventory();
         await fetchCategories();
         await fetchCurrencies();
+        await fetchRecipes();
         checkLowStockAlerts();
     } catch (e) {
         console.error("Init failed", e);
@@ -403,7 +538,7 @@ function renderCategories(apiCategories = null) {
         masterCategories = apiCategories;
     }
 
-    const categories = ['All', ...masterCategories];
+    const categories = ['All', ...masterCategories, 'Recipes'];
     container.innerHTML = '';
     
     // Sync the Add Item modal category dropdown
@@ -437,6 +572,28 @@ function renderProducts() {
     grid.innerHTML = '';
 
     const query = document.getElementById('searchInput')?.value.toLowerCase() || '';
+
+    if (currentCategory === 'Recipes') {
+        const filtered = allRecipes.filter(r => {
+            return !query || (r.name && r.name.toLowerCase().includes(query));
+        });
+
+        filtered.forEach(r => {
+            const card = document.createElement('div');
+            card.className = 'product-card recipe-product-card';
+            card.onclick = () => addRecipeToCart(r);
+            card.innerHTML = `
+                <div class="product-img"><span class="emoji-icon">🍲</span></div>
+                <div class="product-info">
+                    <div class="product-name">${r.name}</div>
+                    <div class="product-price">${formatPrice(r.price)}</div>
+                    <div class="product-stock" style="color:var(--accent);">Recipe</div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+        return;
+    }
 
     const filtered = allProducts.filter(p => {
         const matchesCategory = currentCategory === 'All' || p.category === currentCategory;
@@ -537,11 +694,29 @@ function addToCart(product) {
         showToast("Out of stock!", "warn");
         return;
     }
-    const existing = cart.find(item => item.id === product.id);
+    const existing = cart.find(item => item.id === product.id && item.itemType === 'Part');
     if (existing) {
         existing.quantity++;
     } else {
-        cart.push({ ...product, quantity: 1 });
+        cart.push({ ...product, quantity: 1, itemType: 'Part' });
+    }
+    updateCartUI();
+}
+
+function addRecipeToCart(recipe) {
+    const existing = cart.find(item => item.id === recipe.id && item.itemType === 'Recipe');
+    if (existing) {
+        existing.quantity++;
+    } else {
+        cart.push({
+            id: recipe.id,
+            name: recipe.name,
+            price: recipe.price,
+            quantity: 1,
+            itemType: 'Recipe',
+            recipeId: recipe.id,
+            image: '🍲'
+        });
     }
     updateCartUI();
 }
@@ -563,9 +738,9 @@ function updateCartUI() {
                 <div class="cart-item-price">${formatPrice(item.price)}</div>
             </div>
             <div class="qty-controls">
-                <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
+                <button class="qty-btn" onclick="changeQty(${item.id}, -1, '${item.itemType || 'Part'}')">-</button>
                 <div class="qty-val">${item.quantity}</div>
-                <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+                <button class="qty-btn" onclick="changeQty(${item.id}, 1, '${item.itemType || 'Part'}')">+</button>
             </div>
             <div class="cart-item-total">${formatPrice(total)}</div>
         `;
@@ -577,19 +752,40 @@ function updateCartUI() {
     document.getElementById('subTotal').innerText = formatPrice(subtotal);
     document.getElementById('taxTotal').innerText = formatPrice(tax);
     document.getElementById('grandTotal').innerText = formatPrice(subtotal + tax);
+
+    // Update floating cart badge count
+    const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const floatCount = document.getElementById('cartFloatingCount');
+    if (floatCount) {
+        floatCount.innerText = totalQty;
+        const btn = document.getElementById('floatingCartBtn');
+        if (btn) {
+            if (totalQty > 0) {
+                btn.classList.add('visible');
+            } else {
+                btn.classList.remove('visible');
+                const sidebar = document.querySelector('.cart-sidebar');
+                if (sidebar && sidebar.classList.contains('open')) {
+                    toggleCartDrawer();
+                }
+            }
+        }
+    }
 }
 
-function changeQty(id, delta) {
-    const item = cart.find(x => x.id === id);
+function changeQty(id, delta, itemType = 'Part') {
+    const item = cart.find(x => x.id === id && x.itemType === itemType);
     if (!item) return;
 
     if (item.quantity + delta <= 0) {
-        cart = cart.filter(x => x.id !== id);
+        cart = cart.filter(x => !(x.id === id && x.itemType === itemType));
     } else {
-        const product = allProducts.find(p => p.id === id);
-        if (delta > 0 && product && item.quantity >= product.stock && !product.isService) {
-            showToast("No more stock available", "warn");
-            return;
+        if (itemType === 'Part') {
+            const product = allProducts.find(p => p.id === id);
+            if (delta > 0 && product && item.quantity >= product.stock && !product.isService) {
+                showToast("No more stock available", "warn");
+                return;
+            }
         }
         item.quantity += delta;
     }
@@ -602,20 +798,31 @@ async function processCheckout() {
     if (cart.length === 0) return;
     
     try {
+        const payloadItems = cart.map(i => ({
+            id: i.itemType === 'Recipe' ? 0 : i.id,
+            name: i.name,
+            qty: i.quantity,
+            price: i.price,
+            itemType: i.itemType || 'Part',
+            recipeId: i.itemType === 'Recipe' ? i.id : null
+        }));
+
         const res = await fetch(`${API_BASE}/api/checkout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: cart.map(i => ({ id: i.id, qty: i.quantity, price: i.price })) })
+            body: JSON.stringify({ items: payloadItems })
         });
 
         if (res.ok) {
             cart = [];
             updateCartUI();
             await fetchInventory();
+            await fetchRecipes();
             renderProducts();
             showToast("Transaction Complete!", "success");
         } else {
-            showToast("Checkout failed", "error");
+            const err = await res.json();
+            showToast(err.error || "Checkout failed", "error");
         }
     } catch (err) {
         showToast("Connection error", "error");
@@ -1048,3 +1255,552 @@ async function processReturn() {
         }
     } catch (e) { showToast("Connection error", "error"); }
 }
+
+// ─── TAB ROUTING SYSTEM ───────────────────────────────────────────────
+function switchTab(tabId) {
+    const searchBar = document.getElementById('topSearchBar');
+    const btnOpenAdd = document.getElementById('btnOpenAddModal');
+
+    if (searchBar) {
+        if (tabId === 'pos') searchBar.style.display = 'flex';
+        else searchBar.style.display = 'none';
+    }
+    if (btnOpenAdd) {
+        if (tabId === 'pos') btnOpenAdd.style.display = 'block';
+        else btnOpenAdd.style.display = 'none';
+    }
+
+    document.querySelectorAll('.tab-content-panel').forEach(panel => {
+        panel.classList.add('hidden');
+        panel.classList.remove('active-panel');
+    });
+
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    let panelId = 'tabContentPos';
+    let btnId = 'tabBtnPos';
+
+    if (tabId === 'pos') { panelId = 'tabContentPos'; btnId = 'tabBtnPos'; renderProducts(); }
+    else if (tabId === 'inventory') { panelId = 'tabContentInventory'; btnId = 'tabBtnInventory'; loadInventoryTable(); }
+    else if (tabId === 'recipes') { panelId = 'tabContentRecipes'; btnId = 'tabBtnRecipes'; loadRecipesTab(); }
+    else if (tabId === 'import') { panelId = 'tabContentImport'; btnId = 'tabBtnImport'; }
+    else if (tabId === 'reports') { panelId = 'tabContentReports'; btnId = 'tabBtnReports'; loadReportsData(); }
+
+    const activePanel = document.getElementById(panelId);
+    if (activePanel) {
+        activePanel.classList.remove('hidden');
+        activePanel.classList.add('active-panel');
+    }
+
+    const activeBtn = document.getElementById(btnId);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+}
+
+// ─── INVENTORY MANAGEMENT ─────────────────────────────────────────────
+function loadInventoryTable() {
+    const tbody = document.getElementById('inventoryTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    allProducts.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--border)';
+        tr.innerHTML = `
+            <td class="col-name" style="padding:12px; font-weight:600; color:var(--text-main);">${p.name}</td>
+            <td class="col-category" style="padding:12px; color:var(--text-muted);">${p.category || 'General'}</td>
+            <td class="col-sku" style="padding:12px; font-family:monospace; color:var(--text-main);">${p.barcode || p.sku || '-'}</td>
+            <td class="col-price" style="padding:12px; text-align:right; font-weight:600; color:var(--accent);">${formatPrice(p.price)}</td>
+            <td class="col-stock" style="padding:12px; text-align:right; font-weight:700; color:${p.stock <= 0 ? 'var(--danger)' : p.stock < 5 ? 'var(--warn)' : 'var(--text-main)'}">${p.stock}</td>
+            <td class="col-min" style="padding:12px; text-align:right; color:var(--text-muted);">${p.minStock || 5}</td>
+            <td class="col-actions" style="padding:12px; text-align:center;">
+                <button class="btn-clear" onclick="openEditModal(${p.id})" style="padding:6px 12px; font-size:0.8rem; margin-right:5px; border:1.5px solid var(--accent); color:var(--accent); border-radius:6px; font-weight:600; background:none;">Edit</button>
+                <button class="btn-clear" onclick="deleteIngredient(${p.id})" style="padding:6px 12px; font-size:0.8rem; color:var(--danger); border:1.5px solid var(--danger); border-radius:6px; font-weight:600; background:none;">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function openAddModalDirect() {
+    document.getElementById('modalTitle').innerText = t('modal_add_title');
+    document.getElementById('btnSubmitItem').innerText = t('modal_add_btn');
+    document.getElementById('editItemId').value = '';
+    document.getElementById('newItemName').value = '';
+    document.getElementById('newItemPrice').value = '';
+    document.getElementById('newItemStock').value = '';
+    document.getElementById('newItemBarcode').value = '';
+    document.getElementById('addItemModal').classList.remove('hidden');
+}
+
+function showDeleteConfirm(title, message, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.style.zIndex = '99999';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.background = 'rgba(0, 0, 0, 0.4)';
+    overlay.style.backdropFilter = 'blur(4px)';
+
+    const card = document.createElement('div');
+    card.className = 'scanner-card';
+    card.style.maxWidth = '360px';
+    card.style.padding = '24px';
+    card.style.borderRadius = '16px';
+    card.style.background = 'var(--bg-secondary)';
+    card.style.border = '1px solid var(--border-color)';
+    card.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
+    card.style.textAlign = 'center';
+
+    card.innerHTML = `
+        <h3 style="margin-top:0; color:var(--text-main); font-size:1.2rem; font-weight:800;">${title}</h3>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin:16px 0 24px 0; line-height:1.5;">${message}</p>
+        <div style="display:flex; gap:12px; justify-content:center;">
+            <button class="btn-clear" id="confirmCancelBtn" style="flex:1; height:40px; border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; font-weight:600; cursor:pointer;">Cancel</button>
+            <button class="btn-primary" id="confirmOkBtn" style="flex:1; height:40px; background:var(--danger) !important; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Delete</button>
+        </div>
+    `;
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const closeConfirm = () => {
+        document.body.removeChild(overlay);
+    };
+
+    overlay.querySelector('#confirmCancelBtn').onclick = closeConfirm;
+    overlay.querySelector('#confirmOkBtn').onclick = () => {
+        closeConfirm();
+        onConfirm();
+    };
+}
+
+function deleteIngredient(id) {
+    showDeleteConfirm(
+        "Delete Ingredient",
+        "Are you sure you want to delete this ingredient?",
+        async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/products/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast("Ingredient deleted successfully", "success");
+                    await initApp();
+                    loadInventoryTable();
+                } else {
+                    showToast("Failed to delete ingredient", "error");
+                }
+            } catch (e) { showToast("Connection error", "error"); }
+        }
+    );
+}
+
+// ─── RECIPES MANAGEMENT ───────────────────────────────────────────────
+async function fetchRecipes() {
+    try {
+        const res = await fetch(`${API_BASE}/api/recipes`);
+        if (res.ok) {
+            allRecipes = await res.json();
+        }
+    } catch (e) { console.error("Fetch recipes failed", e); }
+}
+
+function loadRecipesTab() {
+    const grid = document.getElementById('recipesGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    allRecipes.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'glass-card';
+        card.style.padding = '20px';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+        card.style.justifyContent = 'space-between';
+        
+        let componentsText = r.parts && r.parts.length > 0
+            ? r.parts.map(p => `${p.qty}x ${p.partName}`).join(', ')
+            : 'No ingredients set';
+        if (componentsText.length > 60) componentsText = componentsText.substring(0, 57) + '...';
+
+        card.innerHTML = `
+            <div>
+                <h3 style="margin-top:0; color:white;">${r.name}</h3>
+                <p style="color:var(--text-muted); font-size:0.85rem; min-height:36px; margin:8px 0;">${r.description || 'No description'}</p>
+                <div style="font-size:0.8rem; margin:10px 0; background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:6px;">
+                    <b style="color:var(--text-muted);">Ingredients:</b> <span style="color:white;">${componentsText}</span>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:15px; margin-top:15px;">
+                <div>
+                    <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Selling Price</span>
+                    <div style="font-size:1.2rem; font-weight:800; color:var(--accent);">${formatPrice(r.price)}</div>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn-clear" onclick="editRecipe(${r.id})" style="padding:6px 12px; font-size:0.8rem; border:1px solid var(--border); color:white; border-radius:6px;">Edit</button>
+                    <button class="btn-clear" onclick="deleteRecipe(${r.id})" style="padding:6px 12px; font-size:0.8rem; color:var(--danger); border:1px solid var(--danger); border-radius:6px;">Delete</button>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function openNewRecipeModal() {
+    document.getElementById('recipeModalTitle').innerText = "Create New Recipe";
+    document.getElementById('editRecipeId').value = '';
+    document.getElementById('recipeName').value = '';
+    document.getElementById('recipeDesc').value = '';
+    document.getElementById('recipePrice').value = '';
+    document.getElementById('recipeIngredientsList').innerHTML = '';
+    addRecipeIngredientRow();
+    document.getElementById('recipeModal').classList.remove('hidden');
+}
+
+function closeRecipeModal() {
+    document.getElementById('recipeModal').classList.add('hidden');
+}
+
+function addRecipeIngredientRow(selectedPartId = '', qty = 1) {
+    const list = document.getElementById('recipeIngredientsList');
+    if (!list) return;
+
+    const row = document.createElement('div');
+    row.className = 'recipe-ingredient-row';
+    row.style.display = 'grid';
+    row.style.gridTemplateColumns = '1fr 80px 40px';
+    row.style.gap = '10px';
+    row.style.alignItems = 'center';
+
+    let options = allProducts.map(p => `<option value="${p.id}" ${p.id == selectedPartId ? 'selected' : ''}>${p.name}</option>`).join('');
+
+    row.innerHTML = `
+        <select class="ingredient-select" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:1px solid var(--border); padding:8px; border-radius:6px;">
+            <option value="">-- Choose Ingredient --</option>
+            ${options}
+        </select>
+        <input type="number" class="ingredient-qty" placeholder="Qty" value="${qty}" min="0.1" step="0.1" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:1px solid var(--border); padding:8px; border-radius:6px; text-align:center;">
+        <button onclick="removeRecipeIngredientRow(this)" style="background:none; border:none; color:var(--danger); font-size:1.3rem; cursor:pointer;">&times;</button>
+    `;
+    list.appendChild(row);
+}
+
+function removeRecipeIngredientRow(btn) {
+    const row = btn.parentElement;
+    row.remove();
+}
+
+async function saveRecipe() {
+    const id = document.getElementById('editRecipeId').value;
+    const name = document.getElementById('recipeName').value;
+    const desc = document.getElementById('recipeDesc').value;
+    const price = parseFloat(document.getElementById('recipePrice').value);
+
+    if (!name || isNaN(price)) {
+        showToast("Please fill Recipe Name and Selling Price", "error");
+        return;
+    }
+
+    const ingredientRows = document.querySelectorAll('.recipe-ingredient-row');
+    const ingredients = [];
+    ingredientRows.forEach(row => {
+        const partId = row.querySelector('.ingredient-select').value;
+        const qty = parseFloat(row.querySelector('.ingredient-qty').value);
+        if (partId && qty > 0) {
+            ingredients.push({ partId: parseInt(partId), qty });
+        }
+    });
+
+    if (ingredients.length === 0) {
+        showToast("Add at least one valid ingredient", "error");
+        return;
+    }
+
+    const payload = { id: id ? parseInt(id) : null, name, description: desc, price, ingredients };
+
+    try {
+        const res = await fetch(`${API_BASE}/api/recipes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            showToast(id ? "Recipe updated!" : "Recipe created!", "success");
+            closeRecipeModal();
+            await fetchRecipes();
+            loadRecipesTab();
+        } else {
+            showToast("Failed to save recipe", "error");
+        }
+    } catch (e) { showToast("Connection error", "error"); }
+}
+
+function deleteRecipe(id) {
+    showDeleteConfirm(
+        "Delete Recipe",
+        "Are you sure you want to delete this recipe? Components will remain in inventory.",
+        async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/recipes/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast("Recipe deleted successfully", "success");
+                    await fetchRecipes();
+                    loadRecipesTab();
+                } else {
+                    showToast("Failed to delete recipe", "error");
+                }
+            } catch (e) { showToast("Connection error", "error"); }
+        }
+    );
+}
+
+function editRecipe(id) {
+    const r = allRecipes.find(x => x.id === id);
+    if (!r) return;
+
+    document.getElementById('recipeModalTitle').innerText = "Edit Recipe";
+    document.getElementById('editRecipeId').value = r.id;
+    document.getElementById('recipeName').value = r.name;
+    document.getElementById('recipeDesc').value = r.description || '';
+    document.getElementById('recipePrice').value = r.price;
+
+    const list = document.getElementById('recipeIngredientsList');
+    list.innerHTML = '';
+    if (r.parts && r.parts.length > 0) {
+        r.parts.forEach(p => {
+            addRecipeIngredientRow(p.partId, p.qty);
+        });
+    } else {
+        addRecipeIngredientRow();
+    }
+    document.getElementById('recipeModal').classList.remove('hidden');
+}
+
+// ─── CSV FILE IMPORT / EXPORT ────────────────────────────────────────
+let pendingImportItems = [];
+
+function handleImportFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const content = evt.target.result;
+        parseImportFile(content, file.name.endsWith('.tsv') || file.name.endsWith('.xls') || content.includes('\t'));
+    };
+    reader.readAsText(file);
+}
+
+function parseImportFile(text, isTsv) {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length <= 1) {
+        showToast("Import file is empty", "warn");
+        return;
+    }
+
+    const separator = isTsv ? '\t' : ',';
+    const headers = lines[0].split(separator).map(h => h.replace(/"/g, '').trim());
+    
+    // Auto-detect schema
+    const nameIdx = headers.findIndex(h => h.toLowerCase().includes('name'));
+    const catIdx = headers.findIndex(h => h.toLowerCase().includes('category'));
+    const priceIdx = headers.findIndex(h => h.toLowerCase().includes('price') || h.toLowerCase().includes('unitprice'));
+    const stockIdx = headers.findIndex(h => h.toLowerCase().includes('stock') || h.toLowerCase().includes('qty') || h.toLowerCase().includes('quantity'));
+    const barcodeIdx = headers.findIndex(h => h.toLowerCase().includes('barcode'));
+    const skuIdx = headers.findIndex(h => h.toLowerCase().includes('sku') || h.toLowerCase().includes('partnumber'));
+    const descIdx = headers.findIndex(h => h.toLowerCase().includes('desc'));
+
+    if (nameIdx === -1) {
+        showToast("Invalid file format. 'Name' column is required.", "error");
+        return;
+    }
+
+    pendingImportItems = [];
+    for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(separator).map(c => c.replace(/"/g, '').trim());
+        if (cols.length < headers.length) continue;
+
+        pendingImportItems.push({
+            name: cols[nameIdx] || '',
+            category: catIdx !== -1 ? cols[catIdx] : 'General',
+            price: priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0.00 : 0.00,
+            stock: stockIdx !== -1 ? parseInt(cols[stockIdx]) || 0 : 0,
+            barcode: barcodeIdx !== -1 ? cols[barcodeIdx] : '',
+            sku: skuIdx !== -1 ? cols[skuIdx] : '',
+            description: descIdx !== -1 ? cols[descIdx] : ''
+        });
+    }
+
+    // Show preview
+    document.getElementById('importPreviewCount').innerText = pendingImportItems.length;
+    const previewList = document.getElementById('importPreviewList');
+    previewList.innerHTML = pendingImportItems.map(item => `
+        <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:10px;">
+            <b style="color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</b>
+            <span style="color:var(--text-muted);">${item.category}</span>
+            <span style="color:var(--accent); text-align:right;">$${item.price.toFixed(2)}</span>
+            <span style="color:white; text-align:right;">Qty: ${item.stock}</span>
+        </div>
+    `).join('');
+
+    document.getElementById('importPreviewArea').classList.remove('hidden');
+    showToast(`Parsed ${pendingImportItems.length} items from file`, "info");
+}
+
+function clearImportPreview() {
+    pendingImportItems = [];
+    document.getElementById('importFile').value = '';
+    document.getElementById('importPreviewArea').classList.add('hidden');
+    document.getElementById('importPreviewList').innerHTML = '';
+}
+
+async function confirmImport() {
+    if (pendingImportItems.length === 0) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/import-items`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: pendingImportItems })
+        });
+        if (res.ok) {
+            const result = await res.json();
+            showToast(`Import Success! Imported: ${result.imported}, Skipped: ${result.skipped}`, "success");
+            clearImportPreview();
+            await initApp();
+        } else {
+            showToast("Failed to process import on server", "error");
+        }
+    } catch (e) { showToast("Connection error", "error"); }
+}
+
+async function exportInventoryToCsv() {
+    try {
+        // Construct CSV Content
+        const headers = ["part_name", "category_name", "selling_price", "purchase_price", "quantity_in_stock", "minimum_stock_level", "barcode", "part_number", "description"];
+        const rows = allProducts.map(p => [
+            `"${p.name.replace(/"/g, '""')}"`,
+            `"${(p.category || 'General').replace(/"/g, '""')}"`,
+            p.price.toFixed(2),
+            (p.price * 0.7).toFixed(2), // mock purchase price
+            p.stock,
+            p.minStock || 5,
+            `"${(p.barcode || '').replace(/"/g, '""')}"`,
+            `"${(p.sku || '').replace(/"/g, '""')}"`,
+            `"${(p.description || '').replace(/"/g, '""')}"`
+        ]);
+
+        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const filename = `inventory_${new Date().toISOString().slice(0,10)}.csv`;
+
+        const res = await fetch(`${API_BASE}/api/export-csv`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename, csvContent })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            showToast(`Exported CSV successfully to ${data.path}!`, "success");
+        } else {
+            showToast("Export failed on device", "error");
+        }
+    } catch (e) { showToast("Connection error during export", "error"); }
+}
+
+function downloadCsvTemplate() {
+    const csvContent = "part_name,category_name,selling_price,quantity_in_stock,barcode,part_number,description\nSalmon Fillet,Seafood,15.99,100,72901234567,SF-100,Fresh pink salmon fillet\nTiger Prawns,Seafood,24.50,50,72909876543,TP-200,Frozen tiger prawns large\n";
+    
+    // In WebView, trigger download by writing to Downloads folder
+    fetch(`${API_BASE}/api/export-csv`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: "Import_Template.csv", csvContent })
+    })
+    .then(res => {
+        if (res.ok) showToast("Template downloaded to Downloads folder", "success");
+        else showToast("Failed to download template", "error");
+    })
+    .catch(() => showToast("Connection error", "error"));
+}
+
+// ─── REPORTS & ANALYTICS ──────────────────────────────────────────────
+async function loadReportsData() {
+    try {
+        const res = await fetch(`${API_BASE}/api/reports`);
+        if (res.ok) {
+            const data = await res.json();
+            
+            // Populate KPIs
+            document.getElementById('kpiRevenue').innerText = formatPrice(data.revenue || 0);
+            document.getElementById('kpiOrders').innerText = data.orders || 0;
+            document.getElementById('kpiOutOfStock').innerText = data.outOfStock || 0;
+            document.getElementById('kpiLowStock').innerText = data.lowStock || 0;
+
+            // Render category sales list
+            const catList = document.getElementById('categorySalesList');
+            if (catList) {
+                catList.innerHTML = '';
+                if (data.categorySales && data.categorySales.length > 0) {
+                    const maxSales = Math.max(...data.categorySales.map(c => c.sales)) || 1;
+                    
+                    data.categorySales.forEach(c => {
+                        const pct = (c.sales / maxSales) * 100;
+                        const row = document.createElement('div');
+                        row.className = 'report-bar-row';
+                        row.innerHTML = `
+                            <div class="report-bar-label">
+                                <span style="font-weight:600; color:white;">${c.category}</span>
+                                <span style="color:var(--accent); font-weight:700;">${formatPrice(c.sales)}</span>
+                            </div>
+                            <div class="report-bar-outer">
+                                <div class="report-bar-inner" style="width: ${pct}%;"></div>
+                            </div>
+                        `;
+                        catList.appendChild(row);
+                    });
+                } else {
+                    catList.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; text-align:center; padding:20px;">No sales data available.</div>';
+                }
+            }
+
+            // Render activity logs
+            const logList = document.getElementById('activityLogsList');
+            if (logList) {
+                logList.innerHTML = '';
+                if (data.transactions && data.transactions.length > 0) {
+                    data.transactions.forEach(t => {
+                        const div = document.createElement('div');
+                        div.className = `activity-log-item ${t.action.toLowerCase()}`;
+                        div.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; font-weight:700; color:white;">
+                                <span>${t.action}: ${t.item}</span>
+                                <span style="font-size:0.75rem; color:var(--text-muted);">${t.user}</span>
+                            </div>
+                            <div style="color:var(--text-muted); margin-top:4px;">${t.desc}</div>
+                            <div class="activity-time">${t.time}</div>
+                        `;
+                        logList.appendChild(div);
+                    });
+                } else {
+                    logList.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; text-align:center; padding:20px;">No recent activities found.</div>';
+                }
+            }
+        }
+    } catch (e) { console.error("Failed to load reports", e); }
+}
+
+
+window.toggleCartDrawer = function() {
+    const sidebar = document.querySelector('.cart-sidebar');
+    const closeBtn = document.querySelector('.cart-close-btn');
+    if (sidebar) {
+        const isOpen = sidebar.classList.toggle('open');
+        if (closeBtn) {
+            closeBtn.style.display = isOpen ? 'block' : 'none';
+        }
+    }
+};

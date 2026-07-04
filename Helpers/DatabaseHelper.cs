@@ -301,7 +301,27 @@ namespace Shaheen_InventoryManagement_Android
                         order_id        INTEGER,
                         part_id         INTEGER,
                         quantity        INTEGER,
-                        price           REAL
+                        price           REAL,
+                        item_type       TEXT DEFAULT 'Part',
+                        recipe_id       INTEGER
+                    );
+
+                    CREATE TABLE IF NOT EXISTS recipes (
+                        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                        recipe_name     TEXT NOT NULL UNIQUE,
+                        description     TEXT,
+                        selling_price   REAL DEFAULT 0,
+                        status          TEXT DEFAULT 'Active',
+                        date_added      TEXT DEFAULT (datetime('now')),
+                        date_deleted    TEXT,
+                        recipe_image    TEXT
+                    );
+
+                    CREATE TABLE IF NOT EXISTS recipe_parts (
+                        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                        recipe_id       INTEGER NOT NULL,
+                        part_id         INTEGER NOT NULL,
+                        quantity        REAL DEFAULT 1
                     );
 
                     CREATE TABLE IF NOT EXISTS payments (
@@ -401,6 +421,10 @@ namespace Shaheen_InventoryManagement_Android
                 if (!ColumnExists("orders", "shipping_address")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN shipping_address TEXT;");
                 if (!ColumnExists("orders", "delivery_date")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN delivery_date TEXT;");
                 if (!ColumnExists("orders", "due_date")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN due_date TEXT;");
+
+                // Add recipe fields to order_items if missing
+                if (!ColumnExists("order_items", "item_type")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN item_type TEXT DEFAULT 'Part';");
+                if (!ColumnExists("order_items", "recipe_id")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN recipe_id INTEGER;");
             }
             catch (Exception ex)
             {

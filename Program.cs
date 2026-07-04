@@ -52,31 +52,6 @@ namespace Shaheen_InventoryManagement_Android
                 // Initialize currency tables and load cached rates
                 Shaheen_InventoryManagement_Android.Services.CurrencyService.EnsureTable();
 
-                // Check License
-                if (!Shaheen_InventoryManagement_Android.Helpers.LicenseManager.HasValidLicense())
-                {
-                    // Show activation form
-                    Shaheen_InventoryManagement_Android.Forms.LicenseActivationForm activationForm = new Shaheen_InventoryManagement_Android.Forms.LicenseActivationForm();
-                    if (activationForm.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-                    {
-                        // User cancelled activation - exit application
-                        return;
-                    }
-                }
-
-                // Check for expiring license and show warning
-                var license = Shaheen_InventoryManagement_Android.Helpers.LicenseManager.GetCurrentLicense();
-                if (license != null && license.IsExpiringSoon() && !license.IsTrial())
-                {
-                    int daysLeft = license.DaysRemaining();
-                    Shaheen_InventoryManagement_Android.Forms.ModernMessageBox.Show(
-                        string.Format(LocalizationManager.GetString("Msg_LicExpiringSoonBody"), daysLeft),
-                        LocalizationManager.GetString("Msg_LicExpiringSoon"),
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning
-                    );
-                }
-
                 Application.Run(new LoginForm());
             }
             catch (Exception ex)
@@ -182,6 +157,7 @@ namespace Shaheen_InventoryManagement_Android
                         var dt = DatabaseHelper.ExecuteDataTable(
                             @"SELECT p.id, p.part_name, p.selling_price, p.quantity_in_stock,
                                      p.minimum_stock_level, p.barcode, p.part_number, p.part_image,
+                                     p.description,
                                      COALESCE(c.category_name, 'General') AS category,
                                      c.category_image
                               FROM parts p
@@ -256,7 +232,8 @@ namespace Shaheen_InventoryManagement_Android
                                 category = category,
                                 image = partImage,
                                 categoryImage = catImage,
-                                isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase)
+                                isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase),
+                                description = row["description"].ToString()
                             });
                         }
 
@@ -265,6 +242,30 @@ namespace Shaheen_InventoryManagement_Android
                     catch (Exception ex)
                     {
                         return Microsoft.AspNetCore.Http.Results.Problem("DB error: " + ex.Message);
+                    }
+                });
+
+                // - Delete Product (DELETE) -
+                app.MapDelete("/api/products/{id}", (int id) =>
+                {
+                    try
+                    {
+                        string partName = DatabaseHelper.ExecuteScalar<string>("SELECT part_name FROM parts WHERE id = @id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id)) ?? "N/A";
+                        
+                        DatabaseHelper.ExecuteNonQuery("UPDATE parts SET date_deleted = datetime('now') WHERE id = @id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+                        
+                        DatabaseHelper.LogTransaction("DELETE", partName, $"Deleted Part: {partName} (ID: {id}) via WebPOS");
+                        
+                        // - Broadcast real-time update to all connected clients -
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{partName}' deleted via Web POS");
+                        
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem("Failed to delete item: " + ex.Message);
                     }
                 });
 

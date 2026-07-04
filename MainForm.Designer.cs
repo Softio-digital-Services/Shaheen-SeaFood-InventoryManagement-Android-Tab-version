@@ -51,13 +51,6 @@ namespace Shaheen_InventoryManagement_Android
             this.panel1.BackColor = System.Drawing.Color.White;
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel1.Controls.Add(this.label2);
-            this.btnLock = new System.Windows.Forms.PictureBox();
-            this.btnLock.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            this.btnLock.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnLock.Location = new System.Drawing.Point(970, 0); 
-            this.btnLock.Size = new System.Drawing.Size(40, 25);
-            this.btnLock.BackColor = System.Drawing.Color.Transparent;
-            this.panel1.Controls.Add(this.btnLock);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
@@ -73,15 +66,10 @@ namespace Shaheen_InventoryManagement_Android
             // 
             this.menuUser = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.itemCurrentUser = new System.Windows.Forms.ToolStripMenuItem();
-            this.itemAddUser = new System.Windows.Forms.ToolStripMenuItem();
-            this.itemLicenseInfo = new System.Windows.Forms.ToolStripMenuItem();
             this.itemLogout = new System.Windows.Forms.ToolStripMenuItem();
             
             this.menuUser.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.itemCurrentUser,
-            new System.Windows.Forms.ToolStripSeparator(),
-            this.itemAddUser,
-            this.itemLicenseInfo,
             new System.Windows.Forms.ToolStripSeparator(),
             this.itemLogout});
             this.menuUser.Name = "menuUser";
@@ -91,12 +79,6 @@ namespace Shaheen_InventoryManagement_Android
             this.itemCurrentUser.Enabled = false;
             this.itemCurrentUser.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.itemCurrentUser.Text = "User: Admin";
-            
-            // itemAddUser
-            this.itemAddUser.Text = "Add New User";
-            
-            // itemLicenseInfo
-            this.itemLicenseInfo.Text = "License Info";
             
             // itemLogout
             this.itemLogout.Text = "Logout";
@@ -235,9 +217,6 @@ namespace Shaheen_InventoryManagement_Android
 
         private System.Windows.Forms.ContextMenuStrip menuUser;
         private System.Windows.Forms.ToolStripMenuItem itemCurrentUser;
-        private System.Windows.Forms.ToolStripMenuItem itemAddUser;
-        private System.Windows.Forms.ToolStripMenuItem itemLicenseInfo;
         private System.Windows.Forms.ToolStripMenuItem itemLogout;
-        private System.Windows.Forms.PictureBox btnLock;
     }
 }

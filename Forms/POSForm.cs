@@ -434,11 +434,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             btnAddCustomer.Size = new Size(26, 26);
             btnAddCustomer.Click += (s, e) =>
             {
-                var f = new AddCustomerForm();
-                if (f.ShowDialog() == DialogResult.OK)
-                {
-                    LoadCustomers();
-                }
+                MessageBox.Show("Customer management is disabled in this version.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
             pnlOrderHeader.Controls.Add(btnAddCustomer);
 

@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Shaheen_InventoryManagement_Android</RootNamespace>
+    <AssemblyName>Shaheen_InventoryManagement_Android</AssemblyName>
+    <DefineConstants>$(DefineConstants);ANDROID</DefineConstants>
+    <CheckEolWorkloads>false</CheckEolWorkloads>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Shared helpers and services linked from the parent project -->
+    <Compile Include="..\Helpers\DatabaseHelper.cs" Link="Shared\Helpers\DatabaseHelper.cs" />
+    <Compile Include="..\Helpers\DatabaseInitializer.cs" Link="Shared\Helpers\DatabaseInitializer.cs" />
+    <Compile Include="..\Helpers\DatabaseConfig.cs" Link="Shared\Helpers\DatabaseConfig.cs" />
+    <Compile Include="..\Helpers\LocalizationManager.cs" Link="Shared\Helpers\LocalizationManager.cs" />
+    <Compile Include="..\Helpers\ErrorLogger.cs" Link="Shared\Helpers\ErrorLogger.cs" />
+    <Compile Include="..\Helpers\UserSession.cs" Link="Shared\Helpers\UserSession.cs" />
+    <Compile Include="..\Helpers\GlobalEvents.cs" Link="Shared\Helpers\GlobalEvents.cs" />
+    <Compile Include="..\Services\CurrencyService.cs" Link="Shared\Services\CurrencyService.cs" />
+    <Compile Include="..\Services\ReturnService.cs" Link="Shared\Services\ReturnService.cs" />
+    <Compile Include="..\Data\PartData.cs" Link="Shared\Data\PartData.cs" />
+    <Compile Include="..\Data\RecipeData.cs" Link="Shared\Data\RecipeData.cs" />
+    <Compile Include="..\Data\RecipePartData.cs" Link="Shared\Data\RecipePartData.cs" />
+    <Compile Include="..\Services\Services.cs" Link="Shared\Services\Services.cs" />
+    <Compile Include="..\Services\OrderService.cs" Link="Shared\Services\OrderService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Link the frontend web files and media assets recursively as Android assets -->
+    <AndroidAsset Include="..\wwwroot\**" Link="Assets\wwwroot\%(RecursiveDir)%(FileName)%(Extension)" />
+    <AndroidAsset Include="..\Assets\**" Link="Assets\Assets\%(RecursiveDir)%(FileName)%(Extension)" />
+  </ItemGroup>
+</Project>

@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+#if !ANDROID
 using System.Windows.Forms;
+#endif
 using Microsoft.Data.Sqlite;
 
 namespace Shaheen_InventoryManagement_Android.Helpers

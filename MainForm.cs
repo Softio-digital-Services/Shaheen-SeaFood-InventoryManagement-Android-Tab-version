@@ -13,9 +13,7 @@ namespace Shaheen_InventoryManagement_Android
         // NOTE: WS_EX_COMPOSITED removed — it causes see-through rendering artifacts
         // on borderless maximized WinForms windows (other apps show behind the form).
         private Forms.PartsForm partsForm;
-        private Forms.UsersForm usersForm;
         private Shaheen_InventoryManagement_Android.Forms.DashboardForm dashboardForm;
-        private Shaheen_InventoryManagement_Android.Forms.ReportsForm reportsForm;
         private Shaheen_InventoryManagement_Android.Forms.HistoryForm historyForm;
         private Forms.POSForm posForm;
 
@@ -138,23 +136,11 @@ namespace Shaheen_InventoryManagement_Android
             Dashboard_btn.Text = "  " + L("Nav_Dashboard");
 
             UpdateNavText("btnInventory", "Nav_Inventory");
-            UpdateNavText("btnCustomers", "Nav_Customers");
-            UpdateNavText("btnSuppliers", "Nav_Suppliers");
             UpdateNavText("btnPOS", "Nav_POS");
-            UpdateNavText("btnReports", "Nav_Reports");
             UpdateNavText("btnHistory", "Nav_History");
-            UpdateNavText("btnQuotations", "Nav_Quotations");
-            UpdateNavText("btnCurrencies", "Nav_Currencies");
-            UpdateNavText("btnPO", "Nav_PurchaseOrders");
-            UpdateNavText("btnExpenses", "Nav_Expenses");
-            UpdateNavText("btnUsers", "Nav_Users");
 
             button3.Text = "  " + L("Nav_Logout");
-            if (itemAddUser != null) itemAddUser.Text = L("Nav_AddUser");
-            if (itemLicenseInfo != null) itemLicenseInfo.Text = L("Nav_LicenseInfo");
             if (itemLogout != null) itemLogout.Text = L("Nav_Logout");
-            if (itemLogout != null) itemLogout.Text = L("Nav_Logout");
-            if (btnLock != null) btnLock.Text = ""; // Icon is set via btnLock.Image below
 
             var pnlHeaderIcons = this.Controls.Find("rightPanel", true).FirstOrDefault() as Panel;
             if (pnlHeaderIcons != null)
@@ -251,10 +237,8 @@ namespace Shaheen_InventoryManagement_Android
             Dashboard_btn.Text = "  " + LocalizationManager.GetString("Nav_Dashboard");
 
             // Forms Setup
-            usersForm = InitializeForm<Forms.UsersForm>();
             partsForm = InitializeForm<Forms.PartsForm>();
             posForm = InitializeForm<Forms.POSForm>();
-            reportsForm = InitializeForm<Forms.ReportsForm>();
             historyForm = InitializeForm<Forms.HistoryForm>();
 
             // Navigation Buttons
@@ -273,22 +257,10 @@ namespace Shaheen_InventoryManagement_Android
             bool isAccountant = UserSession.IsAccountant;
             bool isWorker = UserSession.IsStaff;
 
-            // Worker can see POS, Inventory
+            // All roles can access core modules
             if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "Inventory", "inventory", "btnInventory", () => ShowForm(partsForm));
-            if (isAdmin || isWorker) AddNavButton(pnlNav, "POS / Checkout", "pos", "btnPOS", () => ShowForm(posForm));
-
-            // Accountants & Admins
-            if (isAdmin || isAccountant)
-            {
-                AddNavButton(pnlNav, "Reports", "reports", "btnReports", () => { reportsForm.RefreshData(); ShowForm(reportsForm); });
-                AddNavButton(pnlNav, "History", "history", "btnHistory", () => { historyForm.LoadHistory(); ShowForm(historyForm); });
-            }
-
-            // Admin Only
-            if (isAdmin)
-            {
-                AddNavButton(pnlNav, "Users Management", "users", "btnUsers", () => ShowForm(usersForm));
-            }
+            if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "POS / Checkout", "pos", "btnPOS", () => ShowForm(posForm));
+            if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "History", "history", "btnHistory", () => { historyForm.LoadHistory(); ShowForm(historyForm); });
 
             ShowForm(dashboardForm);
             HighlightSelectedButton(Dashboard_btn);
@@ -390,7 +362,7 @@ namespace Shaheen_InventoryManagement_Android
         {
             // Use Dock=Right so the panel always stretches correctly at any screen width.
             // We position icons from the right edge using fixed offsets.
-            const int iconAreaWidth = 500;
+            const int iconAreaWidth = 250;
             Panel rightPanel = new Panel { Name = "rightPanel", Width = iconAreaWidth, BackColor = Color.Transparent, Dock = DockStyle.Right };
             int w = iconAreaWidth;
             AddHeaderButton(rightPanel, w - 45, "Close", "btnWinClose", () => Application.Exit());
@@ -407,39 +379,6 @@ namespace Shaheen_InventoryManagement_Android
             pbNotification.Paint += (s, e) => { if (_alertCount > 0) { e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias; using (SolidBrush b = new SolidBrush(ThemeConfig.DangerColorBright)) e.Graphics.FillEllipse(b, 24, 6, 8, 8); } };
             pbNotification.Click += (s, e) => ShowNotifications(s, e);
             rightPanel.Controls.Add(pbNotification);
-
-            btnLock.Location = new Point(w - 285, 4);
-            btnLock.Size = new Size(42, 42);
-            btnLock.Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("lock"), Color.White);
-            btnLock.SizeMode = PictureBoxSizeMode.Zoom;
-            ThemeConfig.ApplyHeaderIconStyle(btnLock);
-            btnLock.Click += (s, e) => BtnLock_Click(s, e);
-            rightPanel.Controls.Add(btnLock);
-
-            // Calculator
-            PictureBox pbCalc = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 335, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("calculator"), Color.White) };
-            ThemeConfig.ApplyHeaderIconStyle(pbCalc);
-            pbCalc.Click += (s, e) => ShowInPopup(new Plugins.CalculatorPanel(), LocalizationManager.IsArabic ? "\u062d\u0627\u0633\u0628\u0629" : "Calculator", 380, 580);
-            rightPanel.Controls.Add(pbCalc);
-
-            // Backup
-            PictureBox pbBackup = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 385, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("backup"), Color.White) };
-            ThemeConfig.ApplyHeaderIconStyle(pbBackup);
-            pbBackup.Click += (s, e) => ShowInPopup(new Plugins.BackupPanel(_pluginContext), LocalizationManager.IsArabic ? "\u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629" : "Backup & Restore", 520, 500);
-            rightPanel.Controls.Add(pbBackup);
-
-            // Currencies
-            PictureBox pbCurrencies = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 435, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("currencies"), Color.White) };
-            ThemeConfig.ApplyHeaderIconStyle(pbCurrencies);
-            pbCurrencies.Click += (s, e) => { using (var f = new Forms.CurrencySettingsForm()) f.ShowDialog(this); };
-            rightPanel.Controls.Add(pbCurrencies);
-
-            // About Us
-            PictureBox pbAbout = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 485, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("info"), Color.White) };
-            ThemeConfig.ApplyHeaderIconStyle(pbAbout);
-            ToolTip ttAbout = new ToolTip(); ttAbout.SetToolTip(pbAbout, LocalizationManager.IsArabic ? "عن البرنامج" : "About Us");
-            pbAbout.Click += (s, e) => { using (var f = new Forms.AboutUsForm()) f.ShowDialog(this); };
-            rightPanel.Controls.Add(pbAbout);
 
             panel1.Controls.Add(rightPanel);
         }
@@ -467,29 +406,7 @@ namespace Shaheen_InventoryManagement_Android
             p.Controls.Add(b);
         }
 
-        private LockOverlay _lockOverlay;
-        private void BtnLock_Click(object sender, EventArgs e)
-        {
-            if (_lockOverlay == null)
-            {
-                _lockOverlay = new LockOverlay();
-                _lockOverlay.Unlocked += (s, ev) =>
-                {
-                    _lockOverlay.Visible = false;
-                    this.Controls.Remove(_lockOverlay);
-                    _lockOverlay.Dispose();
-                    _lockOverlay = null;
-                };
-            }
 
-            if (!this.Controls.Contains(_lockOverlay))
-            {
-                this.Controls.Add(_lockOverlay);
-                _lockOverlay.BringToFront();
-            }
-            _lockOverlay.Visible = true;
-            _lockOverlay.Focus();
-        }
 
         private void ShowNotifications(object sender, EventArgs e)
         {
@@ -519,8 +436,6 @@ namespace Shaheen_InventoryManagement_Android
         private void InitializeNotificationSystem()
         {
             _dashboardService = new Services.DashboardService();
-            var expenseService = new Services.ExpenseService();
-            expenseService.ProcessRecurringExpenses(); // Check for month-end expenses
 
             _notificationTimer = new System.Windows.Forms.Timer { Interval = 30000 };
             _notificationTimer.Tick += (s, e) => RefreshNotificationBadge(); _notificationTimer.Start(); RefreshNotificationBadge();
@@ -529,7 +444,7 @@ namespace Shaheen_InventoryManagement_Android
         private void RefreshNotificationBadge()
         {
             int oldCount = _alertCount;
-            _alertCount = _dashboardService.GetLowStockCount() + _dashboardService.GetPaymentRemindersCount() + _dashboardService.GetUnpaidExpensesCount();
+            _alertCount = _dashboardService.GetLowStockCount();
             if (oldCount != _alertCount && pbNotification != null) pbNotification.Invalidate();
         }
 
@@ -558,10 +473,7 @@ namespace Shaheen_InventoryManagement_Android
             panel2.BackColor = Color.FromArgb(248, 250, 252); // Light Gray Sidebar
             panel3.BackColor = ThemeConfig.BackgroundColor;
 
-            itemAddUser.Click += ItemAddUser_Click;
-            itemLicenseInfo.Click += ItemLicenseInfo_Click;
             itemLogout.Click += ItemLogout_Click;
-            btnLock.Click += BtnLock_Click;
         }
 
         private Button CreateNavigationButton(string text, string iconName, EventHandler clickHandler)
@@ -634,8 +546,6 @@ namespace Shaheen_InventoryManagement_Android
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        private void ItemAddUser_Click(object sender, EventArgs e) { new Forms.AddUserForm().ShowDialog(this); }
-        private void ItemLicenseInfo_Click(object sender, EventArgs e) { new Forms.LicenseInfoForm().ShowDialog(this); }
         private void ItemLogout_Click(object sender, EventArgs e) { button3_Click_1(sender, e); }
         private void button1_Click(object sender, EventArgs e) { ShowForm(dashboardForm); }
         private void ApplyPermissions()
@@ -644,25 +554,8 @@ namespace Shaheen_InventoryManagement_Android
             bool isStaff = UserSession.Role == "Staff";
             bool isAccountant = UserSession.Role == "Accountant";
 
-            // Sidebar Buttons Hide Logic
-            SetNavVisibility("btnReports", isAdmin);
-            SetNavVisibility("btnCurrencies", isAdmin);
-            SetNavVisibility("btnHistory", isAdmin || isAccountant);
-            SetNavVisibility("btnPO", isAdmin || isAccountant);
-
-            if (isStaff)
-            {
-                SetNavVisibility("btnCustomers", false);
-                SetNavVisibility("btnSuppliers", false);
-            }
-
             if (isAccountant)
             {
-                // Hide most except POS and History/PO maybe? 
-                // Based on previous logic:
-                string[] toHide = { "Dashboard_btn", "btnInventory", "btnCustomers", "btnSuppliers", "btnReports", "btnQuotations", "btnCurrencies" };
-                foreach (string name in toHide) SetNavVisibility(name, false);
-
                 // Auto-show POS
                 var btnPOS = this.Controls.Find("btnPOS", true);
                 if (btnPOS.Length > 0) { ShowForm(posForm); HighlightSelectedButton((Button)btnPOS[0]); }

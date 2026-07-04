@@ -1578,7 +1578,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
         {
             try
             {
-                SaveFileDialog dlg = new SaveFileDialog { Filter = "CSV Files (*.csv)|*.csv", FileName = $"Items_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv", Title = "Export Items to CSV" };
+                SaveFileDialog dlg = new SaveFileDialog { Filter = "Excel Files (*.xls)|*.xls|CSV Files (*.csv)|*.csv", FileName = $"Items_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xls", Title = "Export Items to Excel or CSV" };
                 if (dlg.ShowDialog() != DialogResult.OK) return;
                 DataTable dt = _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
                 if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data to export."); return; }
@@ -1594,8 +1594,19 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 if (exportDt.Columns.Contains("part_id")) exportDt.Columns.Remove("part_id");
                 if (exportDt.Columns.Contains("part_image")) exportDt.Columns.Remove("part_image");
 
-                if (Helpers.ImportExportHelper.ExportToCsv(exportDt, dlg.FileName))
-                    MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} items to CSV successfully!");
+                bool success;
+                string ext = System.IO.Path.GetExtension(dlg.FileName).ToLower();
+                if (ext == ".xls")
+                {
+                    success = Helpers.ImportExportHelper.ExportToExcel(exportDt, dlg.FileName, "Items");
+                }
+                else
+                {
+                    success = Helpers.ImportExportHelper.ExportToCsv(exportDt, dlg.FileName);
+                }
+
+                if (success)
+                    MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} items successfully!");
                 else
                     MessageHelper.ShowError("Failed to export data.");
             }
@@ -1606,9 +1617,20 @@ namespace Shaheen_InventoryManagement_Android.Forms
         {
             try
             {
-                OpenFileDialog dlg = new OpenFileDialog { Filter = "CSV Files (*.csv)|*.csv", Title = "Import Items from CSV" };
+                OpenFileDialog dlg = new OpenFileDialog { Filter = "Excel/CSV Files (*.xls;*.csv)|*.xls;*.csv|Excel Files (*.xls)|*.xls|CSV Files (*.csv)|*.csv", Title = "Import Items from Excel or CSV" };
                 if (dlg.ShowDialog() != DialogResult.OK) return;
-                DataTable dt = Helpers.ImportExportHelper.ImportFromCsv(dlg.FileName);
+
+                DataTable dt;
+                string ext = System.IO.Path.GetExtension(dlg.FileName).ToLower();
+                if (ext == ".xls")
+                {
+                    dt = Helpers.ImportExportHelper.ImportFromExcel(dlg.FileName);
+                }
+                else
+                {
+                    dt = Helpers.ImportExportHelper.ImportFromCsv(dlg.FileName);
+                }
+
                 if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data found in the file."); return; }
 
                 // Allow both old format and new format by checking for either
