@@ -185,23 +185,8 @@
                 <h2 style="margin:0;">Ingredients / Inventory</h2>
                 <button class="btn-primary" onclick="openAddModalDirect()" style="width:auto; padding:10px 20px;">+ Add Ingredient</button>
             </div>
-            <div class="glass-card" style="overflow-x:auto;">
-                <table class="data-table" style="width:100%; border-collapse:collapse; font-size:0.95rem;">
-                    <thead>
-                        <tr style="border-bottom:2px solid var(--border); text-align:left;">
-                            <th style="padding:12px;">Ingredient Name</th>
-                            <th style="padding:12px;">Category</th>
-                            <th style="padding:12px;">Barcode / SKU</th>
-                            <th style="padding:12px; text-align:right;">Selling Price</th>
-                            <th style="padding:12px; text-align:right;">Stock Level</th>
-                            <th style="padding:12px; text-align:right;">Min Level</th>
-                            <th style="padding:12px; text-align:center;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventoryTableBody">
-                        <!-- Populated dynamically -->
-                    </tbody>
-                </table>
+            <div class="product-grid" id="inventoryGrid">
+                <!-- Populated dynamically -->
             </div>
         </div>
 

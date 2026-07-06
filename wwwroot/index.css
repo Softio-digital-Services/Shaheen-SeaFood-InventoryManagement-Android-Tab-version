@@ -325,6 +325,7 @@ body {
     z-index: 5;
 }
 .card-edit-btn:hover { background: var(--accent); color: white; transform: scale(1.1); }
+.card-delete-btn:hover { background: var(--danger) !important; color: white !important; transform: scale(1.1); }
 
 .btn-icon-top, .btn-camera-scan { 
     background: var(--surface-glass); 
@@ -1148,7 +1149,12 @@ body.is-mobile-layout #tabContentReports {
     padding: 16px !important;
     padding-bottom: 90px !important;
 }
-body.is-mobile-layout #tabContentInventory > div:first-child,
+body.is-mobile-layout #tabContentInventory > div:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+}
 body.is-mobile-layout #tabContentRecipes > div:first-child {
     flex-direction: column !important;
     align-items: stretch !important;
@@ -1162,7 +1168,10 @@ body.is-mobile-layout #tabContentReports h2 {
     font-size: 1.4rem !important;
     font-weight: 800 !important;
 }
-body.is-mobile-layout #tabContentInventory button.btn-primary,
+body.is-mobile-layout #tabContentInventory button.btn-primary {
+    width: auto !important;
+    height: 44px;
+}
 body.is-mobile-layout #tabContentRecipes button.btn-primary {
     width: 100% !important;
     height: 44px;
