@@ -286,6 +286,59 @@ if (typeof window !== 'undefined' && !window.AndroidBridge) {
                 });
             });
             responseData = { success: true, imported: body.items.length, skipped: 0 };
+        } else if (path === 'api/import-sales') {
+            const body = JSON.parse(options.body);
+            let processed = 0;
+            let skipped = 0;
+            const skippedNames = [];
+            const deductions = [];
+
+            body.sales.forEach(sale => {
+                const cleanName = sale.recipeName.toLowerCase().replace(/[\s\t\r\n]/g, '');
+                const recipe = mockDb.recipes.find(r => r.name.toLowerCase().replace(/[\s\t\r\n]/g, '') === cleanName);
+                if (!recipe) {
+                    skipped++;
+                    skippedNames.push(sale.recipeName);
+                    return;
+                }
+
+                recipe.parts.forEach(part => {
+                    const prod = mockDb.products.find(p => p.id === part.partId);
+                    if (prod) {
+                        const qtyDeducted = part.qty * sale.qtySold;
+                        if (qtyDeducted <= 0) return;
+                        
+                        const prevStock = prod.stock;
+                        prod.stock = parseFloat((prod.stock - qtyDeducted).toFixed(2));
+
+                        const existingDeduct = deductions.find(d => d.partId === part.partId);
+                        if (existingDeduct) {
+                            existingDeduct.qtyDeducted = parseFloat((existingDeduct.qtyDeducted + qtyDeducted).toFixed(2));
+                            existingDeduct.newStock = prod.stock;
+                        } else {
+                            deductions.push({
+                                partId: part.partId,
+                                partName: prod.name,
+                                qtyDeducted: qtyDeducted,
+                                previousStock: prevStock,
+                                newStock: prod.stock
+                            });
+                        }
+
+                        // Log transaction
+                        mockDb.reports.transactions.unshift({
+                            action: 'STOCK_DEDUCT',
+                            item: prod.name,
+                            desc: `Deducted ${qtyDeducted.toFixed(2).replace(/\.00$/, '')} via sales import (${recipe.name} x${sale.qtySold})`,
+                            user: 'Admin',
+                            time: new Date().toISOString().replace('T', ' ').slice(0, 16)
+                        });
+                    }
+                });
+                processed++;
+            });
+
+            responseData = { success: true, processed, skipped, skippedNames, deductions };
         } else if (path === 'api/export-csv') {
             responseData = { success: true, path: 'Downloads/mock_export.csv' };
         } else if (path === 'api/reports') {
@@ -656,6 +709,7 @@ function openEditModal(id) {
 
 async function submitNewItem() {
     const editId = document.getElementById('editItemId').value;
+    const parsedId = editId ? parseInt(editId) : null;
     const itemData = {
         name: document.getElementById('newItemName').value,
         category: document.getElementById('newItemCategory').value,
@@ -673,7 +727,7 @@ async function submitNewItem() {
         const res = await fetch(`${API_BASE}/api/add-item`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...itemData, id: editId })
+            body: JSON.stringify({ ...itemData, id: parsedId })
         });
 
         if (res.ok) {
@@ -1725,6 +1779,177 @@ function downloadCsvTemplate() {
         else showToast("Failed to download template", "error");
     })
     .catch(() => showToast("Connection error", "error"));
+}
+
+// ─── DAILY SALES IMPORT / EXPORT ─────────────────────────────────────
+let pendingSalesItems = [];
+let lastSalesDeductionResults = [];
+
+function handleSalesImportFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const content = evt.target.result;
+        parseSalesImportFile(content, file.name.endsWith('.tsv') || file.name.endsWith('.xls') || content.includes('\t'));
+    };
+    reader.readAsText(file);
+}
+
+function parseSalesImportFile(text, isTsv) {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length <= 1) {
+        showToast("Import file is empty", "warn");
+        return;
+    }
+
+    const separator = isTsv ? '\t' : ',';
+    const headers = lines[0].split(separator).map(h => h.replace(/"/g, '').trim());
+    
+    // Detect recipe name and quantity sold columns
+    const recipeIdx = headers.findIndex(h => h.toLowerCase().includes('recipe') || h.toLowerCase().includes('meal') || h.toLowerCase().includes('name'));
+    const qtyIdx = headers.findIndex(h => h.toLowerCase().includes('qty') || h.toLowerCase().includes('quantity') || h.toLowerCase().includes('sold') || h.toLowerCase().includes('count'));
+
+    if (recipeIdx === -1) {
+        showToast("Invalid file format. 'Recipe Name' column is required.", "error");
+        return;
+    }
+    const finalQtyIdx = qtyIdx !== -1 ? qtyIdx : -1;
+
+    pendingSalesItems = [];
+    for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(separator).map(c => c.replace(/"/g, '').trim());
+        if (cols.length < headers.length) continue;
+
+        const recipeName = cols[recipeIdx] || '';
+        const qtySold = finalQtyIdx !== -1 ? parseInt(cols[finalQtyIdx]) || 1 : 1;
+
+        if (recipeName) {
+            pendingSalesItems.push({
+                recipeName,
+                qtySold
+            });
+        }
+    }
+
+    // Hide results area when a new file is uploaded
+    document.getElementById('salesImportResultsArea').classList.add('hidden');
+
+    // Show preview
+    document.getElementById('salesImportPreviewCount').innerText = pendingSalesItems.length;
+    const previewList = document.getElementById('salesImportPreviewList');
+    previewList.innerHTML = pendingSalesItems.map(item => `
+        <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; display:flex; justify-content:space-between; align-items:center;">
+            <b style="color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${item.recipeName}</b>
+            <span style="color:white; font-weight:700;">Qty: ${item.qtySold}</span>
+        </div>
+    `).join('');
+
+    document.getElementById('salesImportPreviewArea').classList.remove('hidden');
+    showToast(`Parsed ${pendingSalesItems.length} recipe sales from file`, "info");
+}
+
+function clearSalesImportPreview() {
+    pendingSalesItems = [];
+    document.getElementById('salesImportFile').value = '';
+    document.getElementById('salesImportPreviewArea').classList.add('hidden');
+    document.getElementById('salesImportPreviewList').innerHTML = '';
+}
+
+async function confirmSalesImport() {
+    if (pendingSalesItems.length === 0) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/import-sales`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sales: pendingSalesItems })
+        });
+        if (res.ok) {
+            const result = await res.json();
+            showToast(`Deduction complete! Processed: ${result.processed}, Skipped: ${result.skipped}`, "success");
+            
+            // Store deductions for CSV export
+            lastSalesDeductionResults = result.deductions || [];
+
+            // Display Results
+            document.getElementById('salesResultProcessed').innerText = result.processed;
+            document.getElementById('salesResultSkipped').innerText = result.skipped;
+
+            const skippedContainer = document.getElementById('salesResultSkippedListContainer');
+            if (result.skipped > 0 && result.skippedNames && result.skippedNames.length > 0) {
+                document.getElementById('salesResultSkippedList').innerText = result.skippedNames.join(', ');
+                skippedContainer.classList.remove('hidden');
+            } else {
+                skippedContainer.classList.add('hidden');
+            }
+
+            const resultsList = document.getElementById('salesImportResultsList');
+            if (lastSalesDeductionResults.length > 0) {
+                resultsList.innerHTML = lastSalesDeductionResults.map(d => {
+                    const partName = d.partName || d.PartName || "";
+                    const qtyDeducted = d.qtyDeducted !== undefined ? d.qtyDeducted : d.QtyDeducted;
+                    const newStock = d.newStock !== undefined ? d.newStock : d.NewStock;
+                    return `
+                        <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:6px 0; display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:10px;">
+                            <b style="color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${partName}</b>
+                            <span style="color:var(--danger); text-align:right;">-${qtyDeducted}</span>
+                            <span style="color:${newStock <= 0 ? 'var(--danger)' : newStock < 5 ? 'var(--warn)' : 'white'}; text-align:right; font-weight:700;">Stock: ${newStock}</span>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                resultsList.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:10px;">No ingredient deductions occurred.</div>';
+            }
+
+            document.getElementById('salesImportResultsArea').classList.remove('hidden');
+            clearSalesImportPreview();
+
+            // Refresh the application inventory cache & reload tables
+            await initApp();
+            loadInventoryTable();
+        } else {
+            showToast("Failed to process sales deduction on server", "error");
+        }
+    } catch (e) { showToast("Connection error", "error"); }
+}
+
+async function downloadSalesConsumptionReport() {
+    if (lastSalesDeductionResults.length === 0) {
+        showToast("No consumption results to export", "warn");
+        return;
+    }
+    try {
+        const headers = ["Ingredient Name", "Quantity Deducted", "Previous Stock", "New Stock"];
+        const rows = lastSalesDeductionResults.map(d => {
+            const partName = d.partName || d.PartName || "";
+            const qtyDeducted = d.qtyDeducted !== undefined ? d.qtyDeducted : d.QtyDeducted;
+            const previousStock = d.previousStock !== undefined ? d.previousStock : d.PreviousStock;
+            const newStock = d.newStock !== undefined ? d.newStock : d.NewStock;
+            return [
+                `"${partName.replace(/"/g, '""')}"`,
+                qtyDeducted,
+                previousStock,
+                newStock
+            ];
+        });
+
+        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const filename = `sales_consumption_${new Date().toISOString().slice(0,10)}.csv`;
+
+        const res = await fetch(`${API_BASE}/api/export-csv`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename, csvContent })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            showToast(`Consumption report saved successfully to ${data.path}!`, "success");
+        } else {
+            showToast("Failed to export report on device", "error");
+        }
+    } catch (e) { showToast("Connection error during consumption export", "error"); }
 }
 
 // ─── REPORTS & ANALYTICS ──────────────────────────────────────────────

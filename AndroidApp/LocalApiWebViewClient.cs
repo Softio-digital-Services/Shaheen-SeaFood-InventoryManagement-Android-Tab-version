@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Linq;
 using System.Text.Json;
 using System.Collections.Generic;
 using System.Data;
@@ -204,6 +205,10 @@ namespace Shaheen_InventoryManagement_Android
                 {
                     return ProcessBulkImport(body);
                 }
+                else if (endpoint == "api/import-sales" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ProcessDailySalesImport(body);
+                }
                 else if (endpoint == "api/export-csv" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
                 {
                     return ProcessExportCsv(body);
@@ -363,35 +368,77 @@ namespace Shaheen_InventoryManagement_Android
             if (body == null || string.IsNullOrEmpty(body.Name))
                 return JsonSerializer.Serialize(new { error = "Missing name" });
 
-            if (!string.IsNullOrEmpty(body.Barcode))
-            {
-                int existingCount = DatabaseHelper.ExecuteScalar<int>(
-                    "SELECT COUNT(*) FROM parts WHERE barcode = @b AND date_deleted IS NULL",
-                    new SqliteParameter("@b", body.Barcode));
-
-                if (existingCount > 0)
-                    return JsonSerializer.Serialize(new { error = "Barcode already exists for another item." });
-            }
-
             int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c",
                         new SqliteParameter("@c", body.Category ?? "General"));
             if (catId == 0) catId = 1;
 
-            string sql = @"
-                INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status)
-                VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active')";
+            if (body.Id.HasValue && body.Id.Value > 0)
+            {
+                // Update existing item
+                if (!string.IsNullOrEmpty(body.Barcode))
+                {
+                    int existingCount = DatabaseHelper.ExecuteScalar<int>(
+                        "SELECT COUNT(*) FROM parts WHERE barcode = @b AND id != @id AND date_deleted IS NULL",
+                        new SqliteParameter("@b", body.Barcode),
+                        new SqliteParameter("@id", body.Id.Value));
 
-            DatabaseHelper.ExecuteNonQuery(sql,
-                new SqliteParameter("@name", body.Name),
-                new SqliteParameter("@sku", body.Sku ?? ""),
-                new SqliteParameter("@cat", catId),
-                new SqliteParameter("@p_price", body.Price * 0.7m),
-                new SqliteParameter("@s_price", body.Price),
-                new SqliteParameter("@stock", body.Stock),
-                new SqliteParameter("@barcode", body.Barcode ?? ""));
+                    if (existingCount > 0)
+                        return JsonSerializer.Serialize(new { error = "Barcode already exists for another item." });
+                }
 
-            DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via Android App (Qty: {body.Stock})");
-            return JsonSerializer.Serialize(new { success = true });
+                string sql = @"
+                    UPDATE parts SET 
+                        part_name = @name, 
+                        part_number = @sku, 
+                        category_id = @cat, 
+                        purchase_price = @p_price, 
+                        selling_price = @s_price, 
+                        quantity_in_stock = @stock, 
+                        barcode = @barcode
+                    WHERE id = @id";
+
+                DatabaseHelper.ExecuteNonQuery(sql,
+                    new SqliteParameter("@name", body.Name),
+                    new SqliteParameter("@sku", body.Sku ?? ""),
+                    new SqliteParameter("@cat", catId),
+                    new SqliteParameter("@p_price", body.Price * 0.7m),
+                    new SqliteParameter("@s_price", body.Price),
+                    new SqliteParameter("@stock", body.Stock),
+                    new SqliteParameter("@barcode", body.Barcode ?? ""),
+                    new SqliteParameter("@id", body.Id.Value));
+
+                DatabaseHelper.LogTransaction("STOCK_EDIT", body.Name, $"Edited via Android App (New Qty: {body.Stock})");
+                return JsonSerializer.Serialize(new { success = true });
+            }
+            else
+            {
+                // Insert new item
+                if (!string.IsNullOrEmpty(body.Barcode))
+                {
+                    int existingCount = DatabaseHelper.ExecuteScalar<int>(
+                        "SELECT COUNT(*) FROM parts WHERE barcode = @b AND date_deleted IS NULL",
+                        new SqliteParameter("@b", body.Barcode));
+
+                    if (existingCount > 0)
+                        return JsonSerializer.Serialize(new { error = "Barcode already exists for another item." });
+                }
+
+                string sql = @"
+                    INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status)
+                    VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active')";
+
+                DatabaseHelper.ExecuteNonQuery(sql,
+                    new SqliteParameter("@name", body.Name),
+                    new SqliteParameter("@sku", body.Sku ?? ""),
+                    new SqliteParameter("@cat", catId),
+                    new SqliteParameter("@p_price", body.Price * 0.7m),
+                    new SqliteParameter("@s_price", body.Price),
+                    new SqliteParameter("@stock", body.Stock),
+                    new SqliteParameter("@barcode", body.Barcode ?? ""));
+
+                DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via Android App (Qty: {body.Stock})");
+                return JsonSerializer.Serialize(new { success = true });
+            }
         }
 
         private string ProcessCheckout(string bodyJson)
@@ -529,18 +576,7 @@ namespace Shaheen_InventoryManagement_Android
                 if (body.Id.HasValue && body.Id.Value > 0)
                 {
                     recipe.Id = body.Id.Value;
-                    DatabaseHelper.ExecuteNonQuery("DELETE FROM recipe_parts WHERE recipe_id = @id", new SqliteParameter("@id", recipe.Id));
                     RecipeData.UpdateRecipe(recipe);
-                    foreach (var part in recipe.Parts)
-                    {
-                        string sqlPart = @"INSERT INTO recipe_parts (recipe_id, part_id, quantity)
-                                           VALUES (@r_id, @p_id, @qty)";
-                        DatabaseHelper.ExecuteNonQuery(sqlPart,
-                            new SqliteParameter("@r_id", recipe.Id),
-                            new SqliteParameter("@p_id", part.PartId),
-                            new SqliteParameter("@qty", part.Quantity)
-                        );
-                    }
                 }
                 else
                 {
@@ -620,6 +656,161 @@ namespace Shaheen_InventoryManagement_Android
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "WebAppInterface.ProcessBulkImport");
+                return JsonSerializer.Serialize(new { error = ex.Message });
+            }
+        }
+
+        private string ProcessDailySalesImport(string bodyJson)
+        {
+            try
+            {
+                var body = JsonSerializer.Deserialize<DailySalesImportPayload>(bodyJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (body == null || body.Sales == null || body.Sales.Count == 0)
+                    return JsonSerializer.Serialize(new { error = "No sales data to process" });
+
+                int recipesProcessed = 0;
+                int recipesSkipped = 0;
+                var skippedRecipes = new List<string>();
+                var ingredientDeductions = new List<IngredientDeductionResult>();
+
+                using (var conn = new SqliteConnection(DatabaseConfig.ConnectionString))
+                {
+                    conn.Open();
+                    using (var transaction = conn.BeginTransaction())
+                    {
+                        foreach (var sale in body.Sales)
+                        {
+                            if (string.IsNullOrWhiteSpace(sale.RecipeName) || sale.QtySold <= 0)
+                            {
+                                recipesSkipped++;
+                                continue;
+                            }
+
+                            // 1. Find the recipe ID by name (case-insensitive and ignoring all whitespace)
+                            string sqlRecipe = @"SELECT id, recipe_name FROM recipes 
+                                                 WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(recipe_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
+                                                       REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
+                                                   AND date_deleted IS NULL";
+                            int recipeId = 0;
+                            string exactRecipeName = "";
+                            using (var cmd = new SqliteCommand(sqlRecipe, conn, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@name", sale.RecipeName.Trim());
+                                using (var reader = cmd.ExecuteReader())
+                                {
+                                    if (reader.Read())
+                                    {
+                                        recipeId = Convert.ToInt32(reader["id"]);
+                                        exactRecipeName = reader["recipe_name"].ToString();
+                                    }
+                                }
+                            }
+
+                            if (recipeId == 0)
+                            {
+                                recipesSkipped++;
+                                if (!skippedRecipes.Contains(sale.RecipeName.Trim()))
+                                    skippedRecipes.Add(sale.RecipeName.Trim());
+                                continue;
+                            }
+
+                            // 2. Find parts (ingredients) for this recipe
+                            string sqlParts = @"SELECT rp.part_id, rp.quantity, p.part_name, p.quantity_in_stock 
+                                                FROM recipe_parts rp
+                                                JOIN parts p ON rp.part_id = p.id
+                                                WHERE rp.recipe_id = @recipeId AND p.date_deleted IS NULL";
+                            var partsToDeduct = new List<RecipePartDeduction>();
+                            using (var cmd = new SqliteCommand(sqlParts, conn, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@recipeId", recipeId);
+                                using (var reader = cmd.ExecuteReader())
+                                {
+                                    while (reader.Read())
+                                    {
+                                        partsToDeduct.Add(new RecipePartDeduction
+                                        {
+                                            PartId = Convert.ToInt32(reader["part_id"]),
+                                            PartName = reader["part_name"].ToString(),
+                                            QtyPerRecipe = Convert.ToDouble(reader["quantity"]),
+                                            CurrentStock = Convert.ToDouble(reader["quantity_in_stock"])
+                                        });
+                                    }
+                                }
+                            }
+
+                            // 3. Deduct ingredients from stock
+                            foreach (var p in partsToDeduct)
+                            {
+                                double totalDeduct = p.QtyPerRecipe * (double)sale.QtySold;
+                                if (totalDeduct <= 0) continue;
+
+                                // Check if we already processed this ingredient in a previous loop iteration of this upload
+                                var existingDeduction = ingredientDeductions.FirstOrDefault(d => d.PartId == p.PartId);
+                                double currentStockInDb = p.CurrentStock;
+                                if (existingDeduction != null)
+                                {
+                                    currentStockInDb = existingDeduction.NewStock;
+                                }
+
+                                double newStock = currentStockInDb - totalDeduct;
+
+                                // Update parts table
+                                string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
+                                using (var cmd = new SqliteCommand(sqlUpdatePart, conn, transaction))
+                                {
+                                    cmd.Parameters.AddWithValue("@newStock", newStock);
+                                    cmd.Parameters.AddWithValue("@partId", p.PartId);
+                                    cmd.ExecuteNonQuery();
+                                }
+
+                                // Record transaction
+                                string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
+                                                      VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
+                                string txDesc = $"Deducted {totalDeduct:0.##} via sales import ({exactRecipeName} x{sale.QtySold})";
+                                using (var cmd = new SqliteCommand(sqlInsertTx, conn, transaction))
+                                {
+                                    cmd.Parameters.AddWithValue("@partName", p.PartName);
+                                    cmd.Parameters.AddWithValue("@desc", txDesc);
+                                    cmd.ExecuteNonQuery();
+                                }
+
+                                if (existingDeduction != null)
+                                {
+                                    existingDeduction.QtyDeducted += totalDeduct;
+                                    existingDeduction.NewStock = newStock;
+                                }
+                                else
+                                {
+                                    ingredientDeductions.Add(new IngredientDeductionResult
+                                    {
+                                        PartId = p.PartId,
+                                        PartName = p.PartName,
+                                        QtyDeducted = totalDeduct,
+                                        PreviousStock = p.CurrentStock,
+                                        NewStock = newStock
+                                    });
+                                }
+                            }
+
+                            recipesProcessed++;
+                        }
+
+                        transaction.Commit();
+                    }
+                }
+
+                return JsonSerializer.Serialize(new
+                {
+                    success = true,
+                    processed = recipesProcessed,
+                    skipped = recipesSkipped,
+                    skippedNames = skippedRecipes,
+                    deductions = ingredientDeductions
+                });
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "WebAppInterface.ProcessDailySalesImport");
                 return JsonSerializer.Serialize(new { error = ex.Message });
             }
         }
@@ -763,6 +954,7 @@ namespace Shaheen_InventoryManagement_Android
 
         private class AddItemPayload
         {
+            public int? Id { get; set; }
             public string Name { get; set; }
             public string Category { get; set; }
             public decimal Price { get; set; }
@@ -833,6 +1025,34 @@ namespace Shaheen_InventoryManagement_Android
             public int PartId { get; set; }
             public int Qty { get; set; }
             public decimal RefundAmount { get; set; }
+        }
+
+        private class DailySalesImportPayload
+        {
+            public List<DailySaleDetail> Sales { get; set; }
+        }
+
+        private class DailySaleDetail
+        {
+            public string RecipeName { get; set; }
+            public int QtySold { get; set; }
+        }
+
+        private class RecipePartDeduction
+        {
+            public int PartId { get; set; }
+            public string PartName { get; set; }
+            public double QtyPerRecipe { get; set; }
+            public double CurrentStock { get; set; }
+        }
+
+        private class IngredientDeductionResult
+        {
+            public int PartId { get; set; }
+            public string PartName { get; set; }
+            public double QtyDeducted { get; set; }
+            public double PreviousStock { get; set; }
+            public double NewStock { get; set; }
         }
     }
 }
