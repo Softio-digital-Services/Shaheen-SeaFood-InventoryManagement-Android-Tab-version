@@ -208,11 +208,9 @@
                 <!-- Import -->
                 <div class="glass-card" style="padding:25px;">
                     <h3 style="margin-top:0;">📥 Import Ingredients/Parts</h3>
-                    <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.5;">Upload a CSV or Excel (TSV) file containing your parts list. Existing barcodes will be skipped to prevent duplicates.</p>
                     <div style="border:2px dashed var(--border); border-radius:8px; padding:35px; text-align:center; cursor:pointer; margin-top:20px;" onclick="document.getElementById('importFile').click()">
                         <svg viewBox="0 0 24 24" width="40" height="40" stroke="var(--accent)" stroke-width="2" fill="none" style="margin-bottom:10px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <div style="font-weight:600; color:white;">Choose CSV / TSV file</div>
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Supports standard parts format</div>
                         <input type="file" id="importFile" accept="*/*" style="display:none;" onchange="handleImportFileSelect(event)">
                     </div>
                     <div id="importPreviewArea" class="hidden" style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">
@@ -227,11 +225,9 @@
                 <!-- Import Daily Sales -->
                 <div class="glass-card" style="padding:25px;">
                     <h3 style="margin-top:0;">🍳 Import Daily Sales (Recipes Sold)</h3>
-                    <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.5;">Upload a CSV or Excel (TSV) containing your recipe sales. Executing will deduct ingredients from your active inventory.</p>
                     <div style="border:2px dashed var(--border); border-radius:8px; padding:35px; text-align:center; cursor:pointer; margin-top:20px;" onclick="document.getElementById('salesImportFile').click()">
                         <svg viewBox="0 0 24 24" width="40" height="40" stroke="var(--secondary-accent)" stroke-width="2" fill="none" style="margin-bottom:10px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                         <div style="font-weight:600; color:white;">Choose CSV / TSV Daily Sales</div>
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Expected: Recipe Name, Quantity Sold</div>
                         <input type="file" id="salesImportFile" accept="*/*" style="display:none;" onchange="handleSalesImportFileSelect(event)">
                     </div>
                     
@@ -269,7 +265,6 @@
                 <div class="glass-card" style="padding:25px; display:flex; flex-direction:column; justify-content:space-between;">
                     <div>
                         <h3 style="margin-top:0;">📤 Export Active Inventory</h3>
-                        <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.5;">Export all parts and ingredients currently in your database as a CSV file. It will be downloaded directly to your device's <b>Downloads</b> folder.</p>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:15px; margin-top:40px;">
                         <button class="btn-primary-large" onclick="exportInventoryToCsv()" style="margin:0;">Export Inventory as CSV</button>
