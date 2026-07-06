@@ -1150,34 +1150,26 @@ body.is-mobile-layout #tabContentReports {
     padding: 16px !important;
     padding-bottom: 90px !important;
 }
-body.is-mobile-layout #tabContentInventory > div:first-child {
+body.is-mobile-layout #tabContentInventory > div:first-child,
+body.is-mobile-layout #tabContentRecipes > div:first-child {
     flex-direction: row !important;
     align-items: center !important;
     gap: 16px !important;
     margin-bottom: 16px !important;
 }
-body.is-mobile-layout #tabContentRecipes > div:first-child {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-    margin-bottom: 16px !important;
-}
-body.is-mobile-layout #tabContentInventory h2 {
+body.is-mobile-layout #tabContentInventory h2,
+body.is-mobile-layout #tabContentRecipes h2 {
     font-size: 1.15rem !important;
     font-weight: 800 !important;
 }
-body.is-mobile-layout #tabContentRecipes h2,
 body.is-mobile-layout #tabContentImport h2,
 body.is-mobile-layout #tabContentReports h2 {
     font-size: 1.4rem !important;
     font-weight: 800 !important;
 }
-body.is-mobile-layout #tabContentInventory button.btn-primary {
-    width: auto !important;
-    height: 44px;
-}
+body.is-mobile-layout #tabContentInventory button.btn-primary,
 body.is-mobile-layout #tabContentRecipes button.btn-primary {
-    width: 100% !important;
+    width: auto !important;
     height: 44px;
 }
 body.is-mobile-layout #recipesGrid {
