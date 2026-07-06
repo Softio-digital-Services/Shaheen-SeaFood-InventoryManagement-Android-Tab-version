@@ -1173,7 +1173,7 @@ body.is-mobile-layout #tabContentRecipes button.btn-primary {
     height: 44px;
 }
 body.is-mobile-layout #recipesGrid {
-    grid-template-columns: 100% !important;
+    grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
 }
 body.is-mobile-layout #tabContentImport > div:nth-child(2) {

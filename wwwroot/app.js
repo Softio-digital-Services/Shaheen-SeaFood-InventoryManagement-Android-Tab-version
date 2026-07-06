@@ -1485,34 +1485,22 @@ function loadRecipesTab() {
 
     allRecipes.forEach(r => {
         const card = document.createElement('div');
-        card.className = 'glass-card';
-        card.style.padding = '20px';
-        card.style.display = 'flex';
-        card.style.flexDirection = 'column';
-        card.style.justifyContent = 'space-between';
-        
-        let componentsText = r.parts && r.parts.length > 0
-            ? r.parts.map(p => `${p.qty}x ${p.partName}`).join(', ')
-            : 'No ingredients set';
-        if (componentsText.length > 60) componentsText = componentsText.substring(0, 57) + '...';
+        card.className = 'product-card';
 
         card.innerHTML = `
-            <div>
-                <h3 style="margin-top:0; color:white;">${r.name}</h3>
-                <p style="color:var(--text-muted); font-size:0.85rem; min-height:36px; margin:8px 0;">${r.description || 'No description'}</p>
-                <div style="font-size:0.8rem; margin:10px 0; background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:6px;">
-                    <b style="color:var(--text-muted);">Ingredients:</b> <span style="color:white;">${componentsText}</span>
-                </div>
+            <div class="card-edit-btn" onclick="event.stopPropagation(); editRecipe(${r.id})" title="Edit" style="position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.2s; z-index: 5; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path></svg>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:15px; margin-top:15px;">
-                <div>
-                    <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Selling Price</span>
-                    <div style="font-size:1.2rem; font-weight:800; color:var(--accent);">${formatPrice(r.price)}</div>
-                </div>
-                <div style="display:flex; gap:6px;">
-                    <button class="btn-clear" onclick="editRecipe(${r.id})" style="padding:6px 12px; font-size:0.8rem; border:1px solid var(--border); color:white; border-radius:6px;">Edit</button>
-                    <button class="btn-clear" onclick="deleteRecipe(${r.id})" style="padding:6px 12px; font-size:0.8rem; color:var(--danger); border:1px solid var(--danger); border-radius:6px;">Delete</button>
-                </div>
+            <div class="card-delete-btn" onclick="event.stopPropagation(); deleteRecipe(${r.id})" title="Delete" style="position: absolute; top: 10px; left: 10px; width: 32px; height: 32px; background: rgba(239, 68, 68, 0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--danger); transition: all 0.2s; z-index: 5; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </div>
+            <div class="product-img" style="margin-top: 15px;">
+                <span class="emoji-icon">🍲</span>
+            </div>
+            <div class="product-info" style="text-align: center;">
+                <div class="product-name">${r.name}</div>
+                <div class="product-price" style="color: var(--accent); font-weight: 800; font-size: 0.95rem; margin-top: 4px;">${formatPrice(r.price)}</div>
+                <div class="product-stock" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Recipe</div>
             </div>
         `;
         grid.appendChild(card);
