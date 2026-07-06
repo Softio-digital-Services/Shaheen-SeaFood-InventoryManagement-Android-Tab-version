@@ -869,13 +869,18 @@ namespace Shaheen_InventoryManagement_Android
 
                 var categorySales = new List<object>();
                 var dtCat = DatabaseHelper.ExecuteDataTable(
-                    @"SELECT c.category_name, SUM(oi.quantity * oi.price) as total_sales
+                    @"SELECT 
+                          CASE 
+                              WHEN oi.item_type = 'Recipe' THEN 'Recipes'
+                              ELSE COALESCE(c.category_name, 'General')
+                          END as category_name,
+                          SUM(oi.quantity * oi.price) as total_sales
                       FROM order_items oi
-                      JOIN parts p ON oi.part_id = p.id
-                      JOIN categories c ON p.category_id = c.id
+                      LEFT JOIN parts p ON oi.part_id = p.id AND oi.item_type = 'Part'
+                      LEFT JOIN categories c ON p.category_id = c.id AND oi.item_type = 'Part'
                       JOIN orders o ON oi.order_id = o.order_id
                       WHERE o.status = 'Completed'
-                      GROUP BY c.category_name
+                      GROUP BY category_name
                       ORDER BY total_sales DESC");
                 foreach (DataRow row in dtCat.Rows)
                 {
