@@ -119,7 +119,7 @@ body {
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
     gap: 12px;
     padding-bottom: 50px;
 }
@@ -272,8 +272,8 @@ body {
 .product-card { 
     background: var(--surface-glass); 
     border: 1px solid var(--border-color); 
-    border-radius: 16px; 
-    padding: 12px; 
+    border-radius: 12px; 
+    padding: 8px; 
     cursor: pointer; 
     transition: all 0.3s; 
     backdrop-filter: blur(10px); 
@@ -282,15 +282,15 @@ body {
 .product-card:hover { transform: translateY(-3px); border-color: var(--accent); background: rgba(30, 94, 175, 0.04); }
 
 .product-img { 
-    height: 70px; 
+    height: 48px; 
     background: rgba(255,255,255,0.03); 
-    border-radius: 10px; 
+    border-radius: 8px; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    margin-bottom: 8px; 
+    margin-bottom: 6px; 
     overflow: hidden;
-    padding: 6px;
+    padding: 4px;
 }
 
 .cat-icon-img {
@@ -301,12 +301,12 @@ body {
 }
 
 .emoji-icon {
-    font-size: 1.8rem;
+    font-size: 1.4rem;
 }
 
-.product-name { font-weight: 800; font-size: 0.9rem; margin-bottom: 2px; color: var(--text-main); }
-.product-price { font-weight: 800; font-size: 0.95rem; color: var(--accent); margin-bottom: 4px; }
-.product-stock { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+.product-name { font-weight: 800; font-size: 0.82rem; margin-bottom: 2px; color: var(--text-main); }
+.product-price { font-weight: 800; font-size: 0.85rem; color: var(--accent); margin-bottom: 2px; }
+.product-stock { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); }
 .product-stock.low { color: var(--danger); font-weight: 800; }
 
 .card-edit-btn {
@@ -1206,6 +1206,7 @@ body.is-mobile-layout #tabContentReports > div:nth-child(3) {
     box-shadow: 0 4px 12px rgba(30, 94, 175, 0.2) !important;
     transition: all 0.2s !important;
     padding: 10px 24px !important;
+    white-space: nowrap !important;
 }
 .btn-primary:hover {
     background: var(--accent-hover) !important;

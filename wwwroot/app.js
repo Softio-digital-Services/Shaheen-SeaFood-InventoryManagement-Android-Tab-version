@@ -1390,13 +1390,13 @@ function loadInventoryTable() {
         }
 
         card.innerHTML = `
-            <div class="card-edit-btn" onclick="event.stopPropagation(); openEditModal(${p.id})" title="Edit" style="position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.2s; z-index: 5; cursor: pointer;">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path></svg>
+            <div class="card-edit-btn" onclick="event.stopPropagation(); openEditModal(${p.id})" title="Edit" style="position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.2s; z-index: 5; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path></svg>
             </div>
-            <div class="card-delete-btn" onclick="event.stopPropagation(); deleteIngredient(${p.id})" title="Delete" style="position: absolute; top: 10px; left: 10px; width: 32px; height: 32px; background: rgba(239, 68, 68, 0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--danger); transition: all 0.2s; z-index: 5; cursor: pointer;">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            <div class="card-delete-btn" onclick="event.stopPropagation(); deleteIngredient(${p.id})" title="Delete" style="position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; background: rgba(239, 68, 68, 0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--danger); transition: all 0.2s; z-index: 5; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
             </div>
-            <div class="product-img" style="margin-top: 15px;">${displayContent}</div>
+            <div class="product-img" style="margin-top: 20px;">${displayContent}</div>
             <div class="product-info" style="text-align: center;">
                 <div class="product-name">${p.name}</div>
                 <div class="product-price" style="color: var(--accent); font-weight: 800; font-size: 0.95rem; margin-top: 4px;">${formatPrice(p.price)}</div>
@@ -1500,13 +1500,13 @@ function loadRecipesTab() {
         card.className = 'product-card';
 
         card.innerHTML = `
-            <div class="card-edit-btn" onclick="event.stopPropagation(); editRecipe(${r.id})" title="Edit" style="position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.2s; z-index: 5; cursor: pointer;">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path></svg>
+            <div class="card-edit-btn" onclick="event.stopPropagation(); editRecipe(${r.id})" title="Edit" style="position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.2s; z-index: 5; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path></svg>
             </div>
-            <div class="card-delete-btn" onclick="event.stopPropagation(); deleteRecipe(${r.id})" title="Delete" style="position: absolute; top: 10px; left: 10px; width: 32px; height: 32px; background: rgba(239, 68, 68, 0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--danger); transition: all 0.2s; z-index: 5; cursor: pointer;">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            <div class="card-delete-btn" onclick="event.stopPropagation(); deleteRecipe(${r.id})" title="Delete" style="position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; background: rgba(239, 68, 68, 0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--danger); transition: all 0.2s; z-index: 5; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
             </div>
-            <div class="product-img" style="margin-top: 15px;">
+            <div class="product-img" style="margin-top: 20px;">
                 <span class="emoji-icon">🍲</span>
             </div>
             <div class="product-info" style="text-align: center;">
