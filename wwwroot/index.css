@@ -49,9 +49,9 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 0 32px;
-    background: var(--accent);
+    background: rgba(10, 10, 10, 0.95);
     backdrop-filter: blur(15px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 1px solid var(--border-color);
     z-index: 16000; /* Extremely high to stay above EVERYTHING */
     height: var(--header-height); /* Explicit height */
 }
@@ -794,8 +794,8 @@ body {
 }
 
 .top-nav {
-    background: var(--accent) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background: #0a0a0a !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 .search-bar input {
     background: rgba(255, 255, 255, 0.1) !important;
@@ -823,7 +823,7 @@ body {
 .nav-tab {
     background: none;
     border: 1px solid transparent;
-    color: rgba(255, 255, 255, 0.75);
+    color: #a3a3a3;
     font-weight: 700;
     font-size: 0.9rem;
     padding: 8px 18px;
@@ -833,11 +833,11 @@ body {
 }
 .nav-tab:hover {
     color: white;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
 }
 .nav-tab.active {
     color: white !important;
-    background: rgba(255, 255, 255, 0.2) !important;
+    background: #171717 !important;
     border: 2px solid var(--secondary-accent) !important;
     box-shadow: 0 0 12px rgba(244, 178, 102, 0.35) !important;
 }
