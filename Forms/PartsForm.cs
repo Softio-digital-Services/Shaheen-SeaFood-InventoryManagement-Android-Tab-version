@@ -1633,18 +1633,29 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
                 if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data found in the file."); return; }
 
-                // Allow both old format and new format by checking for either
-                bool isNewFormat = dt.Columns.Contains("part_name");
-                bool isOldFormat = dt.Columns.Contains("PartName");
+                // Allow formats checking by finding column dynamically
+                string nameColumn = null;
+                string[] possibleNameCols = { "ingredient", "Ingredient", "name", "Name", "part_name", "PartName" };
+                foreach (var col in possibleNameCols)
+                {
+                    if (dt.Columns.Contains(col))
+                    {
+                        nameColumn = col;
+                        break;
+                    }
+                }
 
-                if (!isNewFormat && !isOldFormat) { MessageHelper.ShowError("Invalid file format. Could not find part name column."); return; }
+                if (nameColumn == null) { MessageHelper.ShowError("Invalid file format. Could not find ingredient or name column."); return; }
+
+                bool isNewFormat = nameColumn != "PartName";
+                bool isOldFormat = nameColumn == "PartName";
 
                 int imported = 0, skipped = 0;
                 foreach (DataRow row in dt.Rows)
                 {
                     try
                     {
-                        string name = isNewFormat ? row["part_name"].ToString() : row["PartName"].ToString();
+                        string name = row[nameColumn].ToString();
                         string pn = isNewFormat && dt.Columns.Contains("part_number") ? row["part_number"].ToString() : (isOldFormat && dt.Columns.Contains("PartNumber") ? row["PartNumber"].ToString() : "");
 
                         if (string.IsNullOrWhiteSpace(name)) { skipped++; continue; }

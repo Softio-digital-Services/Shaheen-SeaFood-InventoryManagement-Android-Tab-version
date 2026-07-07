@@ -1676,7 +1676,7 @@ function parseImportFile(text, isTsv) {
     const headers = lines[0].split(separator).map(h => h.replace(/"/g, '').trim());
     
     // Auto-detect schema
-    const nameIdx = headers.findIndex(h => h.toLowerCase().includes('name'));
+    const nameIdx = headers.findIndex(h => h.toLowerCase().includes('name') || h.toLowerCase().includes('ingredient'));
     const catIdx = headers.findIndex(h => h.toLowerCase().includes('category'));
     const priceIdx = headers.findIndex(h => h.toLowerCase().includes('price') || h.toLowerCase().includes('unitprice'));
     const stockIdx = headers.findIndex(h => h.toLowerCase().includes('stock') || h.toLowerCase().includes('qty') || h.toLowerCase().includes('quantity'));
