@@ -350,6 +350,7 @@ body {
 .input-group { text-align: left; margin-bottom: 20px; position: relative; }
 .input-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
 .input-group input, .input-group select { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; color: white; font-size: 0.9rem; outline: none; height: 45px; -webkit-appearance: none; -moz-appearance: none; appearance: none; transition: all 0.2s; }
+.login-card .input-group input { color: #333333; }
 .input-group select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: calc(100% - 12px) center; padding-right: 35px; cursor: pointer; }
 .input-group select option, .currency-select option { background: #171717; color: white; padding: 10px; }
 .input-group input:focus, .input-group select:focus { border-color: var(--accent); background: rgba(255, 255, 255, 0.1); box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.2); }

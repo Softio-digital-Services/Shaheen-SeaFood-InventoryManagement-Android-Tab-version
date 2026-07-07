@@ -3,7 +3,7 @@ const TRANSLATIONS = {
     en: {
         // Login
         login_title: 'Inventory Portal',
-        login_subtitle: 'Sign in to manage your garage',
+        login_subtitle: 'Sign in to manage your inventory',
         login_username: 'Username',
         login_password: 'Password',
         login_btn: 'Sign In',
@@ -36,7 +36,7 @@ const TRANSLATIONS = {
         modal_add_btn: 'Add Product',
         modal_save_btn: 'Save Changes',
         modal_field_name: 'Product Name',
-        modal_field_name_ph: 'e.g. Brake Pads',
+        modal_field_name_ph: 'e.g. Salmon Fillet',
         modal_field_category: 'Category',
         modal_field_price: 'Price ($)',
         modal_field_stock: 'Initial Stock',
@@ -87,7 +87,7 @@ const TRANSLATIONS = {
         modal_add_btn: 'إضافة المنتج',
         modal_save_btn: 'حفظ التغييرات',
         modal_field_name: 'اسم المنتج',
-        modal_field_name_ph: 'مثال: تيل أمامي',
+        modal_field_name_ph: 'مثال: فيليه السلمون',
         modal_field_category: 'الفئة',
         modal_field_price: 'السعر',
         modal_field_stock: 'الكمية الابتدائية',
@@ -175,10 +175,10 @@ function applyLanguage() {
 
 // STATE MANAGEMENT (Now dynamic with fallbacks)
 const DEFAULT_PRODUCTS = [
-    { id: 1, name: 'Brake Pads - Front', price: 85.00, stock: 12, category: 'Brakes', image: '🛑' },
-    { id: 2, name: 'Oil Filter (Premium)', price: 15.50, stock: 4, category: 'Engine', image: '🛢️' },
-    { id: 3, name: 'Spark Plug Platinum', price: 8.99, stock: 25, category: 'Engine', image: '⚡' },
-    { id: 10, name: 'Full Engine Service', price: 150.00, stock: 999, category: 'Services', image: '🛠️', isService: true }
+    { id: 1, name: 'Fresh Salmon Fillet', price: 18.50, stock: 40, category: 'Seafood', image: '🐟' },
+    { id: 2, name: 'Garlic Butter', price: 4.25, stock: 15, category: 'Groceries', image: '🧈' },
+    { id: 3, name: 'White Onion', price: 1.50, stock: 80, category: 'Vegetables', image: '🧅' },
+    { id: 10, name: 'Full Kitchen Prep Service', price: 50.00, stock: 999, category: 'Services', image: '🍽️', isService: true }
 ];
 
 // Mock fetch for local browser testing/verification
@@ -186,13 +186,12 @@ if (typeof window !== 'undefined' && !window.AndroidBridge) {
     console.log("Mocking fetch API for offline browser testing");
     const mockDb = {
         products: [
-            { id: 1, name: 'Brake Pads - Front', price: 85.00, stock: 12, category: 'Brakes', image: '🛑' },
-            { id: 2, name: 'Oil Filter (Premium)', price: 15.50, stock: 4, category: 'Engine', image: '🛢️' },
-            { id: 3, name: 'Spark Plug Platinum', price: 8.99, stock: 25, category: 'Engine', image: '⚡' },
-            { id: 4, name: 'Fresh Salmon Fillet', price: 18.50, stock: 40, category: 'Seafood', image: '🐟' },
-            { id: 5, name: 'Garlic Butter', price: 4.25, stock: 15, category: 'Groceries', image: '🧈' }
+            { id: 1, name: 'Fresh Salmon Fillet', price: 18.50, stock: 40, category: 'Seafood', image: '🐟' },
+            { id: 2, name: 'Garlic Butter', price: 4.25, stock: 15, category: 'Groceries', image: '🧈' },
+            { id: 3, name: 'White Onion', price: 1.50, stock: 80, category: 'Vegetables', image: '🧅' },
+            { id: 4, name: 'Tomato Paste', price: 2.99, stock: 50, category: 'Groceries', image: '🥫' }
         ],
-        categories: ['Brakes', 'Engine', 'Seafood', 'Groceries'],
+        categories: ['Seafood', 'Groceries', 'Vegetables', 'Services'],
         recipes: [
             {
                 id: 1,
@@ -489,7 +488,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupSignalR(); 
 
     // 2. Load Data in Background
-    initApp();
+    initApp().then(() => {
+        switchTab('inventory');
+    });
 });
 
 // UTILITIES
@@ -520,6 +521,19 @@ async function fetchLanguageConfig() {
 
 let allRecipes = [];
 
+function refreshActiveTab() {
+    const activeTab = document.querySelector('.nav-tab.active');
+    if (activeTab) {
+        if (activeTab.id === 'tabBtnInventory') {
+            loadInventoryTable();
+        } else if (activeTab.id === 'tabBtnRecipes') {
+            loadRecipesTab();
+        } else if (activeTab.id === 'tabBtnReports') {
+            loadReportsData();
+        }
+    }
+}
+
 async function initApp() {
     try {
         await fetchLanguageConfig();
@@ -531,8 +545,7 @@ async function initApp() {
     } catch (e) {
         console.error("Init failed", e);
     }
-    renderProducts();
-    updateCartUI();
+    refreshActiveTab();
 }
 
 async function fetchCurrencies() {
@@ -921,7 +934,9 @@ async function handleLogin() {
             if (topNav) topNav.style.display = 'flex';
             showToast(`Logged in as ${data.fullName}`, "success");
             globalBarcodeScanner.init(); // Activate scanner immediately on login
-            initApp();
+            initApp().then(() => {
+                switchTab('inventory');
+            });
         } else {
             const msg = "Invalid username or password";
             if (errorBox) {
@@ -1116,7 +1131,7 @@ async function setupSignalR() {
     connection.on("StockUpdated", (reason) => {
         console.log("Real-time sync: StockUpdated", reason);
         fetchInventory().then(() => {
-            renderProducts();
+            refreshActiveTab();
             checkLowStockAlerts();
         });
     });
@@ -1316,12 +1331,10 @@ function switchTab(tabId) {
     const btnOpenAdd = document.getElementById('btnOpenAddModal');
 
     if (searchBar) {
-        if (tabId === 'pos') searchBar.style.display = 'flex';
-        else searchBar.style.display = 'none';
+        searchBar.style.display = 'none';
     }
     if (btnOpenAdd) {
-        if (tabId === 'pos') btnOpenAdd.style.display = 'block';
-        else btnOpenAdd.style.display = 'none';
+        btnOpenAdd.style.display = 'none';
     }
 
     document.querySelectorAll('.tab-content-panel').forEach(panel => {
@@ -1333,11 +1346,10 @@ function switchTab(tabId) {
         btn.classList.remove('active');
     });
 
-    let panelId = 'tabContentPos';
-    let btnId = 'tabBtnPos';
+    let panelId = 'tabContentInventory';
+    let btnId = 'tabBtnInventory';
 
-    if (tabId === 'pos') { panelId = 'tabContentPos'; btnId = 'tabBtnPos'; renderProducts(); }
-    else if (tabId === 'inventory') { panelId = 'tabContentInventory'; btnId = 'tabBtnInventory'; loadInventoryTable(); }
+    if (tabId === 'inventory') { panelId = 'tabContentInventory'; btnId = 'tabBtnInventory'; loadInventoryTable(); }
     else if (tabId === 'recipes') { panelId = 'tabContentRecipes'; btnId = 'tabBtnRecipes'; loadRecipesTab(); }
     else if (tabId === 'import') { panelId = 'tabContentImport'; btnId = 'tabBtnImport'; }
     else if (tabId === 'reports') { panelId = 'tabContentReports'; btnId = 'tabBtnReports'; loadReportsData(); }
@@ -1698,10 +1710,10 @@ function parseImportFile(text, isTsv) {
     const previewList = document.getElementById('importPreviewList');
     previewList.innerHTML = pendingImportItems.map(item => `
         <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:10px;">
-            <b style="color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</b>
+            <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</b>
             <span style="color:var(--text-muted);">${item.category}</span>
             <span style="color:var(--accent); text-align:right;">$${item.price.toFixed(2)}</span>
-            <span style="color:white; text-align:right;">Qty: ${item.stock}</span>
+            <span style="color:var(--text-main); text-align:right;">Qty: ${item.stock}</span>
         </div>
     `).join('');
 
@@ -1845,8 +1857,8 @@ function parseSalesImportFile(text, isTsv) {
     const previewList = document.getElementById('salesImportPreviewList');
     previewList.innerHTML = pendingSalesItems.map(item => `
         <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; display:flex; justify-content:space-between; align-items:center;">
-            <b style="color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${item.recipeName}</b>
-            <span style="color:white; font-weight:700;">Qty: ${item.qtySold}</span>
+            <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${item.recipeName}</b>
+            <span style="color:var(--text-main); font-weight:700;">Qty: ${item.qtySold}</span>
         </div>
     `).join('');
 
@@ -1896,9 +1908,9 @@ async function confirmSalesImport() {
                     const newStock = d.newStock !== undefined ? d.newStock : d.NewStock;
                     return `
                         <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:6px 0; display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:10px;">
-                            <b style="color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${partName}</b>
+                            <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${partName}</b>
                             <span style="color:var(--danger); text-align:right;">-${qtyDeducted}</span>
-                            <span style="color:${newStock <= 0 ? 'var(--danger)' : newStock < 5 ? 'var(--warn)' : 'white'}; text-align:right; font-weight:700;">Stock: ${newStock}</span>
+                            <span style="color:${newStock <= 0 ? 'var(--danger)' : newStock < 5 ? 'var(--warn)' : 'var(--text-main)'}; text-align:right; font-weight:700;">Stock: ${newStock}</span>
                         </div>
                     `;
                 }).join('');
@@ -1982,7 +1994,7 @@ async function loadReportsData() {
                         row.className = 'report-bar-row';
                         row.innerHTML = `
                             <div class="report-bar-label">
-                                <span style="font-weight:600; color:white;">${c.category}</span>
+                                <span style="font-weight:600; color:var(--text-main);">${c.category}</span>
                                 <span style="color:var(--accent); font-weight:700;">${formatPrice(c.sales)}</span>
                             </div>
                             <div class="report-bar-outer">
@@ -2005,7 +2017,7 @@ async function loadReportsData() {
                         const div = document.createElement('div');
                         div.className = `activity-log-item ${t.action.toLowerCase()}`;
                         div.innerHTML = `
-                            <div style="display:flex; justify-content:space-between; font-weight:700; color:white;">
+                            <div style="display:flex; justify-content:space-between; font-weight:700; color:var(--text-main);">
                                 <span>${t.action}: ${t.item}</span>
                                 <span style="font-size:0.75rem; color:var(--text-muted);">${t.user}</span>
                             </div>
@@ -2021,6 +2033,23 @@ async function loadReportsData() {
         }
     } catch (e) { console.error("Failed to load reports", e); }
 }
+
+window.clearReportsData = async function() {
+    if (!confirm("Are you sure you want to clear all sales orders and activity logs to start a fresh daily report? This action cannot be undone.")) {
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/api/clear-reports`, { method: 'POST' });
+        if (res.ok) {
+            showToast("Daily report cleared successfully!", "success");
+            await loadReportsData();
+        } else {
+            showToast("Failed to clear reports", "error");
+        }
+    } catch (e) {
+        showToast("Connection error", "error");
+    }
+};
 
 
 window.toggleCartDrawer = function() {

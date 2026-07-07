@@ -217,6 +217,10 @@ namespace Shaheen_InventoryManagement_Android
                 {
                     return GetReportsData();
                 }
+                else if (endpoint == "api/clear-reports" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ClearReportsData();
+                }
 
                 return JsonSerializer.Serialize(new { error = $"Endpoint not found: {endpoint} ({method})" });
             }
@@ -678,6 +682,8 @@ namespace Shaheen_InventoryManagement_Android
                     conn.Open();
                     using (var transaction = conn.BeginTransaction())
                     {
+                        var itemsForOrder = new List<Tuple<int, double, decimal>>();
+
                         foreach (var sale in body.Sales)
                         {
                             if (string.IsNullOrWhiteSpace(sale.RecipeName) || sale.QtySold <= 0)
@@ -686,13 +692,14 @@ namespace Shaheen_InventoryManagement_Android
                                 continue;
                             }
 
-                            // 1. Find the recipe ID by name (case-insensitive and ignoring all whitespace)
-                            string sqlRecipe = @"SELECT id, recipe_name FROM recipes 
+                            // 1. Find the recipe ID and selling price by name (case-insensitive and ignoring all whitespace)
+                            string sqlRecipe = @"SELECT id, recipe_name, selling_price FROM recipes 
                                                  WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(recipe_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
                                                        REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
                                                    AND date_deleted IS NULL";
                             int recipeId = 0;
                             string exactRecipeName = "";
+                            decimal sellingPrice = 0;
                             using (var cmd = new SqliteCommand(sqlRecipe, conn, transaction))
                             {
                                 cmd.Parameters.AddWithValue("@name", sale.RecipeName.Trim());
@@ -702,6 +709,7 @@ namespace Shaheen_InventoryManagement_Android
                                     {
                                         recipeId = Convert.ToInt32(reader["id"]);
                                         exactRecipeName = reader["recipe_name"].ToString();
+                                        sellingPrice = Convert.ToDecimal(reader["selling_price"]);
                                     }
                                 }
                             }
@@ -793,6 +801,51 @@ namespace Shaheen_InventoryManagement_Android
                             }
 
                             recipesProcessed++;
+                            itemsForOrder.Add(Tuple.Create(recipeId, (double)sale.QtySold, sellingPrice));
+                        }
+
+                        if (itemsForOrder.Count > 0)
+                        {
+                            decimal totalOrderAmount = 0;
+                            foreach (var item in itemsForOrder)
+                            {
+                                totalOrderAmount += item.Item3 * (decimal)item.Item2;
+                            }
+
+                            string sqlInsertOrder = @"INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, status) 
+                                                      VALUES (datetime('now'), @total, 'Paid', @paid, 'Completed');
+                                                      SELECT last_insert_rowid();";
+                            long orderId = 0;
+                            using (var cmd = new SqliteCommand(sqlInsertOrder, conn, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@total", totalOrderAmount);
+                                cmd.Parameters.AddWithValue("@paid", totalOrderAmount);
+                                orderId = (long)cmd.ExecuteScalar();
+                            }
+
+                            foreach (var item in itemsForOrder)
+                            {
+                                string sqlInsertItem = @"INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) 
+                                                         VALUES (@orderId, 0, @qty, @price, 'Recipe', @recipeId)";
+                                using (var cmd = new SqliteCommand(sqlInsertItem, conn, transaction))
+                                {
+                                    cmd.Parameters.AddWithValue("@orderId", orderId);
+                                    cmd.Parameters.AddWithValue("@qty", item.Item2);
+                                    cmd.Parameters.AddWithValue("@price", item.Item3);
+                                    cmd.Parameters.AddWithValue("@recipeId", item.Item1);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+
+                            string sqlInsertTxOrder = @"INSERT INTO transactions (action_type, part_name, description, username) 
+                                                        VALUES ('SALE', @partName, @desc, 'Admin')";
+                            string orderDesc = $"Order #{orderId} placed via daily sales import -- Total: {totalOrderAmount:C}";
+                            using (var cmd = new SqliteCommand(sqlInsertTxOrder, conn, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@partName", "POS Sale");
+                                cmd.Parameters.AddWithValue("@desc", orderDesc);
+                                cmd.ExecuteNonQuery();
+                            }
                         }
 
                         transaction.Commit();
@@ -859,13 +912,23 @@ namespace Shaheen_InventoryManagement_Android
                     "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'Completed'");
 
                 int totalOrders = DatabaseHelper.ExecuteScalar<int>(
-                    "SELECT COUNT(*) FROM orders WHERE status = 'Completed'");
+                    @"SELECT COALESCE(CAST(SUM(oi.quantity) AS INT), 0) 
+                      FROM order_items oi 
+                      JOIN orders o ON oi.order_id = o.order_id 
+                      WHERE o.status = 'Completed'");
 
                 int outOfStock = DatabaseHelper.ExecuteScalar<int>(
-                    "SELECT COUNT(*) FROM parts WHERE quantity_in_stock = 0 AND date_deleted IS NULL AND status = 'Active'");
+                    @"SELECT COUNT(*) FROM parts 
+                      WHERE CAST(quantity_in_stock AS REAL) <= 0 
+                        AND date_deleted IS NULL 
+                        AND (status IS NULL OR LOWER(status) = 'active')");
 
                 int lowStock = DatabaseHelper.ExecuteScalar<int>(
-                    "SELECT COUNT(*) FROM parts WHERE quantity_in_stock <= minimum_stock_level AND quantity_in_stock > 0 AND date_deleted IS NULL AND status = 'Active'");
+                    @"SELECT COUNT(*) FROM parts 
+                      WHERE CAST(quantity_in_stock AS REAL) <= CAST(minimum_stock_level AS REAL) 
+                        AND CAST(quantity_in_stock AS REAL) > 0 
+                        AND date_deleted IS NULL 
+                        AND (status IS NULL OR LOWER(status) = 'active')");
 
                 var categorySales = new List<object>();
                 var dtCat = DatabaseHelper.ExecuteDataTable(
@@ -921,6 +984,71 @@ namespace Shaheen_InventoryManagement_Android
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "WebAppInterface.GetReportsData");
+                return JsonSerializer.Serialize(new { error = ex.Message });
+            }
+        }
+
+        private string ClearReportsData()
+        {
+            try
+            {
+                using (var conn = new SqliteConnection(DatabaseConfig.ConnectionString))
+                {
+                    conn.Open();
+                    using (var transaction = conn.BeginTransaction())
+                    {
+                        // 1. Delete completed order items
+                        string sqlDeleteItems = @"
+                            DELETE FROM order_items 
+                            WHERE order_id IN (SELECT order_id FROM orders WHERE status = 'Completed')";
+                        using (var cmd = new SqliteCommand(sqlDeleteItems, conn, transaction))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // 2. Delete completed orders
+                        string sqlDeleteOrders = "DELETE FROM orders WHERE status = 'Completed'";
+                        using (var cmd = new SqliteCommand(sqlDeleteOrders, conn, transaction))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // 3. Clear payments
+                        string sqlDeletePayments = "DELETE FROM payments";
+                        using (var cmd = new SqliteCommand(sqlDeletePayments, conn, transaction))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // 4. Clear returns and return items
+                        string sqlDeleteReturnItems = "DELETE FROM return_items";
+                        using (var cmd = new SqliteCommand(sqlDeleteReturnItems, conn, transaction))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        string sqlDeleteReturns = "DELETE FROM returns";
+                        using (var cmd = new SqliteCommand(sqlDeleteReturns, conn, transaction))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // 5. Clear transactions
+                        string sqlDeleteTransactions = "DELETE FROM transactions";
+                        using (var cmd = new SqliteCommand(sqlDeleteTransactions, conn, transaction))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                }
+
+                return JsonSerializer.Serialize(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "WebAppInterface.ClearReportsData");
                 return JsonSerializer.Serialize(new { error = ex.Message });
             }
         }
