@@ -141,7 +141,7 @@
 
         <!-- IMPORT/EXPORT TAB CONTENT -->
         <div id="tabContentImport" class="tab-content-panel hidden" style="flex:1; overflow-y:auto; padding:20px; text-align:left;">
-            <h2 style="margin-top:0; margin-bottom:20px;">Import & Export Data</h2>
+            <h2 style="margin-top:0; margin-bottom:20px; font-size:1.35rem;">Import & Export Data</h2>
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:25px;">
                 <!-- Import -->
                 <div class="glass-card" style="padding:25px;">
@@ -215,10 +215,10 @@
         <!-- REPORTS TAB CONTENT -->
         <div id="tabContentReports" class="tab-content-panel hidden" style="flex:1; overflow-y:auto; padding:20px; text-align:left;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2 style="margin:0;">Reports & Analytics</h2>
+                <h2 style="margin:0; font-size:1.35rem;">Reports & Analytics</h2>
                 <div style="display:flex; gap:10px;">
-                    <button class="btn-clear" onclick="loadReportsData()" style="height:35px; border:1px solid var(--border-color); color:var(--text-main); padding:0 15px;">🔄 Refresh</button>
-                    <button class="btn-clear" onclick="clearReportsData()" style="height:35px; padding:0 15px;">🗑️ Clear Data</button>
+                    <button class="btn-refresh-reports" onclick="loadReportsData()">🔄 Refresh</button>
+                    <button class="btn-clear-reports" onclick="clearReportsData()">🗑️ Clear Data</button>
                 </div>
             </div>
             

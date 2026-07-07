@@ -1159,13 +1159,10 @@ body.is-mobile-layout #tabContentRecipes > div:first-child {
     margin-bottom: 16px !important;
 }
 body.is-mobile-layout #tabContentInventory h2,
-body.is-mobile-layout #tabContentRecipes h2 {
-    font-size: 1.15rem !important;
-    font-weight: 800 !important;
-}
+body.is-mobile-layout #tabContentRecipes h2,
 body.is-mobile-layout #tabContentImport h2,
 body.is-mobile-layout #tabContentReports h2 {
-    font-size: 1.4rem !important;
+    font-size: 1.35rem !important;
     font-weight: 800 !important;
 }
 body.is-mobile-layout #tabContentInventory button.btn-primary,
@@ -1215,4 +1212,48 @@ body.is-mobile-layout #tabContentReports > div:nth-child(3) {
 }
 .btn-primary:active {
     transform: translateY(0) !important;
+}
+
+.btn-refresh-reports {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    background: rgba(30, 94, 175, 0.08);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    height: 38px;
+    padding: 0 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-refresh-reports:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-clear-reports {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    height: 38px;
+    padding: 0 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-clear-reports:hover {
+    background: var(--danger);
+    color: white;
 }
