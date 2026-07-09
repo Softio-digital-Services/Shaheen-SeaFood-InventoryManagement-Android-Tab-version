@@ -607,15 +607,14 @@ function renderCategories(apiCategories = null) {
     const categories = ['All', ...masterCategories, 'Recipes'];
     container.innerHTML = '';
     
-    // Sync the Add Item modal category dropdown
-    const modalSelect = document.getElementById('newItemCategory');
-    if (modalSelect) {
-        modalSelect.innerHTML = '';
+    // Sync the Category datalist
+    const datalist = document.getElementById('categoryDatalist');
+    if (datalist) {
+        datalist.innerHTML = '';
         masterCategories.forEach(cat => {
             const opt = document.createElement('option');
             opt.value = cat;
-            opt.innerText = cat;
-            modalSelect.appendChild(opt);
+            datalist.appendChild(opt);
         });
     }
     
@@ -648,12 +647,13 @@ function renderProducts() {
             const card = document.createElement('div');
             card.className = 'product-card recipe-product-card';
             card.onclick = () => addRecipeToCart(r);
+            const subtext = r.categoryName ? `Recipe • ${r.categoryName}` : "Recipe";
             card.innerHTML = `
                 <div class="product-img"><span class="emoji-icon">🍲</span></div>
                 <div class="product-info">
                     <div class="product-name">${r.name}</div>
                     <div class="product-price">${formatPrice(r.price)}</div>
-                    <div class="product-stock" style="color:var(--accent);">Recipe</div>
+                    <div class="product-stock" style="color:var(--accent);">${subtext}</div>
                 </div>
             `;
             grid.appendChild(card);
@@ -700,6 +700,29 @@ function renderProducts() {
                 <div class="product-name">${p.name}</div>
                 <div class="product-price">${formatPrice(p.price)}</div>
                 <div class="product-stock ${p.stock < 5 ? 'low' : ''}">${t('stock_label')}: ${p.stock}</div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+
+    // Also display recipes that belong to this category!
+    const filteredRecipes = allRecipes.filter(r => {
+        const matchesCategory = currentCategory === 'All' || r.categoryName === currentCategory;
+        const matchesSearch = !query || (r.name && r.name.toLowerCase().includes(query));
+        return matchesCategory && matchesSearch;
+    });
+
+    filteredRecipes.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'product-card recipe-product-card';
+        card.onclick = () => addRecipeToCart(r);
+        const subtext = r.categoryName ? `Recipe • ${r.categoryName}` : "Recipe";
+        card.innerHTML = `
+            <div class="product-img"><span class="emoji-icon">🍲</span></div>
+            <div class="product-info">
+                <div class="product-name">${r.name}</div>
+                <div class="product-price">${formatPrice(r.price)}</div>
+                <div class="product-stock" style="color:var(--accent);">${subtext}</div>
             </div>
         `;
         grid.appendChild(card);
@@ -1512,7 +1535,7 @@ function loadRecipesTab() {
             <div class="product-info" style="text-align: center;">
                 <div class="product-name">${r.name}</div>
                 <div class="product-price" style="color: var(--accent); font-weight: 800; font-size: 0.95rem; margin-top: 4px;">${formatPrice(r.price)}</div>
-                <div class="product-stock" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Recipe</div>
+                <div class="product-stock" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">${r.categoryName ? `Recipe • ${r.categoryName}` : 'Recipe'}</div>
             </div>
         `;
         grid.appendChild(card);
@@ -1523,6 +1546,7 @@ function openNewRecipeModal() {
     document.getElementById('recipeModalTitle').innerText = "Create New Recipe";
     document.getElementById('editRecipeId').value = '';
     document.getElementById('recipeName').value = '';
+    document.getElementById('recipeCategory').value = '';
     document.getElementById('recipeDesc').value = '';
     document.getElementById('recipePrice').value = '';
     document.getElementById('recipeIngredientsList').innerHTML = '';
@@ -1566,6 +1590,7 @@ function removeRecipeIngredientRow(btn) {
 async function saveRecipe() {
     const id = document.getElementById('editRecipeId').value;
     const name = document.getElementById('recipeName').value;
+    const categoryName = document.getElementById('recipeCategory').value;
     const desc = document.getElementById('recipeDesc').value;
     const price = parseFloat(document.getElementById('recipePrice').value);
 
@@ -1589,7 +1614,7 @@ async function saveRecipe() {
         return;
     }
 
-    const payload = { id: id ? parseInt(id) : null, name, description: desc, price, ingredients };
+    const payload = { id: id ? parseInt(id) : null, name, categoryName, description: desc, price, ingredients };
 
     try {
         const res = await fetch(`${API_BASE}/api/recipes`, {
@@ -1635,6 +1660,7 @@ function editRecipe(id) {
     document.getElementById('recipeModalTitle').innerText = "Edit Recipe";
     document.getElementById('editRecipeId').value = r.id;
     document.getElementById('recipeName').value = r.name;
+    document.getElementById('recipeCategory').value = r.categoryName || '';
     document.getElementById('recipeDesc').value = r.description || '';
     document.getElementById('recipePrice').value = r.price;
 
@@ -1823,12 +1849,13 @@ function parseSalesImportFile(text, isTsv) {
     const separator = isTsv ? '\t' : ',';
     const headers = lines[0].split(separator).map(h => h.replace(/"/g, '').trim());
     
-    // Detect recipe name and quantity sold columns
-    const recipeIdx = headers.findIndex(h => h.toLowerCase().includes('recipe') || h.toLowerCase().includes('meal') || h.toLowerCase().includes('name'));
-    const qtyIdx = headers.findIndex(h => h.toLowerCase().includes('qty') || h.toLowerCase().includes('quantity') || h.toLowerCase().includes('sold') || h.toLowerCase().includes('count'));
+    // Detect columns
+    const recipeIdx = headers.findIndex(h => h.toLowerCase().includes('recipe') || h.toLowerCase().includes('meal') || h.toLowerCase().includes('name') || h.toLowerCase().includes('description') || h.toLowerCase().includes('descreption'));
+    const qtyIdx = headers.findIndex(h => h.toLowerCase().includes('qty') || h.toLowerCase().includes('quantity') || h.toLowerCase().includes('sold') || h.toLowerCase().includes('count') || h.toLowerCase().includes('qsold'));
+    const itemNoIdx = headers.findIndex(h => h.toLowerCase().includes('item no') || h.toLowerCase().includes('itemno') || h.toLowerCase().includes('no.'));
 
-    if (recipeIdx === -1) {
-        showToast("Invalid file format. 'Recipe Name' column is required.", "error");
+    if (recipeIdx === -1 && itemNoIdx === -1) {
+        showToast("Invalid file format. 'Description' or 'Item No' column is required.", "error");
         return;
     }
     const finalQtyIdx = qtyIdx !== -1 ? qtyIdx : -1;
@@ -1838,11 +1865,13 @@ function parseSalesImportFile(text, isTsv) {
         const cols = lines[i].split(separator).map(c => c.replace(/"/g, '').trim());
         if (cols.length < headers.length) continue;
 
-        const recipeName = cols[recipeIdx] || '';
+        const recipeName = recipeIdx !== -1 ? cols[recipeIdx] || '' : '';
         const qtySold = finalQtyIdx !== -1 ? parseInt(cols[finalQtyIdx]) || 1 : 1;
+        const itemNo = itemNoIdx !== -1 ? cols[itemNoIdx] || '' : '';
 
-        if (recipeName) {
+        if (recipeName || itemNo) {
             pendingSalesItems.push({
+                itemNo,
                 recipeName,
                 qtySold
             });
@@ -1857,7 +1886,7 @@ function parseSalesImportFile(text, isTsv) {
     const previewList = document.getElementById('salesImportPreviewList');
     previewList.innerHTML = pendingSalesItems.map(item => `
         <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; display:flex; justify-content:space-between; align-items:center;">
-            <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${item.recipeName}</b>
+            <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${item.itemNo ? '[' + item.itemNo + '] ' : ''}${item.recipeName || 'Unnamed Item'}</b>
             <span style="color:var(--text-main); font-weight:700;">Qty: ${item.qtySold}</span>
         </div>
     `).join('');

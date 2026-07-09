@@ -694,50 +694,99 @@ namespace Shaheen_InventoryManagement_Android
                                 continue;
                             }
 
-                            // 1. Find the recipe ID and selling price by name (case-insensitive and ignoring all whitespace)
-                            string sqlRecipe = @"SELECT id, recipe_name, selling_price FROM recipes 
-                                                 WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(recipe_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
-                                                       REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
-                                                   AND date_deleted IS NULL";
                             int recipeId = 0;
                             string exactRecipeName = "";
                             decimal sellingPrice = 0;
-                            using (var cmd = new SqliteCommand(sqlRecipe, conn, transaction))
+
+                            // 1. Find the recipe ID and selling price by Item No (if provided)
+                            if (!string.IsNullOrWhiteSpace(sale.ItemNo))
                             {
-                                cmd.Parameters.AddWithValue("@name", sale.RecipeName.Trim());
-                                using (var reader = cmd.ExecuteReader())
+                                string sqlRecipeByNo = @"SELECT id, recipe_name, selling_price FROM recipes 
+                                                         WHERE LOWER(item_no) = LOWER(@itemNo) AND date_deleted IS NULL";
+                                using (var cmd = new SqliteCommand(sqlRecipeByNo, conn, transaction))
                                 {
-                                    if (reader.Read())
+                                    cmd.Parameters.AddWithValue("@itemNo", sale.ItemNo.Trim());
+                                    using (var reader = cmd.ExecuteReader())
                                     {
-                                        recipeId = Convert.ToInt32(reader["id"]);
-                                        exactRecipeName = reader["recipe_name"].ToString();
-                                        sellingPrice = Convert.ToDecimal(reader["selling_price"]);
+                                        if (reader.Read())
+                                        {
+                                            recipeId = Convert.ToInt32(reader["id"]);
+                                            exactRecipeName = reader["recipe_name"].ToString();
+                                            sellingPrice = Convert.ToDecimal(reader["selling_price"]);
+                                        }
                                     }
                                 }
                             }
 
-                            if (recipeId == 0)
+                            // 2. Find the recipe ID and selling price by name (fallback, case-insensitive and ignoring all whitespace)
+                            if (recipeId == 0 && !string.IsNullOrWhiteSpace(sale.RecipeName))
                             {
-                                // Fallback: Search the parts (inventory) table directly by name (case-insensitive and ignoring all whitespace)
-                                string sqlPartDirect = @"SELECT id, part_name, selling_price, quantity_in_stock FROM parts 
-                                                         WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(part_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
-                                                               REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
-                                                           AND date_deleted IS NULL";
-                                int partId = 0;
-                                string exactPartName = "";
-                                decimal partSellingPrice = 0;
-                                double currentPartStock = 0;
-                                using (var cmd = new SqliteCommand(sqlPartDirect, conn, transaction))
+                                string sqlRecipe = @"SELECT id, recipe_name, selling_price FROM recipes 
+                                                     WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(recipe_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
+                                                           REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
+                                                       AND date_deleted IS NULL";
+                                using (var cmd = new SqliteCommand(sqlRecipe, conn, transaction))
                                 {
                                     cmd.Parameters.AddWithValue("@name", sale.RecipeName.Trim());
                                     using (var reader = cmd.ExecuteReader())
                                     {
                                         if (reader.Read())
                                         {
-                                            partId = Convert.ToInt32(reader["id"]);
-                                            exactPartName = reader["part_name"].ToString();
-                                            partSellingPrice = Convert.ToDecimal(reader["selling_price"]);
-                                            currentPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
+                                            recipeId = Convert.ToInt32(reader["id"]);
+                                            exactRecipeName = reader["recipe_name"].ToString();
+                                            sellingPrice = Convert.ToDecimal(reader["selling_price"]);
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (recipeId == 0)
+                            {
+                                int partId = 0;
+                                string exactPartName = "";
+                                decimal partSellingPrice = 0;
+                                double currentPartStock = 0;
+
+                                // Fallback A: Search the parts (inventory) table directly by Item No (if provided)
+                                if (!string.IsNullOrWhiteSpace(sale.ItemNo))
+                                {
+                                    string sqlPartByNo = @"SELECT id, part_name, selling_price, quantity_in_stock FROM parts 
+                                                           WHERE LOWER(item_no) = LOWER(@itemNo) AND date_deleted IS NULL";
+                                    using (var cmd = new SqliteCommand(sqlPartByNo, conn, transaction))
+                                    {
+                                        cmd.Parameters.AddWithValue("@itemNo", sale.ItemNo.Trim());
+                                        using (var reader = cmd.ExecuteReader())
+                                        {
+                                            if (reader.Read())
+                                            {
+                                                partId = Convert.ToInt32(reader["id"]);
+                                                exactPartName = reader["part_name"].ToString();
+                                                partSellingPrice = Convert.ToDecimal(reader["selling_price"]);
+                                                currentPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Fallback B: Search the parts (inventory) table directly by name (case-insensitive and ignoring all whitespace)
+                                if (partId == 0 && !string.IsNullOrWhiteSpace(sale.RecipeName))
+                                {
+                                    string sqlPartDirect = @"SELECT id, part_name, selling_price, quantity_in_stock FROM parts 
+                                                             WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(part_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
+                                                                   REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
+                                                               AND date_deleted IS NULL";
+                                    using (var cmd = new SqliteCommand(sqlPartDirect, conn, transaction))
+                                    {
+                                        cmd.Parameters.AddWithValue("@name", sale.RecipeName.Trim());
+                                        using (var reader = cmd.ExecuteReader())
+                                        {
+                                            if (reader.Read())
+                                            {
+                                                partId = Convert.ToInt32(reader["id"]);
+                                                exactPartName = reader["part_name"].ToString();
+                                                partSellingPrice = Convert.ToDecimal(reader["selling_price"]);
+                                                currentPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
+                                            }
                                         }
                                     }
                                 }
@@ -745,8 +794,9 @@ namespace Shaheen_InventoryManagement_Android
                                 if (partId == 0)
                                 {
                                     recipesSkipped++;
-                                    if (!skippedRecipes.Contains(sale.RecipeName.Trim()))
-                                        skippedRecipes.Add(sale.RecipeName.Trim());
+                                    string missingName = !string.IsNullOrWhiteSpace(sale.RecipeName) ? sale.RecipeName.Trim() : (!string.IsNullOrWhiteSpace(sale.ItemNo) ? "Item No " + sale.ItemNo : "Unknown");
+                                    if (!skippedRecipes.Contains(missingName))
+                                        skippedRecipes.Add(missingName);
                                     continue;
                                 }
 
@@ -1267,6 +1317,7 @@ namespace Shaheen_InventoryManagement_Android
 
         private class DailySaleDetail
         {
+            public string ItemNo { get; set; }
             public string RecipeName { get; set; }
             public int QtySold { get; set; }
         }
