@@ -537,6 +537,7 @@ namespace Shaheen_InventoryManagement_Android
                         description = r.Description,
                         price = r.SellingPrice,
                         totalCost = r.TotalCost,
+                        categoryName = r.CategoryName,
                         parts = partsList
                     });
                 }
@@ -562,6 +563,7 @@ namespace Shaheen_InventoryManagement_Android
                     RecipeName = body.Name,
                     Description = body.Description ?? "",
                     SellingPrice = body.Price,
+                    CategoryName = body.CategoryName ?? "",
                     Status = "Active"
                 };
 
@@ -682,7 +684,7 @@ namespace Shaheen_InventoryManagement_Android
                     conn.Open();
                     using (var transaction = conn.BeginTransaction())
                     {
-                        var itemsForOrder = new List<Tuple<int, double, decimal>>();
+                        var itemsForOrder = new List<Tuple<bool, int, double, decimal>>(); // <isRecipe, id, qty, price>
 
                         foreach (var sale in body.Sales)
                         {
@@ -716,9 +718,91 @@ namespace Shaheen_InventoryManagement_Android
 
                             if (recipeId == 0)
                             {
-                                recipesSkipped++;
-                                if (!skippedRecipes.Contains(sale.RecipeName.Trim()))
-                                    skippedRecipes.Add(sale.RecipeName.Trim());
+                                // Fallback: Search the parts (inventory) table directly by name (case-insensitive and ignoring all whitespace)
+                                string sqlPartDirect = @"SELECT id, part_name, selling_price, quantity_in_stock FROM parts 
+                                                         WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(part_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
+                                                               REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
+                                                           AND date_deleted IS NULL";
+                                int partId = 0;
+                                string exactPartName = "";
+                                decimal partSellingPrice = 0;
+                                double currentPartStock = 0;
+                                using (var cmd = new SqliteCommand(sqlPartDirect, conn, transaction))
+                                {
+                                    cmd.Parameters.AddWithValue("@name", sale.RecipeName.Trim());
+                                    using (var reader = cmd.ExecuteReader())
+                                    {
+                                        if (reader.Read())
+                                        {
+                                            partId = Convert.ToInt32(reader["id"]);
+                                            exactPartName = reader["part_name"].ToString();
+                                            partSellingPrice = Convert.ToDecimal(reader["selling_price"]);
+                                            currentPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
+                                        }
+                                    }
+                                }
+
+                                if (partId == 0)
+                                {
+                                    recipesSkipped++;
+                                    if (!skippedRecipes.Contains(sale.RecipeName.Trim()))
+                                        skippedRecipes.Add(sale.RecipeName.Trim());
+                                    continue;
+                                }
+
+                                // Match found in parts! Deduct from stock directly
+                                double totalDeduct = (double)sale.QtySold;
+                                if (totalDeduct > 0)
+                                {
+                                    var existingDeduction = ingredientDeductions.FirstOrDefault(d => d.PartId == partId);
+                                    double currentStockInDb = currentPartStock;
+                                    if (existingDeduction != null)
+                                    {
+                                        currentStockInDb = existingDeduction.NewStock;
+                                    }
+
+                                    double newStock = currentStockInDb - totalDeduct;
+
+                                    // Update parts table
+                                    string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
+                                    using (var cmd = new SqliteCommand(sqlUpdatePart, conn, transaction))
+                                    {
+                                        cmd.Parameters.AddWithValue("@newStock", newStock);
+                                        cmd.Parameters.AddWithValue("@partId", partId);
+                                        cmd.ExecuteNonQuery();
+                                    }
+
+                                    // Record transaction
+                                    string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
+                                                          VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
+                                    string txDesc = $"Deducted {totalDeduct:0.##} via sales import ({exactPartName} x{sale.QtySold})";
+                                    using (var cmd = new SqliteCommand(sqlInsertTx, conn, transaction))
+                                    {
+                                        cmd.Parameters.AddWithValue("@partName", exactPartName);
+                                        cmd.Parameters.AddWithValue("@desc", txDesc);
+                                        cmd.ExecuteNonQuery();
+                                    }
+
+                                    if (existingDeduction != null)
+                                    {
+                                        existingDeduction.QtyDeducted += totalDeduct;
+                                        existingDeduction.NewStock = newStock;
+                                    }
+                                    else
+                                    {
+                                        ingredientDeductions.Add(new IngredientDeductionResult
+                                        {
+                                            PartId = partId,
+                                            PartName = exactPartName,
+                                            QtyDeducted = totalDeduct,
+                                            PreviousStock = currentPartStock,
+                                            NewStock = newStock
+                                        });
+                                    }
+                                }
+
+                                recipesProcessed++;
+                                itemsForOrder.Add(Tuple.Create(false, partId, (double)sale.QtySold, partSellingPrice));
                                 continue;
                             }
 
@@ -801,7 +885,7 @@ namespace Shaheen_InventoryManagement_Android
                             }
 
                             recipesProcessed++;
-                            itemsForOrder.Add(Tuple.Create(recipeId, (double)sale.QtySold, sellingPrice));
+                            itemsForOrder.Add(Tuple.Create(true, recipeId, (double)sale.QtySold, sellingPrice));
                         }
 
                         if (itemsForOrder.Count > 0)
@@ -809,7 +893,7 @@ namespace Shaheen_InventoryManagement_Android
                             decimal totalOrderAmount = 0;
                             foreach (var item in itemsForOrder)
                             {
-                                totalOrderAmount += item.Item3 * (decimal)item.Item2;
+                                totalOrderAmount += item.Item4 * (decimal)item.Item3;
                             }
 
                             string sqlInsertOrder = @"INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, status) 
@@ -825,14 +909,29 @@ namespace Shaheen_InventoryManagement_Android
 
                             foreach (var item in itemsForOrder)
                             {
-                                string sqlInsertItem = @"INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) 
-                                                         VALUES (@orderId, 0, @qty, @price, 'Recipe', @recipeId)";
+                                bool isRecipe = item.Item1;
+                                int itemId = item.Item2;
+                                double qty = item.Item3;
+                                decimal price = item.Item4;
+
+                                string sqlInsertItem = isRecipe 
+                                    ? @"INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) 
+                                        VALUES (@orderId, 0, @qty, @price, 'Recipe', @recipeId)"
+                                    : @"INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) 
+                                        VALUES (@orderId, @partId, @qty, @price, 'Part', NULL)";
                                 using (var cmd = new SqliteCommand(sqlInsertItem, conn, transaction))
                                 {
                                     cmd.Parameters.AddWithValue("@orderId", orderId);
-                                    cmd.Parameters.AddWithValue("@qty", item.Item2);
-                                    cmd.Parameters.AddWithValue("@price", item.Item3);
-                                    cmd.Parameters.AddWithValue("@recipeId", item.Item1);
+                                    cmd.Parameters.AddWithValue("@qty", qty);
+                                    cmd.Parameters.AddWithValue("@price", price);
+                                    if (isRecipe)
+                                    {
+                                        cmd.Parameters.AddWithValue("@recipeId", itemId);
+                                    }
+                                    else
+                                    {
+                                        cmd.Parameters.AddWithValue("@partId", itemId);
+                                    }
                                     cmd.ExecuteNonQuery();
                                 }
                             }
@@ -1116,6 +1215,7 @@ namespace Shaheen_InventoryManagement_Android
             public string Name { get; set; }
             public string Description { get; set; }
             public decimal Price { get; set; }
+            public string CategoryName { get; set; }
             public List<RecipeIngredientPayload> Ingredients { get; set; }
         }
 
