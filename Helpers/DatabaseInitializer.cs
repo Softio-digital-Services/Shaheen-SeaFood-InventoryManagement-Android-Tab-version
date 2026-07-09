@@ -35,6 +35,15 @@ namespace Shaheen_InventoryManagement_Android.Helpers
                 );
             }
 
+            // Ensure test admin user exists
+            int testAdminCount = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM users WHERE username = 'test'");
+            if (testAdminCount == 0)
+            {
+                DatabaseHelper.ExecuteNonQuery(
+                    "INSERT INTO users (username, password, full_name, role) VALUES ('test', 'Test.Softio', 'Test Admin', 'Admin');"
+                );
+            }
+
             // Repair: Standardise status values (fix Arabic UI bug)
             DatabaseHelper.ExecuteNonQuery(
                 "UPDATE parts SET status = 'Active' WHERE status NOT IN ('Active', 'Inactive') AND date_deleted IS NULL;"

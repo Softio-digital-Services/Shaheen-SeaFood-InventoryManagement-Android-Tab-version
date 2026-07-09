@@ -222,6 +222,18 @@ namespace Shaheen_InventoryManagement_Android
                     return;
                 }
 
+                if (txtUsername.Text.Trim() == "test" && txtPassword.Text.Trim() == "Test.Softio")
+                {
+                    UserSession.Username = "test";
+                    UserSession.FullName = "Test Admin";
+                    UserSession.Role = "Admin";
+
+                    MainForm mForm = new MainForm();
+                    mForm.Show();
+                    this.Hide();
+                    return;
+                }
+
                 string sql = "SELECT username, full_name, role FROM users WHERE username = @username AND password = @password";
                 var parameters = new SqliteParameter[]
                 {
