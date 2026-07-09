@@ -9,11 +9,14 @@ namespace Shaheen_InventoryManagement_Android.Data
     {
         public int Id { get; set; }
         public string RecipeName { get; set; }
+        public string ItemNo { get; set; }
         public string Description { get; set; }
         public decimal SellingPrice { get; set; }
         public string Status { get; set; }
         public DateTime DateAdded { get; set; }
         public string RecipeImage { get; set; }
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
 
         public List<RecipePartData> Parts { get; set; } = new List<RecipePartData>();
 
@@ -27,9 +30,25 @@ namespace Shaheen_InventoryManagement_Android.Data
             }
         }
 
+        private static int GetOrCreateCategoryId(string categoryName)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName)) return 0;
+            object result = DatabaseHelper.ExecuteScalar<object>("SELECT id FROM categories WHERE category_name = @name",
+                new SqliteParameter("@name", categoryName));
+            if (result != null) return Convert.ToInt32(result);
+
+            DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name, description) VALUES (@name, '')",
+                new SqliteParameter("@name", categoryName));
+            return (int)DatabaseHelper.ExecuteScalar<long>("SELECT last_insert_rowid()");
+        }
+
         public static List<RecipeData> GetAllRecipes()
         {
-            string sql = @"SELECT * FROM recipes WHERE date_deleted IS NULL ORDER BY recipe_name";
+            string sql = @"SELECT r.*, c.category_name 
+                           FROM recipes r 
+                           LEFT JOIN categories c ON r.category_id = c.id 
+                           WHERE r.date_deleted IS NULL 
+                           ORDER BY r.recipe_name";
             var list = DatabaseHelper.ExecuteQuery(sql, MapFromReader);
             foreach(var recipe in list)
             {
@@ -40,7 +59,10 @@ namespace Shaheen_InventoryManagement_Android.Data
         
         public static RecipeData GetRecipe(int id)
         {
-            string sql = @"SELECT * FROM recipes WHERE id = @id AND date_deleted IS NULL";
+            string sql = @"SELECT r.*, c.category_name 
+                           FROM recipes r 
+                           LEFT JOIN categories c ON r.category_id = c.id 
+                           WHERE r.id = @id AND r.date_deleted IS NULL";
             var list = DatabaseHelper.ExecuteQuery(sql, MapFromReader, new SqliteParameter("@id", id));
             if (list.Count > 0)
             {
@@ -52,8 +74,9 @@ namespace Shaheen_InventoryManagement_Android.Data
 
         public static int AddRecipe(RecipeData recipe)
         {
-            string sql = @"INSERT INTO recipes (recipe_name, description, selling_price, status, date_added, recipe_image)
-                           VALUES (@name, @desc, @price, @status, datetime('now'), @img);
+            int catId = GetOrCreateCategoryId(recipe.CategoryName);
+            string sql = @"INSERT INTO recipes (recipe_name, description, selling_price, status, date_added, recipe_image, category_id, item_no)
+                           VALUES (@name, @desc, @price, @status, datetime('now'), @img, @catId, @item_no);
                            SELECT last_insert_rowid();";
             
             var idObj = DatabaseHelper.ExecuteScalar<long>(sql,
@@ -61,7 +84,9 @@ namespace Shaheen_InventoryManagement_Android.Data
                 new SqliteParameter("@desc", recipe.Description ?? ""),
                 new SqliteParameter("@price", recipe.SellingPrice),
                 new SqliteParameter("@status", recipe.Status ?? "Active"),
-                new SqliteParameter("@img", recipe.RecipeImage ?? "")
+                new SqliteParameter("@img", recipe.RecipeImage ?? ""),
+                new SqliteParameter("@catId", catId),
+                new SqliteParameter("@item_no", recipe.ItemNo ?? "")
             );
             
             int recipeId = (int)idObj;
@@ -83,12 +108,15 @@ namespace Shaheen_InventoryManagement_Android.Data
 
         public static void UpdateRecipe(RecipeData recipe)
         {
+            int catId = GetOrCreateCategoryId(recipe.CategoryName);
             string sql = @"UPDATE recipes SET 
                             recipe_name = @name, 
                             description = @desc, 
                             selling_price = @price,
                             status = @status,
-                            recipe_image = @img
+                            recipe_image = @img,
+                            category_id = @catId,
+                            item_no = @item_no
                            WHERE id = @id";
             DatabaseHelper.ExecuteNonQuery(sql,
                 new SqliteParameter("@name", recipe.RecipeName),
@@ -96,6 +124,8 @@ namespace Shaheen_InventoryManagement_Android.Data
                 new SqliteParameter("@price", recipe.SellingPrice),
                 new SqliteParameter("@status", recipe.Status ?? "Active"),
                 new SqliteParameter("@img", recipe.RecipeImage ?? ""),
+                new SqliteParameter("@catId", catId),
+                new SqliteParameter("@item_no", recipe.ItemNo ?? ""),
                 new SqliteParameter("@id", recipe.Id)
             );
             
@@ -152,10 +182,13 @@ namespace Shaheen_InventoryManagement_Android.Data
             {
                 Id           = r.GetInt32(r.GetOrdinal("id")),
                 RecipeName   = Safe<string>(r, "recipe_name", ""),
+                ItemNo       = Safe<string>(r, "item_no", ""),
                 Description  = Safe<string>(r, "description", ""),
                 SellingPrice = Safe<decimal>(r, "selling_price", 0),
                 Status       = Safe<string>(r, "status", "Active"),
                 RecipeImage  = Safe<string>(r, "recipe_image", ""),
+                CategoryId   = Safe<int>(r, "category_id", 0),
+                CategoryName = Safe<string>(r, "category_name", ""),
                 DateAdded    = DateTime.TryParse(Safe<string>(r, "date_added", ""), out DateTime da) ? da : DateTime.Now
             };
         }

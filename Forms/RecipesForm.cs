@@ -59,10 +59,12 @@ namespace Shaheen_InventoryManagement_Android.Forms
             dgvRecipes.RowHeadersVisible = false;
 
             dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "id", DataPropertyName = "Id", Visible = false });
-            dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "RecipeName", HeaderText = "Recipe Name", DataPropertyName = "RecipeName", FillWeight = 30 });
-            dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "Description", HeaderText = "Description", DataPropertyName = "Description", FillWeight = 40 });
-            dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "TotalCost", HeaderText = "Total Cost", DataPropertyName = "TotalCost", FillWeight = 15, DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" } });
-            dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "SellingPrice", HeaderText = "Selling Price", DataPropertyName = "SellingPrice", FillWeight = 15, DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" } });
+            dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemNo", HeaderText = "Item No.", DataPropertyName = "ItemNo", FillWeight = 15 });
+            dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "RecipeName", HeaderText = "Recipe Name", DataPropertyName = "RecipeName", FillWeight = 25 });
+            dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "CategoryName", HeaderText = "Category", DataPropertyName = "CategoryName", FillWeight = 15 });
+            dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "Description", HeaderText = "Description", DataPropertyName = "Description", FillWeight = 35 });
+            dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "TotalCost", HeaderText = "Total Cost", DataPropertyName = "TotalCost", FillWeight = 12, DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" } });
+            dgvRecipes.Columns.Add(new DataGridViewTextBoxColumn { Name = "SellingPrice", HeaderText = "Selling Price", DataPropertyName = "SellingPrice", FillWeight = 13, DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" } });
 
             var colActions = new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = "Actions", ReadOnly = true, MinimumWidth = 90, Width = 90, AutoSizeMode = DataGridViewAutoSizeColumnMode.None };
             dgvRecipes.Columns.Add(colActions);

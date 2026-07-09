@@ -2320,7 +2320,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
                     string barcode = _scanBuffer.Trim();
                     _scanBuffer = "";
 
-                    DataTable dt = DatabaseHelper.ExecuteDataTable($"SELECT id,part_name,selling_price,quantity_in_stock FROM parts WHERE (barcode='{barcode}' OR part_number='{barcode}') AND date_deleted IS NULL");
+                    DataTable dt = DatabaseHelper.ExecuteDataTable($"SELECT id,part_name,selling_price,quantity_in_stock FROM parts WHERE (barcode='{barcode}' OR part_number='{barcode}' OR item_no='{barcode}') AND date_deleted IS NULL");
                     if (dt.Rows.Count > 0)
                     {
                         DataRow r = dt.Rows[0];

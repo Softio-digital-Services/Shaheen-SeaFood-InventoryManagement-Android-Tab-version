@@ -16,6 +16,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
         private ModernTextBox txtName;
         private ModernTextBox txtDescription;
+        private ModernTextBox txtItemNo;
         private ModernTextBox txtSku;
         private ModernTextBox txtBarcode;
         private ModernButton btnAutoSku;
@@ -119,7 +120,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             flpLeft.Controls.Add(cmbTaxRate);
 
             // Category
-            cmbCategory = new ModernComboBox { LabelText = "Category", Width = 280, Margin = new Padding(0, 0, 0, 10), DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbCategory = new ModernComboBox { LabelText = "Category", Width = 280, Margin = new Padding(0, 0, 0, 10), DropDownStyle = ComboBoxStyle.DropDown };
             flpLeft.Controls.Add(cmbCategory);
 
             // Expiry Date
@@ -139,6 +140,8 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
             txtName = new ModernTextBox { LabelText = "Name", Width = fullW, Margin = new Padding(0, 0, 20, 10) };
             txtDescription = new ModernTextBox { LabelText = "Description", Width = fullW, Margin = new Padding(0, 0, 20, 10) };
+
+            txtItemNo = new ModernTextBox { LabelText = "Item No.", Width = halfW, Margin = new Padding(0, 0, 10, 10) };
 
             FlowLayoutPanel flpSku = new FlowLayoutPanel { Width = halfW, Height = 67, Margin = new Padding(0, 0, 10, 10), FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
             txtSku = new ModernTextBox { LabelText = "SKU", Width = halfW - 75, Margin = new Padding(0) };
@@ -170,7 +173,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             txtShelf = new ModernTextBox { LabelText = "Shelf", Width = halfW, Margin = new Padding(0, 0, 10, 10) };
             txtUom = new ModernTextBox { LabelText = "Unit of Measure", Width = halfW, Margin = new Padding(0, 0, 10, 10) };
 
-            flpMiddle.Controls.AddRange(new Control[] { txtName, txtDescription, flpSku, flpBarcode, txtBatch, txtLocation, txtShelf, txtUom });
+            flpMiddle.Controls.AddRange(new Control[] { txtName, txtDescription, txtItemNo, flpSku, flpBarcode, txtBatch, txtLocation, txtShelf, txtUom });
             tlpMain.Controls.Add(flpMiddle, 1, 0);
 
             // -- Right Pane Row 1: Stock & Supplier --
@@ -256,6 +259,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
             txtName.Text = part.PartName;
             txtDescription.Text = part.Description;
+            txtItemNo.Text = part.ItemNo;
             txtSku.Text = part.PartNumber;
             txtBarcode.Text = part.Barcode;
             cmbCategory.Text = part.CategoryName;
@@ -358,6 +362,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 Id = _editPartId ?? 0,
                 PartName = txtName.Text.Trim(),
                 Description = txtDescription.Text.Trim(),
+                ItemNo = txtItemNo.Text.Trim(),
                 Barcode = txtBarcode.Text.Trim(),
                 PartNumber = txtSku.Text.Trim(),
                 CategoryName = cmbCategory.Text,

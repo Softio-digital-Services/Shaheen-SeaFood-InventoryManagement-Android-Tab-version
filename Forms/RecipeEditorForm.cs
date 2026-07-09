@@ -16,9 +16,11 @@ namespace Shaheen_InventoryManagement_Android.Forms
         private RecipeData _recipe;
         private BindingList<RecipePartData> _partsList;
 
+        private ModernTextBox txtItemNo;
         private ModernTextBox txtName;
         private ModernTextBox txtDesc;
         private ModernNumericUpDown numPrice;
+        private ModernComboBox cmbCategory;
         private DataGridView dgvParts;
         private Label lblTotalCost;
         
@@ -59,9 +61,13 @@ namespace Shaheen_InventoryManagement_Android.Forms
             tlpForm.Controls.Add(pnlLeft, 0, 0);
             tlpForm.SetRowSpan(pnlLeft, 4);
 
-            // Name
-            txtName = new ModernTextBox { LabelText = "Recipe Name", Dock = DockStyle.Fill };
-            tlpForm.Controls.Add(txtName, 1, 0);
+            // Name & Item No.
+            FlowLayoutPanel flpName = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, AutoSize = true };
+            txtItemNo = new ModernTextBox { LabelText = "Item No.", Width = 150, Margin = new Padding(0, 0, 20, 0) };
+            txtName = new ModernTextBox { LabelText = "Recipe Name", Width = 470, Margin = new Padding(0) };
+            flpName.Controls.Add(txtItemNo);
+            flpName.Controls.Add(txtName);
+            tlpForm.Controls.Add(flpName, 1, 0);
 
             // Description
             txtDesc = new ModernTextBox { LabelText = "Description", Dock = DockStyle.Fill, Multiline = true, Height = 60 };
@@ -70,10 +76,12 @@ namespace Shaheen_InventoryManagement_Android.Forms
             // Selling Price & Add Component
             FlowLayoutPanel flpPrice = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, AutoSize = true };
             numPrice = new ModernNumericUpDown { LabelText = "Selling Price", Width = 150, DecimalPlaces = 2, Maximum = 1000000m, Margin = new Padding(0, 0, 20, 0) };
+            cmbCategory = new ModernComboBox { LabelText = "Category", Width = 200, Margin = new Padding(0, 0, 20, 0), DropDownStyle = ComboBoxStyle.DropDown };
             ModernButton btnAddPart = new ModernButton { Text = "Add Component", Size = new Size(160, 35), Margin = new Padding(0, 25, 0, 0) };
             btnAddPart.Click += BtnAddPart_Click;
             ThemeConfig.ApplyStandardAddButton(btnAddPart, "Add Component");
             flpPrice.Controls.Add(numPrice);
+            flpPrice.Controls.Add(cmbCategory);
             flpPrice.Controls.Add(btnAddPart);
             tlpForm.Controls.Add(flpPrice, 1, 2);
 
@@ -136,14 +144,25 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
         private void LoadData()
         {
+            try
+            {
+                var cats = CategoryData.GetAllCategories();
+                cmbCategory.DisplayMember = "CategoryName";
+                cmbCategory.ValueMember = "CategoryName";
+                cmbCategory.DataSource = cats;
+            }
+            catch { }
+
             if (_recipeId.HasValue)
             {
                 _recipe = RecipeData.GetRecipe(_recipeId.Value);
                 if (_recipe != null)
                 {
                     txtName.Text = _recipe.RecipeName;
+                    txtItemNo.Text = _recipe.ItemNo;
                     txtDesc.Text = _recipe.Description;
                     numPrice.Value = _recipe.SellingPrice;
+                    cmbCategory.Text = _recipe.CategoryName;
                     _currentImagePath = _recipe.RecipeImage;
                     _partsList = new BindingList<RecipePartData>(_recipe.Parts);
                 }
@@ -284,8 +303,10 @@ namespace Shaheen_InventoryManagement_Android.Forms
             }
 
             _recipe.RecipeName = txtName.Text.Trim();
+            _recipe.ItemNo = txtItemNo.Text.Trim();
             _recipe.Description = txtDesc.Text.Trim();
             _recipe.SellingPrice = numPrice.Value;
+            _recipe.CategoryName = cmbCategory.Text;
             _recipe.RecipeImage = _currentImagePath;
             _recipe.Parts = _partsList.ToList();
 

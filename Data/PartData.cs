@@ -25,6 +25,7 @@ namespace Shaheen_InventoryManagement_Android.Data
         public string Barcode { get; set; }
         public string Status { get; set; }
         public DateTime DateAdded { get; set; }
+        public string ItemNo { get; set; }
 
         public string ItemType { get; set; } = "Product";
         public string UnitOfMeasure { get; set; }
@@ -83,10 +84,10 @@ namespace Shaheen_InventoryManagement_Android.Data
         {
             string sql = @"SELECT p.*, c.category_name, s.supplier_name
                            FROM parts p
-                           LEFT JOIN categories c ON p.category_id = c.id
-                           LEFT JOIN suppliers  s ON p.supplier_id = s.id
-                           WHERE (p.part_number LIKE @kw OR p.part_name LIKE @kw)
-                           AND p.date_deleted IS NULL";
+                            LEFT JOIN categories c ON p.category_id = c.id
+                            LEFT JOIN suppliers  s ON p.supplier_id = s.id
+                            WHERE (p.part_number LIKE @kw OR p.part_name LIKE @kw OR p.item_no LIKE @kw)
+                            AND p.date_deleted IS NULL";
             if (!string.IsNullOrEmpty(categoryName))
             {
                 if (categoryName == "Others") sql += " AND (c.category_name IS NULL OR c.category_name = '')";
@@ -100,7 +101,7 @@ namespace Shaheen_InventoryManagement_Android.Data
 
         public static int SearchPartsCount(string keyword, string categoryName = null)
         {
-            string sql = "SELECT COUNT(*) FROM parts p LEFT JOIN categories c ON p.category_id = c.id WHERE (p.part_number LIKE @kw OR p.part_name LIKE @kw) AND p.date_deleted IS NULL";
+            string sql = "SELECT COUNT(*) FROM parts p LEFT JOIN categories c ON p.category_id = c.id WHERE (p.part_number LIKE @kw OR p.part_name LIKE @kw OR p.item_no LIKE @kw) AND p.date_deleted IS NULL";
             if (!string.IsNullOrEmpty(categoryName))
             {
                 if (categoryName == "Others") sql += " AND (c.category_name IS NULL OR c.category_name = '')";
@@ -127,6 +128,7 @@ namespace Shaheen_InventoryManagement_Android.Data
             {
                 Id = r.GetInt32(r.GetOrdinal("id")),
                 PartNumber = Safe<string>(r, "part_number", ""),
+                ItemNo = Safe<string>(r, "item_no", ""),
                 PartName = Safe<string>(r, "part_name", ""),
                 Description = Safe<string>(r, "description", ""),
                 CategoryId = Safe<int>(r, "category_id", 0),

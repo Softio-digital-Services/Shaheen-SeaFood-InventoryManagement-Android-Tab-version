@@ -236,6 +236,7 @@ namespace Shaheen_InventoryManagement_Android
                     CREATE TABLE IF NOT EXISTS parts (
                         id                  INTEGER PRIMARY KEY AUTOINCREMENT,
                         part_number         TEXT,
+                        item_no             TEXT,
                         part_name           TEXT NOT NULL,
                         description         TEXT,
                         category_id         INTEGER,
@@ -309,12 +310,14 @@ namespace Shaheen_InventoryManagement_Android
                     CREATE TABLE IF NOT EXISTS recipes (
                         id              INTEGER PRIMARY KEY AUTOINCREMENT,
                         recipe_name     TEXT NOT NULL UNIQUE,
+                        item_no         TEXT,
                         description     TEXT,
                         selling_price   REAL DEFAULT 0,
                         status          TEXT DEFAULT 'Active',
                         date_added      TEXT DEFAULT (datetime('now')),
                         date_deleted    TEXT,
-                        recipe_image    TEXT
+                        recipe_image    TEXT,
+                        category_id     INTEGER
                     );
 
                     CREATE TABLE IF NOT EXISTS recipe_parts (
@@ -425,6 +428,13 @@ namespace Shaheen_InventoryManagement_Android
                 // Add recipe fields to order_items if missing
                 if (!ColumnExists("order_items", "item_type")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN item_type TEXT DEFAULT 'Part';");
                 if (!ColumnExists("order_items", "recipe_id")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN recipe_id INTEGER;");
+
+                 // Add category_id to recipes if missing
+                if (!ColumnExists("recipes", "category_id")) ExecuteNonQuery("ALTER TABLE recipes ADD COLUMN category_id INTEGER;");
+
+                // Add item_no migrations
+                if (!ColumnExists("parts", "item_no")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN item_no TEXT;");
+                if (!ColumnExists("recipes", "item_no")) ExecuteNonQuery("ALTER TABLE recipes ADD COLUMN item_no TEXT;");
             }
             catch (Exception ex)
             {

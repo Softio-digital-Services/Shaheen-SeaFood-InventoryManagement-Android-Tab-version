@@ -516,6 +516,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             var colImage = new DataGridViewImageColumn { Name = "colImage", HeaderText = "Image", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom, FillWeight = 6, ReadOnly = true };
             colImage.DefaultCellStyle.Padding = new Padding(12);
             dgvParts.Columns.Add(colImage);
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colItemNo", HeaderText = "Item No.", DataPropertyName = "item_no", FillWeight = 10, ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSKU", HeaderText = "SKU", DataPropertyName = "part_number", FillWeight = 10, ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBarcode", HeaderText = "Barcode", DataPropertyName = "barcode", FillWeight = 10, ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", HeaderText = "Product", DataPropertyName = "part_name", FillWeight = 18, ReadOnly = true });

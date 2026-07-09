@@ -71,6 +71,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
         private void dgvRecipesPartSelection(DataGridView dgv)
         {
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemNo", HeaderText = "Item No.", DataPropertyName = "ItemNo", FillWeight = 20 });
             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartNumber", HeaderText = "SKU", DataPropertyName = "PartNumber", FillWeight = 20 });
             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", HeaderText = "Name", DataPropertyName = "PartName", FillWeight = 40 });
             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "QuantityInStock", HeaderText = "Stock", DataPropertyName = "QuantityInStock", FillWeight = 20 });
@@ -109,7 +110,8 @@ namespace Shaheen_InventoryManagement_Android.Forms
             {
                 dgvParts.DataSource = _allParts.Where(p => 
                     (p.PartName != null && p.PartName.ToLower().Contains(keyword)) ||
-                    (p.PartNumber != null && p.PartNumber.ToLower().Contains(keyword))).ToList();
+                    (p.PartNumber != null && p.PartNumber.ToLower().Contains(keyword)) ||
+                    (p.ItemNo != null && p.ItemNo.ToLower().Contains(keyword))).ToList();
             }
         }
 
