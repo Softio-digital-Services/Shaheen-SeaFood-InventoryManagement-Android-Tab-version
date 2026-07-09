@@ -288,8 +288,16 @@
             <input type="hidden" id="editRecipeId">
             <div style="display:flex; flex-direction:column; gap:15px; text-align:left; margin-bottom:20px;">
                 <div class="input-group">
+                    <label>Item No</label>
+                    <input type="text" id="recipeItemNo" placeholder="e.g. 101">
+                </div>
+                <div class="input-group">
                     <label>Recipe Name</label>
                     <input type="text" id="recipeName" placeholder="e.g. Garlic Butter Salmon">
+                </div>
+                <div class="input-group">
+                    <label>Category</label>
+                    <input type="text" id="recipeCategory" list="categoryDatalist" placeholder="e.g. Seafood" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:1px solid var(--border); padding:8px; border-radius:6px;">
                 </div>
                 <div class="input-group">
                     <label>Description</label>
@@ -323,14 +331,16 @@
             <input type="hidden" id="editItemId">
             <div class="input-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; text-align:left;">
                 <div class="input-group">
+                    <label>Item No</label>
+                    <input type="text" id="newItemNo" placeholder="e.g. 101">
+                </div>
+                <div class="input-group">
                     <label data-i18n="modal_field_name">Product Name</label>
                     <input type="text" id="newItemName" placeholder="e.g. Salmon Fillet">
                 </div>
                 <div class="input-group">
                     <label data-i18n="modal_field_category">Category</label>
-                    <select id="newItemCategory">
-                        <!-- Options populated dynamically from database -->
-                    </select>
+                    <input type="text" id="newItemCategory" list="categoryDatalist" placeholder="e.g. Seafood" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:1px solid var(--border); padding:8px; border-radius:6px;">
                 </div>
                 <div class="input-group">
                     <label data-i18n="modal_field_price">Price ($)</label>
@@ -399,6 +409,9 @@
         <div class="notif-header" data-i18n="notif_header">System Alerts</div>
         <div class="notif-list" id="notificationList"></div>
     </div>
+
+    <!-- Shared Datalist for Category Autocomplete -->
+    <datalist id="categoryDatalist"></datalist>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>

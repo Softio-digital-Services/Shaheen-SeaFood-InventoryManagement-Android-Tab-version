@@ -236,6 +236,7 @@ namespace Shaheen_InventoryManagement_Android
             var dt = DatabaseHelper.ExecuteDataTable(
                 @"SELECT p.id, p.part_name, p.selling_price, p.quantity_in_stock,
                          p.minimum_stock_level, p.barcode, p.part_number, p.part_image,
+                         p.item_no,
                          COALESCE(c.category_name, 'General') AS category,
                          c.category_image
                   FROM parts p
@@ -251,6 +252,7 @@ namespace Shaheen_InventoryManagement_Android
                 {
                     id = Convert.ToInt32(row["id"]),
                     name = row["part_name"].ToString(),
+                    itemNo = row["item_no"].ToString(),
                     price = Convert.ToDecimal(row["selling_price"]),
                     stock = Convert.ToInt32(row["quantity_in_stock"]),
                     minStock = Convert.ToInt32(row["minimum_stock_level"]),
@@ -390,7 +392,7 @@ namespace Shaheen_InventoryManagement_Android
                         return JsonSerializer.Serialize(new { error = "Barcode already exists for another item." });
                 }
 
-                string sql = @"
+                 string sql = @"
                     UPDATE parts SET 
                         part_name = @name, 
                         part_number = @sku, 
@@ -398,7 +400,8 @@ namespace Shaheen_InventoryManagement_Android
                         purchase_price = @p_price, 
                         selling_price = @s_price, 
                         quantity_in_stock = @stock, 
-                        barcode = @barcode
+                        barcode = @barcode,
+                        item_no = @itemNo
                     WHERE id = @id";
 
                 DatabaseHelper.ExecuteNonQuery(sql,
@@ -409,6 +412,7 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@s_price", body.Price),
                     new SqliteParameter("@stock", body.Stock),
                     new SqliteParameter("@barcode", body.Barcode ?? ""),
+                    new SqliteParameter("@itemNo", body.ItemNo ?? ""),
                     new SqliteParameter("@id", body.Id.Value));
 
                 DatabaseHelper.LogTransaction("STOCK_EDIT", body.Name, $"Edited via Android App (New Qty: {body.Stock})");
@@ -428,8 +432,8 @@ namespace Shaheen_InventoryManagement_Android
                 }
 
                 string sql = @"
-                    INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status)
-                    VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active')";
+                    INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, item_no)
+                    VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @itemNo)";
 
                 DatabaseHelper.ExecuteNonQuery(sql,
                     new SqliteParameter("@name", body.Name),
@@ -438,7 +442,8 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@p_price", body.Price * 0.7m),
                     new SqliteParameter("@s_price", body.Price),
                     new SqliteParameter("@stock", body.Stock),
-                    new SqliteParameter("@barcode", body.Barcode ?? ""));
+                    new SqliteParameter("@barcode", body.Barcode ?? ""),
+                    new SqliteParameter("@itemNo", body.ItemNo ?? ""));
 
                 DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via Android App (Qty: {body.Stock})");
                 return JsonSerializer.Serialize(new { success = true });
@@ -534,6 +539,7 @@ namespace Shaheen_InventoryManagement_Android
                     {
                         id = r.Id,
                         name = r.RecipeName,
+                        itemNo = r.ItemNo,
                         description = r.Description,
                         price = r.SellingPrice,
                         totalCost = r.TotalCost,
@@ -561,6 +567,7 @@ namespace Shaheen_InventoryManagement_Android
                 var recipe = new RecipeData
                 {
                     RecipeName = body.Name,
+                    ItemNo = body.ItemNo ?? "",
                     Description = body.Description ?? "",
                     SellingPrice = body.Price,
                     CategoryName = body.CategoryName ?? "",
@@ -1243,6 +1250,7 @@ namespace Shaheen_InventoryManagement_Android
             public int Stock { get; set; }
             public string Barcode { get; set; }
             public string Sku { get; set; }
+            public string ItemNo { get; set; }
         }
 
         private class CheckoutPayload
@@ -1263,6 +1271,7 @@ namespace Shaheen_InventoryManagement_Android
         {
             public int? Id { get; set; }
             public string Name { get; set; }
+            public string ItemNo { get; set; }
             public string Description { get; set; }
             public decimal Price { get; set; }
             public string CategoryName { get; set; }

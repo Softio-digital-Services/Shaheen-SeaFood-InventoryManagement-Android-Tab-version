@@ -735,6 +735,7 @@ function openEditModal(id) {
     document.getElementById('modalTitle').innerText = t('modal_edit_title');
     document.getElementById('btnSubmitItem').innerText = t('modal_save_btn');
     document.getElementById('editItemId').value = item.id;
+    document.getElementById('newItemNo').value = item.itemNo || '';
     document.getElementById('newItemName').value = item.name;
     document.getElementById('newItemCategory').value = item.category || (masterCategories.length > 0 ? masterCategories[0] : '');
     document.getElementById('newItemPrice').value = item.price;
@@ -747,6 +748,7 @@ async function submitNewItem() {
     const editId = document.getElementById('editItemId').value;
     const parsedId = editId ? parseInt(editId) : null;
     const itemData = {
+        itemNo: document.getElementById('newItemNo').value,
         name: document.getElementById('newItemName').value,
         category: document.getElementById('newItemCategory').value,
         price: parseFloat(document.getElementById('newItemPrice').value),
@@ -1434,6 +1436,7 @@ function openAddModalDirect() {
     document.getElementById('modalTitle').innerText = t('modal_add_title');
     document.getElementById('btnSubmitItem').innerText = t('modal_add_btn');
     document.getElementById('editItemId').value = '';
+    document.getElementById('newItemNo').value = '';
     document.getElementById('newItemName').value = '';
     document.getElementById('newItemPrice').value = '';
     document.getElementById('newItemStock').value = '';
@@ -1545,6 +1548,7 @@ function loadRecipesTab() {
 function openNewRecipeModal() {
     document.getElementById('recipeModalTitle').innerText = "Create New Recipe";
     document.getElementById('editRecipeId').value = '';
+    document.getElementById('recipeItemNo').value = '';
     document.getElementById('recipeName').value = '';
     document.getElementById('recipeCategory').value = '';
     document.getElementById('recipeDesc').value = '';
@@ -1589,6 +1593,7 @@ function removeRecipeIngredientRow(btn) {
 
 async function saveRecipe() {
     const id = document.getElementById('editRecipeId').value;
+    const itemNo = document.getElementById('recipeItemNo').value;
     const name = document.getElementById('recipeName').value;
     const categoryName = document.getElementById('recipeCategory').value;
     const desc = document.getElementById('recipeDesc').value;
@@ -1614,7 +1619,7 @@ async function saveRecipe() {
         return;
     }
 
-    const payload = { id: id ? parseInt(id) : null, name, categoryName, description: desc, price, ingredients };
+    const payload = { id: id ? parseInt(id) : null, name, itemNo, categoryName, description: desc, price, ingredients };
 
     try {
         const res = await fetch(`${API_BASE}/api/recipes`, {
@@ -1659,6 +1664,7 @@ function editRecipe(id) {
 
     document.getElementById('recipeModalTitle').innerText = "Edit Recipe";
     document.getElementById('editRecipeId').value = r.id;
+    document.getElementById('recipeItemNo').value = r.itemNo || '';
     document.getElementById('recipeName').value = r.name;
     document.getElementById('recipeCategory').value = r.categoryName || '';
     document.getElementById('recipeDesc').value = r.description || '';
