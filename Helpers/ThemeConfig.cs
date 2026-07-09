@@ -20,8 +20,8 @@ namespace Shaheen_InventoryManagement_Android
         // ==========================================
         // BRANDING
         // ==========================================
-        public static string CompanyName { get; set; } = "Chahine Seafood";
-        public static string AppTitle { get; set; } = "Chahine Seafood - Inventory Management";
+        public static string CompanyName { get; set; } = "Chahine Inventory";
+        public static string AppTitle { get; set; } = "Chahine Inventory";
 
         static ThemeConfig()
         {
