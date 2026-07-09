@@ -1715,6 +1715,7 @@ function parseImportFile(text, isTsv) {
     const barcodeIdx = headers.findIndex(h => h.toLowerCase().includes('barcode'));
     const skuIdx = headers.findIndex(h => h.toLowerCase().includes('sku') || h.toLowerCase().includes('partnumber'));
     const descIdx = headers.findIndex(h => h.toLowerCase().includes('desc'));
+    const itemNoIdx = headers.findIndex(h => h.toLowerCase().includes('item no') || h.toLowerCase().includes('itemno') || h.toLowerCase().includes('no.'));
 
     if (nameIdx === -1) {
         showToast("Invalid file format. 'Name' column is required.", "error");
@@ -1727,6 +1728,7 @@ function parseImportFile(text, isTsv) {
         if (cols.length < headers.length) continue;
 
         pendingImportItems.push({
+            itemNo: itemNoIdx !== -1 ? cols[itemNoIdx] : '',
             name: cols[nameIdx] || '',
             category: catIdx !== -1 ? cols[catIdx] : 'General',
             price: priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0.00 : 0.00,
@@ -1742,7 +1744,7 @@ function parseImportFile(text, isTsv) {
     const previewList = document.getElementById('importPreviewList');
     previewList.innerHTML = pendingImportItems.map(item => `
         <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:10px;">
-            <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</b>
+            <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.itemNo ? '[' + item.itemNo + '] ' : ''}${item.name}</b>
             <span style="color:var(--text-muted);">${item.category}</span>
             <span style="color:var(--accent); text-align:right;">$${item.price.toFixed(2)}</span>
             <span style="color:var(--text-main); text-align:right;">Qty: ${item.stock}</span>

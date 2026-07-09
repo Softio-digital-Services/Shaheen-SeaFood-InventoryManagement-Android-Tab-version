@@ -648,8 +648,8 @@ namespace Shaheen_InventoryManagement_Android
                     if (catId == 0) catId = 1;
 
                     string sql = @"
-                        INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, description)
-                        VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @desc)";
+                        INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, description, item_no)
+                        VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @desc, @itemNo)";
 
                     DatabaseHelper.ExecuteNonQuery(sql,
                         new SqliteParameter("@name", item.Name),
@@ -659,7 +659,8 @@ namespace Shaheen_InventoryManagement_Android
                         new SqliteParameter("@s_price", item.Price),
                         new SqliteParameter("@stock", item.Stock),
                         new SqliteParameter("@barcode", item.Barcode ?? ""),
-                        new SqliteParameter("@desc", item.Description ?? ""));
+                        new SqliteParameter("@desc", item.Description ?? ""),
+                        new SqliteParameter("@itemNo", item.ItemNo ?? ""));
 
                     imported++;
                 }
@@ -1298,6 +1299,7 @@ namespace Shaheen_InventoryManagement_Android
             public string Barcode { get; set; }
             public string Sku { get; set; }
             public string Description { get; set; }
+            public string ItemNo { get; set; }
         }
 
         private class ExportCsvPayload
