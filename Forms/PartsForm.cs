@@ -1666,6 +1666,18 @@ namespace Shaheen_InventoryManagement_Android.Forms
                         p.PartName = name;
                         p.PartNumber = pn;
 
+                        string itemNoColumn = null;
+                        string[] possibleItemNoCols = { "item_no", "itemno", "ItemNo", "Item No", "item no", "No." };
+                        foreach (var col in possibleItemNoCols)
+                        {
+                            if (dt.Columns.Contains(col))
+                            {
+                                itemNoColumn = col;
+                                break;
+                            }
+                        }
+                        if (itemNoColumn != null) p.ItemNo = row[itemNoColumn].ToString();
+
                         if (isNewFormat)
                         {
                             if (dt.Columns.Contains("category_name")) p.CategoryName = row["category_name"].ToString();

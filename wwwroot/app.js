@@ -1816,7 +1816,7 @@ async function exportInventoryToCsv() {
 }
 
 function downloadCsvTemplate() {
-    const csvContent = "part_name,category_name,selling_price,quantity_in_stock,barcode,part_number,description\nSalmon Fillet,Seafood,15.99,100,72901234567,SF-100,Fresh pink salmon fillet\nTiger Prawns,Seafood,24.50,50,72909876543,TP-200,Frozen tiger prawns large\n";
+    const csvContent = "item_no,part_name,category_name,selling_price,quantity_in_stock,barcode,part_number,description\n101,Salmon Fillet,Seafood,15.99,100,72901234567,SF-100,Fresh pink salmon fillet\n102,Tiger Prawns,Seafood,24.50,50,72909876543,TP-200,Frozen tiger prawns large\n";
     
     // In WebView, trigger download by writing to Downloads folder
     fetch(`${API_BASE}/api/export-csv`, {
