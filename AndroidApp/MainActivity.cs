@@ -10,6 +10,7 @@ namespace Shaheen_InventoryManagement_Android
     [Activity(
         Label = "@string/app_name",
         Theme = "@android:style/Theme.NoTitleBar.Fullscreen",
+        Icon = "@drawable/app_icon",
         MainLauncher = true,
         ConfigurationChanges = Android.Content.PM.ConfigChanges.Orientation | Android.Content.PM.ConfigChanges.ScreenSize)]
     public class MainActivity : Activity
