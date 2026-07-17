@@ -20,6 +20,11 @@
     <Compile Include="..\Helpers\ErrorLogger.cs" Link="Shared\Helpers\ErrorLogger.cs" />
     <Compile Include="..\Helpers\UserSession.cs" Link="Shared\Helpers\UserSession.cs" />
     <Compile Include="..\Helpers\GlobalEvents.cs" Link="Shared\Helpers\GlobalEvents.cs" />
+    <Compile Include="..\Helpers\LicenseKey.cs" Link="Shared\Helpers\LicenseKey.cs" />
+    <Compile Include="..\Helpers\LicenseManager.cs" Link="Shared\Helpers\LicenseManager.cs" />
+    <Compile Include="..\Helpers\LicenseStorage.cs" Link="Shared\Helpers\LicenseStorage.cs" />
+    <Compile Include="..\Helpers\HardwareInfo.cs" Link="Shared\Helpers\HardwareInfo.cs" />
+    <Compile Include="..\Helpers\Encryption.cs" Link="Shared\Helpers\Encryption.cs" />
     <Compile Include="..\Services\CurrencyService.cs" Link="Shared\Services\CurrencyService.cs" />
     <Compile Include="..\Services\ReturnService.cs" Link="Shared\Services\ReturnService.cs" />
     <Compile Include="..\Data\PartData.cs" Link="Shared\Data\PartData.cs" />

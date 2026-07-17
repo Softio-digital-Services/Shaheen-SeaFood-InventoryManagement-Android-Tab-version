@@ -2,7 +2,10 @@ using Android.App;
 using Android.OS;
 using Android.Webkit;
 using Android.Views;
+using Android.Widget;
+using Android.Content;
 using System.IO;
+using System.Globalization;
 using Shaheen_InventoryManagement_Android.Helpers;
 
 namespace Shaheen_InventoryManagement_Android
@@ -33,6 +36,19 @@ namespace Shaheen_InventoryManagement_Android
                 ErrorLogger.LogError(ex, "MainActivity.OnCreate.DatabaseInitialize");
             }
 
+            // Check if a valid license/trial is active on this device
+            if (LicenseManager.HasValidLicense())
+            {
+                InitializeWebView();
+            }
+            else
+            {
+                ShowLicenseActivationDialog();
+            }
+        }
+
+        private void InitializeWebView()
+        {
             // Create and configure WebView programmatically
             _webView = new WebView(this);
             _webView.Settings.JavaScriptEnabled = true;
@@ -54,6 +70,112 @@ namespace Shaheen_InventoryManagement_Android
             _webView.LoadUrl("http://local-api/wwwroot/index.html?t=" + System.DateTime.UtcNow.Ticks);
 
             SetContentView(_webView);
+        }
+
+        private void ShowLicenseActivationDialog()
+        {
+            var builder = new AlertDialog.Builder(this);
+            builder.SetTitle(LocalizationManager.GetString("License_Title", "Software Activation"));
+            builder.SetCancelable(false);
+
+            // Container Layout
+            var container = new LinearLayout(this);
+            container.Orientation = Orientation.Vertical;
+            container.SetPadding(50, 40, 50, 40);
+
+            // Description
+            var lblDesc = new TextView(this)
+            {
+                Text = LocalizationManager.GetString("License_Msg_Activate", "This product is unregistered. Please enter your customer name and license key to activate, or start a 30-day trial."),
+                TextSize = 16f
+            };
+            lblDesc.SetPadding(0, 0, 0, 20);
+            container.AddView(lblDesc);
+
+            // Hardware ID Display
+            var lblHwId = new TextView(this)
+            {
+                Text = LocalizationManager.GetString("License_HardwareId", "Hardware ID") + ": " + HardwareInfo.GetShortHardwareId(),
+                TextSize = 14f,
+                Typeface = Android.Graphics.Typeface.Monospace
+            };
+            lblHwId.SetPadding(0, 0, 0, 30);
+            container.AddView(lblHwId);
+
+            // Customer Name Input
+            var txtCustomer = new EditText(this) { Hint = LocalizationManager.GetString("License_CustomerName", "Customer / Company Name") };
+            container.AddView(txtCustomer);
+
+            // License Key Input
+            var txtKey = new EditText(this) { Hint = LocalizationManager.GetString("License_Key", "License Key") };
+            container.AddView(txtKey);
+
+            builder.SetView(container);
+
+            builder.SetPositiveButton(LocalizationManager.GetString("License_Activate", "Activate"), (s, e) => {
+                // Handled custom below to prevent auto-closing on invalid key
+            });
+
+            builder.SetNegativeButton(LocalizationManager.GetString("License_StartTrial", "Start Trial"), (s, e) => {
+                // Handled custom below
+            });
+
+            builder.SetNeutralButton(LocalizationManager.GetString("License_Exit", "Exit"), (s, e) => {
+                Finish();
+            });
+
+            var dialog = builder.Create();
+            dialog.Show();
+
+            // Override buttons to prevent automatic dismissal on invalid key or click
+            dialog.GetButton((int)DialogButtonType.Positive).Click += (s, e) => {
+                string customer = txtCustomer.Text.Trim();
+                string key = txtKey.Text.Trim();
+
+                if (string.IsNullOrEmpty(customer))
+                {
+                    txtCustomer.Error = LocalizationManager.GetString("License_CustomerRequired", "Customer Name is required.");
+                    return;
+                }
+                if (string.IsNullOrEmpty(key))
+                {
+                    txtKey.Error = LocalizationManager.GetString("License_KeyRequired", "License Key is required.");
+                    return;
+                }
+
+                var activated = LicenseManager.ActivateLicense(key, customer);
+                if (activated != null)
+                {
+                    Toast.MakeText(this, LocalizationManager.GetString("License_ActivatedSuccessfully", "License activated successfully!"), ToastLength.Short).Show();
+                    dialog.Dismiss();
+                    InitializeWebView();
+                }
+                else
+                {
+                    Toast.MakeText(this, LocalizationManager.GetString("License_ActivationFailed", "Invalid License Key or Customer Name for this machine."), ToastLength.Long).Show();
+                }
+            };
+
+            dialog.GetButton((int)DialogButtonType.Negative).Click += (s, e) => {
+                LicenseKey existing = LicenseManager.GetCurrentLicense();
+                if (existing != null && existing.IsTrial() && System.DateTime.Now > existing.ExpirationDate)
+                {
+                    Toast.MakeText(this, LocalizationManager.GetString("License_TrialExpired", "Your trial period has already expired. Please activate a full license key."), ToastLength.Long).Show();
+                    return;
+                }
+
+                var trial = LicenseManager.StartTrial();
+                if (trial != null)
+                {
+                    Toast.MakeText(this, LocalizationManager.GetString("License_TrialStarted", "30-day trial period started successfully!"), ToastLength.Short).Show();
+                    dialog.Dismiss();
+                    InitializeWebView();
+                }
+                else
+                {
+                    Toast.MakeText(this, LocalizationManager.GetString("License_TrialFailed", "Failed to start trial. Please contact support."), ToastLength.Long).Show();
+                }
+            };
         }
 
         public bool ShowFileChooser(IValueCallback filePathCallback, WebChromeClient.FileChooserParams fileChooserParams)

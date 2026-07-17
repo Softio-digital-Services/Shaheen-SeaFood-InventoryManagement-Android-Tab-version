@@ -18,8 +18,19 @@ namespace Shaheen_InventoryManagement_Android
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            if (args != null && args.Length > 0 && args[0] == "--test-license")
+            {
+                RunLicenseTests();
+                return;
+            }
+            if (args != null && args.Length > 0 && args[0] == "--check-current-license")
+            {
+                CheckCurrentLicense();
+                return;
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -28,9 +39,6 @@ namespace Shaheen_InventoryManagement_Android
 
             // Set initial language to English
             //Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.SetLanguage("ar");
-
-            // Expose background task for server hosting without blocking UI thread
-            _ = Task.Run(() => StartApiServer());
 
             Application.ThreadException += (s, e) =>
             {
@@ -43,6 +51,21 @@ namespace Shaheen_InventoryManagement_Android
 
             try
             {
+                // Check if a valid license exists
+                if (!Shaheen_InventoryManagement_Android.Helpers.LicenseManager.HasValidLicense())
+                {
+                    using (var licenseForm = new Shaheen_InventoryManagement_Android.Forms.LicenseForm())
+                    {
+                        if (licenseForm.ShowDialog() != DialogResult.OK)
+                        {
+                            return; // Exit application if license is not activated/trial not started
+                        }
+                    }
+                }
+
+                // Expose background task for server hosting without blocking UI thread
+                _ = Task.Run(() => StartApiServer());
+
                 // Initialize Database (Create if missing)
                 Shaheen_InventoryManagement_Android.Helpers.DatabaseInitializer.Initialize();
 
@@ -600,6 +623,84 @@ namespace Shaheen_InventoryManagement_Android
             public int PartId { get; set; }
             public int Qty { get; set; }
             public decimal RefundAmount { get; set; }
+        }
+
+        private static void CheckCurrentLicense()
+        {
+            try
+            {
+                var license = Helpers.LicenseManager.GetCurrentLicense();
+                if (license == null)
+                {
+                    Console.WriteLine("Current License: NULL (No license stored)");
+                }
+                else
+                {
+                    Console.WriteLine($"Current License: Key={license.Key}, Type={license.LicenseType}, Customer={license.CustomerName}, Expiry={license.ExpirationDate}, IsValid={license.IsValid()}, IsTrial={license.IsTrial()}");
+                    Console.WriteLine($"HasValidLicense: {Helpers.LicenseManager.HasValidLicense()}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception checking license: {ex.Message}");
+            }
+        }
+
+        private static void RunLicenseTests()
+        {
+            Console.WriteLine("Running licensing system tests...");
+            try
+            {
+                // Clean up previous licenses
+                Helpers.LicenseManager.DeactivateLicense();
+                if (Helpers.LicenseManager.HasValidLicense())
+                {
+                    Console.WriteLine("Error: License still reported as valid after deactivation.");
+                    Environment.Exit(1);
+                }
+
+                // Validate test key
+                string testKey = "CHAHN-YEAR1-00000-27365-01211";
+                string testCustomer = "Test User";
+                
+                bool isValid = Helpers.LicenseManager.ValidateLicenseKey(testKey, testCustomer);
+                if (!isValid)
+                {
+                    Console.WriteLine("Error: Valid license key CHAHN-YEAR1-00000-27365-01211 was rejected for customer Test User.");
+                    Environment.Exit(1);
+                }
+
+                // Verify check on invalid customer
+                bool isValidIncorrect = Helpers.LicenseManager.ValidateLicenseKey("CHAHN-YEAR1-00000-27365-99999", testCustomer);
+                if (isValidIncorrect)
+                {
+                    Console.WriteLine("Error: Invalid checksum key was validated successfully.");
+                    Environment.Exit(1);
+                }
+
+                // Activate license
+                var activated = Helpers.LicenseManager.ActivateLicense(testKey, testCustomer);
+                if (activated == null)
+                {
+                    Console.WriteLine("Error: Failed to activate license.");
+                    Environment.Exit(1);
+                }
+
+                if (!Helpers.LicenseManager.HasValidLicense())
+                {
+                    Console.WriteLine("Error: HasValidLicense returned false after activation.");
+                    Environment.Exit(1);
+                }
+
+                // Clean up
+                Helpers.LicenseManager.DeactivateLicense();
+                Console.WriteLine("Licensing system tests PASSED successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in licensing tests: {ex.Message}");
+                Environment.Exit(1);
+            }
         }
     }
 }

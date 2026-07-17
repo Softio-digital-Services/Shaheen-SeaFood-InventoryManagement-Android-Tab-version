@@ -19,15 +19,19 @@ namespace Shaheen_InventoryManagement_Android.Helpers
         {
             try
             {
+#if ANDROID
+                string androidId = Android.Provider.Settings.Secure.GetString(Android.App.Application.Context.ContentResolver, Android.Provider.Settings.Secure.AndroidId);
+                return ComputeHash(androidId);
+#else
                 string machineName = Environment.MachineName;
                 string machineGuid = GetWindowsMachineGuid();
                 
                 string combined = machineName + machineGuid;
                 return ComputeHash(combined);
+#endif
             }
             catch
             {
-                // Fallback to machine name if anything fails
                 return ComputeHash(Environment.MachineName);
             }
         }
@@ -37,6 +41,9 @@ namespace Shaheen_InventoryManagement_Android.Helpers
         /// </summary>
         public static string GetLegacyMachineFingerprint()
         {
+#if ANDROID
+            return GetMachineFingerprint();
+#else
             try
             {
                 string machineName = Environment.MachineName;
@@ -51,6 +58,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers
             {
                 return ComputeHash(Environment.MachineName + Environment.UserName);
             }
+#endif
         }
 
         /// <summary>
@@ -62,6 +70,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers
             return fullId.Substring(0, Math.Min(12, fullId.Length)).ToUpper();
         }
 
+#if !ANDROID
         private static string GetWindowsMachineGuid()
         {
             try
@@ -98,6 +107,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers
             catch { }
             return "";
         }
+#endif
 
         private static string ComputeHash(string input)
         {

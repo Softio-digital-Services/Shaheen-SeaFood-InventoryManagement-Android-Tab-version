@@ -1,4 +1,6 @@
+#if !ANDROID
 using Microsoft.Win32;
+#endif
 using System;
 using System.IO;
 using System.Globalization;
@@ -26,8 +28,10 @@ namespace Shaheen_InventoryManagement_Android.Helpers
         {
             try
             {
+#if !ANDROID
                 // Save to Registry
                 SaveToRegistry(license);
+#endif
 
                 // Save to encrypted file
                 SaveToFile(license);
@@ -48,10 +52,12 @@ namespace Shaheen_InventoryManagement_Android.Helpers
         {
             try
             {
+#if !ANDROID
                 // Try Registry first
                 LicenseKey license = LoadFromRegistry();
                 if (license != null)
                     return license;
+#endif
 
                 // Fallback to file
                 return LoadFromFile();
@@ -70,6 +76,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers
         {
             try
             {
+#if !ANDROID
                 // Delete from Registry
                 using (RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryPath, true))
                 {
@@ -83,6 +90,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers
                         key.DeleteValue("HardwareId", false);
                     }
                 }
+#endif
 
                 // Delete file
                 if (File.Exists(LicenseFilePath))
@@ -91,6 +99,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers
             catch { }
         }
 
+#if !ANDROID
         private static void SaveToRegistry(LicenseKey license)
         {
             using (RegistryKey key = Registry.CurrentUser.CreateSubKey(RegistryPath))
@@ -106,7 +115,9 @@ namespace Shaheen_InventoryManagement_Android.Helpers
                 }
             }
         }
+#endif
 
+#if !ANDROID
         private static LicenseKey LoadFromRegistry()
         {
             using (RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryPath))
@@ -136,6 +147,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers
                 }
             }
         }
+#endif
 
         private static void SaveToFile(LicenseKey license)
         {
