@@ -94,12 +94,13 @@ namespace Shaheen_InventoryManagement_Android.Data
             // Add parts (No inventory deduction)
             foreach(var part in recipe.Parts)
             {
-                string sqlPart = @"INSERT INTO recipe_parts (recipe_id, part_id, quantity)
-                                   VALUES (@r_id, @p_id, @qty)";
+                string sqlPart = @"INSERT INTO recipe_parts (recipe_id, part_id, quantity, unit_of_measure)
+                                   VALUES (@r_id, @p_id, @qty, @uom)";
                 DatabaseHelper.ExecuteNonQuery(sqlPart,
                     new SqliteParameter("@r_id", recipeId),
                     new SqliteParameter("@p_id", part.PartId),
-                    new SqliteParameter("@qty", part.Quantity)
+                    new SqliteParameter("@qty", part.Quantity),
+                    new SqliteParameter("@uom", string.IsNullOrEmpty(part.UnitOfMeasure) ? (object)DBNull.Value : part.UnitOfMeasure)
                 );
             }
             
@@ -134,12 +135,13 @@ namespace Shaheen_InventoryManagement_Android.Data
             
             foreach(var part in recipe.Parts)
             {
-                string sqlPart = @"INSERT INTO recipe_parts (recipe_id, part_id, quantity)
-                                   VALUES (@r_id, @p_id, @qty)";
+                string sqlPart = @"INSERT INTO recipe_parts (recipe_id, part_id, quantity, unit_of_measure)
+                                   VALUES (@r_id, @p_id, @qty, @uom)";
                 DatabaseHelper.ExecuteNonQuery(sqlPart,
                     new SqliteParameter("@r_id", recipe.Id),
                     new SqliteParameter("@p_id", part.PartId),
-                    new SqliteParameter("@qty", part.Quantity)
+                    new SqliteParameter("@qty", part.Quantity),
+                    new SqliteParameter("@uom", string.IsNullOrEmpty(part.UnitOfMeasure) ? (object)DBNull.Value : part.UnitOfMeasure)
                 );
             }
         }

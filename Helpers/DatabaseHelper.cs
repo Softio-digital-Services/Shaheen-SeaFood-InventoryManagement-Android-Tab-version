@@ -413,6 +413,7 @@ namespace Shaheen_InventoryManagement_Android
                 if (!ColumnExists("parts", "price2")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price2 REAL DEFAULT 0;");
                 if (!ColumnExists("parts", "price3")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price3 REAL DEFAULT 0;");
                 if (!ColumnExists("parts", "price4")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price4 REAL DEFAULT 0;");
+                if (!ColumnExists("recipe_parts", "unit_of_measure")) ExecuteNonQuery("ALTER TABLE recipe_parts ADD COLUMN unit_of_measure TEXT;");
 
                 // Add due_date to payments if missing
                 if (!ColumnExists("payments", "due_date"))

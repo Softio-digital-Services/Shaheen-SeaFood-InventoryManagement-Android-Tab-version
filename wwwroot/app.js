@@ -1572,33 +1572,91 @@ function closeRecipeModal() {
     document.getElementById('recipeModal').classList.add('hidden');
 }
 
-function addRecipeIngredientRow(selectedPartId = '', qty = 1) {
+function addRecipeIngredientRow(selectedPartId = '', qty = 1, savedUom = '') {
     const list = document.getElementById('recipeIngredientsList');
     if (!list) return;
 
     const row = document.createElement('div');
     row.className = 'recipe-ingredient-row';
     row.style.display = 'grid';
-    row.style.gridTemplateColumns = '2fr 80px 60px 100px 90px 30px';
+    row.style.gridTemplateColumns = '2fr 80px 100px 90px 90px 30px';
     row.style.gap = '10px';
     row.style.alignItems = 'center';
     row.style.marginBottom = '8px';
 
     let options = allProducts.map(p => `<option value="${p.id}" ${p.id == selectedPartId ? 'selected' : ''}>${p.name}</option>`).join('');
 
+    let uomOptions = '';
+    if (selectedPartId) {
+        const product = allProducts.find(p => p.id == selectedPartId);
+        if (product) {
+            uomOptions = getUomOptionsHtml(product.unitOfMeasure, savedUom);
+        }
+    }
+    if (!uomOptions) {
+        uomOptions = getUomOptionsHtml('pcs', savedUom);
+    }
+
     row.innerHTML = `
-        <select class="ingredient-select" onchange="updateRecipeModalCosts()" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px;">
+        <select class="ingredient-select" onchange="onIngredientProductChange(this)" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px;">
             <option value="">-- Choose Ingredient --</option>
             ${options}
         </select>
         <input type="number" class="ingredient-qty" oninput="updateRecipeModalCosts()" placeholder="Qty" value="${qty}" min="0.01" step="0.01" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px; text-align:center;">
-        <span class="ingredient-uom" style="color:var(--text-muted); font-weight:600; text-align:center; font-size:0.9rem;">-</span>
+        <select class="ingredient-uom" onchange="updateRecipeModalCosts()" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px; font-weight:600; text-align:center; font-size:0.9rem;">
+            ${uomOptions}
+        </select>
         <span class="ingredient-unit-cost" style="color:var(--text-muted); text-align:right; font-size:0.85rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">$0.00</span>
         <span class="ingredient-total-cost" style="color:var(--accent); font-weight:bold; text-align:right; font-size:0.95rem;">$0.00</span>
         <button onclick="removeRecipeIngredientRow(this)" style="background:none; border:none; color:var(--danger); font-size:1.3rem; cursor:pointer; padding:0; line-height:1;">&times;</button>
     `;
     list.appendChild(row);
     updateRecipeModalCosts();
+}
+
+window.onIngredientProductChange = function(selectElem) {
+    const row = selectElem.parentElement;
+    const uomSelect = row.querySelector('.ingredient-uom');
+    if (!uomSelect) return;
+
+    const partId = parseInt(selectElem.value);
+    if (partId) {
+        const product = allProducts.find(p => p.id === partId);
+        if (product) {
+            uomSelect.innerHTML = getUomOptionsHtml(product.unitOfMeasure);
+        }
+    } else {
+        uomSelect.innerHTML = getUomOptionsHtml('pcs');
+    }
+    updateRecipeModalCosts();
+};
+
+function getUomOptionsHtml(baseUom, selectedUom = '') {
+    baseUom = (baseUom || 'pcs').toLowerCase().trim();
+    if (!selectedUom) selectedUom = baseUom;
+
+    selectedUom = selectedUom.toLowerCase().trim();
+    if (selectedUom.startsWith('gram') || selectedUom === 'g') selectedUom = 'g';
+    else if (selectedUom.startsWith('kilo') || selectedUom === 'kg') selectedUom = 'kg';
+    else if (selectedUom.startsWith('liter') || selectedUom === 'l') selectedUom = 'l';
+    else if (selectedUom === 'ml') selectedUom = 'ml';
+    else selectedUom = 'pcs';
+
+    let options = [
+        { val: 'pcs', text: 'pcs' },
+        { val: 'g', text: 'gram' },
+        { val: 'kg', text: 'kg' }
+    ];
+
+    if (baseUom.startsWith('l') || baseUom.startsWith('ml')) {
+        options = [
+            { val: 'ml', text: 'ml' },
+            { val: 'l', text: 'l' },
+            { val: 'pcs', text: 'pcs' }
+        ];
+    }
+
+    return options.map(o => `<option value="${o.val}" ${o.val === selectedUom ? 'selected' : ''}>${o.text}</option>`).join('');
 }
 
 function removeRecipeIngredientRow(btn) {
@@ -1613,29 +1671,41 @@ window.updateRecipeModalCosts = function() {
     rows.forEach(row => {
         const select = row.querySelector('.ingredient-select');
         const qtyInput = row.querySelector('.ingredient-qty');
-        const uomSpan = row.querySelector('.ingredient-uom');
+        const uomSelect = row.querySelector('.ingredient-uom');
         const unitCostSpan = row.querySelector('.ingredient-unit-cost');
         const totalCostSpan = row.querySelector('.ingredient-total-cost');
         
-        if (!select || !qtyInput) return;
+        if (!select || !qtyInput || !uomSelect) return;
         
         const partId = parseInt(select.value);
         const qty = parseFloat(qtyInput.value) || 0;
+        const chosenUom = uomSelect.value;
         
         if (partId) {
             const product = allProducts.find(p => p.id === partId);
             if (product) {
-                const uom = product.unitOfMeasure || 'pcs';
-                const cost = product.purchasePrice || 0;
-                const rowCost = cost * qty;
+                const baseUom = (product.unitOfMeasure || 'pcs').toLowerCase().trim();
+                const baseCost = product.purchasePrice || 0;
+                let convertedCost = baseCost;
+
+                // Simple conversion logic based on base UOM vs chosen UOM
+                if ((baseUom.startsWith('kilo') || baseUom === 'kg') && chosenUom === 'g') {
+                    convertedCost = baseCost / 1000;
+                } else if ((baseUom.startsWith('gram') || baseUom === 'g') && chosenUom === 'kg') {
+                    convertedCost = baseCost * 1000;
+                } else if ((baseUom.startsWith('liter') || baseUom === 'l') && chosenUom === 'ml') {
+                    convertedCost = baseCost / 1000;
+                } else if (baseUom === 'ml' && chosenUom === 'l') {
+                    convertedCost = baseCost * 1000;
+                }
+
+                const rowCost = convertedCost * qty;
                 totalCost += rowCost;
                 
-                if (uomSpan) uomSpan.textContent = uom;
-                if (unitCostSpan) unitCostSpan.textContent = `$${cost.toFixed(2)}/${uom}`;
+                if (unitCostSpan) unitCostSpan.textContent = `$${convertedCost.toFixed(2)}/${chosenUom}`;
                 if (totalCostSpan) totalCostSpan.textContent = `$${rowCost.toFixed(2)}`;
             }
         } else {
-            if (uomSpan) uomSpan.textContent = '-';
             if (unitCostSpan) unitCostSpan.textContent = '$0.00';
             if (totalCostSpan) totalCostSpan.textContent = '$0.00';
         }
@@ -1665,8 +1735,10 @@ async function saveRecipe() {
     ingredientRows.forEach(row => {
         const partId = row.querySelector('.ingredient-select').value;
         const qty = parseFloat(row.querySelector('.ingredient-qty').value);
+        const uomSelect = row.querySelector('.ingredient-uom');
+        const uom = uomSelect ? uomSelect.value : 'pcs';
         if (partId && qty > 0) {
-            ingredients.push({ partId: parseInt(partId), qty });
+            ingredients.push({ partId: parseInt(partId), qty, unitOfMeasure: uom });
         }
     });
 
@@ -1730,7 +1802,7 @@ function editRecipe(id) {
     list.innerHTML = '';
     if (r.parts && r.parts.length > 0) {
         r.parts.forEach(p => {
-            addRecipeIngredientRow(p.partId, p.qty);
+            addRecipeIngredientRow(p.partId, p.qty, p.unitOfMeasure);
         });
     } else {
         addRecipeIngredientRow();

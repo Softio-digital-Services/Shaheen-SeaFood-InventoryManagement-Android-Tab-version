@@ -617,7 +617,8 @@ namespace Shaheen_InventoryManagement_Android
                         recipe.Parts.Add(new RecipePartData
                         {
                             PartId = ing.PartId,
-                            Quantity = ing.Qty
+                            Quantity = ing.Qty,
+                            UnitOfMeasure = ing.UnitOfMeasure
                         });
                     }
                 }
@@ -1319,6 +1320,7 @@ namespace Shaheen_InventoryManagement_Android
         {
             public int PartId { get; set; }
             public double Qty { get; set; }
+            public string UnitOfMeasure { get; set; }
         }
 
         private class BulkImportPayload
