@@ -372,14 +372,13 @@ namespace Shaheen_InventoryManagement_Android
                             if (existingCount > 0)
                                 return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
                         }
-
                         int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c",
                                     new Microsoft.Data.Sqlite.SqliteParameter("@c", body.Category ?? "General"));
                         if (catId == 0) catId = 1;
 
                         string sql = @"
-                            INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status)
-                            VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active')";
+                            INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, unit_of_measure)
+                            VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @uom)";
 
                         DatabaseHelper.ExecuteNonQuery(sql,
                             new Microsoft.Data.Sqlite.SqliteParameter("@name", body.Name),
@@ -388,7 +387,8 @@ namespace Shaheen_InventoryManagement_Android
                             new Microsoft.Data.Sqlite.SqliteParameter("@p_price", body.Price * 0.7m),
                             new Microsoft.Data.Sqlite.SqliteParameter("@s_price", body.Price),
                             new Microsoft.Data.Sqlite.SqliteParameter("@stock", body.Stock),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@barcode", body.Barcode ?? ""));
+                            new Microsoft.Data.Sqlite.SqliteParameter("@barcode", body.Barcode ?? ""),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@uom", body.UnitOfMeasure ?? ""));
 
                         DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via WebPOS (Qty: {body.Stock})");
 
@@ -636,6 +636,7 @@ namespace Shaheen_InventoryManagement_Android
             public int Stock { get; set; }
             public string Barcode { get; set; }
             public string Sku { get; set; }
+            public string UnitOfMeasure { get; set; }
         }
 
         private class CheckoutPayload

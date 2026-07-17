@@ -398,28 +398,36 @@
             <div class="input-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; text-align:left;">
                 <div class="input-group">
                     <label>Item No</label>
-                    <input type="text" id="newItemNo" placeholder="e.g. 101">
+                    <input type="text" id="newItemNo" placeholder="e.g. 101" style="border: 2px solid var(--accent);">
                 </div>
                 <div class="input-group">
                     <label data-i18n="modal_field_name">Product Name</label>
-                    <input type="text" id="newItemName" placeholder="e.g. Salmon Fillet">
+                    <input type="text" id="newItemName" placeholder="e.g. Salmon Fillet" style="border: 2px solid var(--accent);">
                 </div>
                 <div class="input-group">
                     <label data-i18n="modal_field_category">Category</label>
-                    <input type="text" id="newItemCategory" list="categoryDatalist" placeholder="e.g. Seafood" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:1px solid var(--border); padding:8px; border-radius:6px;">
+                    <input type="text" id="newItemCategory" list="categoryDatalist" placeholder="e.g. Seafood" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px;">
                 </div>
                 <div class="input-group">
                     <label data-i18n="modal_field_price">Price ($)</label>
-                    <input type="number" id="newItemPrice" placeholder="0.00">
+                    <input type="number" id="newItemPrice" placeholder="0.00" style="border: 2px solid var(--accent);">
                 </div>
                 <div class="input-group">
                     <label data-i18n="modal_field_stock">Initial Stock</label>
-                    <input type="number" id="newItemStock" placeholder="0">
+                    <input type="number" id="newItemStock" placeholder="0" style="border: 2px solid var(--accent);">
+                </div>
+                <div class="input-group">
+                    <label>Measurement Unit (UOM)</label>
+                    <select id="newItemUom" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px; font-weight:600;">
+                        <option value="pcs">pcs</option>
+                        <option value="g">gram</option>
+                        <option value="kg">kg</option>
+                    </select>
                 </div>
                 <div class="input-group" style="grid-column: span 2;">
                     <label data-i18n="modal_field_barcode">Barcode / SKU</label>
                     <div style="display:flex; gap:10px;">
-                        <input type="text" id="newItemBarcode" placeholder="Scan or type barcode" style="flex:1;">
+                        <input type="text" id="newItemBarcode" placeholder="Scan or type barcode" style="flex:1; border: 2px solid var(--accent);">
                         <button class="btn-camera-scan" id="btnModalCameraScan" style="width:55px;">
                             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                         </button>

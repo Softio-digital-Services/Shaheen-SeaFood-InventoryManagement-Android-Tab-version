@@ -699,7 +699,7 @@ function renderProducts() {
             <div class="product-info">
                 <div class="product-name">${p.name}</div>
                 <div class="product-price">${formatPrice(p.price)}</div>
-                <div class="product-stock ${p.stock < 5 ? 'low' : ''}">${t('stock_label')}: ${p.stock}</div>
+                <div class="product-stock ${p.stock < 5 ? 'low' : ''}">${t('stock_label')}: ${p.stock} ${p.unitOfMeasure || 'pcs'}</div>
             </div>
         `;
         grid.appendChild(card);
@@ -741,6 +741,7 @@ function openEditModal(id) {
     document.getElementById('newItemPrice').value = item.price;
     document.getElementById('newItemStock').value = item.stock;
     document.getElementById('newItemBarcode').value = item.barcode || '';
+    document.getElementById('newItemUom').value = item.unitOfMeasure || 'pcs';
     document.getElementById('addItemModal').classList.remove('hidden');
 }
 
@@ -753,7 +754,8 @@ async function submitNewItem() {
         category: document.getElementById('newItemCategory').value,
         price: parseFloat(document.getElementById('newItemPrice').value),
         stock: parseInt(document.getElementById('newItemStock').value),
-        barcode: document.getElementById('newItemBarcode').value
+        barcode: document.getElementById('newItemBarcode').value,
+        unitOfMeasure: document.getElementById('newItemUom').value
     };
 
     if (!itemData.name || isNaN(itemData.price)) {
@@ -1442,6 +1444,7 @@ function openAddModalDirect() {
     document.getElementById('newItemPrice').value = '';
     document.getElementById('newItemStock').value = '';
     document.getElementById('newItemBarcode').value = '';
+    document.getElementById('newItemUom').value = 'pcs';
     document.getElementById('addItemModal').classList.remove('hidden');
 }
 

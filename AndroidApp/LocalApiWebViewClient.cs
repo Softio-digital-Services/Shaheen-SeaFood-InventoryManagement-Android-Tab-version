@@ -436,7 +436,8 @@ namespace Shaheen_InventoryManagement_Android
                         selling_price = @s_price, 
                         quantity_in_stock = @stock, 
                         barcode = @barcode,
-                        item_no = @itemNo
+                        item_no = @itemNo,
+                        unit_of_measure = @uom
                     WHERE id = @id";
 
                 DatabaseHelper.ExecuteNonQuery(sql,
@@ -448,6 +449,7 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@stock", body.Stock),
                     new SqliteParameter("@barcode", body.Barcode ?? ""),
                     new SqliteParameter("@itemNo", body.ItemNo ?? ""),
+                    new SqliteParameter("@uom", body.UnitOfMeasure ?? ""),
                     new SqliteParameter("@id", body.Id.Value));
 
                 DatabaseHelper.LogTransaction("STOCK_EDIT", body.Name, $"Edited via Android App (New Qty: {body.Stock})");
@@ -467,8 +469,8 @@ namespace Shaheen_InventoryManagement_Android
                 }
 
                 string sql = @"
-                    INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, item_no)
-                    VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @itemNo)";
+                    INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, item_no, unit_of_measure)
+                    VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @itemNo, @uom)";
 
                 DatabaseHelper.ExecuteNonQuery(sql,
                     new SqliteParameter("@name", body.Name),
@@ -478,7 +480,8 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@s_price", body.Price),
                     new SqliteParameter("@stock", body.Stock),
                     new SqliteParameter("@barcode", body.Barcode ?? ""),
-                    new SqliteParameter("@itemNo", body.ItemNo ?? ""));
+                    new SqliteParameter("@itemNo", body.ItemNo ?? ""),
+                    new SqliteParameter("@uom", body.UnitOfMeasure ?? ""));
 
                 DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via Android App (Qty: {body.Stock})");
                 return JsonSerializer.Serialize(new { success = true });
@@ -1289,6 +1292,7 @@ namespace Shaheen_InventoryManagement_Android
             public string Barcode { get; set; }
             public string Sku { get; set; }
             public string ItemNo { get; set; }
+            public string UnitOfMeasure { get; set; }
         }
 
         private class CheckoutPayload
