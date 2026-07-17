@@ -240,7 +240,7 @@ namespace Shaheen_InventoryManagement_Android
             var dt = DatabaseHelper.ExecuteDataTable(
                 @"SELECT p.id, p.part_name, p.selling_price, p.quantity_in_stock,
                          p.minimum_stock_level, p.barcode, p.part_number, p.part_image,
-                         p.item_no,
+                         p.item_no, p.unit_of_measure, p.purchase_price,
                          COALESCE(c.category_name, 'General') AS category,
                          c.category_image
                   FROM parts p
@@ -258,6 +258,8 @@ namespace Shaheen_InventoryManagement_Android
                     name = row["part_name"].ToString(),
                     itemNo = row["item_no"].ToString(),
                     price = Convert.ToDecimal(row["selling_price"]),
+                    purchasePrice = Convert.ToDecimal(row["purchase_price"]),
+                    unitOfMeasure = row["unit_of_measure"].ToString(),
                     stock = Convert.ToInt32(row["quantity_in_stock"]),
                     minStock = Convert.ToInt32(row["minimum_stock_level"]),
                     barcode = row["barcode"].ToString(),
@@ -565,7 +567,8 @@ namespace Shaheen_InventoryManagement_Android
                             partName = rp.PartName,
                             qty = rp.Quantity,
                             unitCost = rp.UnitCost,
-                            totalCost = rp.TotalCost
+                            totalCost = rp.TotalCost,
+                            unitOfMeasure = rp.UnitOfMeasure
                         });
                     }
                     result.Add(new

@@ -73,9 +73,10 @@ namespace Shaheen_InventoryManagement_Android.Forms
         {
             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemNo", HeaderText = "Item No.", DataPropertyName = "ItemNo", FillWeight = 20 });
             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartNumber", HeaderText = "SKU", DataPropertyName = "PartNumber", FillWeight = 20 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", HeaderText = "Name", DataPropertyName = "PartName", FillWeight = 40 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "QuantityInStock", HeaderText = "Stock", DataPropertyName = "QuantityInStock", FillWeight = 20 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "PurchasePrice", HeaderText = "Unit Cost", DataPropertyName = "PurchasePrice", FillWeight = 20, DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" } });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", HeaderText = "Name", DataPropertyName = "PartName", FillWeight = 35 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitOfMeasure", HeaderText = "UOM", DataPropertyName = "UnitOfMeasure", FillWeight = 15 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "QuantityInStock", HeaderText = "Stock", DataPropertyName = "QuantityInStock", FillWeight = 15 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "PurchasePrice", HeaderText = "Unit Cost", DataPropertyName = "PurchasePrice", FillWeight = 15, DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" } });
         }
 
         private void ApplyTheme()

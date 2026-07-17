@@ -105,10 +105,12 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 Margin = new Padding(0, 10, 0, 0)
             };
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartNumber", HeaderText = "SKU", DataPropertyName = "PartNumber", FillWeight = 20 });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", HeaderText = "Name", DataPropertyName = "PartName", FillWeight = 40 });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "Quantity", HeaderText = "Quantity", DataPropertyName = "Quantity", FillWeight = 15 });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "TotalCost", HeaderText = "Cost", DataPropertyName = "TotalCost", FillWeight = 15, DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" } });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartNumber", HeaderText = "SKU", DataPropertyName = "PartNumber", FillWeight = 15 });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", HeaderText = "Name", DataPropertyName = "PartName", FillWeight = 30 });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "Quantity", HeaderText = "Quantity", DataPropertyName = "Quantity", FillWeight = 12 });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitOfMeasure", HeaderText = "UOM", DataPropertyName = "UnitOfMeasure", FillWeight = 12 });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitCost", HeaderText = "Unit Cost", DataPropertyName = "UnitCost", FillWeight = 13, DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" } });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "TotalCost", HeaderText = "Cost", DataPropertyName = "TotalCost", FillWeight = 13, DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" } });
             
             var colActions = new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = "Actions", ReadOnly = true, MinimumWidth = 90, Width = 90, AutoSizeMode = DataGridViewAutoSizeColumnMode.None };
             dgvParts.Columns.Add(colActions);

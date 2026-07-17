@@ -1536,10 +1536,19 @@ function loadRecipesTab() {
             <div class="product-img" style="margin-top: 20px;">
                 <span class="emoji-icon">🍲</span>
             </div>
-            <div class="product-info" style="text-align: center;">
+            <div class="product-info" style="text-align: center; padding: 10px;">
                 <div class="product-name">${r.name}</div>
-                <div class="product-price" style="color: var(--accent); font-weight: 800; font-size: 0.95rem; margin-top: 4px;">${formatPrice(r.price)}</div>
-                <div class="product-stock" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">${r.categoryName ? `Recipe • ${r.categoryName}` : 'Recipe'}</div>
+                <div style="display:flex; justify-content:space-around; align-items:center; margin-top:8px;">
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        <span style="font-size:0.7rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Cost</span>
+                        <span style="color:var(--text); font-weight:700; font-size:0.85rem;">${formatPrice(r.totalCost || 0)}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        <span style="font-size:0.7rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Price</span>
+                        <span style="color:var(--accent); font-weight:800; font-size:0.9rem;">${formatPrice(r.price)}</span>
+                    </div>
+                </div>
+                <div class="product-stock" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top: 8px;">${r.categoryName ? `Recipe • ${r.categoryName}` : 'Recipe'}</div>
             </div>
         `;
         grid.appendChild(card);
@@ -1570,27 +1579,73 @@ function addRecipeIngredientRow(selectedPartId = '', qty = 1) {
     const row = document.createElement('div');
     row.className = 'recipe-ingredient-row';
     row.style.display = 'grid';
-    row.style.gridTemplateColumns = '1fr 80px 40px';
+    row.style.gridTemplateColumns = '2fr 80px 60px 100px 90px 30px';
     row.style.gap = '10px';
     row.style.alignItems = 'center';
+    row.style.marginBottom = '8px';
 
     let options = allProducts.map(p => `<option value="${p.id}" ${p.id == selectedPartId ? 'selected' : ''}>${p.name}</option>`).join('');
 
     row.innerHTML = `
-        <select class="ingredient-select" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:1px solid var(--border); padding:8px; border-radius:6px;">
+        <select class="ingredient-select" onchange="updateRecipeModalCosts()" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px;">
             <option value="">-- Choose Ingredient --</option>
             ${options}
         </select>
-        <input type="number" class="ingredient-qty" placeholder="Qty" value="${qty}" min="0.1" step="0.1" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:1px solid var(--border); padding:8px; border-radius:6px; text-align:center;">
-        <button onclick="removeRecipeIngredientRow(this)" style="background:none; border:none; color:var(--danger); font-size:1.3rem; cursor:pointer;">&times;</button>
+        <input type="number" class="ingredient-qty" oninput="updateRecipeModalCosts()" placeholder="Qty" value="${qty}" min="0.01" step="0.01" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px; text-align:center;">
+        <span class="ingredient-uom" style="color:var(--text-muted); font-weight:600; text-align:center; font-size:0.9rem;">-</span>
+        <span class="ingredient-unit-cost" style="color:var(--text-muted); text-align:right; font-size:0.85rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">$0.00</span>
+        <span class="ingredient-total-cost" style="color:var(--accent); font-weight:bold; text-align:right; font-size:0.95rem;">$0.00</span>
+        <button onclick="removeRecipeIngredientRow(this)" style="background:none; border:none; color:var(--danger); font-size:1.3rem; cursor:pointer; padding:0; line-height:1;">&times;</button>
     `;
     list.appendChild(row);
+    updateRecipeModalCosts();
 }
 
 function removeRecipeIngredientRow(btn) {
     const row = btn.parentElement;
     row.remove();
+    updateRecipeModalCosts();
 }
+
+window.updateRecipeModalCosts = function() {
+    let totalCost = 0;
+    const rows = document.querySelectorAll('.recipe-ingredient-row');
+    rows.forEach(row => {
+        const select = row.querySelector('.ingredient-select');
+        const qtyInput = row.querySelector('.ingredient-qty');
+        const uomSpan = row.querySelector('.ingredient-uom');
+        const unitCostSpan = row.querySelector('.ingredient-unit-cost');
+        const totalCostSpan = row.querySelector('.ingredient-total-cost');
+        
+        if (!select || !qtyInput) return;
+        
+        const partId = parseInt(select.value);
+        const qty = parseFloat(qtyInput.value) || 0;
+        
+        if (partId) {
+            const product = allProducts.find(p => p.id === partId);
+            if (product) {
+                const uom = product.unitOfMeasure || 'pcs';
+                const cost = product.purchasePrice || 0;
+                const rowCost = cost * qty;
+                totalCost += rowCost;
+                
+                if (uomSpan) uomSpan.textContent = uom;
+                if (unitCostSpan) unitCostSpan.textContent = `$${cost.toFixed(2)}/${uom}`;
+                if (totalCostSpan) totalCostSpan.textContent = `$${rowCost.toFixed(2)}`;
+            }
+        } else {
+            if (uomSpan) uomSpan.textContent = '-';
+            if (unitCostSpan) unitCostSpan.textContent = '$0.00';
+            if (totalCostSpan) totalCostSpan.textContent = '$0.00';
+        }
+    });
+    
+    const totalDisplay = document.getElementById('recipeIngredientsTotalCost');
+    if (totalDisplay) {
+        totalDisplay.textContent = `$${totalCost.toFixed(2)}`;
+    }
+};
 
 async function saveRecipe() {
     const id = document.getElementById('editRecipeId').value;

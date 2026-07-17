@@ -16,12 +16,13 @@ namespace Shaheen_InventoryManagement_Android.Data
         public string PartName { get; set; }
         public string PartNumber { get; set; }
         public decimal UnitCost { get; set; }
+        public string UnitOfMeasure { get; set; }
         
         public decimal TotalCost => UnitCost * (decimal)Quantity;
 
         public static List<RecipePartData> GetPartsForRecipe(int recipeId)
         {
-            string sql = @"SELECT rp.*, p.part_name, p.part_number, p.purchase_price
+            string sql = @"SELECT rp.*, p.part_name, p.part_number, p.purchase_price, p.unit_of_measure
                            FROM recipe_parts rp
                            JOIN parts p ON rp.part_id = p.id
                            WHERE rp.recipe_id = @id";
@@ -50,7 +51,8 @@ namespace Shaheen_InventoryManagement_Android.Data
                 Quantity   = Safe<double>(r, "quantity", 1),
                 PartName   = Safe<string>(r, "part_name", ""),
                 PartNumber = Safe<string>(r, "part_number", ""),
-                UnitCost   = Safe<decimal>(r, "purchase_price", 0)
+                UnitCost   = Safe<decimal>(r, "purchase_price", 0),
+                UnitOfMeasure = Safe<string>(r, "unit_of_measure", "")
             };
         }
     }
