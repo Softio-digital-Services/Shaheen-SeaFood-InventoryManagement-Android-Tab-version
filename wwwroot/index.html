@@ -75,10 +75,10 @@
                 <div class="logo"></div>
             </div>
             
-            <!-- Navigation Tabs -->
             <div class="nav-tabs">
                 <button class="nav-tab active" id="tabBtnInventory" onclick="switchTab('inventory')">Inventory</button>
                 <button class="nav-tab" id="tabBtnRecipes" onclick="switchTab('recipes')">Recipes</button>
+                <button class="nav-tab" id="tabBtnSales" onclick="switchTab('sales')">Sales Entry</button>
                 <button class="nav-tab" id="tabBtnImport" onclick="switchTab('import')">Import/Export</button>
                 <button class="nav-tab" id="tabBtnReports" onclick="switchTab('reports')">Reports</button>
             </div>
@@ -136,6 +136,63 @@
             </div>
             <div class="product-grid" id="recipesGrid" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));">
                 <!-- Recipe Cards will load dynamically here -->
+            </div>
+        </div>
+
+        <!-- SALES ENTRY TAB CONTENT -->
+        <div id="tabContentSales" class="tab-content-panel hidden" style="flex:1; overflow-y:auto; padding:20px; text-align:left;">
+            <h2 style="margin-top:0; margin-bottom:20px; font-size:1.35rem;">Manual Sales Entry</h2>
+            
+            <div style="display:grid; grid-template-columns: 1fr 2fr; gap:30px; align-items: start;">
+                <!-- Sales Form -->
+                <div class="glass-card" style="padding:20px;">
+                    <h3 style="margin-top:0; font-size:1.05rem; margin-bottom:15px;">Add Sales Record</h3>
+                    
+                    <div class="input-group" style="margin-bottom:15px;">
+                        <label>Item Name</label>
+                        <select id="salesProductSelect" style="width:100%; padding:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; color:var(--text);" onchange="onSalesProductChange()">
+                            <option value="">Select an item...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group" style="margin-bottom:15px;">
+                        <label>Quantity</label>
+                        <input type="number" id="salesQuantityInput" value="1" min="1" oninput="calculateSalesTotal()" style="width:100%; padding:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; color:var(--text);">
+                    </div>
+                    
+                    <div class="input-group" style="margin-bottom:15px;">
+                        <label>Price ($)</label>
+                        <input type="number" id="salesPriceInput" value="0.00" min="0.01" step="0.01" oninput="calculateSalesTotal()" style="width:100%; padding:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; color:var(--text);">
+                    </div>
+                    
+                    <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:bold; color:var(--text-muted);">Total:</span>
+                        <span id="salesTotalDisplay" style="font-size:1.25rem; font-weight:bold; color:var(--accent);">$0.00</span>
+                    </div>
+                    
+                    <button class="btn-primary-large" onclick="submitSalesEntry()" style="margin:0;">Submit Sale</button>
+                </div>
+                
+                <!-- Sales Table -->
+                <div class="glass-card" style="padding:20px;">
+                    <h3 style="margin-top:0; font-size:1.05rem; margin-bottom:15px;">Recent Sales History</h3>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left; padding:12px; border-bottom:2px solid var(--border);">Item</th>
+                                    <th style="text-align:right; padding:12px; border-bottom:2px solid var(--border);">Quantity</th>
+                                    <th style="text-align:right; padding:12px; border-bottom:2px solid var(--border);">Price</th>
+                                    <th style="text-align:right; padding:12px; border-bottom:2px solid var(--border);">Total</th>
+                                    <th style="text-align:center; padding:12px; border-bottom:2px solid var(--border);">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salesTableBody">
+                                <!-- Sales entries populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 

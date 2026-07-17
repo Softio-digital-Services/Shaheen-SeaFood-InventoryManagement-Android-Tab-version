@@ -509,6 +509,36 @@ namespace Shaheen_InventoryManagement_Android
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
 
+                // - Sales Items (GET) -
+                app.MapGet("/api/sales-items", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT oi.order_item_id, p.part_name, oi.quantity, oi.price, o.order_date
+                              FROM order_items oi
+                              JOIN parts p ON oi.part_id = p.id
+                              JOIN orders o ON oi.order_id = o.order_id
+                              ORDER BY oi.order_item_id DESC LIMIT 100");
+
+                        var items = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            items.Add(new
+                            {
+                                id = Convert.ToInt32(row["order_item_id"]),
+                                name = row["part_name"].ToString(),
+                                qty = Convert.ToInt32(row["quantity"]),
+                                price = Convert.ToDecimal(row["price"]),
+                                total = Convert.ToInt32(row["quantity"]) * Convert.ToDecimal(row["price"]),
+                                date = Convert.ToDateTime(row["order_date"])
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(items);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
                 // - Order Details (GET) -
                 app.MapGet("/api/order-details/{id}", (int id) =>
                 {

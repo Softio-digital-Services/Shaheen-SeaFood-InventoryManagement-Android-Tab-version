@@ -1376,6 +1376,7 @@ function switchTab(tabId) {
 
     if (tabId === 'inventory') { panelId = 'tabContentInventory'; btnId = 'tabBtnInventory'; loadInventoryTable(); }
     else if (tabId === 'recipes') { panelId = 'tabContentRecipes'; btnId = 'tabBtnRecipes'; loadRecipesTab(); }
+    else if (tabId === 'sales') { panelId = 'tabContentSales'; btnId = 'tabBtnSales'; loadSalesTab(); }
     else if (tabId === 'import') { panelId = 'tabContentImport'; btnId = 'tabBtnImport'; }
     else if (tabId === 'reports') { panelId = 'tabContentReports'; btnId = 'tabBtnReports'; loadReportsData(); }
 
@@ -2097,5 +2098,169 @@ window.toggleCartDrawer = function() {
         if (closeBtn) {
             closeBtn.style.display = isOpen ? 'block' : 'none';
         }
+    }
+};
+
+
+// ─── MANUAL SALES ENTRY TAB ───────────────────────────────────────────
+window.loadSalesTab = async function() {
+    // 1. Populate product dropdown
+    const select = document.getElementById('salesProductSelect');
+    if (select) {
+        // Keep initial option
+        select.innerHTML = '<option value="">Select an item...</option>';
+        
+        // Sort products alphabetically
+        const sortedProducts = [...allProducts].sort((a, b) => a.name.localeCompare(b.name));
+        sortedProducts.forEach(p => {
+            if (p.status !== 'Inactive') {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.name} ($${p.price.toFixed(2)})`;
+                select.appendChild(opt);
+            }
+        });
+    }
+
+    // 2. Fetch and render sales items table
+    try {
+        const res = await fetch(`${API_BASE}/api/sales-items`);
+        if (res.ok) {
+            const items = await res.json();
+            renderSalesItemsTable(items);
+        } else {
+            showToast("Failed to fetch sales history", "error");
+        }
+    } catch (e) {
+        console.error("Failed to load sales items", e);
+    }
+    
+    // Reset Form
+    if (select) select.value = "";
+    const qtyInput = document.getElementById('salesQuantityInput');
+    if (qtyInput) qtyInput.value = "1";
+    const priceInput = document.getElementById('salesPriceInput');
+    if (priceInput) priceInput.value = "0.00";
+    calculateSalesTotal();
+};
+
+window.onSalesProductChange = function() {
+    const select = document.getElementById('salesProductSelect');
+    const priceInput = document.getElementById('salesPriceInput');
+    if (!select || !priceInput) return;
+
+    const productId = parseInt(select.value);
+    if (!productId) {
+        priceInput.value = "0.00";
+        calculateSalesTotal();
+        return;
+    }
+
+    const product = allProducts.find(p => p.id === productId);
+    if (product) {
+        priceInput.value = product.price.toFixed(2);
+    }
+    calculateSalesTotal();
+};
+
+window.calculateSalesTotal = function() {
+    const qtyInput = document.getElementById('salesQuantityInput');
+    const priceInput = document.getElementById('salesPriceInput');
+    const totalDisplay = document.getElementById('salesTotalDisplay');
+    if (!qtyInput || !priceInput || !totalDisplay) return;
+
+    const qty = parseInt(qtyInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+    const total = qty * price;
+    totalDisplay.textContent = `$${total.toFixed(2)}`;
+};
+
+function renderSalesItemsTable(items) {
+    const tbody = document.getElementById('salesTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No sales entries found.</td></tr>';
+        return;
+    }
+
+    items.forEach(item => {
+        const tr = document.createElement('tr');
+        const formattedDate = new Date(item.date).toLocaleString();
+        
+        tr.innerHTML = `
+            <td style="padding:12px; border-bottom:1px solid var(--border); color:var(--text-main); font-weight:600;">${item.name}</td>
+            <td style="padding:12px; border-bottom:1px solid var(--border); text-align:right;">${item.qty}</td>
+            <td style="padding:12px; border-bottom:1px solid var(--border); text-align:right;">$${item.price.toFixed(2)}</td>
+            <td style="padding:12px; border-bottom:1px solid var(--border); text-align:right; font-weight:700; color:var(--accent);">$${item.total.toFixed(2)}</td>
+            <td style="padding:12px; border-bottom:1px solid var(--border); text-align:center; color:var(--text-muted); font-size:0.85rem;">${formattedDate}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+window.submitSalesEntry = async function() {
+    const select = document.getElementById('salesProductSelect');
+    const qtyInput = document.getElementById('salesQuantityInput');
+    const priceInput = document.getElementById('salesPriceInput');
+    if (!select || !qtyInput || !priceInput) return;
+
+    const productId = parseInt(select.value);
+    const qty = parseInt(qtyInput.value);
+    const price = parseFloat(priceInput.value);
+
+    if (!productId) {
+        showToast("Please select an item", "error");
+        return;
+    }
+    if (!qty || qty <= 0) {
+        showToast("Please enter a valid quantity", "error");
+        return;
+    }
+    if (isNaN(price) || price <= 0) {
+        showToast("Please enter a valid price", "error");
+        return;
+    }
+
+    const product = allProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    // Check stock if tracked
+    if (product.isStockTracked && qty > product.stock) {
+        showToast(`Insufficient stock! Current stock: ${product.stock}`, "error");
+        return;
+    }
+
+    const payload = {
+        items: [{
+            id: productId,
+            name: product.name,
+            price: price,
+            qty: qty
+        }]
+    };
+
+    try {
+        const res = await fetch(`${API_BASE}/api/checkout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            showToast("Sale recorded successfully!", "success");
+            
+            // Re-fetch products to update cached stock count
+            await fetchInventory();
+            
+            // Reload the sales tab dropdown and table
+            await loadSalesTab();
+        } else {
+            const errText = await res.text();
+            showToast("Checkout failed: " + errText, "error");
+        }
+    } catch (e) {
+        showToast("Connection error", "error");
     }
 };
