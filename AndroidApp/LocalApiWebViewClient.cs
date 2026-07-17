@@ -326,9 +326,10 @@ namespace Shaheen_InventoryManagement_Android
         private string GetSalesItems()
         {
             var dt = DatabaseHelper.ExecuteDataTable(
-                @"SELECT oi.order_item_id, p.part_name, oi.quantity, oi.price, o.order_date
+                @"SELECT oi.order_item_id, COALESCE(p.part_name, r.recipe_name) as item_name, oi.quantity, oi.price, o.order_date
                   FROM order_items oi
-                  JOIN parts p ON oi.part_id = p.id
+                  LEFT JOIN parts p ON oi.part_id = p.id AND oi.item_type != 'Recipe'
+                  LEFT JOIN recipes r ON oi.recipe_id = r.id AND oi.item_type = 'Recipe'
                   JOIN orders o ON oi.order_id = o.order_id
                   ORDER BY oi.order_item_id DESC LIMIT 100");
 
@@ -338,7 +339,7 @@ namespace Shaheen_InventoryManagement_Android
                 list.Add(new
                 {
                     id = Convert.ToInt32(row["order_item_id"]),
-                    name = row["part_name"].ToString(),
+                    name = row["item_name"].ToString(),
                     qty = Convert.ToInt32(row["quantity"]),
                     price = Convert.ToDecimal(row["price"]),
                     total = Convert.ToInt32(row["quantity"]) * Convert.ToDecimal(row["price"]),
