@@ -427,15 +427,22 @@ namespace Shaheen_InventoryManagement_Android
 
                         foreach (var item in body.Items)
                         {
-                            if (item.Id > 0)
-                            {
-                                DatabaseHelper.ExecuteNonQuery(
-                                    "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)",
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@oid", orderId),
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@pid", item.Id),
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@price", item.Price));
+                            bool isRecipe = item.ItemType == "Recipe" || (item.RecipeId.HasValue && item.RecipeId.Value > 0);
+                            int partId = isRecipe ? 0 : item.Id;
+                            int? recipeId = isRecipe ? (item.RecipeId ?? item.Id) : (int?)null;
+                            string itemType = isRecipe ? "Recipe" : "Part";
 
+                            DatabaseHelper.ExecuteNonQuery(
+                                "INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) VALUES (@oid, @pid, @qty, @price, @type, @rid)",
+                                new Microsoft.Data.Sqlite.SqliteParameter("@oid", orderId),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@pid", partId),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@price", item.Price),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@type", itemType),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@rid", (object)recipeId ?? DBNull.Value));
+
+                            if (!isRecipe && item.Id > 0)
+                            {
                                 DatabaseHelper.ExecuteNonQuery(
                                     "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid",
                                     new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
@@ -515,9 +522,10 @@ namespace Shaheen_InventoryManagement_Android
                     try
                     {
                         var dt = DatabaseHelper.ExecuteDataTable(
-                            @"SELECT oi.order_item_id, p.part_name, oi.quantity, oi.price, o.order_date
+                            @"SELECT oi.order_item_id, COALESCE(p.part_name, r.recipe_name) as item_name, oi.quantity, oi.price, o.order_date
                               FROM order_items oi
-                              JOIN parts p ON oi.part_id = p.id
+                              LEFT JOIN parts p ON oi.part_id = p.id AND oi.item_type != 'Recipe'
+                              LEFT JOIN recipes r ON oi.recipe_id = r.id AND oi.item_type = 'Recipe'
                               JOIN orders o ON oi.order_id = o.order_id
                               ORDER BY oi.order_item_id DESC LIMIT 100");
 
@@ -527,7 +535,7 @@ namespace Shaheen_InventoryManagement_Android
                             items.Add(new
                             {
                                 id = Convert.ToInt32(row["order_item_id"]),
-                                name = row["part_name"].ToString(),
+                                name = row["item_name"].ToString(),
                                 qty = Convert.ToInt32(row["quantity"]),
                                 price = Convert.ToDecimal(row["price"]),
                                 total = Convert.ToInt32(row["quantity"]) * Convert.ToDecimal(row["price"]),
@@ -640,6 +648,8 @@ namespace Shaheen_InventoryManagement_Android
             public string Name { get; set; }
             public decimal Price { get; set; }
             public int Qty { get; set; }
+            public string ItemType { get; set; }
+            public int? RecipeId { get; set; }
         }
 
         private class ReturnPayload

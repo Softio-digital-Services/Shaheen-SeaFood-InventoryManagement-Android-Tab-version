@@ -2104,22 +2104,39 @@ window.toggleCartDrawer = function() {
 
 // ─── MANUAL SALES ENTRY TAB ───────────────────────────────────────────
 window.loadSalesTab = async function() {
-    // 1. Populate product dropdown
+    // 1. Populate product & recipe dropdown with optgroups
     const select = document.getElementById('salesProductSelect');
     if (select) {
         // Keep initial option
         select.innerHTML = '<option value="">Select an item...</option>';
         
-        // Sort products alphabetically
+        // Products group
+        const prodGroup = document.createElement('optgroup');
+        prodGroup.label = "Ingredients & Products";
         const sortedProducts = [...allProducts].sort((a, b) => a.name.localeCompare(b.name));
         sortedProducts.forEach(p => {
             if (p.status !== 'Inactive') {
                 const opt = document.createElement('option');
-                opt.value = p.id;
+                opt.value = `prod-${p.id}`;
                 opt.textContent = `${p.name} ($${p.price.toFixed(2)})`;
-                select.appendChild(opt);
+                prodGroup.appendChild(opt);
             }
         });
+        select.appendChild(prodGroup);
+
+        // Recipes group
+        const recGroup = document.createElement('optgroup');
+        recGroup.label = "Food Recipes";
+        const sortedRecipes = [...allRecipes].sort((a, b) => a.name.localeCompare(b.name));
+        sortedRecipes.forEach(r => {
+            if (r.status !== 'Inactive') {
+                const opt = document.createElement('option');
+                opt.value = `rec-${r.id}`;
+                opt.textContent = `${r.name} ($${r.price.toFixed(2)})`;
+                recGroup.appendChild(opt);
+            }
+        });
+        select.appendChild(recGroup);
     }
 
     // 2. Fetch and render sales items table
@@ -2149,16 +2166,21 @@ window.onSalesProductChange = function() {
     const priceInput = document.getElementById('salesPriceInput');
     if (!select || !priceInput) return;
 
-    const productId = parseInt(select.value);
-    if (!productId) {
+    if (!select.value) {
         priceInput.value = "0.00";
         calculateSalesTotal();
         return;
     }
 
-    const product = allProducts.find(p => p.id === productId);
-    if (product) {
-        priceInput.value = product.price.toFixed(2);
+    const [type, idStr] = select.value.split('-');
+    const itemId = parseInt(idStr);
+
+    if (type === 'prod') {
+        const product = allProducts.find(p => p.id === itemId);
+        if (product) priceInput.value = product.price.toFixed(2);
+    } else if (type === 'rec') {
+        const recipe = allRecipes.find(r => r.id === itemId);
+        if (recipe) priceInput.value = recipe.price.toFixed(2);
     }
     calculateSalesTotal();
 };
@@ -2206,14 +2228,16 @@ window.submitSalesEntry = async function() {
     const priceInput = document.getElementById('salesPriceInput');
     if (!select || !qtyInput || !priceInput) return;
 
-    const productId = parseInt(select.value);
-    const qty = parseInt(qtyInput.value);
-    const price = parseFloat(priceInput.value);
-
-    if (!productId) {
+    if (!select.value) {
         showToast("Please select an item", "error");
         return;
     }
+
+    const [type, idStr] = select.value.split('-');
+    const itemId = parseInt(idStr);
+    const qty = parseInt(qtyInput.value);
+    const price = parseFloat(priceInput.value);
+
     if (!qty || qty <= 0) {
         showToast("Please enter a valid quantity", "error");
         return;
@@ -2223,22 +2247,43 @@ window.submitSalesEntry = async function() {
         return;
     }
 
-    const product = allProducts.find(p => p.id === productId);
-    if (!product) return;
+    let payloadItem = null;
 
-    // Check stock if tracked
-    if (product.isStockTracked && qty > product.stock) {
-        showToast(`Insufficient stock! Current stock: ${product.stock}`, "error");
-        return;
-    }
+    if (type === 'prod') {
+        const product = allProducts.find(p => p.id === itemId);
+        if (!product) return;
 
-    const payload = {
-        items: [{
-            id: productId,
+        // Check stock if tracked
+        if (product.isStockTracked && qty > product.stock) {
+            showToast(`Insufficient stock! Current stock: ${product.stock}`, "error");
+            return;
+        }
+
+        payloadItem = {
+            id: itemId,
             name: product.name,
             price: price,
-            qty: qty
-        }]
+            qty: qty,
+            itemType: "Part"
+        };
+    } else if (type === 'rec') {
+        const recipe = allRecipes.find(r => r.id === itemId);
+        if (!recipe) return;
+
+        payloadItem = {
+            id: itemId,
+            name: recipe.name,
+            price: price,
+            qty: qty,
+            itemType: "Recipe",
+            recipeId: itemId
+        };
+    }
+
+    if (!payloadItem) return;
+
+    const payload = {
+        items: [payloadItem]
     };
 
     try {
@@ -2259,6 +2304,24 @@ window.submitSalesEntry = async function() {
         } else {
             const errText = await res.text();
             showToast("Checkout failed: " + errText, "error");
+        }
+    } catch (e) {
+        showToast("Connection error", "error");
+    }
+};
+
+window.clearSalesHistory = async function() {
+    if (!confirm("Are you sure you want to clear all sales history and transaction logs? This action cannot be undone.")) {
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/api/clear-reports`, { method: 'POST' });
+        if (res.ok) {
+            showToast("Sales history cleared successfully!", "success");
+            await fetchInventory();
+            await loadSalesTab();
+        } else {
+            showToast("Failed to clear sales history", "error");
         }
     } catch (e) {
         showToast("Connection error", "error");
