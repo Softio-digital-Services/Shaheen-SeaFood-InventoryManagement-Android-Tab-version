@@ -40,6 +40,12 @@ namespace Shaheen_InventoryManagement_Android.Data
         public decimal Price3 { get; set; } = 0;
         public decimal Price4 { get; set; } = 0;
 
+        public string StockType { get; set; } = "Piece";
+        public int PackItemsNumber { get; set; } = 0;
+        public decimal PackPrice { get; set; } = 0;
+        public decimal ItemPrice { get; set; } = 0;
+        public decimal PiecePrice { get; set; } = 0;
+
         public static List<PartData> GetAllParts(string categoryName = null, int limit = 0, int offset = 0)
         {
             string sql = @"SELECT p.*, c.category_name, s.supplier_name
@@ -157,7 +163,12 @@ namespace Shaheen_InventoryManagement_Android.Data
                 IsStockTracked = Safe<int>(r, "is_stock_tracked", 1) == 1,
                 Price2 = Safe<decimal>(r, "price2", 0),
                 Price3 = Safe<decimal>(r, "price3", 0),
-                Price4 = Safe<decimal>(r, "price4", 0)
+                Price4 = Safe<decimal>(r, "price4", 0),
+                StockType = Safe<string>(r, "stock_type", "Piece"),
+                PackItemsNumber = Safe<int>(r, "pack_items_number", 0),
+                PackPrice = Safe<decimal>(r, "pack_price", 0),
+                ItemPrice = Safe<decimal>(r, "item_price", 0),
+                PiecePrice = Safe<decimal>(r, "piece_price", 0)
             };
         }
     }

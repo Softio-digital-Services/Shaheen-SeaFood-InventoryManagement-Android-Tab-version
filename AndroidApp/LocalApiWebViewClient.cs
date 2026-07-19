@@ -168,6 +168,25 @@ namespace Shaheen_InventoryManagement_Android
                 {
                     return ProcessAddItem(body);
                 }
+                else if (endpoint == "api/adjust-stock" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ProcessAdjustStock(body);
+                }
+                else if (endpoint == "api/stock-transactions")
+                {
+                    string date = "";
+                    int qIdx = url.IndexOf('?');
+                    if (qIdx >= 0)
+                    {
+                        var query = url.Substring(qIdx + 1);
+                        var parts = query.Split('&');
+                        foreach (var p in parts)
+                        {
+                            if (p.StartsWith("date=")) date = Uri.UnescapeDataString(p.Substring("date=".Length));
+                        }
+                    }
+                    return GetStockTransactions(date);
+                }
                 else if (endpoint == "api/checkout" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
                 {
                     return ProcessCheckout(body);
@@ -241,6 +260,7 @@ namespace Shaheen_InventoryManagement_Android
                 @"SELECT p.id, p.part_name, p.selling_price, p.quantity_in_stock,
                          p.minimum_stock_level, p.barcode, p.part_number, p.part_image,
                          p.item_no, p.unit_of_measure, p.purchase_price,
+                         p.stock_type, p.pack_items_number, p.pack_price, p.item_price, p.piece_price,
                          COALESCE(c.category_name, 'General') AS category,
                          c.category_image
                   FROM parts p
@@ -267,7 +287,12 @@ namespace Shaheen_InventoryManagement_Android
                     category = category,
                     image = CleanImagePrefix(row["part_image"].ToString()),
                     categoryImage = CleanCategoryIcon(category, row["category_image"].ToString()),
-                    isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase)
+                    isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase),
+                    stockType = row["stock_type"] != DBNull.Value ? row["stock_type"].ToString() : "Piece",
+                    packItemsNumber = row["pack_items_number"] != DBNull.Value ? Convert.ToInt32(row["pack_items_number"]) : 0,
+                    packPrice = row["pack_price"] != DBNull.Value ? Convert.ToDecimal(row["pack_price"]) : 0m,
+                    itemPrice = row["item_price"] != DBNull.Value ? Convert.ToDecimal(row["item_price"]) : 0m,
+                    piecePrice = row["piece_price"] != DBNull.Value ? Convert.ToDecimal(row["piece_price"]) : 0m
                 });
             }
             return JsonSerializer.Serialize(list);
@@ -413,7 +438,7 @@ namespace Shaheen_InventoryManagement_Android
                         new SqliteParameter("@c", body.Category ?? "General"));
             if (catId == 0) catId = 1;
 
-            if (body.Id.HasValue && body.Id.Value > 0)
+             if (body.Id.HasValue && body.Id.Value > 0)
             {
                 // Update existing item
                 if (!string.IsNullOrEmpty(body.Barcode))
@@ -435,9 +460,15 @@ namespace Shaheen_InventoryManagement_Android
                         purchase_price = @p_price, 
                         selling_price = @s_price, 
                         quantity_in_stock = @stock, 
+                        minimum_stock_level = @min_stock,
                         barcode = @barcode,
                         item_no = @itemNo,
-                        unit_of_measure = @uom
+                        unit_of_measure = @uom,
+                        stock_type = @stock_type,
+                        pack_items_number = @pack_items_number,
+                        pack_price = @pack_price,
+                        item_price = @item_price,
+                        piece_price = @piece_price
                     WHERE id = @id";
 
                 DatabaseHelper.ExecuteNonQuery(sql,
@@ -447,9 +478,15 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@p_price", body.Price * 0.7m),
                     new SqliteParameter("@s_price", body.Price),
                     new SqliteParameter("@stock", body.Stock),
+                    new SqliteParameter("@min_stock", body.MinStock),
                     new SqliteParameter("@barcode", body.Barcode ?? ""),
                     new SqliteParameter("@itemNo", body.ItemNo ?? ""),
                     new SqliteParameter("@uom", body.UnitOfMeasure ?? ""),
+                    new SqliteParameter("@stock_type", body.StockType ?? "Piece"),
+                    new SqliteParameter("@pack_items_number", body.PackItemsNumber),
+                    new SqliteParameter("@pack_price", body.PackPrice),
+                    new SqliteParameter("@item_price", body.ItemPrice),
+                    new SqliteParameter("@piece_price", body.PiecePrice),
                     new SqliteParameter("@id", body.Id.Value));
 
                 DatabaseHelper.LogTransaction("STOCK_EDIT", body.Name, $"Edited via Android App (New Qty: {body.Stock})");
@@ -469,8 +506,10 @@ namespace Shaheen_InventoryManagement_Android
                 }
 
                 string sql = @"
-                    INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, item_no, unit_of_measure)
-                    VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @itemNo, @uom)";
+                    INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, minimum_stock_level, barcode, status, item_no, unit_of_measure,
+                                       stock_type, pack_items_number, pack_price, item_price, piece_price)
+                    VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @min_stock, @barcode, 'Active', @itemNo, @uom,
+                            @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price)";
 
                 DatabaseHelper.ExecuteNonQuery(sql,
                     new SqliteParameter("@name", body.Name),
@@ -479,12 +518,76 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@p_price", body.Price * 0.7m),
                     new SqliteParameter("@s_price", body.Price),
                     new SqliteParameter("@stock", body.Stock),
+                    new SqliteParameter("@min_stock", body.MinStock),
                     new SqliteParameter("@barcode", body.Barcode ?? ""),
                     new SqliteParameter("@itemNo", body.ItemNo ?? ""),
-                    new SqliteParameter("@uom", body.UnitOfMeasure ?? ""));
+                    new SqliteParameter("@uom", body.UnitOfMeasure ?? ""),
+                    new SqliteParameter("@stock_type", body.StockType ?? "Piece"),
+                    new SqliteParameter("@pack_items_number", body.PackItemsNumber),
+                    new SqliteParameter("@pack_price", body.PackPrice),
+                    new SqliteParameter("@item_price", body.ItemPrice),
+                    new SqliteParameter("@piece_price", body.PiecePrice));
 
                 DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via Android App (Qty: {body.Stock})");
                 return JsonSerializer.Serialize(new { success = true });
+            }
+        }
+
+        private string ProcessAdjustStock(string bodyJson)
+        {
+            try
+            {
+                var body = JsonSerializer.Deserialize<AdjustStockPayload>(bodyJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (body == null || body.PartId <= 0)
+                    return JsonSerializer.Serialize(new { error = "Invalid product ID" });
+
+                var inventoryService = new Shaheen_InventoryManagement_Android.Services.InventoryService();
+                inventoryService.AdjustStock(body.PartId, body.Change, body.Reason ?? "Manual Adjustment");
+
+                return JsonSerializer.Serialize(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "WebAppInterface.ProcessAdjustStock");
+                return JsonSerializer.Serialize(new { error = ex.Message });
+            }
+        }
+
+        private string GetStockTransactions(string date)
+        {
+            try
+            {
+                string sql = @"SELECT action_type, part_name, description, timestamp, username
+                               FROM transactions
+                               WHERE action_type IN ('ADJUST_IN', 'ADJUST_OUT', 'STOCK_EDIT', 'STOCK_ADD')";
+                
+                var parameters = new List<SqliteParameter>();
+                if (!string.IsNullOrEmpty(date))
+                {
+                    sql += " AND date(timestamp) = @date";
+                    parameters.Add(new SqliteParameter("@date", date));
+                }
+                sql += " ORDER BY id DESC";
+
+                var dt = DatabaseHelper.ExecuteDataTable(sql, parameters.ToArray());
+                var list = new List<object>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    list.Add(new
+                    {
+                        action = row["action_type"].ToString(),
+                        item = row["part_name"].ToString(),
+                        desc = row["description"].ToString(),
+                        time = row["timestamp"].ToString(),
+                        user = row["username"].ToString()
+                    });
+                }
+                return JsonSerializer.Serialize(list);
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "WebAppInterface.GetStockTransactions");
+                return JsonSerializer.Serialize(new { error = ex.Message });
             }
         }
 
@@ -904,35 +1007,40 @@ namespace Shaheen_InventoryManagement_Android
                                 continue;
                             }
 
-                            // 2. Find parts (ingredients) for this recipe
-                            string sqlParts = @"SELECT rp.part_id, rp.quantity, p.part_name, p.quantity_in_stock 
-                                                FROM recipe_parts rp
-                                                JOIN parts p ON rp.part_id = p.id
-                                                WHERE rp.recipe_id = @recipeId AND p.date_deleted IS NULL";
-                            var partsToDeduct = new List<RecipePartDeduction>();
-                            using (var cmd = new SqliteCommand(sqlParts, conn, transaction))
-                            {
-                                cmd.Parameters.AddWithValue("@recipeId", recipeId);
-                                using (var reader = cmd.ExecuteReader())
-                                {
-                                    while (reader.Read())
-                                    {
-                                        partsToDeduct.Add(new RecipePartDeduction
-                                        {
-                                            PartId = Convert.ToInt32(reader["part_id"]),
-                                            PartName = reader["part_name"].ToString(),
-                                            QtyPerRecipe = Convert.ToDouble(reader["quantity"]),
-                                            CurrentStock = Convert.ToDouble(reader["quantity_in_stock"])
-                                        });
-                                    }
-                                }
-                            }
+                             // 2. Find parts (ingredients) for this recipe
+                             string sqlParts = @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure as recipe_uom, p.part_name, p.quantity_in_stock, p.unit_of_measure as part_uom, p.stock_type, p.pack_items_number 
+                                                 FROM recipe_parts rp
+                                                 JOIN parts p ON rp.part_id = p.id
+                                                 WHERE rp.recipe_id = @recipeId AND p.date_deleted IS NULL";
+                             var partsToDeduct = new List<RecipePartDeduction>();
+                             using (var cmd = new SqliteCommand(sqlParts, conn, transaction))
+                             {
+                                 cmd.Parameters.AddWithValue("@recipeId", recipeId);
+                                 using (var reader = cmd.ExecuteReader())
+                                 {
+                                     while (reader.Read())
+                                     {
+                                         partsToDeduct.Add(new RecipePartDeduction
+                                         {
+                                             PartId = Convert.ToInt32(reader["part_id"]),
+                                             PartName = reader["part_name"].ToString(),
+                                             QtyPerRecipe = Convert.ToDouble(reader["quantity"]),
+                                             CurrentStock = Convert.ToDouble(reader["quantity_in_stock"]),
+                                             RecipeUom = reader["recipe_uom"]?.ToString(),
+                                             PartUom = reader["part_uom"]?.ToString(),
+                                             StockType = reader["stock_type"]?.ToString(),
+                                             PackItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1
+                                         });
+                                     }
+                                 }
+                             }
 
-                            // 3. Deduct ingredients from stock
-                            foreach (var p in partsToDeduct)
-                            {
-                                double totalDeduct = p.QtyPerRecipe * (double)sale.QtySold;
-                                if (totalDeduct <= 0) continue;
+                             // 3. Deduct ingredients from stock
+                             foreach (var p in partsToDeduct)
+                             {
+                                 double qtyPerRecipeConverted = RecipePartData.GetConvertedQuantity(p.QtyPerRecipe, p.RecipeUom, p.PartUom, p.StockType, p.PackItems);
+                                 double totalDeduct = qtyPerRecipeConverted * (double)sale.QtySold;
+                                 if (totalDeduct <= 0) continue;
 
                                 // Check if we already processed this ingredient in a previous loop iteration of this upload
                                 var existingDeduction = ingredientDeductions.FirstOrDefault(d => d.PartId == p.PartId);
@@ -1293,6 +1401,19 @@ namespace Shaheen_InventoryManagement_Android
             public string Sku { get; set; }
             public string ItemNo { get; set; }
             public string UnitOfMeasure { get; set; }
+            public string StockType { get; set; }
+            public int PackItemsNumber { get; set; }
+            public decimal PackPrice { get; set; }
+            public decimal ItemPrice { get; set; }
+            public decimal PiecePrice { get; set; }
+            public int MinStock { get; set; }
+        }
+
+        private class AdjustStockPayload
+        {
+            public int PartId { get; set; }
+            public int Change { get; set; }
+            public string Reason { get; set; }
         }
 
         private class CheckoutPayload
@@ -1381,6 +1502,10 @@ namespace Shaheen_InventoryManagement_Android
             public string PartName { get; set; }
             public double QtyPerRecipe { get; set; }
             public double CurrentStock { get; set; }
+            public string RecipeUom { get; set; }
+            public string PartUom { get; set; }
+            public string StockType { get; set; }
+            public int PackItems { get; set; }
         }
 
         private class IngredientDeductionResult

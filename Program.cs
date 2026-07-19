@@ -180,7 +180,7 @@ namespace Shaheen_InventoryManagement_Android
                         var dt = DatabaseHelper.ExecuteDataTable(
                             @"SELECT p.id, p.part_name, p.selling_price, p.quantity_in_stock,
                                      p.minimum_stock_level, p.barcode, p.part_number, p.part_image,
-                                     p.description,
+                                     p.description, p.stock_type, p.pack_items_number, p.pack_price, p.item_price, p.piece_price,
                                      COALESCE(c.category_name, 'General') AS category,
                                      c.category_image
                               FROM parts p
@@ -256,7 +256,12 @@ namespace Shaheen_InventoryManagement_Android
                                 image = partImage,
                                 categoryImage = catImage,
                                 isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase),
-                                description = row["description"].ToString()
+                                description = row["description"].ToString(),
+                                stockType = row["stock_type"] != DBNull.Value ? row["stock_type"].ToString() : "Piece",
+                                packItemsNumber = row["pack_items_number"] != DBNull.Value ? Convert.ToInt32(row["pack_items_number"]) : 0,
+                                packPrice = row["pack_price"] != DBNull.Value ? Convert.ToDecimal(row["pack_price"]) : 0m,
+                                itemPrice = row["item_price"] != DBNull.Value ? Convert.ToDecimal(row["item_price"]) : 0m,
+                                piecePrice = row["piece_price"] != DBNull.Value ? Convert.ToDecimal(row["piece_price"]) : 0m
                             });
                         }
 
@@ -351,7 +356,6 @@ namespace Shaheen_InventoryManagement_Android
                     }
                 });
 
-                // - Add Item (POST) -
                 app.MapPost("/api/add-item", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
                     try
@@ -363,43 +367,173 @@ namespace Shaheen_InventoryManagement_Android
                         if (body == null || string.IsNullOrEmpty(body.Name))
                             return Microsoft.AspNetCore.Http.Results.BadRequest("Missing name");
 
-                        if (!string.IsNullOrEmpty(body.Barcode))
-                        {
-                            int existingCount = DatabaseHelper.ExecuteScalar<int>(
-                                "SELECT COUNT(*) FROM parts WHERE barcode = @b AND date_deleted IS NULL",
-                                new Microsoft.Data.Sqlite.SqliteParameter("@b", body.Barcode));
-
-                            if (existingCount > 0)
-                                return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
-                        }
                         int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c",
                                     new Microsoft.Data.Sqlite.SqliteParameter("@c", body.Category ?? "General"));
                         if (catId == 0) catId = 1;
 
-                        string sql = @"
-                            INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, unit_of_measure)
-                            VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @uom)";
+                        if (body.Id.HasValue && body.Id.Value > 0)
+                        {
+                            // Update existing item
+                            if (!string.IsNullOrEmpty(body.Barcode))
+                            {
+                                int existingCount = DatabaseHelper.ExecuteScalar<int>(
+                                    "SELECT COUNT(*) FROM parts WHERE barcode = @b AND id != @id AND date_deleted IS NULL",
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@b", body.Barcode),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@id", body.Id.Value));
 
-                        DatabaseHelper.ExecuteNonQuery(sql,
-                            new Microsoft.Data.Sqlite.SqliteParameter("@name", body.Name),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@sku", body.Sku ?? ""),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@cat", catId),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@p_price", body.Price * 0.7m),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@s_price", body.Price),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@stock", body.Stock),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@barcode", body.Barcode ?? ""),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@uom", body.UnitOfMeasure ?? ""));
+                                if (existingCount > 0)
+                                    return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
+                            }
 
-                        DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via WebPOS (Qty: {body.Stock})");
+                            string sql = @"
+                                UPDATE parts SET 
+                                    part_name = @name, 
+                                    part_number = @sku, 
+                                    category_id = @cat, 
+                                    purchase_price = @p_price, 
+                                    selling_price = @s_price, 
+                                    quantity_in_stock = @stock, 
+                                    minimum_stock_level = @min_stock,
+                                    barcode = @barcode,
+                                    item_no = @itemNo,
+                                    unit_of_measure = @uom,
+                                    stock_type = @stock_type,
+                                    pack_items_number = @pack_items_number,
+                                    pack_price = @pack_price,
+                                    item_price = @item_price,
+                                    piece_price = @piece_price
+                                WHERE id = @id";
 
-                        // - Broadcast real-time update to all connected clients -
-                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' added via Web POS");
+                            DatabaseHelper.ExecuteNonQuery(sql,
+                                new Microsoft.Data.Sqlite.SqliteParameter("@name", body.Name),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@sku", body.Sku ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@cat", catId),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@p_price", body.Price * 0.7m),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@s_price", body.Price),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@stock", body.Stock),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@min_stock", body.MinStock),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@barcode", body.Barcode ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@itemNo", body.ItemNo ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@uom", body.UnitOfMeasure ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@stock_type", body.StockType ?? "Piece"),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@pack_items_number", body.PackItemsNumber),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@pack_price", body.PackPrice),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@item_price", body.ItemPrice),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@piece_price", body.PiecePrice),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@id", body.Id.Value));
+
+                            DatabaseHelper.LogTransaction("STOCK_EDIT", body.Name, $"Edited via WebPOS (New Qty: {body.Stock})");
+                            _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' updated via Web POS");
+                            return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                        }
+                        else
+                        {
+                            // Insert new item
+                            if (!string.IsNullOrEmpty(body.Barcode))
+                            {
+                                int existingCount = DatabaseHelper.ExecuteScalar<int>(
+                                    "SELECT COUNT(*) FROM parts WHERE barcode = @b AND date_deleted IS NULL",
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@b", body.Barcode));
+
+                                if (existingCount > 0)
+                                    return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
+                            }
+
+                            string sql = @"
+                                INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, minimum_stock_level, barcode, status, item_no, unit_of_measure,
+                                                   stock_type, pack_items_number, pack_price, item_price, piece_price)
+                                VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @min_stock, @barcode, 'Active', @itemNo, @uom,
+                                        @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price)";
+
+                            DatabaseHelper.ExecuteNonQuery(sql,
+                                new Microsoft.Data.Sqlite.SqliteParameter("@name", body.Name),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@sku", body.Sku ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@cat", catId),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@p_price", body.Price * 0.7m),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@s_price", body.Price),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@stock", body.Stock),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@min_stock", body.MinStock),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@barcode", body.Barcode ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@itemNo", body.ItemNo ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@uom", body.UnitOfMeasure ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@stock_type", body.StockType ?? "Piece"),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@pack_items_number", body.PackItemsNumber),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@pack_price", body.PackPrice),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@item_price", body.ItemPrice),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@piece_price", body.PiecePrice));
+
+                            DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via WebPOS (Qty: {body.Stock})");
+                            _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' added via Web POS");
+                            return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem("Failed to add/update item: " + ex.Message);
+                    }
+                });
+
+                // - Adjust Stock (POST) -
+                app.MapPost("/api/adjust-stock", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<AdjustStockPayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                        if (body == null || body.PartId <= 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest("Invalid product ID");
+
+                        var inventoryService = new Shaheen_InventoryManagement_Android.Services.InventoryService();
+                        inventoryService.AdjustStock(body.PartId, body.Change, body.Reason ?? "Manual Adjustment");
+
+                        // Broadcast update
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Stock adjusted for item ID {body.PartId}");
 
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
                     }
                     catch (Exception ex)
                     {
-                        return Microsoft.AspNetCore.Http.Results.Problem("Failed to add item: " + ex.Message);
+                        return Microsoft.AspNetCore.Http.Results.Problem("Failed to adjust stock: " + ex.Message);
+                    }
+                });
+
+                // - Stock Transactions (GET) -
+                app.MapGet("/api/stock-transactions", (string date) =>
+                {
+                    try
+                    {
+                        string sql = @"SELECT action_type, part_name, description, timestamp, username
+                                       FROM transactions
+                                       WHERE action_type IN ('ADJUST_IN', 'ADJUST_OUT', 'STOCK_EDIT', 'STOCK_ADD')";
+                        
+                        var parameters = new System.Collections.Generic.List<Microsoft.Data.Sqlite.SqliteParameter>();
+                        if (!string.IsNullOrEmpty(date))
+                        {
+                            sql += " AND date(timestamp) = @date";
+                            parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@date", date));
+                        }
+                        sql += " ORDER BY id DESC";
+
+                        var dt = DatabaseHelper.ExecuteDataTable(sql, parameters.ToArray());
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            list.Add(new
+                            {
+                                action = row["action_type"].ToString(),
+                                item = row["part_name"].ToString(),
+                                desc = row["description"].ToString(),
+                                time = row["timestamp"].ToString(),
+                                user = row["username"].ToString()
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem("Failed to fetch transactions: " + ex.Message);
                     }
                 });
 
@@ -630,6 +764,7 @@ namespace Shaheen_InventoryManagement_Android
 
         private class AddItemPayload
         {
+            public int? Id { get; set; }
             public string Name { get; set; }
             public string Category { get; set; }
             public decimal Price { get; set; }
@@ -637,6 +772,20 @@ namespace Shaheen_InventoryManagement_Android
             public string Barcode { get; set; }
             public string Sku { get; set; }
             public string UnitOfMeasure { get; set; }
+            public string ItemNo { get; set; }
+            public string StockType { get; set; }
+            public int PackItemsNumber { get; set; }
+            public decimal PackPrice { get; set; }
+            public decimal ItemPrice { get; set; }
+            public decimal PiecePrice { get; set; }
+            public int MinStock { get; set; }
+        }
+
+        private class AdjustStockPayload
+        {
+            public int PartId { get; set; }
+            public int Change { get; set; }
+            public string Reason { get; set; }
         }
 
         private class CheckoutPayload

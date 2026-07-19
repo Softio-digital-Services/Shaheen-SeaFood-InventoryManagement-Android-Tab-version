@@ -55,5 +55,68 @@ namespace Shaheen_InventoryManagement_Android.Data
                 UnitOfMeasure = Safe<string>(r, "unit_of_measure", "")
             };
         }
+
+        public static double GetConvertedQuantity(double qty, string recipeUom, string partUom, string stockType, int packItems)
+        {
+            if (string.IsNullOrEmpty(recipeUom)) recipeUom = "pcs";
+            if (string.IsNullOrEmpty(partUom)) partUom = "pcs";
+            recipeUom = recipeUom.ToLower().Trim();
+            partUom = partUom.ToLower().Trim();
+
+            if (stockType == "Pack")
+            {
+                if (packItems <= 0) packItems = 1;
+                if (recipeUom == "pcs")
+                {
+                    return qty / packItems;
+                }
+                else if (recipeUom == "g")
+                {
+                    if (partUom.StartsWith("kilo") || partUom == "kg")
+                    {
+                        return qty / (packItems * 1000.0);
+                    }
+                    else
+                    {
+                        return qty / packItems;
+                    }
+                }
+                else if (recipeUom == "kg")
+                {
+                    if (partUom.StartsWith("gram") || partUom == "g")
+                    {
+                        return qty * 1000.0 / packItems;
+                    }
+                    else
+                    {
+                        return qty / packItems;
+                    }
+                }
+                else
+                {
+                    return qty / packItems;
+                }
+            }
+            else
+            {
+                if ((partUom.StartsWith("kilo") || partUom == "kg") && (recipeUom == "g" || recipeUom.StartsWith("gram")))
+                {
+                    return qty / 1000.0;
+                }
+                else if ((partUom.StartsWith("gram") || partUom == "g") && (recipeUom == "kg" || recipeUom.StartsWith("kilo")))
+                {
+                    return qty * 1000.0;
+                }
+                else if ((partUom.StartsWith("liter") || partUom == "l") && (recipeUom == "ml"))
+                {
+                    return qty / 1000.0;
+                }
+                else if (partUom == "ml" && (recipeUom == "l" || recipeUom.StartsWith("liter")))
+                {
+                    return qty * 1000.0;
+                }
+                return qty;
+            }
+        }
     }
 }

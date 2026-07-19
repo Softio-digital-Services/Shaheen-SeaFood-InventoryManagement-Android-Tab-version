@@ -699,7 +699,7 @@ function renderProducts() {
             <div class="product-info">
                 <div class="product-name">${p.name}</div>
                 <div class="product-price">${formatPrice(p.price)}</div>
-                <div class="product-stock ${p.stock < 5 ? 'low' : ''}">${t('stock_label')}: ${p.stock} ${p.unitOfMeasure || 'pcs'}</div>
+                <div class="product-stock ${p.stock < (p.minStock || 5) ? 'low' : ''}">${t('stock_label')}: ${p.stock} ${p.unitOfMeasure || 'pcs'}</div>
             </div>
         `;
         grid.appendChild(card);
@@ -729,6 +729,30 @@ function renderProducts() {
     });
 }
 
+function toggleStockTypeFields() {
+    const stockType = document.getElementById('newItemStockType').value;
+    const packGroup = document.getElementById('packFieldsGroup');
+    const pieceGroup = document.getElementById('pieceFieldsGroup');
+    if (stockType === 'Pack') {
+        packGroup.style.display = 'grid';
+        pieceGroup.style.display = 'none';
+    } else {
+        packGroup.style.display = 'none';
+        pieceGroup.style.display = 'grid';
+    }
+}
+
+function calculatePackItemPrice() {
+    const packItems = parseInt(document.getElementById('newItemPackItemsNumber').value) || 0;
+    const packPrice = parseFloat(document.getElementById('newItemPackPrice').value) || 0;
+    const itemPriceInput = document.getElementById('newItemItemPrice');
+    if (packItems > 0) {
+        itemPriceInput.value = (packPrice / packItems).toFixed(2);
+    } else {
+        itemPriceInput.value = '0.00';
+    }
+}
+
 function openEditModal(id) {
     const item = allProducts.find(p => p.id === id);
     if (!item) return;
@@ -740,22 +764,54 @@ function openEditModal(id) {
     document.getElementById('newItemCategory').value = item.category || (masterCategories.length > 0 ? masterCategories[0] : '');
     document.getElementById('newItemPrice').value = item.price;
     document.getElementById('newItemStock').value = item.stock;
+    document.getElementById('newItemMinStock').value = item.minStock !== undefined ? item.minStock : 5;
     document.getElementById('newItemBarcode').value = item.barcode || '';
     document.getElementById('newItemUom').value = item.unitOfMeasure || 'pcs';
+
+    // Set stock type fields
+    const stockType = item.stockType || 'Piece';
+    document.getElementById('newItemStockType').value = stockType;
+    document.getElementById('newItemPackItemsNumber').value = item.packItemsNumber || '';
+    document.getElementById('newItemPackPrice').value = item.packPrice || '';
+    document.getElementById('newItemItemPrice').value = item.itemPrice || '';
+    document.getElementById('newItemPiecePrice').value = item.piecePrice !== undefined ? item.piecePrice : item.price;
+
+    toggleStockTypeFields();
     document.getElementById('addItemModal').classList.remove('hidden');
 }
 
 async function submitNewItem() {
     const editId = document.getElementById('editItemId').value;
     const parsedId = editId ? parseInt(editId) : null;
+
+    const stockType = document.getElementById('newItemStockType').value;
+    const piecePrice = parseFloat(document.getElementById('newItemPiecePrice').value) || 0;
+    const packPrice = parseFloat(document.getElementById('newItemPackPrice').value) || 0;
+    const packItemsNumber = parseInt(document.getElementById('newItemPackItemsNumber').value) || 0;
+    const itemPrice = parseFloat(document.getElementById('newItemItemPrice').value) || 0;
+    const minStock = parseInt(document.getElementById('newItemMinStock').value) || 5;
+
+    let mainPrice = 0;
+    if (stockType === 'Piece') {
+        mainPrice = piecePrice;
+    } else {
+        mainPrice = packPrice;
+    }
+
     const itemData = {
         itemNo: document.getElementById('newItemNo').value,
         name: document.getElementById('newItemName').value,
         category: document.getElementById('newItemCategory').value,
-        price: parseFloat(document.getElementById('newItemPrice').value),
-        stock: parseInt(document.getElementById('newItemStock').value),
+        price: mainPrice,
+        stock: parseInt(document.getElementById('newItemStock').value) || 0,
         barcode: document.getElementById('newItemBarcode').value,
-        unitOfMeasure: document.getElementById('newItemUom').value
+        unitOfMeasure: document.getElementById('newItemUom').value,
+        stockType: stockType,
+        packItemsNumber: packItemsNumber,
+        packPrice: packPrice,
+        itemPrice: itemPrice,
+        piecePrice: piecePrice,
+        minStock: minStock
     };
 
     if (!itemData.name || isNaN(itemData.price)) {
@@ -1377,6 +1433,7 @@ function switchTab(tabId) {
     let btnId = 'tabBtnInventory';
 
     if (tabId === 'inventory') { panelId = 'tabContentInventory'; btnId = 'tabBtnInventory'; loadInventoryTable(); }
+    else if (tabId === 'stock') { panelId = 'tabContentStock'; btnId = 'tabBtnStock'; loadStockTab(); }
     else if (tabId === 'recipes') { panelId = 'tabContentRecipes'; btnId = 'tabBtnRecipes'; loadRecipesTab(); }
     else if (tabId === 'sales') { panelId = 'tabContentSales'; btnId = 'tabBtnSales'; loadSalesTab(); }
     else if (tabId === 'import') { panelId = 'tabContentImport'; btnId = 'tabBtnImport'; }
@@ -1417,6 +1474,23 @@ function loadInventoryTable() {
             displayContent = `<span class="emoji-icon">${itemImage || '📦'}</span>`;
         }
 
+        let stockDetailsHtml = '';
+        if (p.stockType === 'Pack') {
+            stockDetailsHtml = `
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; line-height: 1.2;">
+                    Type: <span style="color: var(--text); font-weight: 600;">Pack (${p.packItemsNumber} items)</span><br/>
+                    Pack: <span style="color: var(--accent); font-weight: 600;">${formatPrice(p.packPrice)}</span> | Item: <span style="color: var(--text); font-weight: 600;">${formatPrice(p.itemPrice)}</span>
+                </div>
+            `;
+        } else {
+            stockDetailsHtml = `
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; line-height: 1.2;">
+                    Type: <span style="color: var(--text); font-weight: 600;">Piece</span><br/>
+                    Piece Price: <span style="color: var(--accent); font-weight: 600;">${formatPrice(p.piecePrice || p.price)}</span>
+                </div>
+            `;
+        }
+
         card.innerHTML = `
             <div class="card-edit-btn" onclick="event.stopPropagation(); openEditModal(${p.id})" title="Edit" style="position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.2s; z-index: 5; cursor: pointer;">
                 <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path></svg>
@@ -1426,9 +1500,9 @@ function loadInventoryTable() {
             </div>
             <div class="product-img" style="margin-top: 20px;">${displayContent}</div>
             <div class="product-info" style="text-align: center;">
-                <div class="product-name">${p.name}</div>
-                <div class="product-price" style="color: var(--accent); font-weight: 800; font-size: 0.95rem; margin-top: 4px;">${formatPrice(p.price)}</div>
-                <div class="product-stock ${p.stock < (p.minStock || 5) ? 'low' : ''}" style="font-size: 0.75rem; font-weight: 600;">Stock: ${p.stock}</div>
+                <div class="product-name" style="font-weight: 700;">${p.name}</div>
+                ${stockDetailsHtml}
+                <div class="product-stock ${p.stock < (p.minStock || 5) ? 'low' : ''}" style="font-size: 0.75rem; font-weight: 700; margin-top: 6px;">Stock: ${p.stock} <span style="font-weight: 400; color: var(--text-muted);">(Min: ${p.minStock || 5})</span></div>
             </div>
         `;
         grid.appendChild(card);
@@ -1443,8 +1517,15 @@ function openAddModalDirect() {
     document.getElementById('newItemName').value = '';
     document.getElementById('newItemPrice').value = '';
     document.getElementById('newItemStock').value = '';
+    document.getElementById('newItemMinStock').value = '5';
     document.getElementById('newItemBarcode').value = '';
     document.getElementById('newItemUom').value = 'pcs';
+    document.getElementById('newItemStockType').value = 'Piece';
+    document.getElementById('newItemPackItemsNumber').value = '';
+    document.getElementById('newItemPackPrice').value = '';
+    document.getElementById('newItemItemPrice').value = '';
+    document.getElementById('newItemPiecePrice').value = '';
+    toggleStockTypeFields();
     document.getElementById('addItemModal').classList.remove('hidden');
 }
 
@@ -1593,7 +1674,7 @@ function addRecipeIngredientRow(selectedPartId = '', qty = 1, savedUom = '') {
     if (selectedPartId) {
         const product = allProducts.find(p => p.id == selectedPartId);
         if (product) {
-            uomOptions = getUomOptionsHtml(product.unitOfMeasure, savedUom);
+            uomOptions = getUomOptionsHtml(product, savedUom);
         }
     }
     if (!uomOptions) {
@@ -1626,7 +1707,7 @@ window.onIngredientProductChange = function(selectElem) {
     if (partId) {
         const product = allProducts.find(p => p.id === partId);
         if (product) {
-            uomSelect.innerHTML = getUomOptionsHtml(product.unitOfMeasure);
+            uomSelect.innerHTML = getUomOptionsHtml(product);
         }
     } else {
         uomSelect.innerHTML = getUomOptionsHtml('pcs');
@@ -1634,11 +1715,20 @@ window.onIngredientProductChange = function(selectElem) {
     updateRecipeModalCosts();
 };
 
-function getUomOptionsHtml(baseUom, selectedUom = '') {
-    baseUom = (baseUom || 'pcs').toLowerCase().trim();
-    if (!selectedUom) selectedUom = baseUom;
+function getUomOptionsHtml(prodOrUom, selectedUom = '') {
+    let baseUom = 'pcs';
+    let stockType = 'Piece';
+    if (typeof prodOrUom === 'object' && prodOrUom !== null) {
+        baseUom = prodOrUom.unitOfMeasure || 'pcs';
+        stockType = prodOrUom.stockType || 'Piece';
+    } else if (typeof prodOrUom === 'string') {
+        baseUom = prodOrUom;
+    }
 
+    baseUom = baseUom.toLowerCase().trim();
+    if (!selectedUom) selectedUom = baseUom;
     selectedUom = selectedUom.toLowerCase().trim();
+
     if (selectedUom.startsWith('gram') || selectedUom === 'g') selectedUom = 'g';
     else if (selectedUom.startsWith('kilo') || selectedUom === 'kg') selectedUom = 'kg';
     else if (selectedUom.startsWith('liter') || selectedUom === 'l') selectedUom = 'l';
@@ -1656,6 +1746,11 @@ function getUomOptionsHtml(baseUom, selectedUom = '') {
             { val: 'ml', text: 'ml' },
             { val: 'l', text: 'l' },
             { val: 'pcs', text: 'pcs' }
+        ];
+    } else if (stockType === 'Pack') {
+        options = [
+            { val: 'pcs', text: 'pcs' },
+            { val: 'g', text: 'gram' }
         ];
     }
 
@@ -1691,15 +1786,36 @@ window.updateRecipeModalCosts = function() {
                 const baseCost = product.purchasePrice || 0;
                 let convertedCost = baseCost;
 
-                // Simple conversion logic based on base UOM vs chosen UOM
-                if ((baseUom.startsWith('kilo') || baseUom === 'kg') && chosenUom === 'g') {
-                    convertedCost = baseCost / 1000;
-                } else if ((baseUom.startsWith('gram') || baseUom === 'g') && chosenUom === 'kg') {
-                    convertedCost = baseCost * 1000;
-                } else if ((baseUom.startsWith('liter') || baseUom === 'l') && chosenUom === 'ml') {
-                    convertedCost = baseCost / 1000;
-                } else if (baseUom === 'ml' && chosenUom === 'l') {
-                    convertedCost = baseCost * 1000;
+                if (product.stockType === 'Pack') {
+                    const packItems = product.packItemsNumber || 1;
+                    const itemCost = baseCost / packItems;
+                    if (chosenUom === 'pcs') {
+                        convertedCost = itemCost;
+                    } else if (chosenUom === 'g') {
+                        if (baseUom.startsWith('kilo') || baseUom === 'kg') {
+                            convertedCost = itemCost / 1000;
+                        } else {
+                            convertedCost = itemCost;
+                        }
+                    } else if (chosenUom === 'kg') {
+                        if (baseUom.startsWith('gram') || baseUom === 'g') {
+                            convertedCost = itemCost * 1000;
+                        } else {
+                            convertedCost = itemCost;
+                        }
+                    } else {
+                        convertedCost = itemCost;
+                    }
+                } else {
+                    if ((baseUom.startsWith('kilo') || baseUom === 'kg') && chosenUom === 'g') {
+                        convertedCost = baseCost / 1000;
+                    } else if ((baseUom.startsWith('gram') || baseUom === 'g') && chosenUom === 'kg') {
+                        convertedCost = baseCost * 1000;
+                    } else if ((baseUom.startsWith('liter') || baseUom === 'l') && chosenUom === 'ml') {
+                        convertedCost = baseCost / 1000;
+                    } else if (baseUom === 'ml' && chosenUom === 'l') {
+                        convertedCost = baseCost * 1000;
+                    }
                 }
 
                 const rowCost = convertedCost * qty;
@@ -2455,5 +2571,149 @@ window.clearSalesHistory = async function() {
         }
     } catch (e) {
         showToast("Connection error", "error");
+    }
+};
+
+// ─── STOCK MENU MANAGEMENT ───────────────────────────────────────────
+function getTodayDateString() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+window.loadStockTab = function() {
+    const dateInput = document.getElementById('stockReportDate');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = getTodayDateString();
+    }
+    loadStockTabList();
+    loadStockReport();
+};
+
+window.loadStockTabList = function() {
+    const tbody = document.getElementById('stockTabTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const query = document.getElementById('stockTabSearch')?.value.toLowerCase() || '';
+    
+    const filtered = allProducts.filter(p => {
+        return !query || 
+            (p.name && p.name.toLowerCase().includes(query)) || 
+            (p.sku && p.sku.toLowerCase().includes(query)) || 
+            (p.barcode && p.barcode.toLowerCase().includes(query));
+    });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">No products found</td></tr>`;
+        return;
+    }
+
+    filtered.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        
+        tr.innerHTML = `
+            <td class="col-qa-name" style="padding:12px; font-weight:600; text-align:left;">${p.name}</td>
+            <td class="col-qa-unit" style="padding:12px; text-align:center; color:var(--text-muted); font-size:0.85rem;">${p.unitOfMeasure || 'pcs'}</td>
+            <td class="col-qa-stock" style="padding:12px; text-align:center; font-weight:bold; color:var(--accent); font-size:1rem;">${p.stock}</td>
+            <td class="col-qa-adjust" style="padding:12px; text-align:center;">
+                <div style="display:flex; gap:8px; justify-content:center;">
+                    <button onclick="adjustStockItem(${p.id}, -1)" style="width:30px; height:30px; border-radius:6px; border:none; background:rgba(239, 68, 68, 0.2); color:#ef4444; font-weight:bold; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">-</button>
+                    <button onclick="adjustStockItem(${p.id}, 1)" style="width:30px; height:30px; border-radius:6px; border:none; background:rgba(16, 185, 129, 0.2); color:#10b981; font-weight:bold; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+window.filterStockTabList = function() {
+    loadStockTabList();
+};
+
+window.adjustStockItem = async function(productId, delta) {
+    try {
+        const res = await fetch(`${API_BASE}/api/adjust-stock`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ partId: productId, change: delta, reason: 'Daily Quick Adjustment' })
+        });
+
+        if (res.ok) {
+            showToast("Stock updated!", "success");
+            await fetchInventory();
+            loadStockTabList();
+            loadStockReport();
+        } else {
+            showToast("Failed to update stock", "error");
+        }
+    } catch (e) {
+        showToast("Connection error", "error");
+    }
+};
+
+window.loadStockReport = async function() {
+    const tbody = document.getElementById('stockReportTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const selectedDate = document.getElementById('stockReportDate').value;
+    if (!selectedDate) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/stock-transactions?date=${selectedDate}`);
+        if (res.ok) {
+            const list = await res.json();
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-muted);">No stock movements recorded on this day</td></tr>`;
+                return;
+            }
+
+            list.forEach(tx => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                
+                let timeStr = tx.time;
+                if (tx.time && tx.time.includes(' ')) {
+                    timeStr = tx.time.split(' ')[1].substring(0, 5);
+                } else if (tx.time && tx.time.includes('T')) {
+                    timeStr = tx.time.split('T')[1].substring(0, 5);
+                }
+
+                let badgeBg = 'rgba(255, 255, 255, 0.1)';
+                let badgeColor = '#fff';
+                let actionText = tx.action;
+                if (tx.action === 'ADJUST_IN' || tx.action === 'STOCK_ADD') {
+                    badgeBg = 'rgba(16, 185, 129, 0.15)';
+                    badgeColor = '#10b981';
+                    actionText = '➕ ADD';
+                } else if (tx.action === 'ADJUST_OUT') {
+                    badgeBg = 'rgba(239, 68, 68, 0.15)';
+                    badgeColor = '#ef4444';
+                    actionText = '➖ REDUCE';
+                } else if (tx.action === 'STOCK_EDIT') {
+                    badgeBg = 'rgba(59, 130, 246, 0.15)';
+                    badgeColor = '#3b82f6';
+                    actionText = '📝 EDIT';
+                }
+
+                tr.innerHTML = `
+                    <td class="col-sr-time" style="padding:10px; font-size:0.85rem; color:var(--text-muted); font-weight:600;">${timeStr}</td>
+                    <td class="col-sr-item" style="padding:10px; font-weight:600; text-align:left;">${tx.item}</td>
+                    <td class="col-sr-details" style="padding:10px; text-align:left; font-size:0.85rem;">
+                        <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700; background:${badgeBg}; color:${badgeColor}; margin-right:8px;">${actionText}</span>
+                        ${tx.desc}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--danger);">Failed to load movements</td></tr>`;
+        }
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--danger);">Connection error</td></tr>`;
     }
 };

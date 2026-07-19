@@ -436,6 +436,13 @@ namespace Shaheen_InventoryManagement_Android
                 // Add item_no migrations
                 if (!ColumnExists("parts", "item_no")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN item_no TEXT;");
                 if (!ColumnExists("recipes", "item_no")) ExecuteNonQuery("ALTER TABLE recipes ADD COLUMN item_no TEXT;");
+
+                // Add stock type and pack/piece columns to parts
+                if (!ColumnExists("parts", "stock_type")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN stock_type TEXT DEFAULT 'Piece';");
+                if (!ColumnExists("parts", "pack_items_number")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN pack_items_number INTEGER DEFAULT 0;");
+                if (!ColumnExists("parts", "pack_price")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN pack_price REAL DEFAULT 0;");
+                if (!ColumnExists("parts", "item_price")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN item_price REAL DEFAULT 0;");
+                if (!ColumnExists("parts", "piece_price")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN piece_price REAL DEFAULT 0;");
             }
             catch (Exception ex)
             {

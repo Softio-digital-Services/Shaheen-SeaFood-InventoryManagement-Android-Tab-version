@@ -133,16 +133,19 @@ namespace Shaheen_InventoryManagement_Android.Services
             if (isNew)
             {
                 sql = @"INSERT INTO parts (part_name, part_number, description, category_id, supplier_id, purchase_price, selling_price, quantity_in_stock, minimum_stock_level, reorder_quantity, location, shelf, part_image, barcode, status, date_added,
-                                          item_type, unit_of_measure, batch_number, expiry_date, is_sales_item, is_purchase_item, is_inactive, tax_rate, is_stock_tracked, price2, price3, price4, item_no) 
+                                          item_type, unit_of_measure, batch_number, expiry_date, is_sales_item, is_purchase_item, is_inactive, tax_rate, is_stock_tracked, price2, price3, price4, item_no,
+                                          stock_type, pack_items_number, pack_price, item_price, piece_price) 
                         VALUES (@name, @num, @desc, @cat, @sup, @cost, @price1, @stock, @min, @reorder, @loc, @shelf, @img, @barcode, @status, datetime('now'),
-                                @type, @uom, @batch, @expiry, @sales, @purchase, @inactive, @tax, @tracked, @price2, @price3, @price4, @item_no)";
+                                @type, @uom, @batch, @expiry, @sales, @purchase, @inactive, @tax, @tracked, @price2, @price3, @price4, @item_no,
+                                @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price)";
             }
             else
             {
                 sql = @"UPDATE parts SET part_name=@name, part_number=@num, description=@desc, category_id=@cat, supplier_id=@sup, purchase_price=@cost, selling_price=@price1, 
                                          quantity_in_stock=@stock, minimum_stock_level=@min, reorder_quantity=@reorder, location=@loc, shelf=@shelf, barcode=@barcode, status=@status,
                                          item_type=@type, unit_of_measure=@uom, batch_number=@batch, expiry_date=@expiry, is_sales_item=@sales, is_purchase_item=@purchase, 
-                                         is_inactive=@inactive, tax_rate=@tax, is_stock_tracked=@tracked, price2=@price2, price3=@price3, price4=@price4, item_no=@item_no";
+                                         is_inactive=@inactive, tax_rate=@tax, is_stock_tracked=@tracked, price2=@price2, price3=@price3, price4=@price4, item_no=@item_no,
+                                         stock_type=@stock_type, pack_items_number=@pack_items_number, pack_price=@pack_price, item_price=@item_price, piece_price=@piece_price";
                 if (p.PartImage != null) sql += ", part_image=@img";
                 sql += " WHERE id=@id";
             }
@@ -175,7 +178,12 @@ namespace Shaheen_InventoryManagement_Android.Services
                 new SqliteParameter("@price2",   p.Price2),
                 new SqliteParameter("@price3",   p.Price3),
                 new SqliteParameter("@price4",   p.Price4),
-                new SqliteParameter("@item_no",  p.ItemNo ?? "")
+                new SqliteParameter("@item_no",  p.ItemNo ?? ""),
+                new SqliteParameter("@stock_type", p.StockType ?? "Piece"),
+                new SqliteParameter("@pack_items_number", p.PackItemsNumber),
+                new SqliteParameter("@pack_price", p.PackPrice),
+                new SqliteParameter("@item_price", p.ItemPrice),
+                new SqliteParameter("@piece_price", p.PiecePrice)
             };
             if (isNew || p.PartImage != null) parms.Add(new SqliteParameter("@img", p.PartImage ?? (object)DBNull.Value));
             if (!isNew) parms.Add(new SqliteParameter("@id", p.Id));

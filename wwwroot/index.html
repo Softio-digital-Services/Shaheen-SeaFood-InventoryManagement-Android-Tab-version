@@ -77,6 +77,7 @@
             
             <div class="nav-tabs">
                 <button class="nav-tab active" id="tabBtnInventory" onclick="switchTab('inventory')">Inventory</button>
+                <button class="nav-tab" id="tabBtnStock" onclick="switchTab('stock')">Stock Menu</button>
                 <button class="nav-tab" id="tabBtnRecipes" onclick="switchTab('recipes')">Recipes</button>
                 <button class="nav-tab" id="tabBtnSales" onclick="switchTab('sales')">Sales Entry</button>
                 <button class="nav-tab" id="tabBtnImport" onclick="switchTab('import')">Import/Export</button>
@@ -125,6 +126,61 @@
             </div>
             <div class="product-grid" id="inventoryGrid">
                 <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- STOCK MENU TAB CONTENT -->
+        <div id="tabContentStock" class="tab-content-panel hidden" style="flex:1; overflow:auto; padding:20px; text-align:left;">
+            <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:25px; align-items: start;">
+                
+                <!-- Quick Adjuster Panel -->
+                <div class="glass-card" style="padding:20px; display:flex; flex-direction:column; min-height: 480px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap: wrap; gap:10px;">
+                        <h3 style="margin:0; font-size:1.15rem;">⚡ Daily Stock Quick Adjust</h3>
+                        <input type="text" id="stockTabSearch" placeholder="Search stock..." oninput="filterStockTabList()" style="width:200px; padding:6px 12px; background:rgba(0,0,0,0.25); border:2px solid var(--accent); border-radius:6px; color:white; font-size:0.85rem;">
+                    </div>
+                    
+                    <div style="overflow-y:auto; flex:1; max-height: 480px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.15);">
+                        <table class="data-table stock-quick-adjust-table" style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr style="background:rgba(0,0,0,0.3); position: sticky; top: 0; z-index: 10;">
+                                    <th style="text-align:left; padding:12px; font-size:0.8rem; border-bottom: 2px solid var(--border);">Item Name</th>
+                                    <th style="text-align:center; padding:12px; font-size:0.8rem; width:80px; border-bottom: 2px solid var(--border);">Unit</th>
+                                    <th style="text-align:center; padding:12px; font-size:0.8rem; width:100px; border-bottom: 2px solid var(--border);">Current Stock</th>
+                                    <th style="text-align:center; padding:12px; font-size:0.8rem; width:120px; border-bottom: 2px solid var(--border);">Adjust</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockTabTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Daily Stock Movement Report -->
+                <div class="glass-card" style="padding:20px; display:flex; flex-direction:column; min-height: 480px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                        <h3 style="margin:0; font-size:1.15rem;">📅 Daily Stock Report</h3>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="date" id="stockReportDate" onchange="loadStockReport()" style="padding:6px 10px; background:rgba(0,0,0,0.25); border:2px solid var(--accent); border-radius:6px; color:white; font-size:0.85rem; font-weight:600;">
+                        </div>
+                    </div>
+                    
+                    <div style="overflow-y:auto; flex:1; max-height: 480px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.15);">
+                        <table class="data-table stock-report-table" style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr style="background:rgba(0,0,0,0.3); position: sticky; top: 0; z-index: 10;">
+                                    <th style="text-align:left; padding:12px; font-size:0.8rem; width:80px; border-bottom: 2px solid var(--border);">Time</th>
+                                    <th style="text-align:left; padding:12px; font-size:0.8rem; border-bottom: 2px solid var(--border);">Item</th>
+                                    <th style="text-align:left; padding:12px; font-size:0.8rem; border-bottom: 2px solid var(--border);">Adjustment Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockReportTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -408,7 +464,7 @@
                     <label data-i18n="modal_field_category">Category</label>
                     <input type="text" id="newItemCategory" list="categoryDatalist" placeholder="e.g. Seafood" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px;">
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="newItemPriceGroup" style="display: none;">
                     <label data-i18n="modal_field_price">Price ($)</label>
                     <input type="number" id="newItemPrice" placeholder="0.00" style="border: 2px solid var(--accent);">
                 </div>
@@ -423,6 +479,41 @@
                         <option value="g">gram</option>
                         <option value="kg">kg</option>
                     </select>
+                </div>
+                <div class="input-group">
+                    <label>Minimum Stock</label>
+                    <input type="number" id="newItemMinStock" placeholder="5" style="border: 2px solid var(--accent);">
+                </div>
+                <div class="input-group" style="grid-column: span 2;">
+                    <label>Stock Type</label>
+                    <select id="newItemStockType" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px; font-weight:600;" onchange="toggleStockTypeFields()">
+                        <option value="Piece">Piece (pcs)</option>
+                        <option value="Pack">Pack</option>
+                    </select>
+                </div>
+                
+                <!-- Piece Specific Fields -->
+                <div id="pieceFieldsGroup" class="input-group" style="grid-column: span 2; display: grid; grid-template-columns: 1fr; gap: 15px; padding: 0; margin: 0; border: none; background: transparent;">
+                    <div class="input-group" style="margin:0;">
+                        <label>Piece Price ($)</label>
+                        <input type="number" id="newItemPiecePrice" placeholder="0.00" step="0.01" style="border: 2px solid var(--accent);">
+                    </div>
+                </div>
+
+                <!-- Pack Specific Fields -->
+                <div id="packFieldsGroup" class="input-group" style="grid-column: span 2; display: none; grid-template-columns: 1fr 1fr 1fr; gap: 15px; padding: 0; margin: 0; border: none; background: transparent;">
+                    <div class="input-group" style="margin:0;">
+                        <label>Pack Items No</label>
+                        <input type="number" id="newItemPackItemsNumber" placeholder="e.g. 10" style="border: 2px solid var(--accent);" oninput="calculatePackItemPrice()">
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label>Pack Price ($)</label>
+                        <input type="number" id="newItemPackPrice" placeholder="0.00" step="0.01" style="border: 2px solid var(--accent);" oninput="calculatePackItemPrice()">
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label>Item Price ($)</label>
+                        <input type="number" id="newItemItemPrice" placeholder="0.00" step="0.01" style="border: 2px solid var(--accent);">
+                    </div>
                 </div>
                 <div class="input-group" style="grid-column: span 2;">
                     <label data-i18n="modal_field_barcode">Barcode / SKU</label>
