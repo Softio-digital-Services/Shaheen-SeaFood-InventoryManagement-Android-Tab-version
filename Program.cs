@@ -367,8 +367,18 @@ namespace Shaheen_InventoryManagement_Android
                         if (body == null || string.IsNullOrEmpty(body.Name))
                             return Microsoft.AspNetCore.Http.Results.BadRequest("Missing name");
 
-                        int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c",
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@c", body.Category ?? "General"));
+                        string categoryName = (body.Category ?? "General").Trim();
+                        if (string.IsNullOrEmpty(categoryName)) categoryName = "General";
+
+                        int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c)",
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@c", categoryName));
+                        if (catId == 0)
+                        {
+                            DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name) VALUES (@c)",
+                                        new Microsoft.Data.Sqlite.SqliteParameter("@c", categoryName));
+                            catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c)",
+                                        new Microsoft.Data.Sqlite.SqliteParameter("@c", categoryName));
+                        }
                         if (catId == 0) catId = 1;
 
                         if (body.Id.HasValue && body.Id.Value > 0)
@@ -577,10 +587,10 @@ namespace Shaheen_InventoryManagement_Android
 
                             if (!isRecipe && item.Id > 0)
                             {
-                                DatabaseHelper.ExecuteNonQuery(
-                                    "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid",
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@pid", item.Id));
+                                 DatabaseHelper.ExecuteNonQuery(
+                                     "UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid",
+                                     new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
+                                     new Microsoft.Data.Sqlite.SqliteParameter("@pid", item.Id));
                             }
                         }
 

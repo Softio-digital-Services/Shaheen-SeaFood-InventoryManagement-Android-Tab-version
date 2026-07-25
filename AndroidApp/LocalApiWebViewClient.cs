@@ -434,8 +434,18 @@ namespace Shaheen_InventoryManagement_Android
             if (body == null || string.IsNullOrEmpty(body.Name))
                 return JsonSerializer.Serialize(new { error = "Missing name" });
 
-            int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c",
-                        new SqliteParameter("@c", body.Category ?? "General"));
+            string categoryName = (body.Category ?? "General").Trim();
+            if (string.IsNullOrEmpty(categoryName)) categoryName = "General";
+
+            int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c)",
+                        new SqliteParameter("@c", categoryName));
+            if (catId == 0)
+            {
+                DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name) VALUES (@c)",
+                            new SqliteParameter("@c", categoryName));
+                catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c)",
+                            new SqliteParameter("@c", categoryName));
+            }
             if (catId == 0) catId = 1;
 
              if (body.Id.HasValue && body.Id.Value > 0)
@@ -962,7 +972,7 @@ namespace Shaheen_InventoryManagement_Android
                                         currentStockInDb = existingDeduction.NewStock;
                                     }
 
-                                    double newStock = currentStockInDb - totalDeduct;
+                                    double newStock = Math.Max(0, currentStockInDb - totalDeduct);
 
                                     // Update parts table
                                     string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
@@ -1050,7 +1060,7 @@ namespace Shaheen_InventoryManagement_Android
                                     currentStockInDb = existingDeduction.NewStock;
                                 }
 
-                                double newStock = currentStockInDb - totalDeduct;
+                                double newStock = Math.Max(0, currentStockInDb - totalDeduct);
 
                                 // Update parts table
                                 string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";

@@ -117,7 +117,7 @@ namespace Shaheen_InventoryManagement_Android.Services
                         double qtyPerRecipeConverted = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantity(rpQty, recipeUom, partUom, stockType, packItems);
                         double totalDeduct = qtyPerRecipeConverted * item.Quantity;
                         
-                        string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid";
+                        string sqlStock = "UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid";
                         DatabaseHelper.ExecuteNonQuery(sqlStock,
                             new SqliteParameter("@qty", totalDeduct),
                             new SqliteParameter("@pid", pId)
@@ -127,7 +127,7 @@ namespace Shaheen_InventoryManagement_Android.Services
                 else
                 {
                     // Regular part
-                    string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid";
+                    string sqlStock = "UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid";
                     DatabaseHelper.ExecuteNonQuery(sqlStock,
                         new SqliteParameter("@qty", item.Quantity),
                         new SqliteParameter("@pid", item.PartId)
@@ -286,14 +286,14 @@ namespace Shaheen_InventoryManagement_Android.Services
 
                             double qtyPerRecipeConverted = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantity(rpQty, recipeUom, partUom, stockType, packItems);
                             double totalDeduct = qtyPerRecipeConverted * item.Quantity;
-                            DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid", 
+                            DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid", 
                                 new SqliteParameter("@qty", totalDeduct), 
                                 new SqliteParameter("@pid", pId));
                         }
                     }
                     else
                     {
-                        DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid", 
+                        DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid", 
                             new SqliteParameter("@qty", item.Quantity), 
                             new SqliteParameter("@pid", item.PartId));
                     }

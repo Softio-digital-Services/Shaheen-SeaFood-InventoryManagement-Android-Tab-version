@@ -1329,7 +1329,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             {
                 if (int.TryParse(stockCell.Value.ToString(), out int stock) && int.TryParse(minCell.Value.ToString(), out int minS))
                 {
-                    if (stock <= minS) { row.DefaultCellStyle.BackColor = ThemeConfig.DangerBadgeBg; row.DefaultCellStyle.SelectionBackColor = ThemeConfig.DangerLight; row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark; }
+                    if (stock <= minS || stock == 0) { row.DefaultCellStyle.BackColor = ThemeConfig.DangerBadgeBg; row.DefaultCellStyle.SelectionBackColor = ThemeConfig.DangerLight; row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark; }
                     else { row.DefaultCellStyle.BackColor = ThemeConfig.SurfaceColor; row.DefaultCellStyle.SelectionBackColor = ThemeConfig.SelectionBackColor; row.DefaultCellStyle.SelectionForeColor = ThemeConfig.TextColorDark; }
                 }
             }
@@ -1351,7 +1351,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 {
                     int.TryParse(e.Value.ToString(), out int stock);
                     int.TryParse(minCell.Value.ToString(), out int minS);
-                    if (stock <= minS)
+                    if (stock <= minS || stock == 0)
                     {
                         e.Handled = true; e.PaintBackground(e.CellBounds, true);
                         SizeF ts = e.Graphics.MeasureString(e.Value.ToString(), e.CellStyle.Font);

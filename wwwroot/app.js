@@ -308,7 +308,7 @@ if (typeof window !== 'undefined' && !window.AndroidBridge) {
                         if (qtyDeducted <= 0) return;
                         
                         const prevStock = prod.stock;
-                        prod.stock = parseFloat((prod.stock - qtyDeducted).toFixed(2));
+                        prod.stock = Math.max(0, parseFloat((prod.stock - qtyDeducted).toFixed(2)));
 
                         const existingDeduct = deductions.find(d => d.partId === part.partId);
                         if (existingDeduct) {
@@ -1452,12 +1452,62 @@ function switchTab(tabId) {
 }
 
 // ─── INVENTORY MANAGEMENT ─────────────────────────────────────────────
+function populateInventoryCategoryFilter() {
+    const filterSelect = document.getElementById('inventoryCategoryFilter');
+    if (!filterSelect) return;
+
+    const currentVal = filterSelect.value || 'All';
+
+    // Collect unique categories
+    const categories = new Set();
+    allProducts.forEach(p => {
+        if (p.category) categories.add(p.category);
+    });
+
+    if (typeof masterCategories !== 'undefined' && Array.isArray(masterCategories)) {
+        masterCategories.forEach(c => {
+            if (c) categories.add(c);
+        });
+    }
+
+    // Sort categories
+    const sortedCats = Array.from(categories).sort();
+
+    // Rebuild options
+    let html = '<option value="All">All Categories</option>';
+    sortedCats.forEach(cat => {
+        html += `<option value="${cat}">${cat}</option>`;
+    });
+    filterSelect.innerHTML = html;
+
+    // Restore value
+    if (currentVal === 'All' || sortedCats.includes(currentVal)) {
+        filterSelect.value = currentVal;
+    } else {
+        filterSelect.value = 'All';
+    }
+}
+
+window.filterInventoryByCategory = function() {
+    loadInventoryTable();
+};
+
 function loadInventoryTable() {
     const grid = document.getElementById('inventoryGrid');
     if (!grid) return;
+
+    populateInventoryCategoryFilter();
+
+    const filterSelect = document.getElementById('inventoryCategoryFilter');
+    const selectedCategory = filterSelect ? filterSelect.value : 'All';
+
     grid.innerHTML = '';
 
-    allProducts.forEach(p => {
+    const filteredProducts = selectedCategory === 'All' 
+        ? allProducts 
+        : allProducts.filter(p => p.category === selectedCategory);
+
+    filteredProducts.forEach(p => {
         const card = document.createElement('div');
         card.className = 'product-card';
         
@@ -1994,7 +2044,7 @@ function parseImportFile(text, isTsv) {
             <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.itemNo ? '[' + item.itemNo + '] ' : ''}${item.name}</b>
             <span style="color:var(--text-muted);">${item.category}</span>
             <span style="color:var(--accent); text-align:right;">$${item.price.toFixed(2)}</span>
-            <span style="color:var(--text-main); text-align:right;">Qty: ${item.stock}</span>
+            <span style="color:${item.stock === 0 ? 'var(--danger)' : 'var(--text-main)'}; text-align:right;">Qty: ${item.stock}</span>
         </div>
     `).join('');
 
@@ -2618,11 +2668,12 @@ window.loadStockTabList = function() {
         tr.innerHTML = `
             <td class="col-qa-name" style="padding:12px; font-weight:600; text-align:left;">${p.name}</td>
             <td class="col-qa-unit" style="padding:12px; text-align:center; color:var(--text-muted); font-size:0.85rem;">${p.unitOfMeasure || 'pcs'}</td>
-            <td class="col-qa-stock" style="padding:12px; text-align:center; font-weight:bold; color:var(--accent); font-size:1rem;">${p.stock}</td>
+            <td class="col-qa-stock" style="padding:12px; text-align:center; font-weight:bold; color:${p.stock === 0 ? 'var(--danger)' : 'var(--accent)'}; font-size:1rem;">${p.stock}</td>
             <td class="col-qa-adjust" style="padding:12px; text-align:center;">
-                <div style="display:flex; gap:8px; justify-content:center;">
-                    <button onclick="adjustStockItem(${p.id}, -1)" style="width:30px; height:30px; border-radius:6px; border:none; background:rgba(239, 68, 68, 0.2); color:#ef4444; font-weight:bold; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">-</button>
-                    <button onclick="adjustStockItem(${p.id}, 1)" style="width:30px; height:30px; border-radius:6px; border:none; background:rgba(16, 185, 129, 0.2); color:#10b981; font-weight:bold; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+                <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                    <button onclick="adjustStockItemWithInput(${p.id}, -1)" style="width:30px; height:30px; border-radius:6px; border:none; background:rgba(239, 68, 68, 0.2); color:#ef4444; font-weight:bold; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">-</button>
+                    <input type="number" id="quickAdjustInput_${p.id}" value="1" min="1" step="1" style="width:55px; height:30px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.25); color:white; text-align:center; font-size:0.9rem; font-weight:bold; outline:none;" />
+                    <button onclick="adjustStockItemWithInput(${p.id}, 1)" style="width:30px; height:30px; border-radius:6px; border:none; background:rgba(16, 185, 129, 0.2); color:#10b981; font-weight:bold; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
                 </div>
             </td>
         `;
@@ -2632,6 +2683,18 @@ window.loadStockTabList = function() {
 
 window.filterStockTabList = function() {
     loadStockTabList();
+};
+
+window.adjustStockItemWithInput = async function(productId, direction) {
+    const input = document.getElementById(`quickAdjustInput_${productId}`);
+    if (!input) return;
+    const value = parseInt(input.value, 10);
+    if (isNaN(value) || value <= 0) {
+        showToast("Please enter a valid positive integer", "error");
+        return;
+    }
+    const delta = direction * value;
+    await adjustStockItem(productId, delta);
 };
 
 window.adjustStockItem = async function(productId, delta) {

@@ -293,7 +293,7 @@ namespace Shaheen_InventoryManagement_Android.Services
             try
             {
                 DatabaseHelper.ExecuteNonQuery(
-                    "UPDATE parts SET quantity_in_stock = quantity_in_stock + @change WHERE id = @id",
+                    "UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock + @change < 0 THEN 0 ELSE quantity_in_stock + @change END WHERE id = @id",
                     new SqliteParameter("@change", change),
                     new SqliteParameter("@id", partId));
 
