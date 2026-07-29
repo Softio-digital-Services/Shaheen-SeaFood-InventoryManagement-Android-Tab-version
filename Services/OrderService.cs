@@ -15,6 +15,7 @@ namespace Shaheen_InventoryManagement_Android.Services
         public string PartImage { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
+        public string UnitOfMeasure { get; set; } = "pack";
         public decimal Total => Quantity * UnitPrice;
     }
 
@@ -63,77 +64,107 @@ namespace Shaheen_InventoryManagement_Android.Services
             );
             int orderId = Convert.ToInt32(orderIdLong);
 
-            // If Draft or Quotation, skip stock updates and balance updates
-            if (orderStatus == "Draft" || orderStatus == "Quotation")
-            {
-                 // Still insert items so we can retrieve them, but DON'T update stock
-                 foreach (var item in items)
+             // If Draft or Quotation, skip stock updates and balance updates
+             if (orderStatus == "Draft" || orderStatus == "Quotation")
+             {
+                  // Still insert items so we can retrieve them, but DON'T update stock
+                  foreach (var item in items)
+                  {
+                     string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id, unit_of_measure) VALUES (@oid, @pid, @qty, @price, @itype, @rid, @uom)";
+                     DatabaseHelper.ExecuteNonQuery(sqlItem,
+                         new SqliteParameter("@oid", orderId),
+                         new SqliteParameter("@pid", item.PartId),
+                         new SqliteParameter("@qty", item.Quantity),
+                         new SqliteParameter("@price", item.UnitPrice),
+                         new SqliteParameter("@itype", item.ItemType),
+                         new SqliteParameter("@rid", item.RecipeId.HasValue ? (object)item.RecipeId.Value : DBNull.Value),
+                         new SqliteParameter("@uom", item.UnitOfMeasure ?? "pack")
+                     );
+                  }
+                  return orderId;
+             }
+
+             // 3. Process Items & Update Stock (Normally)
+             foreach (var item in items)
+             {
+                 // Insert Order Item
+                 string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id, unit_of_measure) VALUES (@oid, @pid, @qty, @price, @itype, @rid, @uom)";
+                 DatabaseHelper.ExecuteNonQuery(sqlItem,
+                     new SqliteParameter("@oid", orderId),
+                     new SqliteParameter("@pid", item.PartId),
+                     new SqliteParameter("@qty", item.Quantity),
+                     new SqliteParameter("@price", item.UnitPrice),
+                     new SqliteParameter("@itype", item.ItemType),
+                     new SqliteParameter("@rid", item.RecipeId.HasValue ? (object)item.RecipeId.Value : DBNull.Value),
+                     new SqliteParameter("@uom", item.UnitOfMeasure ?? "pack")
+                 );
+
+                 // Update Stock
+                 if (item.ItemType == "Recipe" && item.RecipeId.HasValue)
                  {
-                    string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) VALUES (@oid, @pid, @qty, @price, @itype, @rid)";
-                    DatabaseHelper.ExecuteNonQuery(sqlItem,
-                        new SqliteParameter("@oid", orderId),
-                        new SqliteParameter("@pid", item.PartId),
-                        new SqliteParameter("@qty", item.Quantity),
-                        new SqliteParameter("@price", item.UnitPrice),
-                        new SqliteParameter("@itype", item.ItemType),
-                        new SqliteParameter("@rid", item.RecipeId.HasValue ? (object)item.RecipeId.Value : DBNull.Value)
-                    );
+                     // Deduct components of the recipe
+                     string sqlRecipeParts = @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure, p.unit_of_measure as part_uom, p.stock_type, p.pack_items_number,
+                                                      p.big_unit, p.small_unit, p.conversion_value, p.pack_size
+                                              FROM recipe_parts rp 
+                                              JOIN parts p ON rp.part_id = p.id 
+                                              WHERE rp.recipe_id = @rid";
+                     var rParts = DatabaseHelper.ExecuteDataTable(sqlRecipeParts, new SqliteParameter("@rid", item.RecipeId.Value));
+                     foreach (System.Data.DataRow rp in rParts.Rows)
+                     {
+                         int pId = Convert.ToInt32(rp["part_id"]);
+                         double rpQty = Convert.ToDouble(rp["quantity"]);
+                         string recipeUom = rp["unit_of_measure"]?.ToString();
+                         string partUom = rp["part_uom"]?.ToString();
+                         string stockType = rp["stock_type"]?.ToString();
+                         int packItems = rp["pack_items_number"] != DBNull.Value ? Convert.ToInt32(rp["pack_items_number"]) : 1;
+
+                         string bigUnit = rp["big_unit"]?.ToString();
+                         string smallUnit = rp["small_unit"]?.ToString();
+                         double conv = rp["conversion_value"] != DBNull.Value ? Convert.ToDouble(rp["conversion_value"]) : 1.0;
+                         double pSize = rp["pack_size"] != DBNull.Value ? Convert.ToDouble(rp["pack_size"]) : 1.0;
+
+                         double qtyPerRecipeConverted = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                             rpQty, recipeUom, partUom, stockType, packItems, bigUnit, smallUnit, conv, pSize);
+
+                         double totalDeduct = qtyPerRecipeConverted * item.Quantity;
+                         
+                         string sqlStock = "UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid";
+                         DatabaseHelper.ExecuteNonQuery(sqlStock,
+                             new SqliteParameter("@qty", totalDeduct),
+                             new SqliteParameter("@pid", pId)
+                         );
+                     }
                  }
-                 return orderId;
-            }
+                 else
+                 {
+                     // Regular part
+                     var dtPart = DatabaseHelper.ExecuteDataTable(
+                         "SELECT unit_of_measure as part_uom, stock_type, pack_items_number, big_unit, small_unit, conversion_value, pack_size FROM parts WHERE id = @pid",
+                         new SqliteParameter("@pid", item.PartId)
+                     );
+                     double qtyToDeduct = item.Quantity;
+                     if (dtPart.Rows.Count > 0)
+                     {
+                         var partRow = dtPart.Rows[0];
+                         string partUom = partRow["part_uom"]?.ToString();
+                         string stockType = partRow["stock_type"]?.ToString();
+                         int packItems = partRow["pack_items_number"] != DBNull.Value ? Convert.ToInt32(partRow["pack_items_number"]) : 1;
+                         string bigUnit = partRow["big_unit"]?.ToString();
+                         string smallUnit = partRow["small_unit"]?.ToString();
+                         double conv = partRow["conversion_value"] != DBNull.Value ? Convert.ToDouble(partRow["conversion_value"]) : 1.0;
+                         double pSize = partRow["pack_size"] != DBNull.Value ? Convert.ToDouble(partRow["pack_size"]) : 1.0;
 
-            // 3. Process Items & Update Stock (Normally)
-            foreach (var item in items)
-            {
-                // Insert Order Item
-                string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) VALUES (@oid, @pid, @qty, @price, @itype, @rid)";
-                DatabaseHelper.ExecuteNonQuery(sqlItem,
-                    new SqliteParameter("@oid", orderId),
-                    new SqliteParameter("@pid", item.PartId),
-                    new SqliteParameter("@qty", item.Quantity),
-                    new SqliteParameter("@price", item.UnitPrice),
-                    new SqliteParameter("@itype", item.ItemType),
-                    new SqliteParameter("@rid", item.RecipeId.HasValue ? (object)item.RecipeId.Value : DBNull.Value)
-                );
+                         qtyToDeduct = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                             item.Quantity, item.UnitOfMeasure, partUom, stockType, packItems, bigUnit, smallUnit, conv, pSize);
+                     }
 
-                // Update Stock
-                if (item.ItemType == "Recipe" && item.RecipeId.HasValue)
-                {
-                    // Deduct components of the recipe
-                    string sqlRecipeParts = @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure, p.unit_of_measure as part_uom, p.stock_type, p.pack_items_number 
-                                             FROM recipe_parts rp 
-                                             JOIN parts p ON rp.part_id = p.id 
-                                             WHERE rp.recipe_id = @rid";
-                    var rParts = DatabaseHelper.ExecuteDataTable(sqlRecipeParts, new SqliteParameter("@rid", item.RecipeId.Value));
-                    foreach (System.Data.DataRow rp in rParts.Rows)
-                    {
-                        int pId = Convert.ToInt32(rp["part_id"]);
-                        double rpQty = Convert.ToDouble(rp["quantity"]);
-                        string recipeUom = rp["unit_of_measure"]?.ToString();
-                        string partUom = rp["part_uom"]?.ToString();
-                        string stockType = rp["stock_type"]?.ToString();
-                        int packItems = rp["pack_items_number"] != DBNull.Value ? Convert.ToInt32(rp["pack_items_number"]) : 1;
-
-                        double qtyPerRecipeConverted = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantity(rpQty, recipeUom, partUom, stockType, packItems);
-                        double totalDeduct = qtyPerRecipeConverted * item.Quantity;
-                        
-                        string sqlStock = "UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid";
-                        DatabaseHelper.ExecuteNonQuery(sqlStock,
-                            new SqliteParameter("@qty", totalDeduct),
-                            new SqliteParameter("@pid", pId)
-                        );
-                    }
-                }
-                else
-                {
-                    // Regular part
-                    string sqlStock = "UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid";
-                    DatabaseHelper.ExecuteNonQuery(sqlStock,
-                        new SqliteParameter("@qty", item.Quantity),
-                        new SqliteParameter("@pid", item.PartId)
-                    );
-                }
-            }
+                     string sqlStock = "UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid";
+                     DatabaseHelper.ExecuteNonQuery(sqlStock,
+                         new SqliteParameter("@qty", qtyToDeduct),
+                         new SqliteParameter("@pid", item.PartId)
+                     );
+                 }
+             }
 
             // 4. Update Customer Balance (if unpaid)
             if (!isPaid && !isWalkIn)
@@ -225,7 +256,8 @@ namespace Shaheen_InventoryManagement_Android.Services
                 {
                     if (item.ItemType == "Recipe" && item.RecipeId.HasValue)
                     {
-                        string sqlRecipeParts = @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure, p.unit_of_measure as part_uom, p.stock_type, p.pack_items_number 
+                        string sqlRecipeParts = @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure, p.unit_of_measure as part_uom, p.stock_type, p.pack_items_number,
+                                                         p.big_unit, p.small_unit, p.conversion_value, p.pack_size
                                                  FROM recipe_parts rp 
                                                  JOIN parts p ON rp.part_id = p.id 
                                                  WHERE rp.recipe_id = @rid";
@@ -239,10 +271,16 @@ namespace Shaheen_InventoryManagement_Android.Services
                             string stockType = rp["stock_type"]?.ToString();
                             int packItems = rp["pack_items_number"] != DBNull.Value ? Convert.ToInt32(rp["pack_items_number"]) : 1;
 
-                            double qtyPerRecipeConverted = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantity(rpQty, recipeUom, partUom, stockType, packItems);
+                            string bigUnit = rp["big_unit"]?.ToString();
+                            string smallUnit = rp["small_unit"]?.ToString();
+                            double conv = rp["conversion_value"] != DBNull.Value ? Convert.ToDouble(rp["conversion_value"]) : 1.0;
+                            double pSize = rp["pack_size"] != DBNull.Value ? Convert.ToDouble(rp["pack_size"]) : 1.0;
+
+                            double qtyPerRecipeConverted = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                                rpQty, recipeUom, partUom, stockType, packItems, bigUnit, smallUnit, conv, pSize);
                             double totalRequired = qtyPerRecipeConverted * item.Quantity;
 
-                            int currentStock = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id = {pId}");
+                            double currentStock = Convert.ToDouble(DatabaseHelper.ExecuteScalar<object>($"SELECT quantity_in_stock FROM parts WHERE id = {pId}") ?? 0.0);
                             if (currentStock < totalRequired)
                             {
                                 string partName = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {pId}");
@@ -252,11 +290,31 @@ namespace Shaheen_InventoryManagement_Android.Services
                     }
                     else
                     {
-                        int currentStock = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id = {item.PartId}");
-                        if (currentStock < item.Quantity)
+                        var dtPart = DatabaseHelper.ExecuteDataTable(
+                            "SELECT unit_of_measure as part_uom, stock_type, pack_items_number, big_unit, small_unit, conversion_value, pack_size FROM parts WHERE id = @pid",
+                            new SqliteParameter("@pid", item.PartId)
+                        );
+                        double totalRequired = item.Quantity;
+                        if (dtPart.Rows.Count > 0)
+                        {
+                            var partRow = dtPart.Rows[0];
+                            string partUom = partRow["part_uom"]?.ToString();
+                            string stockType = partRow["stock_type"]?.ToString();
+                            int packItems = partRow["pack_items_number"] != DBNull.Value ? Convert.ToInt32(partRow["pack_items_number"]) : 1;
+                            string bigUnit = partRow["big_unit"]?.ToString();
+                            string smallUnit = partRow["small_unit"]?.ToString();
+                            double conv = partRow["conversion_value"] != DBNull.Value ? Convert.ToDouble(partRow["conversion_value"]) : 1.0;
+                            double pSize = partRow["pack_size"] != DBNull.Value ? Convert.ToDouble(partRow["pack_size"]) : 1.0;
+
+                            totalRequired = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                                item.Quantity, item.UnitOfMeasure, partUom, stockType, packItems, bigUnit, smallUnit, conv, pSize) * item.Quantity;
+                        }
+
+                        double currentStock = Convert.ToDouble(DatabaseHelper.ExecuteScalar<object>($"SELECT quantity_in_stock FROM parts WHERE id = {item.PartId}") ?? 0.0);
+                        if (currentStock < totalRequired)
                         {
                             string partName = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {item.PartId}");
-                            throw new Exception($"Insufficient stock for {partName}. Available: {currentStock}, Required: {item.Quantity}");
+                            throw new Exception($"Insufficient stock for {partName}. Available: {currentStock}, Required: {totalRequired}");
                         }
                     }
                 }
@@ -270,7 +328,8 @@ namespace Shaheen_InventoryManagement_Android.Services
                 {
                     if (item.ItemType == "Recipe" && item.RecipeId.HasValue)
                     {
-                        string sqlRecipeParts = @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure, p.unit_of_measure as part_uom, p.stock_type, p.pack_items_number 
+                        string sqlRecipeParts = @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure, p.unit_of_measure as part_uom, p.stock_type, p.pack_items_number,
+                                                         p.big_unit, p.small_unit, p.conversion_value, p.pack_size
                                                  FROM recipe_parts rp 
                                                  JOIN parts p ON rp.part_id = p.id 
                                                  WHERE rp.recipe_id = @rid";
@@ -283,8 +342,14 @@ namespace Shaheen_InventoryManagement_Android.Services
                             string partUom = rp["part_uom"]?.ToString();
                             string stockType = rp["stock_type"]?.ToString();
                             int packItems = rp["pack_items_number"] != DBNull.Value ? Convert.ToInt32(rp["pack_items_number"]) : 1;
+                            
+                            string bigUnit = rp["big_unit"]?.ToString();
+                            string smallUnit = rp["small_unit"]?.ToString();
+                            double conv = rp["conversion_value"] != DBNull.Value ? Convert.ToDouble(rp["conversion_value"]) : 1.0;
+                            double pSize = rp["pack_size"] != DBNull.Value ? Convert.ToDouble(rp["pack_size"]) : 1.0;
 
-                            double qtyPerRecipeConverted = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantity(rpQty, recipeUom, partUom, stockType, packItems);
+                            double qtyPerRecipeConverted = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                                rpQty, recipeUom, partUom, stockType, packItems, bigUnit, smallUnit, conv, pSize);
                             double totalDeduct = qtyPerRecipeConverted * item.Quantity;
                             DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid", 
                                 new SqliteParameter("@qty", totalDeduct), 
@@ -293,8 +358,28 @@ namespace Shaheen_InventoryManagement_Android.Services
                     }
                     else
                     {
+                        var dtPart = DatabaseHelper.ExecuteDataTable(
+                            "SELECT unit_of_measure as part_uom, stock_type, pack_items_number, big_unit, small_unit, conversion_value, pack_size FROM parts WHERE id = @pid",
+                            new SqliteParameter("@pid", item.PartId)
+                        );
+                        double qtyToDeduct = item.Quantity;
+                        if (dtPart.Rows.Count > 0)
+                        {
+                            var partRow = dtPart.Rows[0];
+                            string partUom = partRow["part_uom"]?.ToString();
+                            string stockType = partRow["stock_type"]?.ToString();
+                            int packItems = partRow["pack_items_number"] != DBNull.Value ? Convert.ToInt32(partRow["pack_items_number"]) : 1;
+                            string bigUnit = partRow["big_unit"]?.ToString();
+                            string smallUnit = partRow["small_unit"]?.ToString();
+                            double conv = partRow["conversion_value"] != DBNull.Value ? Convert.ToDouble(partRow["conversion_value"]) : 1.0;
+                            double pSize = partRow["pack_size"] != DBNull.Value ? Convert.ToDouble(partRow["pack_size"]) : 1.0;
+
+                            qtyToDeduct = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                                item.Quantity, item.UnitOfMeasure, partUom, stockType, packItems, bigUnit, smallUnit, conv, pSize);
+                        }
+
                         DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid", 
-                            new SqliteParameter("@qty", item.Quantity), 
+                            new SqliteParameter("@qty", qtyToDeduct), 
                             new SqliteParameter("@pid", item.PartId));
                     }
                 }
@@ -328,7 +413,8 @@ namespace Shaheen_InventoryManagement_Android.Services
              string sql = @"
                 SELECT i.part_id, i.recipe_id, i.item_type, i.quantity, i.price, 
                        p.part_name, p.description, p.part_image,
-                       r.recipe_name, r.description as r_desc
+                       r.recipe_name, r.description as r_desc,
+                       i.unit_of_measure
                 FROM order_items i
                 LEFT JOIN parts p ON i.part_id = p.id
                 LEFT JOIN recipes r ON i.recipe_id = r.id
@@ -348,7 +434,8 @@ namespace Shaheen_InventoryManagement_Android.Services
                                (reader.IsDBNull(6) ? "" : reader.GetString(6)) : 
                                (reader.IsDBNull(9) ? "" : reader.GetString(9)),
                  PartImage = (reader.IsDBNull(2) || reader.GetString(2) == "Part") ? 
-                             (reader.IsDBNull(7) ? "" : reader.GetString(7)) : ""
+                             (reader.IsDBNull(7) ? "" : reader.GetString(7)) : "",
+                 UnitOfMeasure = reader.IsDBNull(10) ? "pack" : reader.GetString(10)
              }, new SqliteParameter("@oid", orderId));
         }
 

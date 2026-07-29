@@ -261,6 +261,7 @@ namespace Shaheen_InventoryManagement_Android
                          p.minimum_stock_level, p.barcode, p.part_number, p.part_image,
                          p.item_no, p.unit_of_measure, p.purchase_price,
                          p.stock_type, p.pack_items_number, p.pack_price, p.item_price, p.piece_price,
+                         p.big_unit, p.small_unit, p.conversion_value, p.pack_size,
                          COALESCE(c.category_name, 'General') AS category,
                          c.category_image
                   FROM parts p
@@ -280,7 +281,7 @@ namespace Shaheen_InventoryManagement_Android
                     price = Convert.ToDecimal(row["selling_price"]),
                     purchasePrice = Convert.ToDecimal(row["purchase_price"]),
                     unitOfMeasure = row["unit_of_measure"].ToString(),
-                    stock = Convert.ToInt32(row["quantity_in_stock"]),
+                    stock = Convert.ToDouble(row["quantity_in_stock"]),
                     minStock = Convert.ToInt32(row["minimum_stock_level"]),
                     barcode = row["barcode"].ToString(),
                     sku = row["part_number"].ToString(),
@@ -292,7 +293,11 @@ namespace Shaheen_InventoryManagement_Android
                     packItemsNumber = row["pack_items_number"] != DBNull.Value ? Convert.ToInt32(row["pack_items_number"]) : 0,
                     packPrice = row["pack_price"] != DBNull.Value ? Convert.ToDecimal(row["pack_price"]) : 0m,
                     itemPrice = row["item_price"] != DBNull.Value ? Convert.ToDecimal(row["item_price"]) : 0m,
-                    piecePrice = row["piece_price"] != DBNull.Value ? Convert.ToDecimal(row["piece_price"]) : 0m
+                    piecePrice = row["piece_price"] != DBNull.Value ? Convert.ToDecimal(row["piece_price"]) : 0m,
+                    bigUnit = row["big_unit"] != DBNull.Value ? row["big_unit"].ToString() : "",
+                    smallUnit = row["small_unit"] != DBNull.Value ? row["small_unit"].ToString() : "",
+                    conversionValue = row["conversion_value"] != DBNull.Value ? Convert.ToDouble(row["conversion_value"]) : 1.0,
+                    packSize = row["pack_size"] != DBNull.Value ? Convert.ToDouble(row["pack_size"]) : 1.0
                 });
             }
             return JsonSerializer.Serialize(list);
@@ -478,7 +483,11 @@ namespace Shaheen_InventoryManagement_Android
                         pack_items_number = @pack_items_number,
                         pack_price = @pack_price,
                         item_price = @item_price,
-                        piece_price = @piece_price
+                        piece_price = @piece_price,
+                        big_unit = @big_unit,
+                        small_unit = @small_unit,
+                        conversion_value = @conversion_value,
+                        pack_size = @pack_size
                     WHERE id = @id";
 
                 DatabaseHelper.ExecuteNonQuery(sql,
@@ -497,6 +506,10 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@pack_price", body.PackPrice),
                     new SqliteParameter("@item_price", body.ItemPrice),
                     new SqliteParameter("@piece_price", body.PiecePrice),
+                    new SqliteParameter("@big_unit", body.BigUnit ?? ""),
+                    new SqliteParameter("@small_unit", body.SmallUnit ?? ""),
+                    new SqliteParameter("@conversion_value", body.ConversionValue),
+                    new SqliteParameter("@pack_size", body.PackSize),
                     new SqliteParameter("@id", body.Id.Value));
 
                 DatabaseHelper.LogTransaction("STOCK_EDIT", body.Name, $"Edited via Android App (New Qty: {body.Stock})");
@@ -517,9 +530,11 @@ namespace Shaheen_InventoryManagement_Android
 
                 string sql = @"
                     INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, minimum_stock_level, barcode, status, item_no, unit_of_measure,
-                                       stock_type, pack_items_number, pack_price, item_price, piece_price)
+                                       stock_type, pack_items_number, pack_price, item_price, piece_price,
+                                       big_unit, small_unit, conversion_value, pack_size)
                     VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @min_stock, @barcode, 'Active', @itemNo, @uom,
-                            @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price)";
+                            @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price,
+                            @big_unit, @small_unit, @conversion_value, @pack_size)";
 
                 DatabaseHelper.ExecuteNonQuery(sql,
                     new SqliteParameter("@name", body.Name),
@@ -536,7 +551,11 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@pack_items_number", body.PackItemsNumber),
                     new SqliteParameter("@pack_price", body.PackPrice),
                     new SqliteParameter("@item_price", body.ItemPrice),
-                    new SqliteParameter("@piece_price", body.PiecePrice));
+                    new SqliteParameter("@piece_price", body.PiecePrice),
+                    new SqliteParameter("@big_unit", body.BigUnit ?? ""),
+                    new SqliteParameter("@small_unit", body.SmallUnit ?? ""),
+                    new SqliteParameter("@conversion_value", body.ConversionValue),
+                    new SqliteParameter("@pack_size", body.PackSize));
 
                 DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via Android App (Qty: {body.Stock})");
                 return JsonSerializer.Serialize(new { success = true });
@@ -624,7 +643,8 @@ namespace Shaheen_InventoryManagement_Android
                         RecipeId = isRecipe ? (item.RecipeId ?? item.Id) : (int?)null,
                         PartName = item.Name,
                         Quantity = item.Qty,
-                        UnitPrice = item.Price
+                        UnitPrice = item.Price,
+                        UnitOfMeasure = item.UnitOfMeasure ?? "pack"
                     });
                 }
 
@@ -777,43 +797,102 @@ namespace Shaheen_InventoryManagement_Android
                         continue;
                     }
 
+                    int existingId = 0;
                     if (!string.IsNullOrEmpty(item.Barcode))
                     {
-                        int existingCount = DatabaseHelper.ExecuteScalar<int>(
-                            "SELECT COUNT(*) FROM parts WHERE barcode = @b AND date_deleted IS NULL",
-                            new SqliteParameter("@b", item.Barcode));
-                        if (existingCount > 0)
-                        {
-                            skipped++;
-                            continue;
-                        }
+                        existingId = DatabaseHelper.ExecuteScalar<int>(
+                            "SELECT id FROM parts WHERE barcode = @b AND date_deleted IS NULL",
+                            new SqliteParameter("@b", item.Barcode.Trim()));
+                    }
+                    if (existingId == 0 && !string.IsNullOrEmpty(item.Sku))
+                    {
+                        existingId = DatabaseHelper.ExecuteScalar<int>(
+                            "SELECT id FROM parts WHERE part_number = @s AND date_deleted IS NULL",
+                            new SqliteParameter("@s", item.Sku.Trim()));
+                    }
+                    if (existingId == 0 && !string.IsNullOrEmpty(item.Name))
+                    {
+                        existingId = DatabaseHelper.ExecuteScalar<int>(
+                            "SELECT id FROM parts WHERE LOWER(part_name) = LOWER(@n) AND date_deleted IS NULL",
+                            new SqliteParameter("@n", item.Name.Trim()));
                     }
 
                     string categoryName = item.Category ?? "General";
-                    int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c",
-                                new SqliteParameter("@c", categoryName));
+                    int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c) AND date_deleted IS NULL",
+                                new SqliteParameter("@c", categoryName.Trim()));
                     if (catId == 0)
                     {
-                        DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name) VALUES (@c)", new SqliteParameter("@c", categoryName));
-                        catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c",
-                                    new SqliteParameter("@c", categoryName));
+                        DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name) VALUES (@c)", new SqliteParameter("@c", categoryName.Trim()));
+                        catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c) AND date_deleted IS NULL",
+                                    new SqliteParameter("@c", categoryName.Trim()));
                     }
                     if (catId == 0) catId = 1;
 
-                    string sql = @"
-                        INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, description, item_no)
-                        VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @desc, @itemNo)";
+                    double pSize = item.PackSize > 0 ? item.PackSize : 1.0;
+                    double conv = item.ConversionValue > 0 ? item.ConversionValue : 1.0;
+                    decimal packPrice = item.PackPrice;
+                    if (packPrice == 0 && item.Price > 0) packPrice = item.Price; // fallback
 
-                    DatabaseHelper.ExecuteNonQuery(sql,
-                        new SqliteParameter("@name", item.Name),
-                        new SqliteParameter("@sku", item.Sku ?? ""),
-                        new SqliteParameter("@cat", catId),
-                        new SqliteParameter("@p_price", item.Price * 0.7m),
-                        new SqliteParameter("@s_price", item.Price),
-                        new SqliteParameter("@stock", item.Stock),
-                        new SqliteParameter("@barcode", item.Barcode ?? ""),
-                        new SqliteParameter("@desc", item.Description ?? ""),
-                        new SqliteParameter("@itemNo", item.ItemNo ?? ""));
+                    decimal itemCost = IngredientCalculationEngine.CalculateCostPerBigUnit(packPrice, pSize);
+                    decimal pieceCost = IngredientCalculationEngine.CalculateCostPerSmallUnit(packPrice, pSize, conv);
+                    double stockPacks = IngredientCalculationEngine.ConvertStockToPacks(item.Stock, pSize);
+
+                    if (existingId > 0)
+                    {
+                        string sqlUpdate = @"
+                            UPDATE parts SET part_name = @name, part_number = @sku, category_id = @cat, purchase_price = @p_price, selling_price = @s_price,
+                                             quantity_in_stock = @stock, barcode = @barcode, description = @desc, item_no = @itemNo,
+                                             big_unit = @big, small_unit = @small, conversion_value = @conv, pack_size = @pack_size,
+                                             pack_price = @pack_price, piece_price = @piece_price, item_price = @item_price, minimum_stock_level = @min
+                            WHERE id = @id";
+
+                        DatabaseHelper.ExecuteNonQuery(sqlUpdate,
+                            new SqliteParameter("@name", item.Name),
+                            new SqliteParameter("@sku", item.Sku ?? ""),
+                            new SqliteParameter("@cat", catId),
+                            new SqliteParameter("@p_price", packPrice),
+                            new SqliteParameter("@s_price", item.Price),
+                            new SqliteParameter("@stock", stockPacks),
+                            new SqliteParameter("@barcode", item.Barcode ?? ""),
+                            new SqliteParameter("@desc", item.Description ?? ""),
+                            new SqliteParameter("@itemNo", item.ItemNo ?? ""),
+                            new SqliteParameter("@big", item.BigUnit ?? ""),
+                            new SqliteParameter("@small", item.SmallUnit ?? ""),
+                            new SqliteParameter("@conv", conv),
+                            new SqliteParameter("@pack_size", pSize),
+                            new SqliteParameter("@pack_price", packPrice),
+                            new SqliteParameter("@piece_price", pieceCost),
+                            new SqliteParameter("@item_price", itemCost),
+                            new SqliteParameter("@min", item.MinStock > 0 ? item.MinStock : 5),
+                            new SqliteParameter("@id", existingId));
+                    }
+                    else
+                    {
+                        string sql = @"
+                            INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, description, item_no,
+                                               big_unit, small_unit, conversion_value, pack_size, pack_price, piece_price, item_price, minimum_stock_level)
+                            VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @desc, @itemNo,
+                                    @big, @small, @conv, @pack_size, @pack_price, @piece_price, @item_price, @min)";
+
+                        DatabaseHelper.ExecuteNonQuery(sql,
+                            new SqliteParameter("@name", item.Name),
+                            new SqliteParameter("@sku", item.Sku ?? ""),
+                            new SqliteParameter("@cat", catId),
+                            new SqliteParameter("@p_price", packPrice),
+                            new SqliteParameter("@s_price", item.Price),
+                            new SqliteParameter("@stock", stockPacks),
+                            new SqliteParameter("@barcode", item.Barcode ?? ""),
+                            new SqliteParameter("@desc", item.Description ?? ""),
+                            new SqliteParameter("@itemNo", item.ItemNo ?? ""),
+                            new SqliteParameter("@big", item.BigUnit ?? ""),
+                            new SqliteParameter("@small", item.SmallUnit ?? ""),
+                            new SqliteParameter("@conv", conv),
+                            new SqliteParameter("@pack_size", pSize),
+                            new SqliteParameter("@pack_price", packPrice),
+                            new SqliteParameter("@piece_price", pieceCost),
+                            new SqliteParameter("@item_price", itemCost),
+                            new SqliteParameter("@min", item.MinStock > 0 ? item.MinStock : 5));
+                    }
 
                     imported++;
                 }
@@ -845,7 +924,7 @@ namespace Shaheen_InventoryManagement_Android
                     conn.Open();
                     using (var transaction = conn.BeginTransaction())
                     {
-                        var itemsForOrder = new List<Tuple<bool, int, double, decimal>>(); // <isRecipe, id, qty, price>
+                        var itemsForOrder = new List<Tuple<bool, int, double, decimal, string>>(); // <isRecipe, id, qty, price, uom>
 
                         foreach (var sale in body.Sales)
                         {
@@ -908,10 +987,21 @@ namespace Shaheen_InventoryManagement_Android
                                 decimal partSellingPrice = 0;
                                 double currentPartStock = 0;
 
+                                // Unit parameters
+                                string partUom = "";
+                                string stockType = "";
+                                int packItems = 1;
+                                string bigUnit = "";
+                                string smallUnit = "";
+                                double convVal = 1.0;
+                                double packSize = 1.0;
+                                decimal packPrice = 0;
+
                                 // Fallback A: Search the parts (inventory) table directly by Item No (if provided)
                                 if (!string.IsNullOrWhiteSpace(sale.ItemNo))
                                 {
-                                    string sqlPartByNo = @"SELECT id, part_name, selling_price, quantity_in_stock FROM parts 
+                                    string sqlPartByNo = @"SELECT id, part_name, selling_price, quantity_in_stock, unit_of_measure, stock_type, pack_items_number,
+                                                                  big_unit, small_unit, conversion_value, pack_size, purchase_price FROM parts 
                                                            WHERE LOWER(item_no) = LOWER(@itemNo) AND date_deleted IS NULL";
                                     using (var cmd = new SqliteCommand(sqlPartByNo, conn, transaction))
                                     {
@@ -924,6 +1014,15 @@ namespace Shaheen_InventoryManagement_Android
                                                 exactPartName = reader["part_name"].ToString();
                                                 partSellingPrice = Convert.ToDecimal(reader["selling_price"]);
                                                 currentPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
+
+                                                partUom = reader["unit_of_measure"]?.ToString() ?? "";
+                                                stockType = reader["stock_type"]?.ToString() ?? "Piece";
+                                                packItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1;
+                                                bigUnit = reader["big_unit"]?.ToString() ?? "";
+                                                smallUnit = reader["small_unit"]?.ToString() ?? "";
+                                                convVal = reader["conversion_value"] != DBNull.Value ? Convert.ToDouble(reader["conversion_value"]) : 1.0;
+                                                packSize = reader["pack_size"] != DBNull.Value ? Convert.ToDouble(reader["pack_size"]) : 1.0;
+                                                packPrice = reader["purchase_price"] != DBNull.Value ? Convert.ToDecimal(reader["purchase_price"]) : 0m;
                                             }
                                         }
                                     }
@@ -932,7 +1031,8 @@ namespace Shaheen_InventoryManagement_Android
                                 // Fallback B: Search the parts (inventory) table directly by name (case-insensitive and ignoring all whitespace)
                                 if (partId == 0 && !string.IsNullOrWhiteSpace(sale.RecipeName))
                                 {
-                                    string sqlPartDirect = @"SELECT id, part_name, selling_price, quantity_in_stock FROM parts 
+                                    string sqlPartDirect = @"SELECT id, part_name, selling_price, quantity_in_stock, unit_of_measure, stock_type, pack_items_number,
+                                                                    big_unit, small_unit, conversion_value, pack_size, purchase_price FROM parts 
                                                              WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(part_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
                                                                    REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
                                                                AND date_deleted IS NULL";
@@ -947,6 +1047,15 @@ namespace Shaheen_InventoryManagement_Android
                                                 exactPartName = reader["part_name"].ToString();
                                                 partSellingPrice = Convert.ToDecimal(reader["selling_price"]);
                                                 currentPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
+
+                                                partUom = reader["unit_of_measure"]?.ToString() ?? "";
+                                                stockType = reader["stock_type"]?.ToString() ?? "Piece";
+                                                packItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1;
+                                                bigUnit = reader["big_unit"]?.ToString() ?? "";
+                                                smallUnit = reader["small_unit"]?.ToString() ?? "";
+                                                convVal = reader["conversion_value"] != DBNull.Value ? Convert.ToDouble(reader["conversion_value"]) : 1.0;
+                                                packSize = reader["pack_size"] != DBNull.Value ? Convert.ToDouble(reader["pack_size"]) : 1.0;
+                                                packPrice = reader["purchase_price"] != DBNull.Value ? Convert.ToDecimal(reader["purchase_price"]) : 0m;
                                             }
                                         }
                                     }
@@ -961,8 +1070,14 @@ namespace Shaheen_InventoryManagement_Android
                                     continue;
                                 }
 
-                                // Match found in parts! Deduct from stock directly
-                                double totalDeduct = (double)sale.QtySold;
+                                // Convert the quantity using the new unit conversion logic
+                                double totalDeduct = RecipePartData.GetConvertedQuantityDynamic(
+                                    sale.QtySold, sale.UnitOfMeasure, partUom, stockType, packItems, bigUnit, smallUnit, convVal, packSize);
+
+                                // Calculate the cost dynamically based on the unit of sale
+                                decimal calculatedCost = IngredientCalculationEngine.CalculatedUnitCost(
+                                    packPrice, sale.UnitOfMeasure, bigUnit, smallUnit, convVal, packSize, stockType, packItems, partUom) * (decimal)sale.QtySold;
+
                                 if (totalDeduct > 0)
                                 {
                                     var existingDeduction = ingredientDeductions.FirstOrDefault(d => d.PartId == partId);
@@ -1013,12 +1128,13 @@ namespace Shaheen_InventoryManagement_Android
                                 }
 
                                 recipesProcessed++;
-                                itemsForOrder.Add(Tuple.Create(false, partId, (double)sale.QtySold, partSellingPrice));
+                                itemsForOrder.Add(Tuple.Create(false, partId, (double)sale.QtySold, calculatedCost, sale.UnitOfMeasure));
                                 continue;
                             }
 
                              // 2. Find parts (ingredients) for this recipe
-                             string sqlParts = @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure as recipe_uom, p.part_name, p.quantity_in_stock, p.unit_of_measure as part_uom, p.stock_type, p.pack_items_number 
+                             string sqlParts = @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure as recipe_uom, p.part_name, p.quantity_in_stock, p.unit_of_measure as part_uom, p.stock_type, p.pack_items_number,
+                                                        p.big_unit, p.small_unit, p.conversion_value, p.pack_size
                                                  FROM recipe_parts rp
                                                  JOIN parts p ON rp.part_id = p.id
                                                  WHERE rp.recipe_id = @recipeId AND p.date_deleted IS NULL";
@@ -1039,7 +1155,11 @@ namespace Shaheen_InventoryManagement_Android
                                              RecipeUom = reader["recipe_uom"]?.ToString(),
                                              PartUom = reader["part_uom"]?.ToString(),
                                              StockType = reader["stock_type"]?.ToString(),
-                                             PackItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1
+                                             PackItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1,
+                                             BigUnit = reader["big_unit"]?.ToString() ?? "",
+                                             SmallUnit = reader["small_unit"]?.ToString() ?? "",
+                                             ConversionValue = reader["conversion_value"] != DBNull.Value ? Convert.ToDouble(reader["conversion_value"]) : 1.0,
+                                             PackSize = reader["pack_size"] != DBNull.Value ? Convert.ToDouble(reader["pack_size"]) : 1.0
                                          });
                                      }
                                  }
@@ -1048,60 +1168,61 @@ namespace Shaheen_InventoryManagement_Android
                              // 3. Deduct ingredients from stock
                              foreach (var p in partsToDeduct)
                              {
-                                 double qtyPerRecipeConverted = RecipePartData.GetConvertedQuantity(p.QtyPerRecipe, p.RecipeUom, p.PartUom, p.StockType, p.PackItems);
+                                 double qtyPerRecipeConverted = RecipePartData.GetConvertedQuantityDynamic(
+                                     p.QtyPerRecipe, p.RecipeUom, p.PartUom, p.StockType, p.PackItems, p.BigUnit, p.SmallUnit, p.ConversionValue, p.PackSize);
                                  double totalDeduct = qtyPerRecipeConverted * (double)sale.QtySold;
                                  if (totalDeduct <= 0) continue;
 
-                                // Check if we already processed this ingredient in a previous loop iteration of this upload
-                                var existingDeduction = ingredientDeductions.FirstOrDefault(d => d.PartId == p.PartId);
-                                double currentStockInDb = p.CurrentStock;
-                                if (existingDeduction != null)
-                                {
-                                    currentStockInDb = existingDeduction.NewStock;
-                                }
+                                 // Check if we already processed this ingredient in a previous loop iteration of this upload
+                                 var existingDeduction = ingredientDeductions.FirstOrDefault(d => d.PartId == p.PartId);
+                                 double currentStockInDb = p.CurrentStock;
+                                 if (existingDeduction != null)
+                                 {
+                                     currentStockInDb = existingDeduction.NewStock;
+                                 }
 
-                                double newStock = Math.Max(0, currentStockInDb - totalDeduct);
+                                 double newStock = Math.Max(0, currentStockInDb - totalDeduct);
 
-                                // Update parts table
-                                string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
-                                using (var cmd = new SqliteCommand(sqlUpdatePart, conn, transaction))
-                                {
-                                    cmd.Parameters.AddWithValue("@newStock", newStock);
-                                    cmd.Parameters.AddWithValue("@partId", p.PartId);
-                                    cmd.ExecuteNonQuery();
-                                }
+                                 // Update parts table
+                                 string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
+                                 using (var cmd = new SqliteCommand(sqlUpdatePart, conn, transaction))
+                                 {
+                                     cmd.Parameters.AddWithValue("@newStock", newStock);
+                                     cmd.Parameters.AddWithValue("@partId", p.PartId);
+                                     cmd.ExecuteNonQuery();
+                                 }
 
-                                // Record transaction
-                                string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
-                                                      VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
-                                string txDesc = $"Deducted {totalDeduct:0.##} via sales import ({exactRecipeName} x{sale.QtySold})";
-                                using (var cmd = new SqliteCommand(sqlInsertTx, conn, transaction))
-                                {
-                                    cmd.Parameters.AddWithValue("@partName", p.PartName);
-                                    cmd.Parameters.AddWithValue("@desc", txDesc);
-                                    cmd.ExecuteNonQuery();
-                                }
+                                 // Record transaction
+                                 string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
+                                                       VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
+                                 string txDesc = $"Deducted {totalDeduct:0.##} via sales import ({exactRecipeName} x{sale.QtySold})";
+                                 using (var cmd = new SqliteCommand(sqlInsertTx, conn, transaction))
+                                 {
+                                     cmd.Parameters.AddWithValue("@partName", p.PartName);
+                                     cmd.Parameters.AddWithValue("@desc", txDesc);
+                                     cmd.ExecuteNonQuery();
+                                 }
 
-                                if (existingDeduction != null)
-                                {
-                                    existingDeduction.QtyDeducted += totalDeduct;
-                                    existingDeduction.NewStock = newStock;
-                                }
-                                else
-                                {
-                                    ingredientDeductions.Add(new IngredientDeductionResult
-                                    {
-                                        PartId = p.PartId,
-                                        PartName = p.PartName,
-                                        QtyDeducted = totalDeduct,
-                                        PreviousStock = p.CurrentStock,
-                                        NewStock = newStock
-                                    });
-                                }
-                            }
+                                 if (existingDeduction != null)
+                                 {
+                                     existingDeduction.QtyDeducted += totalDeduct;
+                                     existingDeduction.NewStock = newStock;
+                                 }
+                                 else
+                                 {
+                                     ingredientDeductions.Add(new IngredientDeductionResult
+                                     {
+                                         PartId = p.PartId,
+                                         PartName = p.PartName,
+                                         QtyDeducted = totalDeduct,
+                                         PreviousStock = p.CurrentStock,
+                                         NewStock = newStock
+                                     });
+                                 }
+                             }
 
-                            recipesProcessed++;
-                            itemsForOrder.Add(Tuple.Create(true, recipeId, (double)sale.QtySold, sellingPrice));
+                             recipesProcessed++;
+                             itemsForOrder.Add(Tuple.Create(true, recipeId, (double)sale.QtySold, sellingPrice, "pack"));
                         }
 
                         if (itemsForOrder.Count > 0)
@@ -1129,17 +1250,19 @@ namespace Shaheen_InventoryManagement_Android
                                 int itemId = item.Item2;
                                 double qty = item.Item3;
                                 decimal price = item.Item4;
+                                string uom = item.Item5;
 
                                 string sqlInsertItem = isRecipe 
-                                    ? @"INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) 
-                                        VALUES (@orderId, 0, @qty, @price, 'Recipe', @recipeId)"
-                                    : @"INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) 
-                                        VALUES (@orderId, @partId, @qty, @price, 'Part', NULL)";
+                                    ? @"INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id, unit_of_measure) 
+                                        VALUES (@orderId, 0, @qty, @price, 'Recipe', @recipeId, @uom)"
+                                    : @"INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id, unit_of_measure) 
+                                        VALUES (@orderId, @partId, @qty, @price, 'Part', NULL, @uom)";
                                 using (var cmd = new SqliteCommand(sqlInsertItem, conn, transaction))
                                 {
                                     cmd.Parameters.AddWithValue("@orderId", orderId);
                                     cmd.Parameters.AddWithValue("@qty", qty);
                                     cmd.Parameters.AddWithValue("@price", price);
+                                    cmd.Parameters.AddWithValue("@uom", uom ?? "pack");
                                     if (isRecipe)
                                     {
                                         cmd.Parameters.AddWithValue("@recipeId", itemId);
@@ -1417,12 +1540,16 @@ namespace Shaheen_InventoryManagement_Android
             public decimal ItemPrice { get; set; }
             public decimal PiecePrice { get; set; }
             public int MinStock { get; set; }
+            public string BigUnit { get; set; }
+            public string SmallUnit { get; set; }
+            public double ConversionValue { get; set; }
+            public double PackSize { get; set; }
         }
 
         private class AdjustStockPayload
         {
             public int PartId { get; set; }
-            public int Change { get; set; }
+            public double Change { get; set; }
             public string Reason { get; set; }
         }
 
@@ -1438,6 +1565,7 @@ namespace Shaheen_InventoryManagement_Android
             public int Qty { get; set; }
             public string ItemType { get; set; }
             public int? RecipeId { get; set; }
+            public string UnitOfMeasure { get; set; }
         }
 
         private class RecipePayload
@@ -1468,11 +1596,17 @@ namespace Shaheen_InventoryManagement_Android
             public string Name { get; set; }
             public string Category { get; set; }
             public decimal Price { get; set; }
-            public int Stock { get; set; }
+            public double Stock { get; set; }
             public string Barcode { get; set; }
             public string Sku { get; set; }
             public string Description { get; set; }
             public string ItemNo { get; set; }
+            public string BigUnit { get; set; }
+            public string SmallUnit { get; set; }
+            public double ConversionValue { get; set; }
+            public double PackSize { get; set; }
+            public decimal PackPrice { get; set; }
+            public int MinStock { get; set; }
         }
 
         private class ExportCsvPayload
@@ -1504,6 +1638,7 @@ namespace Shaheen_InventoryManagement_Android
             public string ItemNo { get; set; }
             public string RecipeName { get; set; }
             public int QtySold { get; set; }
+            public string UnitOfMeasure { get; set; }
         }
 
         private class RecipePartDeduction
@@ -1516,6 +1651,10 @@ namespace Shaheen_InventoryManagement_Android
             public string PartUom { get; set; }
             public string StockType { get; set; }
             public int PackItems { get; set; }
+            public string BigUnit { get; set; }
+            public string SmallUnit { get; set; }
+            public double ConversionValue { get; set; }
+            public double PackSize { get; set; }
         }
 
         private class IngredientDeductionResult

@@ -14,9 +14,11 @@ namespace Shaheen_InventoryManagement_Android.Forms
         private ModernTextBox txtSearch;
         private DataGridView dgvParts;
         private ModernNumericUpDown numQuantity;
+        private ModernComboBox cmbUom;
 
         public PartData SelectedPart { get; private set; }
         public double SelectedQuantity { get; private set; }
+        public string SelectedUnitOfMeasure { get; private set; }
 
         public PartSelectionDialog()
         {
@@ -59,8 +61,37 @@ namespace Shaheen_InventoryManagement_Android.Forms
             Label lblQty = new Label { Text = "Quantity:", AutoSize = true, Location = new Point(10, 20) };
             numQuantity = new ModernNumericUpDown { Location = new Point(80, 18), Width = 100, Minimum = 0.01m, Maximum = 10000m, DecimalPlaces = 2, Value = 1m, ShowLabel = false };
 
+            Label lblUom = new Label { Text = "Unit:", AutoSize = true, Location = new Point(200, 20) };
+            cmbUom = new ModernComboBox { Location = new Point(250, 18), Width = 120, DropDownStyle = ComboBoxStyle.DropDownList };
+
+            dgvParts.SelectionChanged += (s, e) =>
+            {
+                cmbUom.Items.Clear();
+                if (dgvParts.SelectedRows.Count > 0)
+                {
+                    var part = dgvParts.SelectedRows[0].DataBoundItem as PartData;
+                    if (part != null)
+                    {
+                        if (!string.IsNullOrEmpty(part.BigUnit) && !string.IsNullOrEmpty(part.SmallUnit))
+                        {
+                            cmbUom.Items.Add(part.BigUnit);
+                            cmbUom.Items.Add(part.SmallUnit);
+                            cmbUom.Items.Add("pack");
+                            cmbUom.SelectedIndex = 0;
+                        }
+                        else
+                        {
+                            cmbUom.Items.Add(string.IsNullOrEmpty(part.UnitOfMeasure) ? "pcs" : part.UnitOfMeasure);
+                            cmbUom.SelectedIndex = 0;
+                        }
+                    }
+                }
+            };
+
             pnlBottom.Controls.Add(lblQty);
             pnlBottom.Controls.Add(numQuantity);
+            pnlBottom.Controls.Add(lblUom);
+            pnlBottom.Controls.Add(cmbUom);
 
             this.ContentPanel.Controls.Add(pnlBottom);
             this.ContentPanel.Controls.Add(txtSearch);
@@ -127,7 +158,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             var part = dgvParts.SelectedRows[0].DataBoundItem as PartData;
             if (part == null) return;
 
-            if (numQuantity.Value > part.QuantityInStock)
+            if ((double)numQuantity.Value > part.QuantityInStock)
             {
                 if (!MessageHelper.ConfirmAction($"Warning: You are adding {numQuantity.Value} but there is only {part.QuantityInStock} in stock. Proceed?"))
                 {
@@ -137,6 +168,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
             SelectedPart = part;
             SelectedQuantity = (double)numQuantity.Value;
+            SelectedUnitOfMeasure = cmbUom.SelectedItem?.ToString() ?? "pcs";
             this.DialogResult = DialogResult.OK;
             this.Close();
         }

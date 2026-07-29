@@ -273,18 +273,73 @@ if (typeof window !== 'undefined' && !window.AndroidBridge) {
             responseData = { success: true, orderId: 102, total: 45.00 };
         } else if (path === 'api/import-items') {
             const body = JSON.parse(options.body);
-            body.items.forEach((item, idx) => {
-                mockDb.products.push({
-                    id: mockDb.products.length + 1,
-                    name: item.name,
-                    price: item.price,
-                    stock: item.stock,
-                    category: item.category,
-                    barcode: item.barcode,
-                    sku: item.sku
-                });
+            let imported = 0;
+            let skipped = 0;
+
+            body.items.forEach((item) => {
+                if (!item.name) {
+                    skipped++;
+                    return;
+                }
+
+                // Check if existing
+                let existing = mockDb.products.find(p => 
+                    (item.barcode && p.barcode === item.barcode) ||
+                    (item.sku && p.sku === item.sku) ||
+                    (p.name.toLowerCase() === item.name.toLowerCase())
+                );
+
+                const pSize = parseFloat(item.packSize) || 1.0;
+                const conv = parseFloat(item.conversionValue) || 1.0;
+                const pPrice = parseFloat(item.packPrice || item.price || 0.00);
+
+                const stockPacks = item.stock / pSize; // Current Stock from CSV is in Big Unit, converted to packs in database
+                const costPerBigUnit = pPrice / pSize;
+                const costPerSmallUnit = costPerBigUnit / conv;
+
+                if (existing) {
+                    existing.name = item.name;
+                    existing.sku = item.sku || existing.sku;
+                    existing.barcode = item.barcode || existing.barcode;
+                    existing.itemNo = item.itemNo || existing.itemNo;
+                    existing.category = item.category || existing.category;
+                    existing.description = item.description || existing.description;
+                    existing.bigUnit = item.bigUnit || existing.bigUnit;
+                    existing.smallUnit = item.smallUnit || existing.smallUnit;
+                    existing.conversionValue = conv;
+                    existing.packSize = pSize;
+                    existing.packPrice = pPrice;
+                    existing.purchasePrice = pPrice;
+                    existing.price = item.price || existing.price;
+                    existing.stock = stockPacks;
+                    existing.minStock = item.minStock || existing.minStock;
+                    existing.itemPrice = costPerBigUnit;
+                    existing.piecePrice = costPerSmallUnit;
+                } else {
+                    mockDb.products.push({
+                        id: mockDb.products.length + 1,
+                        name: item.name,
+                        sku: item.sku || '',
+                        barcode: item.barcode || '',
+                        itemNo: item.itemNo || '',
+                        category: item.category || 'General',
+                        description: item.description || '',
+                        bigUnit: item.bigUnit || '',
+                        smallUnit: item.smallUnit || '',
+                        conversionValue: conv,
+                        packSize: pSize,
+                        packPrice: pPrice,
+                        purchasePrice: pPrice,
+                        price: item.price || pPrice,
+                        stock: stockPacks,
+                        minStock: item.minStock || 5,
+                        itemPrice: costPerBigUnit,
+                        piecePrice: costPerSmallUnit
+                    });
+                }
+                imported++;
             });
-            responseData = { success: true, imported: body.items.length, skipped: 0 };
+            responseData = { success: true, imported, skipped };
         } else if (path === 'api/import-sales') {
             const body = JSON.parse(options.body);
             let processed = 0;
@@ -294,47 +349,120 @@ if (typeof window !== 'undefined' && !window.AndroidBridge) {
 
             body.sales.forEach(sale => {
                 const cleanName = sale.recipeName.toLowerCase().replace(/[\s\t\r\n]/g, '');
+                
+                // 1. Try finding recipe
                 const recipe = mockDb.recipes.find(r => r.name.toLowerCase().replace(/[\s\t\r\n]/g, '') === cleanName);
-                if (!recipe) {
-                    skipped++;
-                    skippedNames.push(sale.recipeName);
-                    return;
-                }
+                if (recipe) {
+                    recipe.parts.forEach(part => {
+                        const prod = mockDb.products.find(p => p.id === part.partId);
+                        if (prod) {
+                            const pSize = parseFloat(prod.packSize) || 1.0;
+                            const conv = parseFloat(prod.conversionValue) || 1.0;
+                            const partUom = (part.unitOfMeasure || '').toLowerCase().trim();
+                            const sUnit = (prod.smallUnit || '').toLowerCase().trim();
+                            const bUnit = (prod.bigUnit || '').toLowerCase().trim();
 
-                recipe.parts.forEach(part => {
-                    const prod = mockDb.products.find(p => p.id === part.partId);
-                    if (prod) {
-                        const qtyDeducted = part.qty * sale.qtySold;
-                        if (qtyDeducted <= 0) return;
-                        
-                        const prevStock = prod.stock;
-                        prod.stock = Math.max(0, parseFloat((prod.stock - qtyDeducted).toFixed(2)));
+                            let qtyPerRecipeConverted = part.qty;
+                            if (bUnit && sUnit) {
+                                if (partUom === sUnit) {
+                                    qtyPerRecipeConverted = part.qty / (pSize * conv);
+                                } else if (partUom === bUnit) {
+                                    qtyPerRecipeConverted = part.qty / pSize;
+                                } else if (partUom === 'pack') {
+                                    qtyPerRecipeConverted = part.qty;
+                                } else {
+                                    qtyPerRecipeConverted = part.qty / (pSize * conv);
+                                }
+                            }
 
-                        const existingDeduct = deductions.find(d => d.partId === part.partId);
-                        if (existingDeduct) {
-                            existingDeduct.qtyDeducted = parseFloat((existingDeduct.qtyDeducted + qtyDeducted).toFixed(2));
-                            existingDeduct.newStock = prod.stock;
-                        } else {
-                            deductions.push({
-                                partId: part.partId,
-                                partName: prod.name,
-                                qtyDeducted: qtyDeducted,
-                                previousStock: prevStock,
-                                newStock: prod.stock
+                            const qtyDeducted = qtyPerRecipeConverted * sale.qtySold;
+                            if (qtyDeducted <= 0) return;
+                            
+                            const prevStock = prod.stock;
+                            prod.stock = Math.max(0, parseFloat((prod.stock - qtyDeducted).toFixed(4)));
+
+                            const existingDeduct = deductions.find(d => d.partId === part.partId);
+                            if (existingDeduct) {
+                                existingDeduct.qtyDeducted = parseFloat((existingDeduct.qtyDeducted + qtyDeducted).toFixed(4));
+                                existingDeduct.newStock = prod.stock;
+                            } else {
+                                deductions.push({
+                                    partId: part.partId,
+                                    partName: prod.name,
+                                    qtyDeducted: qtyDeducted,
+                                    previousStock: prevStock,
+                                    newStock: prod.stock
+                                });
+                            }
+
+                            // Log transaction
+                            mockDb.reports.transactions.unshift({
+                                action: 'STOCK_DEDUCT',
+                                item: prod.name,
+                                desc: `Deducted ${qtyDeducted.toFixed(4).replace(/\.0000$/, '')} via sales import (${recipe.name} x${sale.qtySold})`,
+                                user: 'Admin',
+                                time: new Date().toISOString().replace('T', ' ').slice(0, 16)
                             });
                         }
+                    });
+                    processed++;
+                } else {
+                    // 2. Try finding product directly (Ingredient Sale)
+                    const prod = mockDb.products.find(p => p.name.toLowerCase().replace(/[\s\t\r\n]/g, '') === cleanName);
+                    if (prod) {
+                        const pSize = parseFloat(prod.packSize) || 1.0;
+                        const conv = parseFloat(prod.conversionValue) || 1.0;
+                        const saleUom = (sale.unitOfMeasure || '').toLowerCase().trim();
+                        const sUnit = (prod.smallUnit || '').toLowerCase().trim();
+                        const bUnit = (prod.bigUnit || '').toLowerCase().trim();
 
-                        // Log transaction
-                        mockDb.reports.transactions.unshift({
-                            action: 'STOCK_DEDUCT',
-                            item: prod.name,
-                            desc: `Deducted ${qtyDeducted.toFixed(2).replace(/\.00$/, '')} via sales import (${recipe.name} x${sale.qtySold})`,
-                            user: 'Admin',
-                            time: new Date().toISOString().replace('T', ' ').slice(0, 16)
-                        });
+                        let qtyConverted = sale.qtySold;
+                        if (bUnit && sUnit) {
+                            if (saleUom === sUnit) {
+                                qtyConverted = sale.qtySold / (pSize * conv);
+                            } else if (saleUom === bUnit) {
+                                qtyConverted = sale.qtySold / pSize;
+                            } else if (saleUom === 'pack') {
+                                qtyConverted = sale.qtySold;
+                            } else {
+                                qtyConverted = sale.qtySold / (pSize * conv);
+                            }
+                        }
+
+                        const qtyDeducted = qtyConverted;
+                        if (qtyDeducted > 0) {
+                            const prevStock = prod.stock;
+                            prod.stock = Math.max(0, parseFloat((prod.stock - qtyDeducted).toFixed(4)));
+
+                            const existingDeduct = deductions.find(d => d.partId === prod.id);
+                            if (existingDeduct) {
+                                existingDeduct.qtyDeducted = parseFloat((existingDeduct.qtyDeducted + qtyDeducted).toFixed(4));
+                                existingDeduct.newStock = prod.stock;
+                            } else {
+                                deductions.push({
+                                    partId: prod.id,
+                                    partName: prod.name,
+                                    qtyDeducted: qtyDeducted,
+                                    previousStock: prevStock,
+                                    newStock: prod.stock
+                                });
+                            }
+
+                            // Log transaction
+                            mockDb.reports.transactions.unshift({
+                                action: 'STOCK_DEDUCT',
+                                item: prod.name,
+                                desc: `Deducted ${qtyDeducted.toFixed(4).replace(/\.0000$/, '')} via sales import (${prod.name} x${sale.qtySold})`,
+                                user: 'Admin',
+                                time: new Date().toISOString().replace('T', ' ').slice(0, 16)
+                            });
+                        }
+                        processed++;
+                    } else {
+                        skipped++;
+                        skippedNames.push(sale.recipeName);
                     }
-                });
-                processed++;
+                }
             });
 
             responseData = { success: true, processed, skipped, skippedNames, deductions };
@@ -388,6 +516,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('modalTitle').innerText = t('modal_add_title');
         document.getElementById('btnSubmitItem').innerText = t('modal_add_btn');
         document.getElementById('editItemId').value = '';
+        document.getElementById('newItemNo').value = '';
+        document.getElementById('newItemName').value = '';
+        document.getElementById('newItemCategory').value = '';
+        document.getElementById('newItemStock').value = '0';
+        document.getElementById('newItemMinStock').value = '5';
+        document.getElementById('newItemBigUnit').value = '';
+        document.getElementById('newItemSmallUnit').value = '';
+        document.getElementById('newItemConversionValue').value = '1';
+        document.getElementById('newItemPackSize').value = '';
+        document.getElementById('newItemPackPrice').value = '';
+        document.getElementById('newItemBarcode').value = '';
         document.getElementById('addItemModal').classList.remove('hidden');
     });
 
@@ -729,29 +868,23 @@ function renderProducts() {
     });
 }
 
-function toggleStockTypeFields() {
-    const stockType = document.getElementById('newItemStockType').value;
-    const packGroup = document.getElementById('packFieldsGroup');
-    const pieceGroup = document.getElementById('pieceFieldsGroup');
-    if (stockType === 'Pack') {
-        packGroup.style.display = 'grid';
-        pieceGroup.style.display = 'none';
-    } else {
-        packGroup.style.display = 'none';
-        pieceGroup.style.display = 'grid';
-    }
-}
-
-function calculatePackItemPrice() {
-    const packItems = parseInt(document.getElementById('newItemPackItemsNumber').value) || 0;
-    const packPrice = parseFloat(document.getElementById('newItemPackPrice').value) || 0;
-    const itemPriceInput = document.getElementById('newItemItemPrice');
-    if (packItems > 0) {
-        itemPriceInput.value = (packPrice / packItems).toFixed(2);
-    } else {
-        itemPriceInput.value = '0.00';
-    }
-}
+window.openAddModalDirect = function() {
+    document.getElementById('modalTitle').innerText = t('modal_add_title');
+    document.getElementById('btnSubmitItem').innerText = t('modal_add_btn');
+    document.getElementById('editItemId').value = '';
+    document.getElementById('newItemNo').value = '';
+    document.getElementById('newItemName').value = '';
+    document.getElementById('newItemCategory').value = '';
+    document.getElementById('newItemStock').value = '0';
+    document.getElementById('newItemMinStock').value = '5';
+    document.getElementById('newItemBigUnit').value = '';
+    document.getElementById('newItemSmallUnit').value = '';
+    document.getElementById('newItemConversionValue').value = '1';
+    document.getElementById('newItemPackSize').value = '';
+    document.getElementById('newItemPackPrice').value = '';
+    document.getElementById('newItemBarcode').value = '';
+    document.getElementById('addItemModal').classList.remove('hidden');
+};
 
 function openEditModal(id) {
     const item = allProducts.find(p => p.id === id);
@@ -762,21 +895,16 @@ function openEditModal(id) {
     document.getElementById('newItemNo').value = item.itemNo || '';
     document.getElementById('newItemName').value = item.name;
     document.getElementById('newItemCategory').value = item.category || (masterCategories.length > 0 ? masterCategories[0] : '');
-    document.getElementById('newItemPrice').value = item.price;
     document.getElementById('newItemStock').value = item.stock;
     document.getElementById('newItemMinStock').value = item.minStock !== undefined ? item.minStock : 5;
     document.getElementById('newItemBarcode').value = item.barcode || '';
-    document.getElementById('newItemUom').value = item.unitOfMeasure || 'pcs';
 
-    // Set stock type fields
-    const stockType = item.stockType || 'Piece';
-    document.getElementById('newItemStockType').value = stockType;
-    document.getElementById('newItemPackItemsNumber').value = item.packItemsNumber || '';
-    document.getElementById('newItemPackPrice').value = item.packPrice || '';
-    document.getElementById('newItemItemPrice').value = item.itemPrice || '';
-    document.getElementById('newItemPiecePrice').value = item.piecePrice !== undefined ? item.piecePrice : item.price;
+    document.getElementById('newItemBigUnit').value = item.bigUnit || '';
+    document.getElementById('newItemSmallUnit').value = item.smallUnit || '';
+    document.getElementById('newItemConversionValue').value = item.conversionValue || '1';
+    document.getElementById('newItemPackSize').value = item.packSize || '';
+    document.getElementById('newItemPackPrice').value = item.packPrice || item.price || '';
 
-    toggleStockTypeFields();
     document.getElementById('addItemModal').classList.remove('hidden');
 }
 
@@ -784,34 +912,33 @@ async function submitNewItem() {
     const editId = document.getElementById('editItemId').value;
     const parsedId = editId ? parseInt(editId) : null;
 
-    const stockType = document.getElementById('newItemStockType').value;
-    const piecePrice = parseFloat(document.getElementById('newItemPiecePrice').value) || 0;
     const packPrice = parseFloat(document.getElementById('newItemPackPrice').value) || 0;
-    const packItemsNumber = parseInt(document.getElementById('newItemPackItemsNumber').value) || 0;
-    const itemPrice = parseFloat(document.getElementById('newItemItemPrice').value) || 0;
     const minStock = parseInt(document.getElementById('newItemMinStock').value) || 5;
 
-    let mainPrice = 0;
-    if (stockType === 'Piece') {
-        mainPrice = piecePrice;
-    } else {
-        mainPrice = packPrice;
-    }
+    const bigUnit = document.getElementById('newItemBigUnit').value.trim();
+    const smallUnit = document.getElementById('newItemSmallUnit').value.trim();
+    const conversionValue = parseFloat(document.getElementById('newItemConversionValue').value) || 1.0;
+    const packSize = parseFloat(document.getElementById('newItemPackSize').value) || 1.0;
+    const itemPrice = packSize > 0 ? (packPrice / packSize) : 0;
 
     const itemData = {
         itemNo: document.getElementById('newItemNo').value,
         name: document.getElementById('newItemName').value,
         category: document.getElementById('newItemCategory').value,
-        price: mainPrice,
+        price: packPrice, // The main price is the pack price
         stock: parseInt(document.getElementById('newItemStock').value) || 0,
         barcode: document.getElementById('newItemBarcode').value,
-        unitOfMeasure: document.getElementById('newItemUom').value,
-        stockType: stockType,
-        packItemsNumber: packItemsNumber,
+        unitOfMeasure: bigUnit, // Use Big Unit as the base unit of measure
+        stockType: 'Pack', // Always Pack item by default
+        packItemsNumber: 1,
         packPrice: packPrice,
         itemPrice: itemPrice,
-        piecePrice: piecePrice,
-        minStock: minStock
+        piecePrice: 0,
+        minStock: minStock,
+        bigUnit: bigUnit,
+        smallUnit: smallUnit,
+        conversionValue: conversionValue,
+        packSize: packSize
     };
 
     if (!itemData.name || isNaN(itemData.price)) {
@@ -848,7 +975,8 @@ function addToCart(product) {
     if (existing) {
         existing.quantity++;
     } else {
-        cart.push({ ...product, quantity: 1, itemType: 'Part' });
+        const defaultUom = (product.bigUnit && product.smallUnit) ? 'pack' : (product.unitOfMeasure || 'pcs');
+        cart.push({ ...product, quantity: 1, itemType: 'Part', selectedUom: defaultUom, basePrice: product.price });
     }
     updateCartUI();
 }
@@ -882,9 +1010,22 @@ function updateCartUI() {
         subtotal += total;
         const div = document.createElement('div');
         div.className = 'cart-item';
+
+        let uomSelectHtml = '';
+        if (item.bigUnit && item.smallUnit) {
+            uomSelectHtml = `
+                <select class="cart-item-uom" onchange="changeCartItemUom(${item.id}, this.value, '${item.itemType || 'Part'}')" style="padding:2px 4px; background:rgba(0,0,0,0.3); color:white; border:1px solid var(--border); border-radius:4px; font-size:0.75rem; margin-top:4px; outline:none; cursor:pointer; font-weight:bold;">
+                    <option value="pack" ${item.selectedUom === 'pack' ? 'selected' : ''}>pack</option>
+                    <option value="${item.bigUnit.toLowerCase()}" ${item.selectedUom === item.bigUnit.toLowerCase() ? 'selected' : ''}>${item.bigUnit}</option>
+                    <option value="${item.smallUnit.toLowerCase()}" ${item.selectedUom === item.smallUnit.toLowerCase() ? 'selected' : ''}>${item.smallUnit}</option>
+                </select>
+            `;
+        }
+
         div.innerHTML = `
             <div class="cart-item-info">
                 <div class="cart-item-name">${item.name}</div>
+                ${uomSelectHtml}
                 <div class="cart-item-price">${formatPrice(item.price)}</div>
             </div>
             <div class="qty-controls">
@@ -923,6 +1064,25 @@ function updateCartUI() {
     }
 }
 
+window.changeCartItemUom = function(id, val, itemType = 'Part') {
+    const item = cart.find(x => x.id === id && x.itemType === itemType);
+    if (!item) return;
+    
+    item.selectedUom = val;
+    const basePrice = item.basePrice || item.price;
+    const convVal = parseFloat(item.conversionValue) || 1.0;
+    const packSz = parseFloat(item.packSize) || 1.0;
+    
+    if (val === 'pack') {
+        item.price = basePrice;
+    } else if (val === item.bigUnit.toLowerCase()) {
+        item.price = basePrice / packSz;
+    } else if (val === item.smallUnit.toLowerCase()) {
+        item.price = (basePrice / packSz) / convVal;
+    }
+    updateCartUI();
+};
+
 function changeQty(id, delta, itemType = 'Part') {
     const item = cart.find(x => x.id === id && x.itemType === itemType);
     if (!item) return;
@@ -954,7 +1114,8 @@ async function processCheckout() {
             qty: i.quantity,
             price: i.price,
             itemType: i.itemType || 'Part',
-            recipeId: i.itemType === 'Recipe' ? i.id : null
+            recipeId: i.itemType === 'Recipe' ? i.id : null,
+            unitOfMeasure: i.selectedUom || 'pack'
         }));
 
         const res = await fetch(`${API_BASE}/api/checkout`, {
@@ -1525,21 +1686,25 @@ function loadInventoryTable() {
         }
 
         let stockDetailsHtml = '';
-        if (p.stockType === 'Pack') {
+        if (p.bigUnit && p.smallUnit) {
             stockDetailsHtml = `
                 <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; line-height: 1.2;">
-                    Type: <span style="color: var(--text); font-weight: 600;">Pack (${p.packItemsNumber} items)</span><br/>
-                    Pack: <span style="color: var(--accent); font-weight: 600;">${formatPrice(p.packPrice)}</span> | Item: <span style="color: var(--text); font-weight: 600;">${formatPrice(p.itemPrice)}</span>
+                    Pack Price: <span style="color: var(--accent); font-weight: 600;">${formatPrice(p.packPrice || p.price)}</span><br/>
+                    Pack Qty: <span style="color: var(--text); font-weight: 600;">${p.packSize} ${p.bigUnit}</span><br/>
+                    Unit Price: <span style="color: var(--text); font-weight: 600;">${formatPrice(p.itemPrice)}/${p.bigUnit}</span>
                 </div>
             `;
         } else {
             stockDetailsHtml = `
                 <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; line-height: 1.2;">
-                    Type: <span style="color: var(--text); font-weight: 600;">Piece</span><br/>
-                    Piece Price: <span style="color: var(--accent); font-weight: 600;">${formatPrice(p.piecePrice || p.price)}</span>
+                    Price: <span style="color: var(--accent); font-weight: 600;">${formatPrice(p.price)}</span>
                 </div>
             `;
         }
+
+        const currentStockVal = p.bigUnit && p.packSize ? (p.stock * p.packSize).toFixed(2) : p.stock;
+        const currentStockUom = p.bigUnit || 'pcs';
+        const minStockVal = p.bigUnit && p.packSize ? (p.minStock * p.packSize).toFixed(2) : (p.minStock || 5);
 
         card.innerHTML = `
             <div class="card-edit-btn" onclick="event.stopPropagation(); openEditModal(${p.id})" title="Edit" style="position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.2s; z-index: 5; cursor: pointer;">
@@ -1552,7 +1717,7 @@ function loadInventoryTable() {
             <div class="product-info" style="text-align: center;">
                 <div class="product-name" style="font-weight: 700;">${p.name}</div>
                 ${stockDetailsHtml}
-                <div class="product-stock ${p.stock < (p.minStock || 5) ? 'low' : ''}" style="font-size: 0.75rem; font-weight: 700; margin-top: 6px;">Stock: ${p.stock} <span style="font-weight: 400; color: var(--text-muted);">(Min: ${p.minStock || 5})</span></div>
+                <div class="product-stock ${p.stock < (p.minStock || 5) ? 'low' : ''}" style="font-size: 0.75rem; font-weight: 700; margin-top: 6px;">Stock: ${currentStockVal} ${currentStockUom} <span style="font-weight: 400; color: var(--text-muted);">(Min: ${minStockVal} ${currentStockUom})</span></div>
             </div>
         `;
         grid.appendChild(card);
@@ -1560,26 +1725,10 @@ function loadInventoryTable() {
 }
 
 function openAddModalDirect() {
-    document.getElementById('modalTitle').innerText = t('modal_add_title');
-    document.getElementById('btnSubmitItem').innerText = t('modal_add_btn');
-    document.getElementById('editItemId').value = '';
-    document.getElementById('newItemNo').value = '';
-    document.getElementById('newItemName').value = '';
-    document.getElementById('newItemPrice').value = '';
-    document.getElementById('newItemStock').value = '';
-    document.getElementById('newItemMinStock').value = '5';
-    document.getElementById('newItemBarcode').value = '';
-    document.getElementById('newItemUom').value = 'pcs';
-    document.getElementById('newItemStockType').value = 'Piece';
-    document.getElementById('newItemPackItemsNumber').value = '';
-    document.getElementById('newItemPackPrice').value = '';
-    document.getElementById('newItemItemPrice').value = '';
-    document.getElementById('newItemPiecePrice').value = '';
-    toggleStockTypeFields();
-    document.getElementById('addItemModal').classList.remove('hidden');
+    window.openAddModalDirect();
 }
 
-function showDeleteConfirm(title, message, onConfirm) {
+function showDeleteConfirm(title, message, onConfirm, confirmText = 'Delete') {
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
     overlay.style.zIndex = '99999';
@@ -1604,7 +1753,7 @@ function showDeleteConfirm(title, message, onConfirm) {
         <p style="color:var(--text-muted); font-size:0.9rem; margin:16px 0 24px 0; line-height:1.5;">${message}</p>
         <div style="display:flex; gap:12px; justify-content:center;">
             <button class="btn-clear" id="confirmCancelBtn" style="flex:1; height:40px; border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; font-weight:600; cursor:pointer;">Cancel</button>
-            <button class="btn-primary" id="confirmOkBtn" style="flex:1; height:40px; background:var(--danger) !important; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Delete</button>
+            <button class="btn-primary" id="confirmOkBtn" style="flex:1; height:40px; background:var(--danger) !important; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">${confirmText}</button>
         </div>
     `;
 
@@ -1768,9 +1917,13 @@ window.onIngredientProductChange = function(selectElem) {
 function getUomOptionsHtml(prodOrUom, selectedUom = '') {
     let baseUom = 'pcs';
     let stockType = 'Piece';
+    let bigUnit = '';
+    let smallUnit = '';
     if (typeof prodOrUom === 'object' && prodOrUom !== null) {
         baseUom = prodOrUom.unitOfMeasure || 'pcs';
         stockType = prodOrUom.stockType || 'Piece';
+        bigUnit = prodOrUom.bigUnit || '';
+        smallUnit = prodOrUom.smallUnit || '';
     } else if (typeof prodOrUom === 'string') {
         baseUom = prodOrUom;
     }
@@ -1778,6 +1931,15 @@ function getUomOptionsHtml(prodOrUom, selectedUom = '') {
     baseUom = baseUom.toLowerCase().trim();
     if (!selectedUom) selectedUom = baseUom;
     selectedUom = selectedUom.toLowerCase().trim();
+
+    if (bigUnit && smallUnit) {
+        const options = [
+            { val: 'pack', text: 'pack' },
+            { val: bigUnit.toLowerCase(), text: bigUnit },
+            { val: smallUnit.toLowerCase(), text: smallUnit }
+        ];
+        return options.map(o => `<option value="${o.val}" ${o.val === selectedUom.toLowerCase() ? 'selected' : ''}>${o.text}</option>`).join('');
+    }
 
     if (selectedUom.startsWith('gram') || selectedUom === 'g') selectedUom = 'g';
     else if (selectedUom.startsWith('kilo') || selectedUom === 'kg') selectedUom = 'kg';
@@ -1827,7 +1989,7 @@ window.updateRecipeModalCosts = function() {
         
         const partId = parseInt(select.value);
         const qty = parseFloat(qtyInput.value) || 0;
-        const chosenUom = uomSelect.value;
+        const chosenUom = uomSelect.value.toLowerCase().trim();
         
         if (partId) {
             const product = allProducts.find(p => p.id === partId);
@@ -1836,7 +1998,23 @@ window.updateRecipeModalCosts = function() {
                 const baseCost = product.purchasePrice || 0;
                 let convertedCost = baseCost;
 
-                if (product.stockType === 'Pack') {
+                const bigUnit = (product.bigUnit || '').toLowerCase().trim();
+                const smallUnit = (product.smallUnit || '').toLowerCase().trim();
+
+                if (bigUnit && smallUnit) {
+                    const convVal = parseFloat(product.conversionValue) || 1.0;
+                    const packSz = parseFloat(product.packSize) || 1.0;
+
+                    if (chosenUom === 'pack') {
+                        convertedCost = baseCost;
+                    } else if (chosenUom === bigUnit) {
+                        convertedCost = baseCost / packSz;
+                    } else if (chosenUom === smallUnit) {
+                        convertedCost = (baseCost / packSz) / convVal;
+                    } else {
+                        convertedCost = baseCost;
+                    }
+                } else if (product.stockType === 'Pack') {
                     const packItems = product.packItemsNumber || 1;
                     const itemCost = baseCost / packItems;
                     if (chosenUom === 'pcs') {
@@ -1871,7 +2049,7 @@ window.updateRecipeModalCosts = function() {
                 const rowCost = convertedCost * qty;
                 totalCost += rowCost;
                 
-                if (unitCostSpan) unitCostSpan.textContent = `$${convertedCost.toFixed(2)}/${chosenUom}`;
+                if (unitCostSpan) unitCostSpan.textContent = `$${convertedCost.toFixed(3)}/${chosenUom}`;
                 if (totalCostSpan) totalCostSpan.textContent = `$${rowCost.toFixed(2)}`;
             }
         } else {
@@ -2004,15 +2182,32 @@ function parseImportFile(text, isTsv) {
     const separator = isTsv ? '\t' : ',';
     const headers = lines[0].split(separator).map(h => h.replace(/"/g, '').trim());
     
-    // Auto-detect schema
-    const nameIdx = headers.findIndex(h => h.toLowerCase().includes('name') || h.toLowerCase().includes('ingredient'));
-    const catIdx = headers.findIndex(h => h.toLowerCase().includes('category'));
-    const priceIdx = headers.findIndex(h => h.toLowerCase().includes('price') || h.toLowerCase().includes('unitprice'));
-    const stockIdx = headers.findIndex(h => h.toLowerCase().includes('stock') || h.toLowerCase().includes('qty') || h.toLowerCase().includes('quantity'));
-    const barcodeIdx = headers.findIndex(h => h.toLowerCase().includes('barcode'));
-    const skuIdx = headers.findIndex(h => h.toLowerCase().includes('sku') || h.toLowerCase().includes('partnumber'));
-    const descIdx = headers.findIndex(h => h.toLowerCase().includes('desc'));
-    const itemNoIdx = headers.findIndex(h => h.toLowerCase().includes('item no') || h.toLowerCase().includes('itemno') || h.toLowerCase().includes('no.'));
+    const findColIdx = (synonyms) => {
+        for (const syn of synonyms) {
+            const cleanSyn = syn.toLowerCase().replace(/[\s_-]/g, '');
+            const idx = headers.findIndex(h => {
+                const cleanHeader = h.toLowerCase().replace(/[\s_-]/g, '');
+                return cleanHeader === cleanSyn;
+            });
+            if (idx !== -1) return idx;
+        }
+        return -1;
+    };
+
+    const nameIdx = findColIdx(['ingredient name', 'ingredientname', 'ingredient', 'name', 'part name', 'partname']);
+    const catIdx = findColIdx(['category', 'category name', 'categoryname']);
+    const bigUnitIdx = findColIdx(['big unit', 'bigunit', 'big_unit', 'big uom']);
+    const smallUnitIdx = findColIdx(['small unit', 'smallunit', 'small_unit', 'small uom']);
+    const conversionIdx = findColIdx(['conversion value', 'conversionvalue', 'conversion', 'conversion_value', 'conversion factor']);
+    const packQtyIdx = findColIdx(['pack quantity', 'packquantity', 'pack size', 'packsize', 'pack_size']);
+    const packPriceIdx = findColIdx(['pack price', 'packprice', 'pack_price', 'purchase price', 'purchase_price', 'cost', 'pack cost']);
+    const priceIdx = findColIdx(['selling price', 'price', 'unit price', 'sellingprice', 'unitprice']);
+    const stockIdx = findColIdx(['current stock', 'stock', 'quantity', 'qty', 'quantity_in_stock', 'currentstock']);
+    const minStockIdx = findColIdx(['minimum stock', 'min stock', 'minimumstock', 'minstock', 'minimum_stock_level']);
+    const barcodeIdx = findColIdx(['barcode']);
+    const skuIdx = findColIdx(['sku', 'part number', 'partnumber', 'part_number']);
+    const descIdx = findColIdx(['description', 'desc', 'notes', 'note']);
+    const itemNoIdx = findColIdx(['item no', 'itemno', 'no.']);
 
     if (nameIdx === -1) {
         showToast("Invalid file format. 'Name' column is required.", "error");
@@ -2024,15 +2219,23 @@ function parseImportFile(text, isTsv) {
         const cols = lines[i].split(separator).map(c => c.replace(/"/g, '').trim());
         if (cols.length < headers.length) continue;
 
+        const pPrice = packPriceIdx !== -1 ? parseFloat(cols[packPriceIdx]) || 0.00 : (priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0.00 : 0.00);
+
         pendingImportItems.push({
             itemNo: itemNoIdx !== -1 ? cols[itemNoIdx] : '',
             name: cols[nameIdx] || '',
             category: catIdx !== -1 ? cols[catIdx] : 'General',
-            price: priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0.00 : 0.00,
-            stock: stockIdx !== -1 ? parseInt(cols[stockIdx]) || 0 : 0,
+            price: priceIdx !== -1 ? parseFloat(cols[priceIdx]) || pPrice : pPrice,
+            stock: stockIdx !== -1 ? parseFloat(cols[stockIdx]) || 0 : 0,
             barcode: barcodeIdx !== -1 ? cols[barcodeIdx] : '',
             sku: skuIdx !== -1 ? cols[skuIdx] : '',
-            description: descIdx !== -1 ? cols[descIdx] : ''
+            description: descIdx !== -1 ? cols[descIdx] : '',
+            bigUnit: bigUnitIdx !== -1 ? cols[bigUnitIdx] : '',
+            smallUnit: smallUnitIdx !== -1 ? cols[smallUnitIdx] : '',
+            conversionValue: conversionIdx !== -1 ? parseFloat(cols[conversionIdx]) || 1.0 : 1.0,
+            packSize: packQtyIdx !== -1 ? parseFloat(cols[packQtyIdx]) || 1.0 : 1.0,
+            packPrice: pPrice,
+            minStock: minStockIdx !== -1 ? parseInt(cols[minStockIdx]) || 5 : 5
         });
     }
 
@@ -2081,18 +2284,33 @@ async function confirmImport() {
 async function exportInventoryToCsv() {
     try {
         // Construct CSV Content
-        const headers = ["part_name", "category_name", "selling_price", "purchase_price", "quantity_in_stock", "minimum_stock_level", "barcode", "part_number", "description"];
-        const rows = allProducts.map(p => [
-            `"${p.name.replace(/"/g, '""')}"`,
-            `"${(p.category || 'General').replace(/"/g, '""')}"`,
-            p.price.toFixed(2),
-            (p.price * 0.7).toFixed(2), // mock purchase price
-            p.stock,
-            p.minStock || 5,
-            `"${(p.barcode || '').replace(/"/g, '""')}"`,
-            `"${(p.sku || '').replace(/"/g, '""')}"`,
-            `"${(p.description || '').replace(/"/g, '""')}"`
-        ]);
+        const headers = ["Ingredient Name", "Category", "Big Unit", "Small Unit", "Conversion Value", "Pack Quantity", "Pack Price", "Current Stock", "Minimum Stock", "Cost per Big Unit", "Cost per Small Unit", "SKU", "Barcode", "Item No"];
+        const rows = allProducts.map(p => {
+            const pSize = parseFloat(p.packSize) || 1.0;
+            const conv = parseFloat(p.conversionValue) || 1.0;
+            const pPrice = parseFloat(p.packPrice || p.purchasePrice || p.price || 0.00);
+            
+            const currentStockBigUnit = p.stock * pSize; // Convert stock packs back to Big Unit
+            const costPerBigUnit = pPrice / pSize;
+            const costPerSmallUnit = costPerBigUnit / conv;
+
+            return [
+                `"${p.name.replace(/"/g, '""')}"`,
+                `"${(p.category || 'General').replace(/"/g, '""')}"`,
+                `"${(p.bigUnit || '').replace(/"/g, '""')}"`,
+                `"${(p.smallUnit || '').replace(/"/g, '""')}"`,
+                conv,
+                pSize,
+                pPrice.toFixed(2),
+                currentStockBigUnit.toFixed(2).replace(/\.00$/, ''),
+                p.minStock || 5,
+                costPerBigUnit.toFixed(4),
+                costPerSmallUnit.toFixed(4),
+                `"${(p.sku || '').replace(/"/g, '""')}"`,
+                `"${(p.barcode || '').replace(/"/g, '""')}"`,
+                `"${(p.itemNo || '').replace(/"/g, '""')}"`
+            ];
+        });
 
         const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
         const filename = `inventory_${new Date().toISOString().slice(0,10)}.csv`;
@@ -2154,13 +2372,25 @@ function parseSalesImportFile(text, isTsv) {
     const separator = isTsv ? '\t' : ',';
     const headers = lines[0].split(separator).map(h => h.replace(/"/g, '').trim());
     
-    // Detect columns
-    const recipeIdx = headers.findIndex(h => h.toLowerCase().includes('recipe') || h.toLowerCase().includes('meal') || h.toLowerCase().includes('name') || h.toLowerCase().includes('description') || h.toLowerCase().includes('descreption'));
-    const qtyIdx = headers.findIndex(h => h.toLowerCase().includes('qty') || h.toLowerCase().includes('quantity') || h.toLowerCase().includes('sold') || h.toLowerCase().includes('count') || h.toLowerCase().includes('qsold'));
-    const itemNoIdx = headers.findIndex(h => h.toLowerCase().includes('item no') || h.toLowerCase().includes('itemno') || h.toLowerCase().includes('no.'));
+    const findColIdx = (synonyms) => {
+        for (const syn of synonyms) {
+            const cleanSyn = syn.toLowerCase().replace(/[\s_-]/g, '');
+            const idx = headers.findIndex(h => {
+                const cleanHeader = h.toLowerCase().replace(/[\s_-]/g, '');
+                return cleanHeader === cleanSyn;
+            });
+            if (idx !== -1) return idx;
+        }
+        return -1;
+    };
+
+    const itemNoIdx = findColIdx(['item no', 'itemno', 'no.']);
+    const recipeIdx = findColIdx(['recipe', 'recipe name', 'recipename', 'item', 'item name', 'itemname', 'meal', 'meal name', 'name', 'ingredient', 'ingredient name', 'description']);
+    const qtyIdx = findColIdx(['qty sold', 'qtysold', 'qty', 'quantity', 'sold', 'quantity sold', 'count', 'quantity_sold']);
+    const unitIdx = findColIdx(['unit', 'uom', 'unit of measure', 'unitofmeasure', 'unit of sale', 'unitofsale']);
 
     if (recipeIdx === -1 && itemNoIdx === -1) {
-        showToast("Invalid file format. 'Description' or 'Item No' column is required.", "error");
+        showToast("Invalid file format. 'Item Name' or 'Item No' column is required.", "error");
         return;
     }
     const finalQtyIdx = qtyIdx !== -1 ? qtyIdx : -1;
@@ -2173,12 +2403,14 @@ function parseSalesImportFile(text, isTsv) {
         const recipeName = recipeIdx !== -1 ? cols[recipeIdx] || '' : '';
         const qtySold = finalQtyIdx !== -1 ? parseInt(cols[finalQtyIdx]) || 1 : 1;
         const itemNo = itemNoIdx !== -1 ? cols[itemNoIdx] || '' : '';
+        const unit = unitIdx !== -1 ? cols[unitIdx] || 'pcs' : 'pcs';
 
         if (recipeName || itemNo) {
             pendingSalesItems.push({
                 itemNo,
                 recipeName,
-                qtySold
+                qtySold,
+                unitOfMeasure: unit
             });
         }
     }
@@ -2192,7 +2424,7 @@ function parseSalesImportFile(text, isTsv) {
     previewList.innerHTML = pendingSalesItems.map(item => `
         <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; display:flex; justify-content:space-between; align-items:center;">
             <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${item.itemNo ? '[' + item.itemNo + '] ' : ''}${item.recipeName || 'Unnamed Item'}</b>
-            <span style="color:var(--text-main); font-weight:700;">Qty: ${item.qtySold}</span>
+            <span style="color:var(--text-main); font-weight:700;">Qty: ${item.qtySold} ${item.unitOfMeasure || ''}</span>
         </div>
     `).join('');
 
@@ -2237,14 +2469,30 @@ async function confirmSalesImport() {
             const resultsList = document.getElementById('salesImportResultsList');
             if (lastSalesDeductionResults.length > 0) {
                 resultsList.innerHTML = lastSalesDeductionResults.map(d => {
+                    const partId = d.partId !== undefined ? d.partId : d.PartId;
                     const partName = d.partName || d.PartName || "";
                     const qtyDeducted = d.qtyDeducted !== undefined ? d.qtyDeducted : d.QtyDeducted;
                     const newStock = d.newStock !== undefined ? d.newStock : d.NewStock;
+
+                    const p = allProducts.find(x => x.id === partId);
+
+                    let qtyStr = "";
+                    let stockStr = "";
+                    if (p && p.bigUnit && p.packSize) {
+                        const qVal = qtyDeducted * p.packSize;
+                        const sVal = newStock * p.packSize;
+                        qtyStr = `-${qVal.toFixed(2).replace(/\.00$/, '')} ${p.bigUnit}`;
+                        stockStr = `Stock: ${sVal.toFixed(2).replace(/\.00$/, '')} ${p.bigUnit}`;
+                    } else {
+                        qtyStr = `-${qtyDeducted.toFixed(2).replace(/\.00$/, '')}`;
+                        stockStr = `Stock: ${newStock.toFixed(2).replace(/\.00$/, '')}`;
+                    }
+
                     return `
                         <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:6px 0; display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:10px;">
                             <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${partName}</b>
-                            <span style="color:var(--danger); text-align:right;">-${qtyDeducted}</span>
-                            <span style="color:${newStock <= 0 ? 'var(--danger)' : newStock < 5 ? 'var(--warn)' : 'var(--text-main)'}; text-align:right; font-weight:700;">Stock: ${newStock}</span>
+                            <span style="color:var(--danger); text-align:right;">${qtyStr}</span>
+                            <span style="color:${newStock <= 0 ? 'var(--danger)' : newStock < 5 ? 'var(--warn)' : 'var(--text-main)'}; text-align:right; font-weight:700;">${stockStr}</span>
                         </div>
                     `;
                 }).join('');
@@ -2270,17 +2518,34 @@ async function downloadSalesConsumptionReport() {
         return;
     }
     try {
-        const headers = ["Ingredient Name", "Quantity Deducted", "Previous Stock", "New Stock"];
+        const headers = ["Ingredient Name", "Quantity Deducted", "Previous Stock", "New Stock", "Unit"];
         const rows = lastSalesDeductionResults.map(d => {
+            const partId = d.partId !== undefined ? d.partId : d.PartId;
             const partName = d.partName || d.PartName || "";
             const qtyDeducted = d.qtyDeducted !== undefined ? d.qtyDeducted : d.QtyDeducted;
             const previousStock = d.previousStock !== undefined ? d.previousStock : d.PreviousStock;
             const newStock = d.newStock !== undefined ? d.newStock : d.NewStock;
+
+            const p = allProducts.find(x => x.id === partId);
+
+            let qVal = qtyDeducted;
+            let pVal = previousStock;
+            let nVal = newStock;
+            let unit = "packs";
+
+            if (p && p.bigUnit && p.packSize) {
+                qVal = qtyDeducted * p.packSize;
+                pVal = previousStock * p.packSize;
+                nVal = newStock * p.packSize;
+                unit = p.bigUnit;
+            }
+
             return [
                 `"${partName.replace(/"/g, '""')}"`,
-                qtyDeducted,
-                previousStock,
-                newStock
+                qVal.toFixed(4).replace(/\.?0+$/, ''),
+                pVal.toFixed(4).replace(/\.?0+$/, ''),
+                nVal.toFixed(4).replace(/\.?0+$/, ''),
+                `"${unit}"`
             ];
         });
 
@@ -2368,21 +2633,25 @@ async function loadReportsData() {
     } catch (e) { console.error("Failed to load reports", e); }
 }
 
-window.clearReportsData = async function() {
-    if (!confirm("Are you sure you want to clear all sales orders and activity logs to start a fresh daily report? This action cannot be undone.")) {
-        return;
-    }
-    try {
-        const res = await fetch(`${API_BASE}/api/clear-reports`, { method: 'POST' });
-        if (res.ok) {
-            showToast("Daily report cleared successfully!", "success");
-            await loadReportsData();
-        } else {
-            showToast("Failed to clear reports", "error");
-        }
-    } catch (e) {
-        showToast("Connection error", "error");
-    }
+window.clearReportsData = function() {
+    showDeleteConfirm(
+        "Clear Daily Report",
+        "Are you sure you want to clear all sales orders and activity logs to start a fresh daily report? This action cannot be undone.",
+        async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/clear-reports`, { method: 'POST' });
+                if (res.ok) {
+                    showToast("Daily report cleared successfully!", "success");
+                    await loadReportsData();
+                } else {
+                    showToast("Failed to clear reports", "error");
+                }
+            } catch (e) {
+                showToast("Connection error", "error");
+            }
+        },
+        "Clear"
+    );
 };
 
 
@@ -2454,16 +2723,21 @@ window.loadSalesTab = async function() {
     if (qtyInput) qtyInput.value = "1";
     const priceInput = document.getElementById('salesPriceInput');
     if (priceInput) priceInput.value = "0.00";
+    const uomGroup = document.getElementById('salesUomGroup');
+    if (uomGroup) uomGroup.style.display = 'none';
     calculateSalesTotal();
 };
 
 window.onSalesProductChange = function() {
     const select = document.getElementById('salesProductSelect');
     const priceInput = document.getElementById('salesPriceInput');
+    const uomGroup = document.getElementById('salesUomGroup');
+    const uomSelect = document.getElementById('salesUomSelect');
     if (!select || !priceInput) return;
 
     if (!select.value) {
         priceInput.value = "0.00";
+        if (uomGroup) uomGroup.style.display = 'none';
         calculateSalesTotal();
         return;
     }
@@ -2473,10 +2747,53 @@ window.onSalesProductChange = function() {
 
     if (type === 'prod') {
         const product = allProducts.find(p => p.id === itemId);
-        if (product) priceInput.value = product.price.toFixed(2);
+        if (product) {
+            priceInput.value = product.price.toFixed(2);
+            if (product.bigUnit && product.smallUnit && uomSelect && uomGroup) {
+                uomSelect.innerHTML = `
+                    <option value="pack">pack</option>
+                    <option value="${product.bigUnit.toLowerCase()}">${product.bigUnit}</option>
+                    <option value="${product.smallUnit.toLowerCase()}">${product.smallUnit}</option>
+                `;
+                uomGroup.style.display = 'block';
+            } else {
+                if (uomGroup) uomGroup.style.display = 'none';
+            }
+        }
     } else if (type === 'rec') {
         const recipe = allRecipes.find(r => r.id === itemId);
-        if (recipe) priceInput.value = recipe.price.toFixed(2);
+        if (recipe) {
+            priceInput.value = recipe.price.toFixed(2);
+        }
+        if (uomGroup) uomGroup.style.display = 'none';
+    }
+    calculateSalesTotal();
+};
+
+window.onSalesUomChange = function() {
+    const select = document.getElementById('salesProductSelect');
+    const uomSelect = document.getElementById('salesUomSelect');
+    const priceInput = document.getElementById('salesPriceInput');
+    if (!select || !uomSelect || !priceInput) return;
+
+    const [type, idStr] = select.value.split('-');
+    const itemId = parseInt(idStr);
+    if (type !== 'prod') return;
+
+    const product = allProducts.find(p => p.id === itemId);
+    if (!product) return;
+
+    const val = uomSelect.value;
+    const basePrice = product.price;
+    const convVal = parseFloat(product.conversionValue) || 1.0;
+    const packSz = parseFloat(product.packSize) || 1.0;
+
+    if (val === 'pack') {
+        priceInput.value = basePrice.toFixed(2);
+    } else if (val === product.bigUnit.toLowerCase()) {
+        priceInput.value = (basePrice / packSz).toFixed(4);
+    } else if (val === product.smallUnit.toLowerCase()) {
+        priceInput.value = ((basePrice / packSz) / convVal).toFixed(5);
     }
     calculateSalesTotal();
 };
@@ -2487,7 +2804,7 @@ window.calculateSalesTotal = function() {
     const totalDisplay = document.getElementById('salesTotalDisplay');
     if (!qtyInput || !priceInput || !totalDisplay) return;
 
-    const qty = parseInt(qtyInput.value) || 0;
+    const qty = parseFloat(qtyInput.value) || 0;
     const price = parseFloat(priceInput.value) || 0;
     const total = qty * price;
     totalDisplay.textContent = `$${total.toFixed(2)}`;
@@ -2499,7 +2816,7 @@ function renderSalesItemsTable(items) {
     tbody.innerHTML = '';
 
     if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No sales entries found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No sales entries found.</td></tr>';
         return;
     }
 
@@ -2509,7 +2826,7 @@ function renderSalesItemsTable(items) {
         
         tr.innerHTML = `
             <td style="padding:12px; border-bottom:1px solid var(--border); color:var(--text-main); font-weight:600;">${item.name}</td>
-            <td style="padding:12px; border-bottom:1px solid var(--border); text-align:right;">${item.qty}</td>
+            <td style="padding:12px; border-bottom:1px solid var(--border); text-align:right;">${item.qty} ${item.unitOfMeasure || ''}</td>
             <td style="padding:12px; border-bottom:1px solid var(--border); text-align:right;">$${item.price.toFixed(2)}</td>
             <td style="padding:12px; border-bottom:1px solid var(--border); text-align:right; font-weight:700; color:var(--accent);">$${item.total.toFixed(2)}</td>
             <td style="padding:12px; border-bottom:1px solid var(--border); text-align:center; color:var(--text-muted); font-size:0.85rem;">${formattedDate}</td>
@@ -2531,7 +2848,7 @@ window.submitSalesEntry = async function() {
 
     const [type, idStr] = select.value.split('-');
     const itemId = parseInt(idStr);
-    const qty = parseInt(qtyInput.value);
+    const qty = parseFloat(qtyInput.value);
     const price = parseFloat(priceInput.value);
 
     if (!qty || qty <= 0) {
@@ -2554,6 +2871,9 @@ window.submitSalesEntry = async function() {
             showToast(`Insufficient stock! Current stock: ${product.stock}`, "error");
             return;
         }
+
+        const uomSelect = document.getElementById('salesUomSelect');
+        const selectedUom = (product.bigUnit && product.smallUnit && uomSelect) ? uomSelect.value : (product.unitOfMeasure || 'pcs');
 
         payloadItem = {
             id: itemId,
@@ -2606,22 +2926,26 @@ window.submitSalesEntry = async function() {
     }
 };
 
-window.clearSalesHistory = async function() {
-    if (!confirm("Are you sure you want to clear all sales history and transaction logs? This action cannot be undone.")) {
-        return;
-    }
-    try {
-        const res = await fetch(`${API_BASE}/api/clear-reports`, { method: 'POST' });
-        if (res.ok) {
-            showToast("Sales history cleared successfully!", "success");
-            await fetchInventory();
-            await loadSalesTab();
-        } else {
-            showToast("Failed to clear sales history", "error");
-        }
-    } catch (e) {
-        showToast("Connection error", "error");
-    }
+window.clearSalesHistory = function() {
+    showDeleteConfirm(
+        "Clear Sales History",
+        "Are you sure you want to clear all sales history and transaction logs? This action cannot be undone.",
+        async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/clear-reports`, { method: 'POST' });
+                if (res.ok) {
+                    showToast("Sales history cleared successfully!", "success");
+                    await fetchInventory();
+                    await loadSalesTab();
+                } else {
+                    showToast("Failed to clear sales history", "error");
+                }
+            } catch (e) {
+                showToast("Connection error", "error");
+            }
+        },
+        "Clear"
+    );
 };
 
 // ─── STOCK MENU MANAGEMENT ───────────────────────────────────────────
@@ -2665,10 +2989,14 @@ window.loadStockTabList = function() {
         const tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
         
+        const unitToShow = p.bigUnit || p.unitOfMeasure || 'pcs';
+        const stockInBigUnit = (p.bigUnit && p.packSize) ? (p.stock * p.packSize) : p.stock;
+        const stockVal = stockInBigUnit.toFixed(2).replace(/\.00$/, '');
+
         tr.innerHTML = `
             <td class="col-qa-name" style="padding:12px; font-weight:600; text-align:left;">${p.name}</td>
-            <td class="col-qa-unit" style="padding:12px; text-align:center; color:var(--text-muted); font-size:0.85rem;">${p.unitOfMeasure || 'pcs'}</td>
-            <td class="col-qa-stock" style="padding:12px; text-align:center; font-weight:bold; color:${p.stock === 0 ? 'var(--danger)' : 'var(--accent)'}; font-size:1rem;">${p.stock}</td>
+            <td class="col-qa-unit" style="padding:12px; text-align:center; color:var(--text-muted); font-size:0.85rem;">${unitToShow}</td>
+            <td class="col-qa-stock" style="padding:12px; text-align:center; font-weight:bold; color:${p.stock === 0 ? 'var(--danger)' : 'var(--accent)'}; font-size:1rem;">${stockVal}</td>
             <td class="col-qa-adjust" style="padding:12px; text-align:center;">
                 <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
                     <button onclick="adjustStockItemWithInput(${p.id}, -1)" style="width:30px; height:30px; border-radius:6px; border:none; background:rgba(239, 68, 68, 0.2); color:#ef4444; font-weight:bold; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">-</button>
@@ -2694,7 +3022,12 @@ window.adjustStockItemWithInput = async function(productId, direction) {
         return;
     }
     const delta = direction * value;
-    await adjustStockItem(productId, delta);
+    
+    // Scale delta (Big Unit adjustment) to packs for database update
+    const p = allProducts.find(x => x.id === productId);
+    const dbChange = (p && p.bigUnit && p.packSize) ? (delta / p.packSize) : delta;
+    
+    await adjustStockItem(productId, dbChange);
 };
 
 window.adjustStockItem = async function(productId, delta) {

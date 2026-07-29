@@ -224,7 +224,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             {
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    var existing = _partsList.FirstOrDefault(p => p.PartId == dialog.SelectedPart.Id);
+                    var existing = _partsList.FirstOrDefault(p => p.PartId == dialog.SelectedPart.Id && p.UnitOfMeasure == dialog.SelectedUnitOfMeasure);
                     if (existing != null)
                     {
                         existing.Quantity += dialog.SelectedQuantity;
@@ -238,7 +238,12 @@ namespace Shaheen_InventoryManagement_Android.Forms
                             PartName = dialog.SelectedPart.PartName,
                             PartNumber = dialog.SelectedPart.PartNumber,
                             UnitCost = dialog.SelectedPart.PurchasePrice,
-                            Quantity = dialog.SelectedQuantity
+                            Quantity = dialog.SelectedQuantity,
+                            UnitOfMeasure = dialog.SelectedUnitOfMeasure,
+                            BigUnit = dialog.SelectedPart.BigUnit,
+                            SmallUnit = dialog.SelectedPart.SmallUnit,
+                            ConversionValue = dialog.SelectedPart.ConversionValue,
+                            PackSize = dialog.SelectedPart.PackSize
                         });
                     }
                     UpdateTotalCost();

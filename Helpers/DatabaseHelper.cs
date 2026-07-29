@@ -264,7 +264,11 @@ namespace Shaheen_InventoryManagement_Android
                         is_stock_tracked    INTEGER DEFAULT 1,
                         price2              REAL DEFAULT 0,
                         price3              REAL DEFAULT 0,
-                        price4              REAL DEFAULT 0
+                        price4              REAL DEFAULT 0,
+                        big_unit            TEXT,
+                        small_unit          TEXT,
+                        conversion_value    REAL DEFAULT 1,
+                        pack_size           REAL DEFAULT 1
                     );
 
                     CREATE TABLE IF NOT EXISTS transactions (
@@ -429,6 +433,7 @@ namespace Shaheen_InventoryManagement_Android
                 // Add recipe fields to order_items if missing
                 if (!ColumnExists("order_items", "item_type")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN item_type TEXT DEFAULT 'Part';");
                 if (!ColumnExists("order_items", "recipe_id")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN recipe_id INTEGER;");
+                if (!ColumnExists("order_items", "unit_of_measure")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN unit_of_measure TEXT;");
 
                  // Add category_id to recipes if missing
                 if (!ColumnExists("recipes", "category_id")) ExecuteNonQuery("ALTER TABLE recipes ADD COLUMN category_id INTEGER;");
@@ -443,6 +448,10 @@ namespace Shaheen_InventoryManagement_Android
                 if (!ColumnExists("parts", "pack_price")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN pack_price REAL DEFAULT 0;");
                 if (!ColumnExists("parts", "item_price")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN item_price REAL DEFAULT 0;");
                 if (!ColumnExists("parts", "piece_price")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN piece_price REAL DEFAULT 0;");
+                if (!ColumnExists("parts", "big_unit")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN big_unit TEXT;");
+                if (!ColumnExists("parts", "small_unit")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN small_unit TEXT;");
+                if (!ColumnExists("parts", "conversion_value")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN conversion_value REAL DEFAULT 1;");
+                if (!ColumnExists("parts", "pack_size")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN pack_size REAL DEFAULT 1;");
             }
             catch (Exception ex)
             {

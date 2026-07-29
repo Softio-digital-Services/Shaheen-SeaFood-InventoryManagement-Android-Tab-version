@@ -25,6 +25,7 @@
     <Compile Include="..\Helpers\LicenseStorage.cs" Link="Shared\Helpers\LicenseStorage.cs" />
     <Compile Include="..\Helpers\HardwareInfo.cs" Link="Shared\Helpers\HardwareInfo.cs" />
     <Compile Include="..\Helpers\Encryption.cs" Link="Shared\Helpers\Encryption.cs" />
+    <Compile Include="..\Helpers\IngredientCalculationEngine.cs" Link="Shared\Helpers\IngredientCalculationEngine.cs" />
     <Compile Include="..\Services\CurrencyService.cs" Link="Shared\Services\CurrencyService.cs" />
     <Compile Include="..\Services\ReturnService.cs" Link="Shared\Services\ReturnService.cs" />
     <Compile Include="..\Data\PartData.cs" Link="Shared\Data\PartData.cs" />

@@ -181,6 +181,7 @@ namespace Shaheen_InventoryManagement_Android
                             @"SELECT p.id, p.part_name, p.selling_price, p.quantity_in_stock,
                                      p.minimum_stock_level, p.barcode, p.part_number, p.part_image,
                                      p.description, p.stock_type, p.pack_items_number, p.pack_price, p.item_price, p.piece_price,
+                                     p.big_unit, p.small_unit, p.conversion_value, p.pack_size,
                                      COALESCE(c.category_name, 'General') AS category,
                                      c.category_image
                               FROM parts p
@@ -261,7 +262,11 @@ namespace Shaheen_InventoryManagement_Android
                                 packItemsNumber = row["pack_items_number"] != DBNull.Value ? Convert.ToInt32(row["pack_items_number"]) : 0,
                                 packPrice = row["pack_price"] != DBNull.Value ? Convert.ToDecimal(row["pack_price"]) : 0m,
                                 itemPrice = row["item_price"] != DBNull.Value ? Convert.ToDecimal(row["item_price"]) : 0m,
-                                piecePrice = row["piece_price"] != DBNull.Value ? Convert.ToDecimal(row["piece_price"]) : 0m
+                                piecePrice = row["piece_price"] != DBNull.Value ? Convert.ToDecimal(row["piece_price"]) : 0m,
+                                bigUnit = row["big_unit"] != DBNull.Value ? row["big_unit"].ToString() : "",
+                                smallUnit = row["small_unit"] != DBNull.Value ? row["small_unit"].ToString() : "",
+                                conversionValue = row["conversion_value"] != DBNull.Value ? Convert.ToDouble(row["conversion_value"]) : 1.0,
+                                packSize = row["pack_size"] != DBNull.Value ? Convert.ToDouble(row["pack_size"]) : 1.0
                             });
                         }
 
@@ -411,7 +416,11 @@ namespace Shaheen_InventoryManagement_Android
                                     pack_items_number = @pack_items_number,
                                     pack_price = @pack_price,
                                     item_price = @item_price,
-                                    piece_price = @piece_price
+                                    piece_price = @piece_price,
+                                    big_unit = @big_unit,
+                                    small_unit = @small_unit,
+                                    conversion_value = @conversion_value,
+                                    pack_size = @pack_size
                                 WHERE id = @id";
 
                             DatabaseHelper.ExecuteNonQuery(sql,
@@ -430,6 +439,10 @@ namespace Shaheen_InventoryManagement_Android
                                 new Microsoft.Data.Sqlite.SqliteParameter("@pack_price", body.PackPrice),
                                 new Microsoft.Data.Sqlite.SqliteParameter("@item_price", body.ItemPrice),
                                 new Microsoft.Data.Sqlite.SqliteParameter("@piece_price", body.PiecePrice),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@big_unit", body.BigUnit ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@small_unit", body.SmallUnit ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@conversion_value", body.ConversionValue),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@pack_size", body.PackSize),
                                 new Microsoft.Data.Sqlite.SqliteParameter("@id", body.Id.Value));
 
                             DatabaseHelper.LogTransaction("STOCK_EDIT", body.Name, $"Edited via WebPOS (New Qty: {body.Stock})");
@@ -451,9 +464,11 @@ namespace Shaheen_InventoryManagement_Android
 
                             string sql = @"
                                 INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, minimum_stock_level, barcode, status, item_no, unit_of_measure,
-                                                   stock_type, pack_items_number, pack_price, item_price, piece_price)
+                                                   stock_type, pack_items_number, pack_price, item_price, piece_price,
+                                                   big_unit, small_unit, conversion_value, pack_size)
                                 VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @min_stock, @barcode, 'Active', @itemNo, @uom,
-                                        @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price)";
+                                        @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price,
+                                        @big_unit, @small_unit, @conversion_value, @pack_size)";
 
                             DatabaseHelper.ExecuteNonQuery(sql,
                                 new Microsoft.Data.Sqlite.SqliteParameter("@name", body.Name),
@@ -470,7 +485,11 @@ namespace Shaheen_InventoryManagement_Android
                                 new Microsoft.Data.Sqlite.SqliteParameter("@pack_items_number", body.PackItemsNumber),
                                 new Microsoft.Data.Sqlite.SqliteParameter("@pack_price", body.PackPrice),
                                 new Microsoft.Data.Sqlite.SqliteParameter("@item_price", body.ItemPrice),
-                                new Microsoft.Data.Sqlite.SqliteParameter("@piece_price", body.PiecePrice));
+                                new Microsoft.Data.Sqlite.SqliteParameter("@piece_price", body.PiecePrice),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@big_unit", body.BigUnit ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@small_unit", body.SmallUnit ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@conversion_value", body.ConversionValue),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@pack_size", body.PackSize));
 
                             DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via WebPOS (Qty: {body.Stock})");
                             _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' added via Web POS");
@@ -480,6 +499,607 @@ namespace Shaheen_InventoryManagement_Android
                     catch (Exception ex)
                     {
                         return Microsoft.AspNetCore.Http.Results.Problem("Failed to add/update item: " + ex.Message);
+                    }
+                });
+
+                // - Bulk Import Items (POST) -
+                app.MapPost("/api/import-items", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<BulkImportPayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                        if (body == null || body.Items == null || body.Items.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest("No items to import");
+
+                        int imported = 0;
+                        int skipped = 0;
+
+                        foreach (var item in body.Items)
+                        {
+                            if (string.IsNullOrWhiteSpace(item.Name))
+                            {
+                                skipped++;
+                                continue;
+                            }
+
+                            // Check if name or barcode already exists to support updates
+                            int existingId = 0;
+                            double currentPacks = 0.0;
+                            if (!string.IsNullOrEmpty(item.Barcode))
+                            {
+                                using (var dt = DatabaseHelper.ExecuteDataTable("SELECT id, quantity_in_stock FROM parts WHERE barcode = @b AND date_deleted IS NULL",
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@b", item.Barcode.Trim())))
+                                {
+                                    if (dt.Rows.Count > 0)
+                                    {
+                                        existingId = Convert.ToInt32(dt.Rows[0]["id"]);
+                                        currentPacks = Convert.ToDouble(dt.Rows[0]["quantity_in_stock"]);
+                                    }
+                                }
+                            }
+                            if (existingId == 0 && !string.IsNullOrEmpty(item.Sku))
+                            {
+                                using (var dt = DatabaseHelper.ExecuteDataTable("SELECT id, quantity_in_stock FROM parts WHERE part_number = @s AND date_deleted IS NULL",
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@s", item.Sku.Trim())))
+                                {
+                                    if (dt.Rows.Count > 0)
+                                    {
+                                        existingId = Convert.ToInt32(dt.Rows[0]["id"]);
+                                        currentPacks = Convert.ToDouble(dt.Rows[0]["quantity_in_stock"]);
+                                    }
+                                }
+                            }
+                            if (existingId == 0 && !string.IsNullOrEmpty(item.Name))
+                            {
+                                using (var dt = DatabaseHelper.ExecuteDataTable("SELECT id, quantity_in_stock FROM parts WHERE LOWER(part_name) = LOWER(@n) AND date_deleted IS NULL",
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@n", item.Name.Trim())))
+                                {
+                                    if (dt.Rows.Count > 0)
+                                    {
+                                        existingId = Convert.ToInt32(dt.Rows[0]["id"]);
+                                        currentPacks = Convert.ToDouble(dt.Rows[0]["quantity_in_stock"]);
+                                    }
+                                }
+                            }
+
+                            string categoryName = (item.Category ?? "General").Trim();
+                            if (string.IsNullOrEmpty(categoryName)) categoryName = "General";
+
+                            int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c) AND date_deleted IS NULL",
+                                        new Microsoft.Data.Sqlite.SqliteParameter("@c", categoryName));
+                            if (catId == 0)
+                            {
+                                DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name) VALUES (@c)",
+                                            new Microsoft.Data.Sqlite.SqliteParameter("@c", categoryName));
+                                catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c) AND date_deleted IS NULL",
+                                            new Microsoft.Data.Sqlite.SqliteParameter("@c", categoryName));
+                            }
+                            if (catId == 0) catId = 1;
+
+                            // Calculate costs using our dynamic engine
+                            double pSize = item.PackSize > 0 ? item.PackSize : 1.0;
+                            double conv = item.ConversionValue > 0 ? item.ConversionValue : 1.0;
+                            decimal packPrice = item.PackPrice;
+                            if (packPrice == 0 && item.Price > 0) packPrice = item.Price; // fallback
+
+                            decimal itemCost = IngredientCalculationEngine.CalculateCostPerBigUnit(packPrice, pSize);
+                            decimal pieceCost = IngredientCalculationEngine.CalculateCostPerSmallUnit(packPrice, pSize, conv);
+
+                            // Convert current stock to packs
+                            double stockPacks = IngredientCalculationEngine.ConvertStockToPacks(item.Stock, pSize);
+
+                            if (existingId > 0)
+                            {
+                                // Update existing item
+                                string sqlUpdate = @"
+                                    UPDATE parts SET part_name = @name, part_number = @sku, category_id = @cat, purchase_price = @p_price, selling_price = @s_price,
+                                                     quantity_in_stock = @stock, barcode = @barcode, description = @desc, item_no = @itemNo,
+                                                     big_unit = @big, small_unit = @small, conversion_value = @conv, pack_size = @pack_size,
+                                                     pack_price = @pack_price, piece_price = @piece_price, item_price = @item_price, minimum_stock_level = @min
+                                    WHERE id = @id";
+
+                                DatabaseHelper.ExecuteNonQuery(sqlUpdate,
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@name", item.Name),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@sku", item.Sku ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@cat", catId),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@p_price", packPrice),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@s_price", item.Price),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@stock", stockPacks),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@barcode", item.Barcode ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@desc", item.Description ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@itemNo", item.ItemNo ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@big", item.BigUnit ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@small", item.SmallUnit ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@conv", conv),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@pack_size", pSize),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@pack_price", packPrice),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@piece_price", pieceCost),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@item_price", itemCost),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@min", item.MinStock > 0 ? item.MinStock : 5),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@id", existingId));
+                            }
+                            else
+                            {
+                                // Insert new item
+                                string sql = @"
+                                    INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status, description, item_no,
+                                                       big_unit, small_unit, conversion_value, pack_size, pack_price, piece_price, item_price, minimum_stock_level)
+                                    VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active', @desc, @itemNo,
+                                            @big, @small, @conv, @pack_size, @pack_price, @piece_price, @item_price, @min)";
+
+                                DatabaseHelper.ExecuteNonQuery(sql,
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@name", item.Name),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@sku", item.Sku ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@cat", catId),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@p_price", packPrice),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@s_price", item.Price),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@stock", stockPacks),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@barcode", item.Barcode ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@desc", item.Description ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@itemNo", item.ItemNo ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@big", item.BigUnit ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@small", item.SmallUnit ?? ""),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@conv", conv),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@pack_size", pSize),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@pack_price", packPrice),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@piece_price", pieceCost),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@item_price", itemCost),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@min", item.MinStock > 0 ? item.MinStock : 5));
+                            }
+
+                            imported++;
+                        }
+
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Imported {imported} items via Web POS");
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, imported, skipped });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem("Bulk import failed: " + ex.Message);
+                    }
+                });
+
+                // - Bulk Import Sales (POST) -
+                app.MapPost("/api/import-sales", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<DailySalesImportPayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                        if (body == null || body.Sales == null || body.Sales.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest("No sales data to process");
+
+                        int recipesProcessed = 0;
+                        int recipesSkipped = 0;
+                        var skippedRecipes = new List<string>();
+                        var ingredientDeductions = new List<IngredientDeductionResult>();
+
+                        using (var conn = new Microsoft.Data.Sqlite.SqliteConnection(DatabaseConfig.ConnectionString))
+                        {
+                            conn.Open();
+                            using (var transaction = conn.BeginTransaction())
+                            {
+                                var itemsForOrder = new List<Tuple<bool, int, double, decimal, string>>(); // <isRecipe, id, qty, price, uom>
+
+                                foreach (var sale in body.Sales)
+                                {
+                                    if (string.IsNullOrWhiteSpace(sale.RecipeName) || sale.QtySold <= 0)
+                                    {
+                                        recipesSkipped++;
+                                        continue;
+                                    }
+
+                                    int recipeId = 0;
+                                    string exactRecipeName = "";
+                                    decimal sellingPrice = 0;
+
+                                    // 1. Find recipe by Item No
+                                    if (!string.IsNullOrWhiteSpace(sale.ItemNo))
+                                    {
+                                        string sqlRecipeByNo = @"SELECT id, recipe_name, selling_price FROM recipes 
+                                                                 WHERE LOWER(item_no) = LOWER(@itemNo) AND date_deleted IS NULL";
+                                        using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlRecipeByNo, conn, transaction))
+                                        {
+                                            cmd.Parameters.AddWithValue("@itemNo", sale.ItemNo.Trim());
+                                            using (var reader = cmd.ExecuteReader())
+                                            {
+                                                if (reader.Read())
+                                                {
+                                                    recipeId = Convert.ToInt32(reader["id"]);
+                                                    exactRecipeName = reader["recipe_name"].ToString();
+                                                    sellingPrice = Convert.ToDecimal(reader["selling_price"]);
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // 2. Find recipe by name
+                                    if (recipeId == 0 && !string.IsNullOrWhiteSpace(sale.RecipeName))
+                                    {
+                                        string sqlRecipe = @"SELECT id, recipe_name, selling_price FROM recipes 
+                                                             WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(recipe_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
+                                                                   REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
+                                                               AND date_deleted IS NULL";
+                                        using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlRecipe, conn, transaction))
+                                        {
+                                            cmd.Parameters.AddWithValue("@name", sale.RecipeName.Trim());
+                                            using (var reader = cmd.ExecuteReader())
+                                            {
+                                                if (reader.Read())
+                                                {
+                                                    recipeId = Convert.ToInt32(reader["id"]);
+                                                    exactRecipeName = reader["recipe_name"].ToString();
+                                                    sellingPrice = Convert.ToDecimal(reader["selling_price"]);
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (recipeId == 0)
+                                    {
+                                        int partId = 0;
+                                        string exactPartName = "";
+                                        decimal partSellingPrice = 0;
+                                        double currentPartStock = 0;
+                                        
+                                        // Unit parameters
+                                        string partUom = "";
+                                        string stockType = "";
+                                        int packItems = 1;
+                                        string bigUnit = "";
+                                        string smallUnit = "";
+                                        double convVal = 1.0;
+                                        double packSize = 1.0;
+                                        decimal packPrice = 0;
+
+                                        // Fallback A: Search parts directly by Item No
+                                        if (!string.IsNullOrWhiteSpace(sale.ItemNo))
+                                        {
+                                            string sqlPartByNo = @"SELECT id, part_name, selling_price, quantity_in_stock, unit_of_measure, stock_type, pack_items_number,
+                                                                          big_unit, small_unit, conversion_value, pack_size, purchase_price FROM parts 
+                                                                   WHERE LOWER(item_no) = LOWER(@itemNo) AND date_deleted IS NULL";
+                                            using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlPartByNo, conn, transaction))
+                                            {
+                                                cmd.Parameters.AddWithValue("@itemNo", sale.ItemNo.Trim());
+                                                using (var reader = cmd.ExecuteReader())
+                                                {
+                                                    if (reader.Read())
+                                                    {
+                                                        partId = Convert.ToInt32(reader["id"]);
+                                                        exactPartName = reader["part_name"].ToString();
+                                                        partSellingPrice = Convert.ToDecimal(reader["selling_price"]);
+                                                        currentPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
+                                                        
+                                                        partUom = reader["unit_of_measure"]?.ToString() ?? "";
+                                                        stockType = reader["stock_type"]?.ToString() ?? "Piece";
+                                                        packItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1;
+                                                        bigUnit = reader["big_unit"]?.ToString() ?? "";
+                                                        smallUnit = reader["small_unit"]?.ToString() ?? "";
+                                                        convVal = reader["conversion_value"] != DBNull.Value ? Convert.ToDouble(reader["conversion_value"]) : 1.0;
+                                                        packSize = reader["pack_size"] != DBNull.Value ? Convert.ToDouble(reader["pack_size"]) : 1.0;
+                                                        packPrice = reader["purchase_price"] != DBNull.Value ? Convert.ToDecimal(reader["purchase_price"]) : 0m;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // Fallback B: Search parts directly by name
+                                        if (partId == 0 && !string.IsNullOrWhiteSpace(sale.RecipeName))
+                                        {
+                                            string sqlPartDirect = @"SELECT id, part_name, selling_price, quantity_in_stock, unit_of_measure, stock_type, pack_items_number,
+                                                                            big_unit, small_unit, conversion_value, pack_size, purchase_price FROM parts 
+                                                                     WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(part_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
+                                                                           REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
+                                                                       AND date_deleted IS NULL";
+                                            using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlPartDirect, conn, transaction))
+                                            {
+                                                cmd.Parameters.AddWithValue("@name", sale.RecipeName.Trim());
+                                                using (var reader = cmd.ExecuteReader())
+                                                {
+                                                    if (reader.Read())
+                                                    {
+                                                        partId = Convert.ToInt32(reader["id"]);
+                                                        exactPartName = reader["part_name"].ToString();
+                                                        partSellingPrice = Convert.ToDecimal(reader["selling_price"]);
+                                                        currentPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
+                                                        
+                                                        partUom = reader["unit_of_measure"]?.ToString() ?? "";
+                                                        stockType = reader["stock_type"]?.ToString() ?? "Piece";
+                                                        packItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1;
+                                                        bigUnit = reader["big_unit"]?.ToString() ?? "";
+                                                        smallUnit = reader["small_unit"]?.ToString() ?? "";
+                                                        convVal = reader["conversion_value"] != DBNull.Value ? Convert.ToDouble(reader["conversion_value"]) : 1.0;
+                                                        packSize = reader["pack_size"] != DBNull.Value ? Convert.ToDouble(reader["pack_size"]) : 1.0;
+                                                        packPrice = reader["purchase_price"] != DBNull.Value ? Convert.ToDecimal(reader["purchase_price"]) : 0m;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (partId == 0)
+                                        {
+                                            recipesSkipped++;
+                                            string missingName = !string.IsNullOrWhiteSpace(sale.RecipeName) ? sale.RecipeName.Trim() : (!string.IsNullOrWhiteSpace(sale.ItemNo) ? "Item No " + sale.ItemNo : "Unknown");
+                                            if (!skippedRecipes.Contains(missingName))
+                                                skippedRecipes.Add(missingName);
+                                            continue;
+                                        }
+
+                                        // Convert the quantity using the new unit conversion logic
+                                        double totalDeduct = Data.RecipePartData.GetConvertedQuantityDynamic(
+                                            sale.QtySold, sale.UnitOfMeasure, partUom, stockType, packItems, bigUnit, smallUnit, convVal, packSize);
+                                        
+                                        // Calculate the cost dynamically based on the unit of sale
+                                        decimal calculatedCost = IngredientCalculationEngine.CalculatedUnitCost(
+                                            packPrice, sale.UnitOfMeasure, bigUnit, smallUnit, convVal, packSize, stockType, packItems, partUom) * (decimal)sale.QtySold;
+
+                                        if (totalDeduct > 0)
+                                        {
+                                            var existingDeduction = ingredientDeductions.FirstOrDefault(d => d.PartId == partId);
+                                            double currentStockInDb = currentPartStock;
+                                            if (existingDeduction != null)
+                                            {
+                                                currentStockInDb = existingDeduction.NewStock;
+                                            }
+
+                                            double newStock = Math.Max(0, currentStockInDb - totalDeduct);
+
+                                            // Update parts table
+                                            string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
+                                            using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlUpdatePart, conn, transaction))
+                                            {
+                                                cmd.Parameters.AddWithValue("@newStock", newStock);
+                                                cmd.Parameters.AddWithValue("@partId", partId);
+                                                cmd.ExecuteNonQuery();
+                                            }
+
+                                            // Record transaction
+                                            string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
+                                                                  VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
+                                            string txDesc = $"Deducted {totalDeduct:0.##} via sales import ({exactPartName} x{sale.QtySold})";
+                                            using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlInsertTx, conn, transaction))
+                                            {
+                                                cmd.Parameters.AddWithValue("@partName", exactPartName);
+                                                cmd.Parameters.AddWithValue("@desc", txDesc);
+                                                cmd.ExecuteNonQuery();
+                                            }
+
+                                            if (existingDeduction != null)
+                                            {
+                                                existingDeduction.QtyDeducted += totalDeduct;
+                                                existingDeduction.NewStock = newStock;
+                                            }
+                                            else
+                                            {
+                                                ingredientDeductions.Add(new IngredientDeductionResult
+                                                {
+                                                    PartId = partId,
+                                                    PartName = exactPartName,
+                                                    QtyDeducted = totalDeduct,
+                                                    PreviousStock = currentPartStock,
+                                                    NewStock = newStock
+                                                });
+                                            }
+                                        }
+
+                                        recipesProcessed++;
+                                        itemsForOrder.Add(Tuple.Create(false, partId, (double)sale.QtySold, calculatedCost, sale.UnitOfMeasure));
+                                        continue;
+                                    }
+
+                                    // 2. Recipe case: find its ingredients
+                                    string sqlParts = @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure as recipe_uom, p.part_name, p.quantity_in_stock, p.unit_of_measure as part_uom, p.stock_type, p.pack_items_number,
+                                                               p.big_unit, p.small_unit, p.conversion_value, p.pack_size
+                                                        FROM recipe_parts rp
+                                                        JOIN parts p ON rp.part_id = p.id
+                                                        WHERE rp.recipe_id = @recipeId AND p.date_deleted IS NULL";
+                                    var partsToDeduct = new List<RecipePartDeduction>();
+                                    using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlParts, conn, transaction))
+                                    {
+                                        cmd.Parameters.AddWithValue("@recipeId", recipeId);
+                                        using (var reader = cmd.ExecuteReader())
+                                        {
+                                            while (reader.Read())
+                                            {
+                                                partsToDeduct.Add(new RecipePartDeduction
+                                                {
+                                                    PartId = Convert.ToInt32(reader["part_id"]),
+                                                    PartName = reader["part_name"].ToString(),
+                                                    QtyPerRecipe = Convert.ToDouble(reader["quantity"]),
+                                                    CurrentStock = Convert.ToDouble(reader["quantity_in_stock"]),
+                                                    RecipeUom = reader["recipe_uom"]?.ToString(),
+                                                    PartUom = reader["part_uom"]?.ToString(),
+                                                    StockType = reader["stock_type"]?.ToString(),
+                                                    PackItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1,
+                                                    BigUnit = reader["big_unit"]?.ToString() ?? "",
+                                                    SmallUnit = reader["small_unit"]?.ToString() ?? "",
+                                                    ConversionValue = reader["conversion_value"] != DBNull.Value ? Convert.ToDouble(reader["conversion_value"]) : 1.0,
+                                                    PackSize = reader["pack_size"] != DBNull.Value ? Convert.ToDouble(reader["pack_size"]) : 1.0
+                                                });
+                                            }
+                                        }
+                                    }
+
+                                    // Deduct ingredients
+                                    foreach (var p in partsToDeduct)
+                                    {
+                                        double qtyPerRecipeConverted = Data.RecipePartData.GetConvertedQuantityDynamic(
+                                            p.QtyPerRecipe, p.RecipeUom, p.PartUom, p.StockType, p.PackItems, p.BigUnit, p.SmallUnit, p.ConversionValue, p.PackSize);
+                                        double totalDeduct = qtyPerRecipeConverted * (double)sale.QtySold;
+                                        if (totalDeduct <= 0) continue;
+
+                                        var existingDeduction = ingredientDeductions.FirstOrDefault(d => d.PartId == p.PartId);
+                                        double currentStockInDb = p.CurrentStock;
+                                        if (existingDeduction != null)
+                                        {
+                                            currentStockInDb = existingDeduction.NewStock;
+                                        }
+
+                                        double newStock = Math.Max(0, currentStockInDb - totalDeduct);
+
+                                        // Update database
+                                        string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
+                                        using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlUpdatePart, conn, transaction))
+                                        {
+                                            cmd.Parameters.AddWithValue("@newStock", newStock);
+                                            cmd.Parameters.AddWithValue("@partId", p.PartId);
+                                            cmd.ExecuteNonQuery();
+                                        }
+
+                                        // Record transaction
+                                        string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
+                                                              VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
+                                        string txDesc = $"Deducted {totalDeduct:0.##} via sales import ({exactRecipeName} x{sale.QtySold})";
+                                        using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlInsertTx, conn, transaction))
+                                        {
+                                            cmd.Parameters.AddWithValue("@partName", p.PartName);
+                                            cmd.Parameters.AddWithValue("@desc", txDesc);
+                                            cmd.ExecuteNonQuery();
+                                        }
+
+                                        if (existingDeduction != null)
+                                        {
+                                            existingDeduction.QtyDeducted += totalDeduct;
+                                            existingDeduction.NewStock = newStock;
+                                        }
+                                        else
+                                        {
+                                            ingredientDeductions.Add(new IngredientDeductionResult
+                                            {
+                                                PartId = p.PartId,
+                                                PartName = p.PartName,
+                                                QtyDeducted = totalDeduct,
+                                                PreviousStock = p.CurrentStock,
+                                                NewStock = newStock
+                                            });
+                                        }
+                                    }
+
+                                    recipesProcessed++;
+                                    itemsForOrder.Add(Tuple.Create(true, recipeId, (double)sale.QtySold, sellingPrice, "pack"));
+                                }
+
+                                if (itemsForOrder.Count > 0)
+                                {
+                                    decimal totalOrderAmount = 0;
+                                    foreach (var item in itemsForOrder)
+                                    {
+                                        totalOrderAmount += item.Item4; // Item4 is already total price (qty * price) for parts or sellingPrice for recipe
+                                    }
+
+                                    string sqlInsertOrder = @"INSERT INTO orders (order_date, total_amount, payment_status, amount_paid, status) 
+                                                              VALUES (datetime('now'), @total, 'Paid', @paid, 'Completed');
+                                                              SELECT last_insert_rowid();";
+                                    long orderId = 0;
+                                    using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlInsertOrder, conn, transaction))
+                                    {
+                                        cmd.Parameters.AddWithValue("@total", totalOrderAmount);
+                                        cmd.Parameters.AddWithValue("@paid", totalOrderAmount);
+                                        orderId = (long)cmd.ExecuteScalar();
+                                    }
+
+                                    foreach (var item in itemsForOrder)
+                                    {
+                                        bool isRecipe = item.Item1;
+                                        int itemId = item.Item2;
+                                        double qty = item.Item3;
+                                        decimal price = item.Item4;
+                                        string uom = item.Item5;
+
+                                        // If part, price is total cost, so unit price = price / qty
+                                        decimal unitPrice = isRecipe ? price : (qty > 0 ? price / (decimal)qty : price);
+
+                                        string sqlInsertItem = isRecipe 
+                                            ? @"INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id, unit_of_measure) 
+                                                VALUES (@orderId, 0, @qty, @price, 'Recipe', @recipeId, @uom)"
+                                            : @"INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id, unit_of_measure) 
+                                                VALUES (@orderId, @partId, @qty, @price, 'Part', NULL, @uom)";
+                                        using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlInsertItem, conn, transaction))
+                                        {
+                                            cmd.Parameters.AddWithValue("@orderId", orderId);
+                                            cmd.Parameters.AddWithValue("@qty", qty);
+                                            cmd.Parameters.AddWithValue("@price", unitPrice);
+                                            cmd.Parameters.AddWithValue("@uom", uom ?? "pack");
+                                            if (isRecipe)
+                                            {
+                                                cmd.Parameters.AddWithValue("@recipeId", itemId);
+                                            }
+                                            else
+                                            {
+                                                cmd.Parameters.AddWithValue("@partId", itemId);
+                                            }
+                                            cmd.ExecuteNonQuery();
+                                        }
+                                    }
+
+                                    string sqlInsertTxOrder = @"INSERT INTO transactions (action_type, part_name, description, username) 
+                                                                VALUES ('SALE', @partName, @desc, 'Admin')";
+                                    string orderDesc = $"Order #{orderId} placed via daily sales import -- Total: {totalOrderAmount:C}";
+                                    using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlInsertTxOrder, conn, transaction))
+                                    {
+                                        cmd.Parameters.AddWithValue("@partName", "POS Sale");
+                                        cmd.Parameters.AddWithValue("@desc", orderDesc);
+                                        cmd.ExecuteNonQuery();
+                                    }
+                                }
+
+                                transaction.Commit();
+                            }
+                        }
+
+                        // Broadcast inventory update
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Daily sales imported ({recipesProcessed} processed)");
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            success = true,
+                            processed = recipesProcessed,
+                            skipped = recipesSkipped,
+                            skippedNames = skippedRecipes,
+                            deductions = ingredientDeductions
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem("Import sales failed: " + ex.Message);
+                    }
+                });
+
+                // - Export CSV (POST) -
+                app.MapPost("/api/export-csv", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<ExportCsvPayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                        if (body == null || string.IsNullOrEmpty(body.CsvContent))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest("No content to export");
+
+                        string filename = string.IsNullOrEmpty(body.Filename) ? $"inventory_{DateTime.Now:yyyyMMdd_HHmmss}.csv" : body.Filename;
+
+                        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                        string downloadsDir = System.IO.Path.Combine(userProfile, "Downloads");
+                        if (!System.IO.Directory.Exists(downloadsDir))
+                        {
+                            System.IO.Directory.CreateDirectory(downloadsDir);
+                        }
+
+                        string filePath = System.IO.Path.Combine(downloadsDir, filename);
+                        System.IO.File.WriteAllText(filePath, body.CsvContent, System.Text.Encoding.UTF8);
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, path = filePath });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem("Failed to export CSV: " + ex.Message);
                     }
                 });
 
@@ -560,46 +1180,26 @@ namespace Shaheen_InventoryManagement_Android
                             return Microsoft.AspNetCore.Http.Results.BadRequest("Empty cart");
 
                         decimal total = 0;
-                        foreach (var item in body.Items) total += item.Price * item.Qty;
-
-                        // SQLite: insert order then get its rowid separately
-                        DatabaseHelper.ExecuteNonQuery(
-                            "INSERT INTO orders (order_date, customer_id, total_amount, status, payment_status, payment_method) " +
-                            "VALUES (datetime('now'), NULL, @total, 'Completed', 'Paid', 'WebPOS')",
-                            new Microsoft.Data.Sqlite.SqliteParameter("@total", total));
-                        long orderId = DatabaseHelper.ExecuteScalar<long>("SELECT last_insert_rowid()");
-
+                        var orderItems = new List<OrderItem>();
                         foreach (var item in body.Items)
                         {
+                            total += item.Price * item.Qty;
                             bool isRecipe = item.ItemType == "Recipe" || (item.RecipeId.HasValue && item.RecipeId.Value > 0);
-                            int partId = isRecipe ? 0 : item.Id;
-                            int? recipeId = isRecipe ? (item.RecipeId ?? item.Id) : (int?)null;
-                            string itemType = isRecipe ? "Recipe" : "Part";
-
-                            DatabaseHelper.ExecuteNonQuery(
-                                "INSERT INTO order_items (order_id, part_id, quantity, price, item_type, recipe_id) VALUES (@oid, @pid, @qty, @price, @type, @rid)",
-                                new Microsoft.Data.Sqlite.SqliteParameter("@oid", orderId),
-                                new Microsoft.Data.Sqlite.SqliteParameter("@pid", partId),
-                                new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
-                                new Microsoft.Data.Sqlite.SqliteParameter("@price", item.Price),
-                                new Microsoft.Data.Sqlite.SqliteParameter("@type", itemType),
-                                new Microsoft.Data.Sqlite.SqliteParameter("@rid", (object)recipeId ?? DBNull.Value));
-
-                            if (!isRecipe && item.Id > 0)
+                            orderItems.Add(new OrderItem
                             {
-                                 DatabaseHelper.ExecuteNonQuery(
-                                     "UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock - @qty < 0 THEN 0 ELSE quantity_in_stock - @qty END WHERE id = @pid",
-                                     new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
-                                     new Microsoft.Data.Sqlite.SqliteParameter("@pid", item.Id));
-                            }
+                                PartId = isRecipe ? 0 : item.Id,
+                                RecipeId = isRecipe ? (item.RecipeId ?? item.Id) : (int?)null,
+                                ItemType = isRecipe ? "Recipe" : "Part",
+                                Quantity = item.Qty,
+                                UnitPrice = item.Price,
+                                UnitOfMeasure = item.UnitOfMeasure ?? "pack"
+                            });
                         }
 
-                        DatabaseHelper.ExecuteNonQuery(
-                            "INSERT INTO transactions (action_type, part_name, description, username) VALUES ('SALE', 'POS Sale', @desc, 'WebPOS')",
-                            new Microsoft.Data.Sqlite.SqliteParameter("@desc", $"Order #{orderId} -- Total: {total:C}"));
+                        var orderService = new OrderService();
+                        int orderId = orderService.PlaceOrder(-1, orderItems, total, true, "Completed");
 
-                        // - Broadcast real-time update to ALL connected clients -
-                        _ = InventoryBroadcaster.Broadcast("SaleCompleted", $"Order #{orderId} - Total: {total:F2}");
+                        DatabaseHelper.LogTransaction("SALE", "POS Sale", $"Order #{orderId} -- Total: {total:C}");
 
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, orderId, total });
                     }
@@ -789,12 +1389,16 @@ namespace Shaheen_InventoryManagement_Android
             public decimal ItemPrice { get; set; }
             public decimal PiecePrice { get; set; }
             public int MinStock { get; set; }
+            public string BigUnit { get; set; }
+            public string SmallUnit { get; set; }
+            public double ConversionValue { get; set; }
+            public double PackSize { get; set; }
         }
 
         private class AdjustStockPayload
         {
             public int PartId { get; set; }
-            public int Change { get; set; }
+            public double Change { get; set; }
             public string Reason { get; set; }
         }
 
@@ -810,6 +1414,7 @@ namespace Shaheen_InventoryManagement_Android
             public int Qty { get; set; }
             public string ItemType { get; set; }
             public int? RecipeId { get; set; }
+            public string UnitOfMeasure { get; set; }
         }
 
         private class ReturnPayload
@@ -823,6 +1428,73 @@ namespace Shaheen_InventoryManagement_Android
             public int PartId { get; set; }
             public int Qty { get; set; }
             public decimal RefundAmount { get; set; }
+        }
+
+        private class BulkImportPayload
+        {
+            public System.Collections.Generic.List<ImportItemDetail> Items { get; set; }
+        }
+
+        private class ImportItemDetail
+        {
+            public string Name { get; set; }
+            public string Category { get; set; }
+            public decimal Price { get; set; }
+            public double Stock { get; set; }
+            public string Barcode { get; set; }
+            public string Sku { get; set; }
+            public string Description { get; set; }
+            public string ItemNo { get; set; }
+            public string BigUnit { get; set; }
+            public string SmallUnit { get; set; }
+            public double ConversionValue { get; set; }
+            public double PackSize { get; set; }
+            public decimal PackPrice { get; set; }
+            public int MinStock { get; set; }
+        }
+
+        private class DailySalesImportPayload
+        {
+            public System.Collections.Generic.List<DailySaleDetail> Sales { get; set; }
+        }
+
+        private class DailySaleDetail
+        {
+            public string ItemNo { get; set; }
+            public string RecipeName { get; set; }
+            public int QtySold { get; set; }
+            public string UnitOfMeasure { get; set; }
+        }
+
+        private class ExportCsvPayload
+        {
+            public string Filename { get; set; }
+            public string CsvContent { get; set; }
+        }
+
+        private class RecipePartDeduction
+        {
+            public int PartId { get; set; }
+            public string PartName { get; set; }
+            public double QtyPerRecipe { get; set; }
+            public double CurrentStock { get; set; }
+            public string RecipeUom { get; set; }
+            public string PartUom { get; set; }
+            public string StockType { get; set; }
+            public int PackItems { get; set; }
+            public string BigUnit { get; set; }
+            public string SmallUnit { get; set; }
+            public double ConversionValue { get; set; }
+            public double PackSize { get; set; }
+        }
+
+        private class IngredientDeductionResult
+        {
+            public int PartId { get; set; }
+            public string PartName { get; set; }
+            public double QtyDeducted { get; set; }
+            public double PreviousStock { get; set; }
+            public double NewStock { get; set; }
         }
 
         private static void CheckCurrentLicense()

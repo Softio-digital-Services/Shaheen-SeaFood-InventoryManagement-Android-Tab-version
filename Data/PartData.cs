@@ -16,7 +16,7 @@ namespace Shaheen_InventoryManagement_Android.Data
         public string SupplierName { get; set; }
         public decimal PurchasePrice { get; set; }
         public decimal SellingPrice { get; set; }
-        public int QuantityInStock { get; set; }
+        public double QuantityInStock { get; set; }
         public int MinimumStockLevel { get; set; }
         public int ReorderQuantity { get; set; }
         public string Location { get; set; }
@@ -45,6 +45,10 @@ namespace Shaheen_InventoryManagement_Android.Data
         public decimal PackPrice { get; set; } = 0;
         public decimal ItemPrice { get; set; } = 0;
         public decimal PiecePrice { get; set; } = 0;
+        public string BigUnit { get; set; }
+        public string SmallUnit { get; set; }
+        public double ConversionValue { get; set; } = 1.0;
+        public double PackSize { get; set; } = 1.0;
 
         public static List<PartData> GetAllParts(string categoryName = null, int limit = 0, int offset = 0)
         {
@@ -143,7 +147,7 @@ namespace Shaheen_InventoryManagement_Android.Data
                 SupplierName = Safe<string>(r, "supplier_name", ""),
                 PurchasePrice = Safe<decimal>(r, "purchase_price", 0),
                 SellingPrice = Safe<decimal>(r, "selling_price", 0),
-                QuantityInStock = Safe<int>(r, "quantity_in_stock", 0),
+                QuantityInStock = Safe<double>(r, "quantity_in_stock", 0.0),
                 MinimumStockLevel = Safe<int>(r, "minimum_stock_level", 0),
                 ReorderQuantity = Safe<int>(r, "reorder_quantity", 0),
                 Location = Safe<string>(r, "location", ""),
@@ -168,7 +172,11 @@ namespace Shaheen_InventoryManagement_Android.Data
                 PackItemsNumber = Safe<int>(r, "pack_items_number", 0),
                 PackPrice = Safe<decimal>(r, "pack_price", 0),
                 ItemPrice = Safe<decimal>(r, "item_price", 0),
-                PiecePrice = Safe<decimal>(r, "piece_price", 0)
+                PiecePrice = Safe<decimal>(r, "piece_price", 0),
+                BigUnit = Safe<string>(r, "big_unit", ""),
+                SmallUnit = Safe<string>(r, "small_unit", ""),
+                ConversionValue = Safe<double>(r, "conversion_value", 1.0),
+                PackSize = Safe<double>(r, "pack_size", 1.0)
             };
         }
     }

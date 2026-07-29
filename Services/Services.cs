@@ -17,7 +17,8 @@ namespace Shaheen_InventoryManagement_Android.Services
                            p.minimum_stock_level, p.reorder_quantity, p.location, p.barcode, p.shelf,
                            p.item_type, p.unit_of_measure, p.batch_number, p.expiry_date,
                            p.is_sales_item, p.is_purchase_item, p.is_inactive, p.tax_rate,
-                           p.is_stock_tracked, p.price2, p.price3, p.price4, p.item_no
+                           p.is_stock_tracked, p.price2, p.price3, p.price4, p.item_no,
+                           p.big_unit, p.small_unit, p.conversion_value, p.pack_size, p.pack_price, p.piece_price, p.item_price
                            FROM parts p
                            LEFT JOIN categories c ON p.category_id = c.id
                            LEFT JOIN suppliers s ON p.supplier_id = s.id
@@ -126,6 +127,20 @@ namespace Shaheen_InventoryManagement_Android.Services
 
         public void SaveProductService(Shaheen_InventoryManagement_Android.Data.PartData p)
         {
+            // Auto-calculate unit costs
+            if (!string.IsNullOrEmpty(p.BigUnit) && !string.IsNullOrEmpty(p.SmallUnit))
+            {
+                p.PackPrice = p.PurchasePrice;
+                p.ItemPrice = Helpers.IngredientCalculationEngine.CalculateCostPerBigUnit(p.PurchasePrice, p.PackSize);
+                p.PiecePrice = Helpers.IngredientCalculationEngine.CalculateCostPerSmallUnit(p.PurchasePrice, p.PackSize, p.ConversionValue);
+            }
+            else
+            {
+                p.PackPrice = p.PurchasePrice;
+                p.ItemPrice = p.PurchasePrice;
+                p.PiecePrice = p.PurchasePrice;
+            }
+
             int categoryId = GetCategoryId(p.CategoryName);
             bool isNew = p.Id == 0;
 
@@ -134,10 +149,12 @@ namespace Shaheen_InventoryManagement_Android.Services
             {
                 sql = @"INSERT INTO parts (part_name, part_number, description, category_id, supplier_id, purchase_price, selling_price, quantity_in_stock, minimum_stock_level, reorder_quantity, location, shelf, part_image, barcode, status, date_added,
                                           item_type, unit_of_measure, batch_number, expiry_date, is_sales_item, is_purchase_item, is_inactive, tax_rate, is_stock_tracked, price2, price3, price4, item_no,
-                                          stock_type, pack_items_number, pack_price, item_price, piece_price) 
+                                          stock_type, pack_items_number, pack_price, item_price, piece_price,
+                                          big_unit, small_unit, conversion_value, pack_size) 
                         VALUES (@name, @num, @desc, @cat, @sup, @cost, @price1, @stock, @min, @reorder, @loc, @shelf, @img, @barcode, @status, datetime('now'),
                                 @type, @uom, @batch, @expiry, @sales, @purchase, @inactive, @tax, @tracked, @price2, @price3, @price4, @item_no,
-                                @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price)";
+                                @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price,
+                                @big_unit, @small_unit, @conversion_value, @pack_size)";
             }
             else
             {
@@ -145,7 +162,8 @@ namespace Shaheen_InventoryManagement_Android.Services
                                          quantity_in_stock=@stock, minimum_stock_level=@min, reorder_quantity=@reorder, location=@loc, shelf=@shelf, barcode=@barcode, status=@status,
                                          item_type=@type, unit_of_measure=@uom, batch_number=@batch, expiry_date=@expiry, is_sales_item=@sales, is_purchase_item=@purchase, 
                                          is_inactive=@inactive, tax_rate=@tax, is_stock_tracked=@tracked, price2=@price2, price3=@price3, price4=@price4, item_no=@item_no,
-                                         stock_type=@stock_type, pack_items_number=@pack_items_number, pack_price=@pack_price, item_price=@item_price, piece_price=@piece_price";
+                                         stock_type=@stock_type, pack_items_number=@pack_items_number, pack_price=@pack_price, item_price=@item_price, piece_price=@piece_price,
+                                         big_unit=@big_unit, small_unit=@small_unit, conversion_value=@conversion_value, pack_size=@pack_size";
                 if (p.PartImage != null) sql += ", part_image=@img";
                 sql += " WHERE id=@id";
             }
@@ -183,7 +201,11 @@ namespace Shaheen_InventoryManagement_Android.Services
                 new SqliteParameter("@pack_items_number", p.PackItemsNumber),
                 new SqliteParameter("@pack_price", p.PackPrice),
                 new SqliteParameter("@item_price", p.ItemPrice),
-                new SqliteParameter("@piece_price", p.PiecePrice)
+                new SqliteParameter("@piece_price", p.PiecePrice),
+                new SqliteParameter("@big_unit", p.BigUnit ?? ""),
+                new SqliteParameter("@small_unit", p.SmallUnit ?? ""),
+                new SqliteParameter("@conversion_value", p.ConversionValue),
+                new SqliteParameter("@pack_size", p.PackSize)
             };
             if (isNew || p.PartImage != null) parms.Add(new SqliteParameter("@img", p.PartImage ?? (object)DBNull.Value));
             if (!isNew) parms.Add(new SqliteParameter("@id", p.Id));
@@ -288,7 +310,7 @@ namespace Shaheen_InventoryManagement_Android.Services
             }
         }
 
-        public void AdjustStock(int partId, int change, string reason)
+        public void AdjustStock(int partId, double change, string reason)
         {
             try
             {
@@ -299,7 +321,7 @@ namespace Shaheen_InventoryManagement_Android.Services
 
                 string partNameResult = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {partId}") ?? "Unknown";
                 string action = change > 0 ? "ADJUST_IN" : "ADJUST_OUT";
-                LogTransaction(action, $"Adjusted stock of {partNameResult} by {change}. Reason: {reason}", partNameResult);
+                LogTransaction(action, $"Adjusted stock of {partNameResult} by {change:F4}. Reason: {reason}", partNameResult);
                 GlobalEvents.RaiseInventoryUpdated();
             }
             catch (Exception ex)

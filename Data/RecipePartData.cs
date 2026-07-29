@@ -18,11 +18,34 @@ namespace Shaheen_InventoryManagement_Android.Data
         public decimal UnitCost { get; set; }
         public string UnitOfMeasure { get; set; }
         
-        public decimal TotalCost => UnitCost * (decimal)Quantity;
+        // Custom unit properties
+        public string StockType { get; set; }
+        public int PackItemsNumber { get; set; }
+        public decimal PackPrice { get; set; }
+        public decimal ItemPrice { get; set; }
+        public decimal PiecePrice { get; set; }
+        public string BigUnit { get; set; }
+        public string SmallUnit { get; set; }
+        public double ConversionValue { get; set; }
+        public double PackSize { get; set; }
+        public string PartUom { get; set; }
+
+        public decimal CalculatedUnitCost
+        {
+            get
+            {
+                return Helpers.IngredientCalculationEngine.CalculatedUnitCost(
+                    UnitCost, UnitOfMeasure, BigUnit, SmallUnit, ConversionValue, PackSize, StockType, PackItemsNumber, PartUom);
+            }
+        }
+
+        public decimal TotalCost => CalculatedUnitCost * (decimal)Quantity;
 
         public static List<RecipePartData> GetPartsForRecipe(int recipeId)
         {
-            string sql = @"SELECT rp.*, p.part_name, p.part_number, p.purchase_price, p.unit_of_measure
+            string sql = @"SELECT rp.*, p.part_name, p.part_number, p.purchase_price, p.unit_of_measure as part_uom,
+                                  p.stock_type, p.pack_items_number, p.pack_price, p.item_price, p.piece_price,
+                                  p.big_unit, p.small_unit, p.conversion_value, p.pack_size
                            FROM recipe_parts rp
                            JOIN parts p ON rp.part_id = p.id
                            WHERE rp.recipe_id = @id";
@@ -52,8 +75,50 @@ namespace Shaheen_InventoryManagement_Android.Data
                 PartName   = Safe<string>(r, "part_name", ""),
                 PartNumber = Safe<string>(r, "part_number", ""),
                 UnitCost   = Safe<decimal>(r, "purchase_price", 0),
-                UnitOfMeasure = Safe<string>(r, "unit_of_measure", "")
+                UnitOfMeasure = Safe<string>(r, "unit_of_measure", ""),
+                
+                // Custom unit mappings
+                StockType  = Safe<string>(r, "stock_type", "Piece"),
+                PackItemsNumber = Safe<int>(r, "pack_items_number", 0),
+                PackPrice  = Safe<decimal>(r, "pack_price", 0),
+                ItemPrice  = Safe<decimal>(r, "item_price", 0),
+                PiecePrice = Safe<decimal>(r, "piece_price", 0),
+                BigUnit    = Safe<string>(r, "big_unit", ""),
+                SmallUnit  = Safe<string>(r, "small_unit", ""),
+                ConversionValue = Safe<double>(r, "conversion_value", 1.0),
+                PackSize   = Safe<double>(r, "pack_size", 1.0),
+                PartUom    = Safe<string>(r, "part_uom", "")
             };
+        }
+
+        public static double GetConvertedQuantityDynamic(double qty, string recipeUom, string partUom, string stockType, int packItems, string bigUnit, string smallUnit, double convVal, double packSize)
+        {
+            if (!string.IsNullOrEmpty(bigUnit) && !string.IsNullOrEmpty(smallUnit))
+            {
+                double conv = convVal > 0 ? convVal : 1.0;
+                double pSize = packSize > 0 ? packSize : 1.0;
+                string rUom = (recipeUom ?? "").ToLower().Trim();
+                string sUnit = smallUnit.ToLower().Trim();
+                string bUnit = bigUnit.ToLower().Trim();
+
+                if (rUom == sUnit)
+                {
+                    return qty / (pSize * conv);
+                }
+                else if (rUom == bUnit)
+                {
+                    return qty / pSize;
+                }
+                else if (rUom == "pack")
+                {
+                    return qty;
+                }
+                else
+                {
+                    return qty / (pSize * conv);
+                }
+            }
+            return GetConvertedQuantity(qty, recipeUom, partUom, stockType, packItems);
         }
 
         public static double GetConvertedQuantity(double qty, string recipeUom, string partUom, string stockType, int packItems)

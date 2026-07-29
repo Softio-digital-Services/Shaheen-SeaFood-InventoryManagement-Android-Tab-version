@@ -1575,6 +1575,26 @@ namespace Shaheen_InventoryManagement_Android.Forms
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // EXPORT / IMPORT (preserved exactly)
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        private int? GetSupplierId(string supplierName)
+        {
+            if (string.IsNullOrWhiteSpace(supplierName)) return null;
+            try
+            {
+                object result = DatabaseHelper.ExecuteScalar<object>("SELECT id FROM suppliers WHERE LOWER(supplier_name) = LOWER(@name) AND date_deleted IS NULL",
+                    new Microsoft.Data.Sqlite.SqliteParameter("@name", supplierName.Trim()));
+                if (result != null && result != DBNull.Value) return Convert.ToInt32(result);
+
+                // Create supplier dynamically if not exists
+                DatabaseHelper.ExecuteNonQuery("INSERT INTO suppliers (supplier_name, date_added) VALUES (@name, datetime('now'))",
+                    new Microsoft.Data.Sqlite.SqliteParameter("@name", supplierName.Trim()));
+                return (int)DatabaseHelper.ExecuteScalar<long>("SELECT last_insert_rowid()");
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         private void ExportToCsv()
         {
             try
@@ -1584,16 +1604,57 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 DataTable dt = _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
                 if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data to export."); return; }
 
-                // Keep the exact same columns as the actual database query
-                DataTable exportDt = dt.Copy();
+                DataTable exportDt = new DataTable();
+                exportDt.Columns.Add("Ingredient Name");
+                exportDt.Columns.Add("Category");
+                exportDt.Columns.Add("Big Unit");
+                exportDt.Columns.Add("Small Unit");
+                exportDt.Columns.Add("Conversion Value");
+                exportDt.Columns.Add("Pack Quantity");
+                exportDt.Columns.Add("Pack Price");
+                exportDt.Columns.Add("Current Stock");
+                exportDt.Columns.Add("Minimum Stock");
+                exportDt.Columns.Add("Supplier");
+                exportDt.Columns.Add("Notes");
+                exportDt.Columns.Add("Cost per Big Unit");
+                exportDt.Columns.Add("Cost per Small Unit");
+                exportDt.Columns.Add("SKU");
+                exportDt.Columns.Add("Barcode");
+                exportDt.Columns.Add("Item No");
 
-                // Clear any inherited constraints (like Primary Key on part_id) so we can remove columns
-                exportDt.PrimaryKey = null;
-                exportDt.Constraints.Clear();
+                foreach (DataRow row in dt.Rows)
+                {
+                    double pSize = row["pack_size"] != DBNull.Value ? Convert.ToDouble(row["pack_size"]) : 1.0;
+                    if (pSize <= 0) pSize = 1.0;
+                    double conv = row["conversion_value"] != DBNull.Value ? Convert.ToDouble(row["conversion_value"]) : 1.0;
+                    if (conv <= 0) conv = 1.0;
 
-                // We can just remove 'part_id' or keep it. Let's remove part_id and part_image so we export raw data cleanly.
-                if (exportDt.Columns.Contains("part_id")) exportDt.Columns.Remove("part_id");
-                if (exportDt.Columns.Contains("part_image")) exportDt.Columns.Remove("part_image");
+                    double stockPacks = row["quantity_in_stock"] != DBNull.Value ? Convert.ToDouble(row["quantity_in_stock"]) : 0.0;
+                    double currentStockBigUnit = Helpers.IngredientCalculationEngine.ConvertStockToBigUnit(stockPacks, pSize);
+
+                    decimal packPrice = row["purchase_price"] != DBNull.Value ? Convert.ToDecimal(row["purchase_price"]) : 0m;
+                    decimal costPerBigUnit = Helpers.IngredientCalculationEngine.CalculateCostPerBigUnit(packPrice, pSize);
+                    decimal costPerSmallUnit = Helpers.IngredientCalculationEngine.CalculateCostPerSmallUnit(packPrice, pSize, conv);
+
+                    exportDt.Rows.Add(
+                        row["part_name"]?.ToString() ?? "",
+                        row["category_name"]?.ToString() ?? "",
+                        row["big_unit"]?.ToString() ?? "",
+                        row["small_unit"]?.ToString() ?? "",
+                        row["conversion_value"] != DBNull.Value ? Convert.ToDouble(row["conversion_value"]) : 1.0,
+                        row["pack_size"] != DBNull.Value ? Convert.ToDouble(row["pack_size"]) : 1.0,
+                        packPrice,
+                        currentStockBigUnit,
+                        row["minimum_stock_level"] != DBNull.Value ? Convert.ToInt32(row["minimum_stock_level"]) : 5,
+                        row["supplier_name"]?.ToString() ?? "",
+                        row["description"]?.ToString() ?? "",
+                        costPerBigUnit,
+                        costPerSmallUnit,
+                        row["part_number"]?.ToString() ?? "",
+                        row["barcode"]?.ToString() ?? "",
+                        row["item_no"]?.ToString() ?? ""
+                    );
+                }
 
                 bool success;
                 string ext = System.IO.Path.GetExtension(dlg.FileName).ToLower();
@@ -1634,90 +1695,139 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
                 if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data found in the file."); return; }
 
-                // Allow formats checking by finding column dynamically
-                string nameColumn = null;
-                string[] possibleNameCols = { "ingredient", "Ingredient", "name", "Name", "part_name", "PartName" };
-                foreach (var col in possibleNameCols)
+                // Case-insensitive column synonyms mapper
+                Func<string[], string> findCol = (synonyms) =>
                 {
-                    if (dt.Columns.Contains(col))
+                    foreach (var syn in synonyms)
                     {
-                        nameColumn = col;
-                        break;
+                        foreach (DataColumn col in dt.Columns)
+                        {
+                            string colName = col.ColumnName.Trim();
+                            if (colName.Equals(syn, StringComparison.OrdinalIgnoreCase) ||
+                                colName.Replace(" ", "").Equals(syn.Replace(" ", ""), StringComparison.OrdinalIgnoreCase) ||
+                                colName.Replace("_", "").Equals(syn.Replace("_", ""), StringComparison.OrdinalIgnoreCase))
+                            {
+                                return col.ColumnName;
+                            }
+                        }
                     }
-                }
+                    return null;
+                };
 
-                if (nameColumn == null) { MessageHelper.ShowError("Invalid file format. Could not find ingredient or name column."); return; }
+                string nameCol = findCol(new[] { "Ingredient Name", "IngredientName", "Ingredient", "Name", "part_name", "PartName" });
+                if (nameCol == null) { MessageHelper.ShowError("Invalid file format. Could not find ingredient or name column."); return; }
 
-                bool isNewFormat = nameColumn != "PartName";
-                bool isOldFormat = nameColumn == "PartName";
+                string catCol = findCol(new[] { "Category", "category_name", "CategoryName" });
+                string bigCol = findCol(new[] { "Big Unit", "BigUnit", "big_unit" });
+                string smallCol = findCol(new[] { "Small Unit", "SmallUnit", "small_unit" });
+                string convCol = findCol(new[] { "Conversion Value", "ConversionValue", "Conversion", "conversion_value" });
+                string packQtyCol = findCol(new[] { "Pack Quantity", "PackQuantity", "Pack Size", "PackSize", "pack_size" });
+                string packPriceCol = findCol(new[] { "Pack Price", "PackPrice", "pack_price", "purchase_price", "Cost" });
+                string stockCol = findCol(new[] { "Current Stock", "CurrentStock", "quantity_in_stock", "Stock", "Quantity" });
+                string minStockCol = findCol(new[] { "Minimum Stock", "MinimumStock", "minimum_stock_level", "MinStock" });
+                string supplierCol = findCol(new[] { "Supplier", "Supplier Name", "SupplierName", "supplier_name" });
+                string notesCol = findCol(new[] { "Notes", "Description", "Note" });
+                string skuCol = findCol(new[] { "SKU", "PartNumber", "Part Number", "part_number" });
+                string barcodeCol = findCol(new[] { "Barcode" });
+                string itemNoCol = findCol(new[] { "Item No", "ItemNo", "No." });
 
                 int imported = 0, skipped = 0;
+                var allExistingParts = Shaheen_InventoryManagement_Android.Data.PartData.GetAllParts();
+
                 foreach (DataRow row in dt.Rows)
                 {
                     try
                     {
-                        string name = row[nameColumn].ToString();
-                        string pn = isNewFormat && dt.Columns.Contains("part_number") ? row["part_number"].ToString() : (isOldFormat && dt.Columns.Contains("PartNumber") ? row["PartNumber"].ToString() : "");
-
+                        string name = row[nameCol]?.ToString()?.Trim() ?? "";
                         if (string.IsNullOrWhiteSpace(name)) { skipped++; continue; }
-                        if (!string.IsNullOrWhiteSpace(pn) && _inventoryService.PartExists(pn)) { skipped++; continue; }
 
-                        var p = new Shaheen_InventoryManagement_Android.Data.PartData();
-                        p.PartName = name;
-                        p.PartNumber = pn;
+                        string sku = skuCol != null ? row[skuCol]?.ToString()?.Trim() ?? "" : "";
+                        string barcode = barcodeCol != null ? row[barcodeCol]?.ToString()?.Trim() ?? "" : "";
+                        string itemNo = itemNoCol != null ? row[itemNoCol]?.ToString()?.Trim() ?? "" : "";
 
-                        string itemNoColumn = null;
-                        string[] possibleItemNoCols = { "item_no", "itemno", "ItemNo", "Item No", "item no", "No." };
-                        foreach (var col in possibleItemNoCols)
+                        // Check if item already exists by itemNo, SKU, Barcode, or Name to support update
+                        Shaheen_InventoryManagement_Android.Data.PartData p = null;
+                        if (!string.IsNullOrEmpty(sku))
                         {
-                            if (dt.Columns.Contains(col))
-                            {
-                                itemNoColumn = col;
-                                break;
-                            }
+                            p = allExistingParts.Find(x => sku.Equals(x.PartNumber, StringComparison.OrdinalIgnoreCase));
                         }
-                        if (itemNoColumn != null) p.ItemNo = row[itemNoColumn].ToString();
-
-                        if (isNewFormat)
+                        if (p == null && !string.IsNullOrEmpty(barcode))
                         {
-                            if (dt.Columns.Contains("category_name")) p.CategoryName = row["category_name"].ToString();
-                            if (dt.Columns.Contains("description")) p.Description = row["description"].ToString();
-                            if (dt.Columns.Contains("quantity_in_stock")) p.QuantityInStock = int.TryParse(row["quantity_in_stock"].ToString(), out int q) ? q : 0;
-                            if (dt.Columns.Contains("minimum_stock_level")) p.MinimumStockLevel = int.TryParse(row["minimum_stock_level"].ToString(), out int m) ? m : 0;
-                            if (dt.Columns.Contains("reorder_quantity")) p.ReorderQuantity = int.TryParse(row["reorder_quantity"].ToString(), out int rq) ? rq : 0;
-                            if (dt.Columns.Contains("purchase_price")) p.PurchasePrice = decimal.TryParse(row["purchase_price"].ToString(), out decimal pp) ? pp : 0;
-                            if (dt.Columns.Contains("selling_price")) p.SellingPrice = decimal.TryParse(row["selling_price"].ToString(), out decimal sp) ? sp : 0;
-                            if (dt.Columns.Contains("location")) p.Location = row["location"].ToString();
-                            if (dt.Columns.Contains("shelf")) p.Shelf = row["shelf"].ToString();
-                            if (dt.Columns.Contains("barcode")) p.Barcode = row["barcode"].ToString();
-                            if (dt.Columns.Contains("status")) p.Status = row["status"].ToString();
-                            if (dt.Columns.Contains("item_type")) p.ItemType = row["item_type"].ToString();
-                            if (dt.Columns.Contains("unit_of_measure")) p.UnitOfMeasure = row["unit_of_measure"].ToString();
-                            if (dt.Columns.Contains("batch_number")) p.BatchNumber = row["batch_number"].ToString();
-                            if (dt.Columns.Contains("expiry_date")) p.ExpiryDate = row["expiry_date"].ToString();
-                            if (dt.Columns.Contains("is_sales_item")) p.IsSalesItem = row["is_sales_item"].ToString() == "1" || row["is_sales_item"].ToString().ToLower() == "true";
-                            if (dt.Columns.Contains("is_purchase_item")) p.IsPurchaseItem = row["is_purchase_item"].ToString() == "1" || row["is_purchase_item"].ToString().ToLower() == "true";
-                            if (dt.Columns.Contains("is_inactive")) p.IsInactive = row["is_inactive"].ToString() == "1" || row["is_inactive"].ToString().ToLower() == "true";
-                            if (dt.Columns.Contains("tax_rate")) p.TaxRate = decimal.TryParse(row["tax_rate"].ToString(), out decimal t) ? t : 0;
-                            if (dt.Columns.Contains("is_stock_tracked")) p.IsStockTracked = row["is_stock_tracked"].ToString() == "1" || row["is_stock_tracked"].ToString().ToLower() == "true";
-                            if (dt.Columns.Contains("price2")) p.Price2 = decimal.TryParse(row["price2"].ToString(), out decimal p2) ? p2 : 0;
-                            if (dt.Columns.Contains("price3")) p.Price3 = decimal.TryParse(row["price3"].ToString(), out decimal p3) ? p3 : 0;
-                            if (dt.Columns.Contains("price4")) p.Price4 = decimal.TryParse(row["price4"].ToString(), out decimal p4) ? p4 : 0;
+                            p = allExistingParts.Find(x => barcode.Equals(x.Barcode, StringComparison.OrdinalIgnoreCase));
+                        }
+                        if (p == null && !string.IsNullOrEmpty(name))
+                        {
+                            p = allExistingParts.Find(x => name.Equals(x.PartName, StringComparison.OrdinalIgnoreCase));
+                        }
+
+                        if (p == null)
+                        {
+                            p = new Shaheen_InventoryManagement_Android.Data.PartData { Status = "Active" };
+                        }
+
+                        p.PartName = name;
+                        if (!string.IsNullOrEmpty(sku)) p.PartNumber = sku;
+                        if (!string.IsNullOrEmpty(barcode)) p.Barcode = barcode;
+                        if (!string.IsNullOrEmpty(itemNo)) p.ItemNo = itemNo;
+
+                        if (catCol != null) p.CategoryName = row[catCol]?.ToString()?.Trim() ?? "General";
+                        if (notesCol != null) p.Description = row[notesCol]?.ToString()?.Trim() ?? "";
+
+                        // Pack & dynamic units setup
+                        string bigUnit = bigCol != null ? row[bigCol]?.ToString()?.Trim() ?? "" : "";
+                        string smallUnit = smallCol != null ? row[smallCol]?.ToString()?.Trim() ?? "" : "";
+                        double convVal = 1.0;
+                        if (convCol != null && double.TryParse(row[convCol]?.ToString() ?? "1", out double cv) && cv > 0)
+                        {
+                            convVal = cv;
+                        }
+                        double packQty = 1.0;
+                        if (packQtyCol != null && double.TryParse(row[packQtyCol]?.ToString() ?? "1", out double pq) && pq > 0)
+                        {
+                            packQty = pq;
+                        }
+                        decimal packPrice = 0;
+                        if (packPriceCol != null) decimal.TryParse(row[packPriceCol]?.ToString() ?? "0", out packPrice);
+
+                        p.BigUnit = bigUnit;
+                        p.SmallUnit = smallUnit;
+                        p.ConversionValue = convVal;
+                        p.PackSize = packQty;
+                        p.PurchasePrice = packPrice;
+                        p.PackPrice = packPrice;
+
+                        // Stock conversion (Current Stock from CSV is in Big Unit, converted to packs in database)
+                        double rawStock = 0;
+                        if (stockCol != null) double.TryParse(row[stockCol]?.ToString() ?? "0", out rawStock);
+                        p.QuantityInStock = Helpers.IngredientCalculationEngine.ConvertStockToPacks(rawStock, packQty);
+
+                        if (minStockCol != null && int.TryParse(row[minStockCol]?.ToString() ?? "5", out int ms))
+                        {
+                            p.MinimumStockLevel = ms;
                         }
                         else
                         {
-                            if (dt.Columns.Contains("Category")) p.CategoryName = row["Category"].ToString();
-                            if (dt.Columns.Contains("Quantity")) p.QuantityInStock = int.TryParse(row["Quantity"].ToString(), out int q) ? q : 0;
-                            if (dt.Columns.Contains("MinimumStock")) p.MinimumStockLevel = int.TryParse(row["MinimumStock"].ToString(), out int m) ? m : 0;
-                            if (dt.Columns.Contains("UnitPrice")) p.SellingPrice = decimal.TryParse(row["UnitPrice"].ToString(), out decimal sp) ? sp : 0;
-                            if (dt.Columns.Contains("Location")) p.Location = row["Location"].ToString();
-                            if (dt.Columns.Contains("Status")) p.Status = row["Status"].ToString();
+                            p.MinimumStockLevel = 5;
+                        }
+
+                        // Supplier lookup and dynamic creation
+                        if (supplierCol != null)
+                        {
+                            string supName = row[supplierCol]?.ToString()?.Trim() ?? "";
+                            if (!string.IsNullOrEmpty(supName))
+                            {
+                                p.SupplierId = GetSupplierId(supName);
+                                p.SupplierName = supName;
+                            }
                         }
 
                         _inventoryService.SaveProductService(p);
                         imported++;
                     }
-                    catch { skipped++; }
+                    catch
+                    {
+                        skipped++;
+                    }
                 }
                 RefreshAll();
                 MessageHelper.ShowSuccess($"Import complete!\nImported: {imported}\nSkipped: {skipped}");

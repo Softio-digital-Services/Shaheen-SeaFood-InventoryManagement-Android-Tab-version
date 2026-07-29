@@ -1732,7 +1732,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
                 Label lblQtyTxt = new Label
                 {
-                    Text = $"{qty} Ã— ",
+                    Text = $"{qty} × ",
                     Font = new Font(ThemeConfig.AppFontFamily, 11F, FontStyle.Bold),
                     ForeColor = ThemeConfig.PrimaryColor,
                     AutoSize = true,
@@ -1784,10 +1784,61 @@ namespace Shaheen_InventoryManagement_Android.Forms
                     if (cmbPrice.SelectedValue is decimal newPrice && newPrice != price)
                     {
                         row["SellingPrice"] = newPrice;
+                        row["PrivatePrice"] = newPrice;
                         RefreshCartDisplay();
                     }
                 };
                 rowPanel.Controls.Add(cmbPrice);
+
+                string uom = row["UnitOfMeasure"]?.ToString() ?? "pack";
+                string bigUnit = row["BigUnit"]?.ToString() ?? "";
+                string smallUnit = row["SmallUnit"]?.ToString() ?? "";
+                double convVal = row["ConversionValue"] != DBNull.Value ? Convert.ToDouble(row["ConversionValue"]) : 1.0;
+                double packSz = row["PackSize"] != DBNull.Value ? Convert.ToDouble(row["PackSize"]) : 1.0;
+
+                ComboBox cmbUom = new ComboBox
+                {
+                    DropDownStyle = ComboBoxStyle.DropDownList,
+                    Font = new Font(ThemeConfig.AppFontFamily, 8F, FontStyle.Regular),
+                    Width = 75,
+                    TabStop = false,
+                    Visible = false
+                };
+                ThemeConfig.ApplyComboBoxStyle(cmbUom);
+
+                if (!string.IsNullOrEmpty(bigUnit) && !string.IsNullOrEmpty(smallUnit))
+                {
+                    cmbUom.Items.Add("pack");
+                    cmbUom.Items.Add(bigUnit);
+                    cmbUom.Items.Add(smallUnit);
+                    cmbUom.SelectedItem = uom;
+                    cmbUom.Visible = true;
+                }
+
+                cmbUom.SelectedIndexChanged += (s, e) =>
+                {
+                    string selectedUom = cmbUom.SelectedItem?.ToString() ?? "pack";
+                    if (selectedUom != uom)
+                    {
+                        row["UnitOfMeasure"] = selectedUom;
+                        decimal basePrice = (decimal)row["PrivatePrice"];
+                        
+                        if (selectedUom == "pack")
+                        {
+                            row["SellingPrice"] = basePrice;
+                        }
+                        else if (selectedUom == bigUnit)
+                        {
+                            row["SellingPrice"] = basePrice / (decimal)packSz;
+                        }
+                        else if (selectedUom == smallUnit)
+                        {
+                            row["SellingPrice"] = (basePrice / (decimal)packSz) / (decimal)convVal;
+                        }
+                        RefreshCartDisplay();
+                    }
+                };
+                rowPanel.Controls.Add(cmbUom);
 
                 // Row total  right aligned
                 Label lblRowTotal = new Label
@@ -1900,6 +1951,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
                     txtQtyInput.Location = new Point(rX - bSz - 42, 24);
                     btnMinus.Location = new Point(rX - bSz - 42 - bSz, 22);
                     cmbPrice.Location = new Point(lblQtyTxt.Right, 20);
+                    cmbUom.Location = new Point(cmbPrice.Right + 5, 20);
                 };
 
                 rowPanel.Controls.AddRange(new Control[] { lblRowTotal, btnMinus, txtQtyInput, btnPlus });
@@ -1960,7 +2012,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
         private void SetCartQty(PartData part, int newQty)
         {
-            if (newQty > part.QuantityInStock) newQty = part.QuantityInStock;
+            if (newQty > part.QuantityInStock) newQty = (int)part.QuantityInStock;
 
             foreach (DataRow r in cartTable.Rows)
             {
@@ -1977,7 +2029,18 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
             if (newQty > 0)
             {
-                cartTable.Rows.Add(part.Id, part.PartName, newQty, 0, part.SellingPrice);
+                DataRow newRow = cartTable.NewRow();
+                newRow["PartID"] = part.Id;
+                newRow["PartName"] = part.PartName;
+                newRow["Quantity"] = newQty;
+                newRow["PrivatePrice"] = part.SellingPrice;
+                newRow["SellingPrice"] = part.SellingPrice;
+                newRow["UnitOfMeasure"] = "pack";
+                newRow["BigUnit"] = part.BigUnit ?? "";
+                newRow["SmallUnit"] = part.SmallUnit ?? "";
+                newRow["ConversionValue"] = part.ConversionValue;
+                newRow["PackSize"] = part.PackSize;
+                cartTable.Rows.Add(newRow);
                 RefreshCartDisplay();
             }
         }
@@ -2052,6 +2115,11 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 cartTable.Columns.Add("PrivatePrice", typeof(decimal));
                 cartTable.Columns.Add("SellingPrice", typeof(decimal));
                 cartTable.Columns.Add("Total", typeof(decimal), "Quantity * SellingPrice");
+                cartTable.Columns.Add("UnitOfMeasure", typeof(string));
+                cartTable.Columns.Add("BigUnit", typeof(string));
+                cartTable.Columns.Add("SmallUnit", typeof(string));
+                cartTable.Columns.Add("ConversionValue", typeof(double));
+                cartTable.Columns.Add("PackSize", typeof(double));
                 LoadCustomers();
             }
             catch (Exception ex) { MessageHelper.ShowError("Error initializing POS: " + ex.Message); }
@@ -2127,7 +2195,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
         // ---------------------------------------------------------------------
         // ADD TO CART  (preserved logic + RefreshCartDisplay)
         // ---------------------------------------------------------------------
-        private void AddToCart(int id, string name, decimal price, int stock, int qtyToAdd = 1)
+        private void AddToCart(int id, string name, decimal price, double stock, int qtyToAdd = 1)
         {
             if (stock <= 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Error_OutOfStock")); return; }
             foreach (DataRow r in cartTable.Rows)
@@ -2143,7 +2211,37 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 }
             }
             if (qtyToAdd > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock", "Not enough stock.")); return; }
-            cartTable.Rows.Add(id, name, qtyToAdd, 0, price);
+
+            string bUnit = "";
+            string sUnit = "";
+            double conv = 1.0;
+            double pSize = 1.0;
+            string defaultUom = "pack";
+            try
+            {
+                var dt = DatabaseHelper.ExecuteDataTable($"SELECT big_unit, small_unit, conversion_value, pack_size FROM parts WHERE id = {id}");
+                if (dt.Rows.Count > 0)
+                {
+                    bUnit = dt.Rows[0]["big_unit"]?.ToString() ?? "";
+                    sUnit = dt.Rows[0]["small_unit"]?.ToString() ?? "";
+                    conv = dt.Rows[0]["conversion_value"] != DBNull.Value ? Convert.ToDouble(dt.Rows[0]["conversion_value"]) : 1.0;
+                    pSize = dt.Rows[0]["pack_size"] != DBNull.Value ? Convert.ToDouble(dt.Rows[0]["pack_size"]) : 1.0;
+                }
+            }
+            catch { }
+
+            DataRow newRow = cartTable.NewRow();
+            newRow["PartID"] = id;
+            newRow["PartName"] = name;
+            newRow["Quantity"] = qtyToAdd;
+            newRow["PrivatePrice"] = price;
+            newRow["SellingPrice"] = price;
+            newRow["UnitOfMeasure"] = defaultUom;
+            newRow["BigUnit"] = bUnit;
+            newRow["SmallUnit"] = sUnit;
+            newRow["ConversionValue"] = conv;
+            newRow["PackSize"] = pSize;
+            cartTable.Rows.Add(newRow);
             RefreshCartDisplay();
         }
 
@@ -2202,7 +2300,15 @@ namespace Shaheen_InventoryManagement_Android.Forms
             {
                 List<OrderItem> items = new List<OrderItem>();
                 foreach (DataRow row in cartTable.Rows)
-                    items.Add(new OrderItem { PartId = (int)row["PartID"], Quantity = (int)row["Quantity"], UnitPrice = (decimal)row["SellingPrice"] });
+                {
+                    items.Add(new OrderItem 
+                    { 
+                        PartId = (int)row["PartID"], 
+                        Quantity = (int)row["Quantity"], 
+                        UnitPrice = (decimal)row["SellingPrice"],
+                        UnitOfMeasure = row["UnitOfMeasure"]?.ToString() ?? "pack"
+                    });
+                }
                 int customerId = Convert.ToInt32(cmbCustomers.SelectedValue);
                 DateTime? dDateC = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.DeliveryDate : (DateTime?)null;
                 DateTime? pDateC = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.PaymentDueDate : (DateTime?)null;

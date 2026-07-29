@@ -42,6 +42,14 @@ namespace Shaheen_InventoryManagement_Android.Forms
         private ModernComboBox cmbSupplier;
         private ModernNumericUpDown numCost;
 
+        private GroupBox gbUnits;
+        private CheckBox chkUseDynamicUnits;
+        private ModernTextBox txtBigUnit;
+        private ModernTextBox txtSmallUnit;
+        private ModernNumericUpDown numConversionValue;
+        private ModernNumericUpDown numPackSize;
+        private ModernNumericUpDown numPricePerBigUnit;
+
         private ModernNumericUpDown[] numPrices = new ModernNumericUpDown[4];
         private ModernTextBox[] txtGrosses = new ModernTextBox[4];
         private ModernTextBox[] txtProfits = new ModernTextBox[4];
@@ -190,7 +198,44 @@ namespace Shaheen_InventoryManagement_Android.Forms
             numCost = new ModernNumericUpDown { LabelText = "Cost", Width = (halfW / 2) - 15, Location = new Point((halfW / 2) + 5, 45), DecimalPlaces = 2, Maximum = 1000000 };
             gbSupp.Controls.AddRange(new Control[] { cmbSupplier, numCost });
 
-            flpStockSupp.Controls.AddRange(new Control[] { gbStock, gbSupp });
+            // Dynamic Unit Setup GroupBox
+            gbUnits = new GroupBox { Text = "Dynamic Unit Setup", Width = fullW, Height = 120, Margin = new Padding(0, 0, 10, 10) };
+            chkUseDynamicUnits = new CheckBox { Text = "Use Dynamic Units", Checked = true, Visible = false, Location = new Point(10, 15), AutoSize = true };
+            int w = 120;
+            txtBigUnit = new ModernTextBox { LabelText = "Big Unit", Width = w, Location = new Point(10, 45) };
+            txtSmallUnit = new ModernTextBox { LabelText = "Small Unit", Width = w, Location = new Point(140, 45) };
+            numConversionValue = new ModernNumericUpDown { LabelText = "Conversion", Width = w, Location = new Point(270, 45), DecimalPlaces = 2, Maximum = 1000000, Value = 1 };
+            numPackSize = new ModernNumericUpDown { LabelText = "Pack Size", Width = w, Location = new Point(400, 45), DecimalPlaces = 2, Maximum = 1000000, Value = 1 };
+            numPricePerBigUnit = new ModernNumericUpDown { LabelText = "Price/Big Unit", Width = w, Location = new Point(530, 45), DecimalPlaces = 4, Maximum = 1000000, Value = 0, Enabled = false };
+            
+            txtBigUnit.Enabled = true;
+            txtSmallUnit.Enabled = true;
+            numConversionValue.Enabled = true;
+            numPackSize.Enabled = true;
+
+            bool isSyncing = false;
+            Action syncBigUnitPrice = () =>
+            {
+                if (isSyncing) return;
+                if (numPackSize.Value > 0)
+                {
+                    isSyncing = true;
+                    try
+                    {
+                        decimal pSize = numPackSize.Value;
+                        decimal cost = numCost.Value;
+                        numPricePerBigUnit.Value = Math.Round(cost / pSize, 4);
+                    }
+                    finally { isSyncing = false; }
+                }
+            };
+
+            numCost.ValueChanged += (s, e) => { syncBigUnitPrice(); };
+            numPackSize.ValueChanged += (s, e) => { syncBigUnitPrice(); };
+
+            gbUnits.Controls.AddRange(new Control[] { chkUseDynamicUnits, txtBigUnit, txtSmallUnit, numConversionValue, numPackSize, numPricePerBigUnit });
+
+            flpStockSupp.Controls.AddRange(new Control[] { gbStock, gbSupp, gbUnits });
             tlpMain.Controls.Add(flpStockSupp, 1, 1);
 
             // -- Prices Grid --
@@ -286,11 +331,21 @@ namespace Shaheen_InventoryManagement_Android.Forms
             }
 
             chkTrackStock.Checked = part.IsStockTracked;
-            numStock.Value = part.QuantityInStock;
+            numStock.Value = (decimal)part.QuantityInStock;
             numLowLevel.Value = part.MinimumStockLevel;
 
             if (part.SupplierId.HasValue) cmbSupplier.SelectedValue = part.SupplierId.Value;
             numCost.Value = part.PurchasePrice;
+
+            chkUseDynamicUnits.Checked = true;
+            txtBigUnit.Text = string.IsNullOrEmpty(part.BigUnit) ? "pcs" : part.BigUnit;
+            txtSmallUnit.Text = string.IsNullOrEmpty(part.SmallUnit) ? "pcs" : part.SmallUnit;
+            numConversionValue.Value = part.ConversionValue > 0 ? (decimal)part.ConversionValue : 1m;
+            numPackSize.Value = part.PackSize > 0 ? (decimal)part.PackSize : 1m;
+            if (numPackSize.Value > 0)
+            {
+                numPricePerBigUnit.Value = Math.Round(part.PurchasePrice / numPackSize.Value, 4);
+            }
 
             numPrices[0].Value = part.SellingPrice;
             numPrices[1].Value = part.Price2;
@@ -377,7 +432,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 IsInactive = chkInactive.Checked,
                 TaxRate = (decimal)((dynamic)cmbTaxRate.SelectedItem).Value,
                 IsStockTracked = chkTrackStock.Checked,
-                QuantityInStock = (int)numStock.Value,
+                QuantityInStock = (double)numStock.Value,
                 MinimumStockLevel = (int)numLowLevel.Value,
                 PurchasePrice = numCost.Value,
                 SellingPrice = numPrices[0].Value,
@@ -385,7 +440,11 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 Price3 = numPrices[2].Value,
                 Price4 = numPrices[3].Value,
                 PartImage = _currentImagePath,
-                Status = chkInactive.Checked ? "Inactive" : "Active"
+                Status = chkInactive.Checked ? "Inactive" : "Active",
+                BigUnit = chkUseDynamicUnits.Checked ? txtBigUnit.Text.Trim() : "",
+                SmallUnit = chkUseDynamicUnits.Checked ? txtSmallUnit.Text.Trim() : "",
+                ConversionValue = chkUseDynamicUnits.Checked ? (double)numConversionValue.Value : 1.0,
+                PackSize = chkUseDynamicUnits.Checked ? (double)numPackSize.Value : 1.0
             };
 
             if (cmbSupplier.SelectedValue != null && (int)cmbSupplier.SelectedValue != -1)

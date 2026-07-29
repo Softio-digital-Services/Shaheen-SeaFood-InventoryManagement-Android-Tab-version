@@ -77,8 +77,8 @@
             
             <div class="nav-tabs">
                 <button class="nav-tab active" id="tabBtnInventory" onclick="switchTab('inventory')">Inventory</button>
-                <button class="nav-tab" id="tabBtnStock" onclick="switchTab('stock')">Stock Menu</button>
                 <button class="nav-tab" id="tabBtnRecipes" onclick="switchTab('recipes')">Recipes</button>
+                <button class="nav-tab" id="tabBtnStock" onclick="switchTab('stock')">Stock Menu</button>
                 <button class="nav-tab" id="tabBtnSales" onclick="switchTab('sales')">Sales Entry</button>
                 <button class="nav-tab" id="tabBtnImport" onclick="switchTab('import')">Import/Export</button>
                 <button class="nav-tab" id="tabBtnReports" onclick="switchTab('reports')">Reports</button>
@@ -219,14 +219,20 @@
                         </select>
                     </div>
                     
+                    <div class="input-group" id="salesUomGroup" style="margin-bottom:15px; display:none;">
+                        <label>Unit of Sale (UOM)</label>
+                        <select id="salesUomSelect" onchange="onSalesUomChange()" style="width:100%; padding:10px; background:var(--bg-card); border:2px solid var(--accent); border-radius:6px; color:var(--text);">
+                        </select>
+                    </div>
+                    
                     <div class="input-group" style="margin-bottom:15px;">
                         <label>Quantity</label>
-                        <input type="number" id="salesQuantityInput" value="1" min="1" oninput="calculateSalesTotal()" style="width:100%; padding:10px; background:var(--bg-card); border:2px solid var(--accent); border-radius:6px; color:var(--text);">
+                        <input type="number" id="salesQuantityInput" value="1" min="0.001" step="any" oninput="calculateSalesTotal()" style="width:100%; padding:10px; background:var(--bg-card); border:2px solid var(--accent); border-radius:6px; color:var(--text);">
                     </div>
                     
                     <div class="input-group" style="margin-bottom:15px;">
                         <label>Price ($)</label>
-                        <input type="number" id="salesPriceInput" value="0.00" min="0.01" step="0.01" oninput="calculateSalesTotal()" style="width:100%; padding:10px; background:var(--bg-card); border:2px solid var(--accent); border-radius:6px; color:var(--text);">
+                        <input type="number" id="salesPriceInput" value="0.00" step="any" readonly style="width:100%; padding:10px; background:rgba(0,0,0,0.15); border:2px solid var(--accent); border-radius:6px; color:var(--text-muted); cursor:not-allowed;">
                     </div>
                     
                     <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
@@ -472,57 +478,36 @@
                     <label data-i18n="modal_field_category">Category</label>
                     <input type="text" id="newItemCategory" list="categoryDatalist" placeholder="e.g. Seafood" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px;">
                 </div>
-                <div class="input-group" id="newItemPriceGroup" style="display: none;">
-                    <label data-i18n="modal_field_price">Price ($)</label>
-                    <input type="number" id="newItemPrice" placeholder="0.00" style="border: 2px solid var(--accent);">
-                </div>
                 <div class="input-group">
-                    <label data-i18n="modal_field_stock">Initial Stock</label>
+                    <label data-i18n="modal_field_stock">Initial Stock (Packs)</label>
                     <input type="number" id="newItemStock" placeholder="0" style="border: 2px solid var(--accent);">
                 </div>
                 <div class="input-group">
-                    <label>Measurement Unit (UOM)</label>
-                    <select id="newItemUom" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px; font-weight:600;">
-                        <option value="pcs">pcs</option>
-                        <option value="g">gram</option>
-                        <option value="kg">kg</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Minimum Stock</label>
+                    <label>Minimum Stock (Packs)</label>
                     <input type="number" id="newItemMinStock" placeholder="5" style="border: 2px solid var(--accent);">
                 </div>
-                <div class="input-group" style="grid-column: span 2;">
-                    <label>Stock Type</label>
-                    <select id="newItemStockType" style="width:100%; background:rgba(0,0,0,0.3); color:white; border:2px solid var(--accent); padding:8px; border-radius:6px; font-weight:600;" onchange="toggleStockTypeFields()">
-                        <option value="Piece">Piece (pcs)</option>
-                        <option value="Pack">Pack</option>
-                    </select>
+
+                <div class="input-group">
+                    <label>Big Unit (e.g. kg, L, box, pcs)</label>
+                    <input type="text" id="newItemBigUnit" placeholder="e.g. kg" style="border: 2px solid var(--accent);" required>
                 </div>
-                
-                <!-- Piece Specific Fields -->
-                <div id="pieceFieldsGroup" class="input-group" style="grid-column: span 2; display: grid; grid-template-columns: 1fr; gap: 15px; padding: 0; margin: 0; border: none; background: transparent;">
-                    <div class="input-group" style="margin:0;">
-                        <label>Piece Price ($)</label>
-                        <input type="number" id="newItemPiecePrice" placeholder="0.00" step="0.01" style="border: 2px solid var(--accent);">
-                    </div>
+                <div class="input-group">
+                    <label>Small Unit (e.g. g, mL, bottle, pcs)</label>
+                    <input type="text" id="newItemSmallUnit" placeholder="e.g. g" style="border: 2px solid var(--accent);" required>
+                </div>
+                <div class="input-group">
+                    <label>Conversion (1 Big = X Small)</label>
+                    <input type="number" id="newItemConversionValue" placeholder="1000" style="border: 2px solid var(--accent);" value="1" min="1" step="any" required>
+                </div>
+                <div class="input-group">
+                    <label>Pack Quantity (in Big Unit)</label>
+                    <input type="number" id="newItemPackSize" placeholder="e.g. 10" style="border: 2px solid var(--accent);" min="0.001" step="any" required>
+                </div>
+                <div class="input-group" style="grid-column: span 2;">
+                    <label>Pack Price ($)</label>
+                    <input type="number" id="newItemPackPrice" placeholder="0.00" step="0.01" style="border: 2px solid var(--accent);" required>
                 </div>
 
-                <!-- Pack Specific Fields -->
-                <div id="packFieldsGroup" class="input-group" style="grid-column: span 2; display: none; grid-template-columns: 1fr 1fr 1fr; gap: 15px; padding: 0; margin: 0; border: none; background: transparent;">
-                    <div class="input-group" style="margin:0;">
-                        <label>Pack Items No</label>
-                        <input type="number" id="newItemPackItemsNumber" placeholder="e.g. 10" style="border: 2px solid var(--accent);" oninput="calculatePackItemPrice()">
-                    </div>
-                    <div class="input-group" style="margin:0;">
-                        <label>Pack Price ($)</label>
-                        <input type="number" id="newItemPackPrice" placeholder="0.00" step="0.01" style="border: 2px solid var(--accent);" oninput="calculatePackItemPrice()">
-                    </div>
-                    <div class="input-group" style="margin:0;">
-                        <label>Item Price ($)</label>
-                        <input type="number" id="newItemItemPrice" placeholder="0.00" step="0.01" style="border: 2px solid var(--accent);">
-                    </div>
-                </div>
                 <div class="input-group" style="grid-column: span 2;">
                     <label data-i18n="modal_field_barcode">Barcode / SKU</label>
                     <div style="display:flex; gap:10px;">
@@ -533,7 +518,7 @@
                     </div>
                 </div>
             </div>
-            <button class="btn-primary-large" id="btnSubmitItem">Add Product</button>
+            <button class="btn-primary-large" id="btnSubmitItem" onclick="submitNewItem()">Add Product</button>
         </div>
     </div>
 
