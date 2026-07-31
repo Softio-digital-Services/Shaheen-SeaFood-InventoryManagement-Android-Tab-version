@@ -228,6 +228,10 @@ namespace Shaheen_InventoryManagement_Android
                 {
                     return ProcessBulkImport(body);
                 }
+                else if (endpoint == "api/import-recipes" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ProcessBulkRecipesImport(body);
+                }
                 else if (endpoint == "api/import-sales" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
                 {
                     return ProcessDailySalesImport(body);
@@ -238,7 +242,20 @@ namespace Shaheen_InventoryManagement_Android
                 }
                 else if (endpoint == "api/reports" && method.Equals("GET", StringComparison.OrdinalIgnoreCase))
                 {
-                    return GetReportsData();
+                    int month = DateTime.Now.Month;
+                    int year = DateTime.Now.Year;
+                    int qIdx = url.IndexOf('?');
+                    if (qIdx >= 0)
+                    {
+                        var query = url.Substring(qIdx + 1);
+                        var parts = query.Split('&');
+                        foreach (var p in parts)
+                        {
+                            if (p.StartsWith("month=")) int.TryParse(Uri.UnescapeDataString(p.Substring("month=".Length)), out month);
+                            if (p.StartsWith("year=")) int.TryParse(Uri.UnescapeDataString(p.Substring("year=".Length)), out year);
+                        }
+                    }
+                    return GetMonthlyReportData(month, year);
                 }
                 else if (endpoint == "api/clear-reports" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
                 {
@@ -251,6 +268,23 @@ namespace Shaheen_InventoryManagement_Android
             {
                 ErrorLogger.LogError(ex, $"WebAppInterface.HandleApiCall: {url}");
                 return JsonSerializer.Serialize(new { error = ex.Message });
+            }
+        }
+
+        [JavascriptInterface]
+        [Export("printPage")]
+        public void PrintPage(string jobName)
+        {
+            try
+            {
+                if (_context is MainActivity mainActivity)
+                {
+                    mainActivity.PrintWebView(jobName);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "WebAppInterface.PrintPage");
             }
         }
 
@@ -467,7 +501,7 @@ namespace Shaheen_InventoryManagement_Android
                         return JsonSerializer.Serialize(new { error = "Barcode already exists for another item." });
                 }
 
-                 string sql = @"
+                  string sql = @"
                     UPDATE parts SET 
                         part_name = @name, 
                         part_number = @sku, 
@@ -487,8 +521,13 @@ namespace Shaheen_InventoryManagement_Android
                         big_unit = @big_unit,
                         small_unit = @small_unit,
                         conversion_value = @conversion_value,
-                        pack_size = @pack_size
+                        pack_size = @pack_size,
+                        part_image = @part_image
                     WHERE id = @id";
+
+                double oldStock = DatabaseHelper.ExecuteScalar<double>(
+                    "SELECT COALESCE(quantity_in_stock, 0) FROM parts WHERE id = @id",
+                    new SqliteParameter("@id", body.Id.Value));
 
                 DatabaseHelper.ExecuteNonQuery(sql,
                     new SqliteParameter("@name", body.Name),
@@ -510,9 +549,19 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@small_unit", body.SmallUnit ?? ""),
                     new SqliteParameter("@conversion_value", body.ConversionValue),
                     new SqliteParameter("@pack_size", body.PackSize),
+                    new SqliteParameter("@part_image", body.Image ?? ""),
                     new SqliteParameter("@id", body.Id.Value));
 
-                DatabaseHelper.LogTransaction("STOCK_EDIT", body.Name, $"Edited via Android App (New Qty: {body.Stock})");
+                double delta = body.Stock - oldStock;
+                if (delta != 0)
+                {
+                    string action = delta > 0 ? "ADJUST_IN" : "ADJUST_OUT";
+                    DatabaseHelper.LogTransaction(action, body.Name, $"Adjusted stock of {body.Name} by {delta:F4}. Reason: Product Edit (New Qty: {body.Stock})");
+                }
+                else
+                {
+                    DatabaseHelper.LogTransaction("STOCK_EDIT", body.Name, $"Edited via Android App (New Qty: {body.Stock})");
+                }
                 return JsonSerializer.Serialize(new { success = true });
             }
             else
@@ -531,10 +580,10 @@ namespace Shaheen_InventoryManagement_Android
                 string sql = @"
                     INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, minimum_stock_level, barcode, status, item_no, unit_of_measure,
                                        stock_type, pack_items_number, pack_price, item_price, piece_price,
-                                       big_unit, small_unit, conversion_value, pack_size)
+                                       big_unit, small_unit, conversion_value, pack_size, part_image)
                     VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @min_stock, @barcode, 'Active', @itemNo, @uom,
                             @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price,
-                            @big_unit, @small_unit, @conversion_value, @pack_size)";
+                            @big_unit, @small_unit, @conversion_value, @pack_size, @part_image)";
 
                 DatabaseHelper.ExecuteNonQuery(sql,
                     new SqliteParameter("@name", body.Name),
@@ -555,7 +604,8 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@big_unit", body.BigUnit ?? ""),
                     new SqliteParameter("@small_unit", body.SmallUnit ?? ""),
                     new SqliteParameter("@conversion_value", body.ConversionValue),
-                    new SqliteParameter("@pack_size", body.PackSize));
+                    new SqliteParameter("@pack_size", body.PackSize),
+                    new SqliteParameter("@part_image", body.Image ?? ""));
 
                 DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via Android App (Qty: {body.Stock})");
                 return JsonSerializer.Serialize(new { success = true });
@@ -716,6 +766,7 @@ namespace Shaheen_InventoryManagement_Android
                         price = r.SellingPrice,
                         totalCost = r.TotalCost,
                         categoryName = r.CategoryName,
+                        image = CleanImagePrefix(r.RecipeImage),
                         parts = partsList
                     });
                 }
@@ -743,6 +794,7 @@ namespace Shaheen_InventoryManagement_Android
                     Description = body.Description ?? "",
                     SellingPrice = body.Price,
                     CategoryName = body.CategoryName ?? "",
+                    RecipeImage = body.Image ?? "",
                     Status = "Active"
                 };
 
@@ -818,13 +870,21 @@ namespace Shaheen_InventoryManagement_Android
                     }
 
                     string categoryName = item.Category ?? "General";
-                    int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c) AND date_deleted IS NULL",
+                    int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c)",
                                 new SqliteParameter("@c", categoryName.Trim()));
                     if (catId == 0)
                     {
-                        DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name) VALUES (@c)", new SqliteParameter("@c", categoryName.Trim()));
-                        catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c) AND date_deleted IS NULL",
-                                    new SqliteParameter("@c", categoryName.Trim()));
+                        try
+                        {
+                            DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name) VALUES (@c)", new SqliteParameter("@c", categoryName.Trim()));
+                            catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c)",
+                                        new SqliteParameter("@c", categoryName.Trim()));
+                        }
+                        catch
+                        {
+                            catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c)",
+                                        new SqliteParameter("@c", categoryName.Trim()));
+                        }
                     }
                     if (catId == 0) catId = 1;
 
@@ -836,6 +896,14 @@ namespace Shaheen_InventoryManagement_Android
                     decimal itemCost = IngredientCalculationEngine.CalculateCostPerBigUnit(packPrice, pSize);
                     decimal pieceCost = IngredientCalculationEngine.CalculateCostPerSmallUnit(packPrice, pSize, conv);
                     double stockPacks = IngredientCalculationEngine.ConvertStockToPacks(item.Stock, pSize);
+
+                    double oldStock = 0;
+                    if (existingId > 0)
+                    {
+                        oldStock = DatabaseHelper.ExecuteScalar<double>(
+                            "SELECT COALESCE(quantity_in_stock, 0) FROM parts WHERE id = @id",
+                            new SqliteParameter("@id", existingId));
+                    }
 
                     if (existingId > 0)
                     {
@@ -894,6 +962,13 @@ namespace Shaheen_InventoryManagement_Android
                             new SqliteParameter("@min", item.MinStock > 0 ? item.MinStock : 5));
                     }
 
+                    double delta = stockPacks - oldStock;
+                    if (delta != 0)
+                    {
+                        string action = delta > 0 ? "ADJUST_IN" : "ADJUST_OUT";
+                        DatabaseHelper.LogTransaction(action, item.Name, $"Adjusted stock of {item.Name} by {delta:F4}. Reason: Bulk Import (New Qty: {stockPacks})");
+                    }
+
                     imported++;
                 }
 
@@ -902,6 +977,124 @@ namespace Shaheen_InventoryManagement_Android
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "WebAppInterface.ProcessBulkImport");
+                return JsonSerializer.Serialize(new { error = ex.Message });
+            }
+        }
+
+        private string ProcessBulkRecipesImport(string bodyJson)
+        {
+            try
+            {
+                var body = JsonSerializer.Deserialize<BulkImportRecipesPayload>(bodyJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (body == null || body.Recipes == null || body.Recipes.Count == 0)
+                    return JsonSerializer.Serialize(new { error = "No recipes to import" });
+
+                int imported = 0;
+                int skipped = 0;
+
+                foreach (var recipeItem in body.Recipes)
+                {
+                    if (string.IsNullOrWhiteSpace(recipeItem.Name))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    // Get or create category
+                    string categoryName = recipeItem.CategoryName ?? "General";
+                    if (string.IsNullOrWhiteSpace(categoryName)) categoryName = "General";
+
+                    int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c)",
+                                new SqliteParameter("@c", categoryName.Trim()));
+                    if (catId == 0)
+                    {
+                        try
+                        {
+                            DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name) VALUES (@c)", new SqliteParameter("@c", categoryName.Trim()));
+                            catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c)",
+                                        new SqliteParameter("@c", categoryName.Trim()));
+                        }
+                        catch
+                        {
+                            catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@c)",
+                                        new SqliteParameter("@c", categoryName.Trim()));
+                        }
+                    }
+                    if (catId == 0) catId = 1;
+
+                    // Check if recipe already exists (active or soft-deleted)
+                    int existingId = DatabaseHelper.ExecuteScalar<int>(
+                        "SELECT id FROM recipes WHERE LOWER(recipe_name) = LOWER(@n)",
+                        new SqliteParameter("@n", recipeItem.Name.Trim()));
+
+                    int recipeId = 0;
+                    if (existingId > 0)
+                    {
+                        // Update recipe and restore it if soft-deleted
+                        string sqlUpdate = @"UPDATE recipes SET description = @desc, selling_price = @price, category_id = @catId, item_no = @itemNo, date_deleted = NULL, status = 'Active' WHERE id = @id";
+                        DatabaseHelper.ExecuteNonQuery(sqlUpdate,
+                            new SqliteParameter("@desc", recipeItem.Description ?? ""),
+                            new SqliteParameter("@price", recipeItem.Price),
+                            new SqliteParameter("@catId", catId),
+                            new SqliteParameter("@itemNo", recipeItem.ItemNo ?? ""),
+                            new SqliteParameter("@id", existingId));
+                        recipeId = existingId;
+
+                        // Delete existing ingredients mapping
+                        DatabaseHelper.ExecuteNonQuery("DELETE FROM recipe_parts WHERE recipe_id = @r_id", new SqliteParameter("@r_id", recipeId));
+                    }
+                    else
+                    {
+                        // Insert recipe
+                        string sqlInsert = @"INSERT INTO recipes (recipe_name, description, selling_price, status, date_added, category_id, item_no)
+                                             VALUES (@name, @desc, @price, 'Active', datetime('now'), @catId, @itemNo);
+                                             SELECT last_insert_rowid();";
+                        recipeId = (int)DatabaseHelper.ExecuteScalar<long>(sqlInsert,
+                            new SqliteParameter("@name", recipeItem.Name.Trim()),
+                            new SqliteParameter("@desc", recipeItem.Description ?? ""),
+                            new SqliteParameter("@price", recipeItem.Price),
+                            new SqliteParameter("@catId", catId),
+                            new SqliteParameter("@itemNo", recipeItem.ItemNo ?? ""));
+                    }
+
+                    if (recipeId == 0)
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    // Insert ingredients/parts
+                    if (recipeItem.Ingredients != null)
+                    {
+                        foreach (var ing in recipeItem.Ingredients)
+                        {
+                            if (string.IsNullOrWhiteSpace(ing.Name)) continue;
+
+                            // Lookup ingredient (part) ID by name
+                            int partId = DatabaseHelper.ExecuteScalar<int>(
+                                "SELECT id FROM parts WHERE LOWER(part_name) = LOWER(@pname) AND date_deleted IS NULL",
+                                new SqliteParameter("@pname", ing.Name.Trim()));
+
+                            if (partId > 0)
+                            {
+                                DatabaseHelper.ExecuteNonQuery(
+                                    "INSERT INTO recipe_parts (recipe_id, part_id, quantity, unit_of_measure) VALUES (@r_id, @p_id, @qty, @uom)",
+                                    new SqliteParameter("@r_id", recipeId),
+                                    new SqliteParameter("@p_id", partId),
+                                    new SqliteParameter("@qty", ing.Qty),
+                                    new SqliteParameter("@uom", ing.UnitOfMeasure ?? ""));
+                            }
+                        }
+                    }
+
+                    imported++;
+                }
+
+                return JsonSerializer.Serialize(new { success = true, imported, skipped });
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "WebAppInterface.ProcessBulkRecipesImport");
                 return JsonSerializer.Serialize(new { error = ex.Message });
             }
         }
@@ -1342,18 +1535,27 @@ namespace Shaheen_InventoryManagement_Android
             }
         }
 
-        private string GetReportsData()
+        private string GetMonthlyReportData(int month, int year)
         {
             try
             {
+                DateTime targetMonthStart = new DateTime(year, month, 1, 0, 0, 0);
+                DateTime targetMonthEnd = new DateTime(year, month, DateTime.DaysInMonth(year, month), 23, 59, 59);
+                string startStr = targetMonthStart.ToString("yyyy-MM-dd HH:mm:ss");
+                string endStr = targetMonthEnd.ToString("yyyy-MM-dd HH:mm:ss");
+
+                // Basic legacy KPIs
                 decimal totalRevenue = DatabaseHelper.ExecuteScalar<decimal>(
-                    "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'Completed'");
+                    "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'Completed' AND order_date >= @start AND order_date <= @end",
+                    new SqliteParameter("@start", startStr),
+                    new SqliteParameter("@end", endStr));
 
                 int totalOrders = DatabaseHelper.ExecuteScalar<int>(
-                    @"SELECT COALESCE(CAST(SUM(oi.quantity) AS INT), 0) 
-                      FROM order_items oi 
-                      JOIN orders o ON oi.order_id = o.order_id 
-                      WHERE o.status = 'Completed'");
+                    @"SELECT COALESCE(COUNT(DISTINCT o.order_id), 0) 
+                      FROM orders o 
+                      WHERE o.status = 'Completed' AND o.order_date >= @start AND o.order_date <= @end",
+                    new SqliteParameter("@start", startStr),
+                    new SqliteParameter("@end", endStr));
 
                 int outOfStock = DatabaseHelper.ExecuteScalar<int>(
                     @"SELECT COUNT(*) FROM parts 
@@ -1368,8 +1570,9 @@ namespace Shaheen_InventoryManagement_Android
                         AND date_deleted IS NULL 
                         AND (status IS NULL OR LOWER(status) = 'active')");
 
+                // Categories Breakdown for Compatibility
                 var categorySales = new List<object>();
-                var dtCat = DatabaseHelper.ExecuteDataTable(
+                DataTable dtCat = DatabaseHelper.ExecuteDataTable(
                     @"SELECT 
                           CASE 
                               WHEN oi.item_type = 'Recipe' THEN 'Recipes'
@@ -1380,9 +1583,11 @@ namespace Shaheen_InventoryManagement_Android
                       LEFT JOIN parts p ON oi.part_id = p.id AND oi.item_type = 'Part'
                       LEFT JOIN categories c ON p.category_id = c.id AND oi.item_type = 'Part'
                       JOIN orders o ON oi.order_id = o.order_id
-                      WHERE o.status = 'Completed'
+                      WHERE o.status = 'Completed' AND o.order_date >= @start AND o.order_date <= @end
                       GROUP BY category_name
-                      ORDER BY total_sales DESC");
+                      ORDER BY total_sales DESC",
+                    new SqliteParameter("@start", startStr),
+                    new SqliteParameter("@end", endStr));
                 foreach (DataRow row in dtCat.Rows)
                 {
                     categorySales.Add(new
@@ -1392,11 +1597,15 @@ namespace Shaheen_InventoryManagement_Android
                     });
                 }
 
+                // Recent transactions inside the target period
                 var recentTransactions = new List<object>();
-                var dtTx = DatabaseHelper.ExecuteDataTable(
+                DataTable dtTx = DatabaseHelper.ExecuteDataTable(
                     @"SELECT action_type, part_name, description, timestamp, username
                       FROM transactions
-                      ORDER BY id DESC LIMIT 10");
+                      WHERE timestamp >= @start AND timestamp <= @end
+                      ORDER BY id DESC LIMIT 50",
+                    new SqliteParameter("@start", startStr),
+                    new SqliteParameter("@end", endStr));
                 foreach (DataRow row in dtTx.Rows)
                 {
                     recentTransactions.Add(new
@@ -1409,6 +1618,474 @@ namespace Shaheen_InventoryManagement_Android
                     });
                 }
 
+                // --- 1. Load active parts details ---
+                DataTable dtParts = DatabaseHelper.ExecuteDataTable(
+                    @"SELECT id, part_name, quantity_in_stock, pack_size, purchase_price, 
+                             big_unit, small_unit, conversion_value, unit_of_measure, stock_type,
+                             pack_items_number, minimum_stock_level
+                      FROM parts WHERE date_deleted IS NULL");
+
+                var partsDict = new Dictionary<int, ReportPartItem>();
+                var partsByName = new Dictionary<string, ReportPartItem>(StringComparer.OrdinalIgnoreCase);
+                foreach (DataRow r in dtParts.Rows)
+                {
+                    int id = Convert.ToInt32(r["id"]);
+                    var pi = new ReportPartItem
+                    {
+                        Id = id,
+                        Name = r["part_name"].ToString(),
+                        CurrentStock = Convert.ToDouble(r["quantity_in_stock"]),
+                        PackSize = r["pack_size"] != DBNull.Value ? Convert.ToDouble(r["pack_size"]) : 1.0,
+                        PackPrice = r["purchase_price"] != DBNull.Value ? Convert.ToDecimal(r["purchase_price"]) : 0m,
+                        BigUnit = r["big_unit"]?.ToString() ?? "",
+                        SmallUnit = r["small_unit"]?.ToString() ?? "",
+                        ConversionValue = r["conversion_value"] != DBNull.Value ? Convert.ToDouble(r["conversion_value"]) : 1.0,
+                        PartUom = r["unit_of_measure"]?.ToString() ?? "",
+                        StockType = r["stock_type"]?.ToString() ?? "",
+                        PackItemsNumber = r["pack_items_number"] != DBNull.Value ? Convert.ToInt32(r["pack_items_number"]) : 1,
+                        MinStock = r["minimum_stock_level"] != DBNull.Value ? Convert.ToInt32(r["minimum_stock_level"]) : 5
+                    };
+                    partsDict[id] = pi;
+                    partsByName[pi.Name.Trim()] = pi;
+                }
+
+                // --- 2. Query all Order Items & Recipe parts in selected period ---
+                double totalRecipesSold = 0;
+                double totalIngredientsSold = 0;
+                decimal totalCogs = 0;
+
+                // Load all recipe sales
+                DataTable dtRecipeSales = DatabaseHelper.ExecuteDataTable(
+                    @"SELECT oi.recipe_id, r.recipe_name, SUM(oi.quantity) as qty_sold, SUM(oi.quantity * oi.price) as revenue
+                      FROM order_items oi
+                      JOIN orders o ON oi.order_id = o.order_id
+                      JOIN recipes r ON oi.recipe_id = r.id
+                      WHERE o.status = 'Completed' AND o.order_date >= @start AND o.order_date <= @end
+                      GROUP BY oi.recipe_id",
+                    new SqliteParameter("@start", startStr),
+                    new SqliteParameter("@end", endStr));
+
+                var recipeSummaries = new List<object>();
+                foreach (DataRow rRow in dtRecipeSales.Rows)
+                {
+                    int recipeId = Convert.ToInt32(rRow["recipe_id"]);
+                    string name = rRow["recipe_name"].ToString();
+                    double qtySold = Convert.ToDouble(rRow["qty_sold"]);
+                    decimal revenue = Convert.ToDecimal(rRow["revenue"]);
+
+                    // Calculate ingredient cost of this recipe
+                    decimal recipeUnitCost = 0;
+                    DataTable dtRecipeParts = DatabaseHelper.ExecuteDataTable(
+                        @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure
+                          FROM recipe_parts rp
+                          WHERE rp.recipe_id = @rid",
+                        new SqliteParameter("@rid", recipeId));
+                    foreach (DataRow rpRow in dtRecipeParts.Rows)
+                    {
+                        int partId = Convert.ToInt32(rpRow["part_id"]);
+                        double rpQty = Convert.ToDouble(rpRow["quantity"]);
+                        string rpUom = rpRow["unit_of_measure"]?.ToString();
+
+                        if (partsDict.TryGetValue(partId, out var part))
+                        {
+                            double rpQtyPacks = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                                rpQty, rpUom, part.PartUom, part.StockType, part.PackItemsNumber, part.BigUnit, part.SmallUnit, part.ConversionValue, part.PackSize);
+                            recipeUnitCost += (decimal)rpQtyPacks * part.PackPrice;
+
+                            // Update part consumption for target month
+                            part.UsedInRecipesPacks += rpQtyPacks * qtySold;
+                        }
+                    }
+
+                    decimal totalCost = recipeUnitCost * (decimal)qtySold;
+                    totalCogs += totalCost;
+                    totalRecipesSold += qtySold;
+
+                    recipeSummaries.Add(new
+                    {
+                        name = name,
+                        qtySold = qtySold,
+                        revenue = revenue,
+                        cost = totalCost,
+                        profit = revenue - totalCost
+                    });
+                }
+
+                // Load direct ingredient sales
+                DataTable dtDirectSales = DatabaseHelper.ExecuteDataTable(
+                    @"SELECT oi.part_id, oi.quantity, oi.price, oi.unit_of_measure
+                      FROM order_items oi
+                      JOIN orders o ON oi.order_id = o.order_id
+                      WHERE o.status = 'Completed' AND oi.item_type = 'Part' AND o.order_date >= @start AND o.order_date <= @end",
+                    new SqliteParameter("@start", startStr),
+                    new SqliteParameter("@end", endStr));
+
+                foreach (DataRow dsRow in dtDirectSales.Rows)
+                {
+                    int partId = Convert.ToInt32(dsRow["part_id"]);
+                    double qty = Convert.ToDouble(dsRow["quantity"]);
+                    decimal price = Convert.ToDecimal(dsRow["price"]);
+                    string uom = dsRow["unit_of_measure"]?.ToString();
+
+                    if (partsDict.TryGetValue(partId, out var part))
+                    {
+                        double qtyPacks = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                            qty, uom, part.PartUom, part.StockType, part.PackItemsNumber, part.BigUnit, part.SmallUnit, part.ConversionValue, part.PackSize);
+                        part.SoldDirectlyPacks += qtyPacks;
+
+                        decimal unitCost = IngredientCalculationEngine.CalculatedUnitCost(
+                            part.PackPrice, uom, part.BigUnit, part.SmallUnit, part.ConversionValue, part.PackSize, part.StockType, part.PackItemsNumber, part.PartUom);
+                        totalCogs += unitCost * (decimal)qty;
+                        totalIngredientsSold += qty;
+                    }
+                }
+
+                // --- 3. Process transactions to compute changes and history ---
+                DataTable dtAllTx = DatabaseHelper.ExecuteDataTable(
+                    @"SELECT action_type, part_name, description, timestamp
+                      FROM transactions
+                      WHERE timestamp >= @start",
+                    new SqliteParameter("@start", startStr));
+
+                foreach (DataRow txRow in dtAllTx.Rows)
+                {
+                    string actionType = txRow["action_type"].ToString();
+                    string partName = txRow["part_name"].ToString().Trim();
+                    string desc = txRow["description"].ToString();
+                    DateTime txDate = DateTime.Parse(txRow["timestamp"].ToString());
+
+                    if (partsByName.TryGetValue(partName, out var part))
+                    {
+                        double changePacks = 0;
+                        var matchAdjust = System.Text.RegularExpressions.Regex.Match(desc, @"by\s+(-?\d+\.?\d*)");
+                        if (matchAdjust.Success)
+                        {
+                            double.TryParse(matchAdjust.Groups[1].Value, out changePacks);
+                        }
+                        else
+                        {
+                            var matchAdd = System.Text.RegularExpressions.Regex.Match(desc, @"Qty:\s*(\d+\.?\d*)");
+                            if (matchAdd.Success)
+                            {
+                                double.TryParse(matchAdd.Groups[1].Value, out changePacks);
+                            }
+                        }
+
+                        if (changePacks != 0)
+                        {
+                            if (txDate <= targetMonthEnd)
+                            {
+                                if (changePacks > 0)
+                                {
+                                    part.PurchasedPacks += changePacks;
+                                }
+                                else
+                                {
+                                    part.AdjustedPacks += changePacks;
+                                }
+                            }
+                            else
+                            {
+                                part.ChangesAfterPeriodPacks += changePacks;
+                            }
+                        }
+                    }
+                }
+
+                // Also need to track sales/recipe consumption that occurred AFTER targetMonthEnd
+                DataTable dtSalesAfter = DatabaseHelper.ExecuteDataTable(
+                    @"SELECT oi.part_id, oi.recipe_id, oi.quantity, oi.item_type, oi.unit_of_measure
+                      FROM order_items oi
+                      JOIN orders o ON oi.order_id = o.order_id
+                      WHERE o.status = 'Completed' AND o.order_date > @end",
+                    new SqliteParameter("@end", endStr));
+
+                foreach (DataRow row in dtSalesAfter.Rows)
+                {
+                    string itemType = row["item_type"].ToString();
+                    if (itemType == "Part")
+                    {
+                        int partId = Convert.ToInt32(row["part_id"]);
+                        double qty = Convert.ToDouble(row["quantity"]);
+                        string uom = row["unit_of_measure"]?.ToString();
+                        if (partsDict.TryGetValue(partId, out var part))
+                        {
+                            double qtyPacks = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                                qty, uom, part.PartUom, part.StockType, part.PackItemsNumber, part.BigUnit, part.SmallUnit, part.ConversionValue, part.PackSize);
+                            part.ChangesAfterPeriodPacks -= qtyPacks;
+                        }
+                    }
+                    else if (itemType == "Recipe")
+                    {
+                        int recipeId = Convert.ToInt32(row["recipe_id"]);
+                        double qty = Convert.ToDouble(row["quantity"]);
+                        DataTable dtRP = DatabaseHelper.ExecuteDataTable("SELECT part_id, quantity, unit_of_measure FROM recipe_parts WHERE recipe_id = " + recipeId);
+                        foreach (DataRow rp in dtRP.Rows)
+                        {
+                            int partId = Convert.ToInt32(rp["part_id"]);
+                            double rpQty = Convert.ToDouble(rp["quantity"]);
+                            string rpUom = rp["unit_of_measure"]?.ToString();
+                            if (partsDict.TryGetValue(partId, out var part))
+                            {
+                                double rpQtyPacks = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                                    rpQty, rpUom, part.PartUom, part.StockType, part.PackItemsNumber, part.BigUnit, part.SmallUnit, part.ConversionValue, part.PackSize);
+                                part.ChangesAfterPeriodPacks -= rpQtyPacks * qty;
+                            }
+                        }
+                    }
+                }
+
+                // --- 4. Populate Ingredient Consumption list ---
+                var ingredientConsumption = new List<object>();
+                decimal totalInventoryValue = 0;
+                double totalPurchasedPacks = 0;
+                decimal totalPurchasedCost = 0;
+
+                foreach (var pi in partsDict.Values)
+                {
+                    double closingStockPacks = pi.CurrentStock - pi.ChangesAfterPeriodPacks;
+                    double usagePacks = pi.UsedInRecipesPacks + pi.SoldDirectlyPacks;
+                    double openingStockPacks = closingStockPacks + usagePacks - pi.PurchasedPacks - pi.AdjustedPacks;
+
+                    openingStockPacks = Math.Max(0, openingStockPacks);
+                    closingStockPacks = Math.Max(0, closingStockPacks);
+
+                    double openingStockBig = openingStockPacks * pi.PackSize;
+                    double purchasedBig = pi.PurchasedPacks * pi.PackSize;
+                    double usedInRecipesBig = pi.UsedInRecipesPacks * pi.PackSize;
+                    double soldDirectlyBig = pi.SoldDirectlyPacks * pi.PackSize;
+                    double closingStockBig = closingStockPacks * pi.PackSize;
+
+                    totalInventoryValue += (decimal)pi.CurrentStock * pi.PackPrice;
+                    totalPurchasedPacks += pi.PurchasedPacks;
+                    totalPurchasedCost += (decimal)pi.PurchasedPacks * pi.PackPrice;
+
+                    string unitToShow = string.IsNullOrEmpty(pi.BigUnit) ? (string.IsNullOrEmpty(pi.PartUom) ? "pcs" : pi.PartUom) : pi.BigUnit;
+
+                    ingredientConsumption.Add(new
+                    {
+                        name = pi.Name,
+                        openingStock = Math.Round(openingStockBig, 2),
+                        purchased = Math.Round(purchasedBig, 2),
+                        usedInRecipes = Math.Round(usedInRecipesBig, 2),
+                        soldDirectly = Math.Round(soldDirectlyBig, 2),
+                        closingStock = Math.Round(closingStockBig, 2),
+                        unit = unitToShow
+                    });
+                }
+
+                // --- 5. Generate Stock Movement History ---
+                var movements = new List<StockMovementItem>();
+
+                // POS Ingredient Sales
+                DataTable dtMovSales = DatabaseHelper.ExecuteDataTable(
+                    @"SELECT oi.part_id, oi.quantity, oi.price, oi.unit_of_measure, o.order_date
+                      FROM order_items oi
+                      JOIN orders o ON oi.order_id = o.order_id
+                      WHERE o.status = 'Completed' AND oi.item_type = 'Part' AND o.order_date >= @start AND o.order_date <= @end",
+                    new SqliteParameter("@start", startStr),
+                    new SqliteParameter("@end", endStr));
+
+                foreach (DataRow row in dtMovSales.Rows)
+                {
+                    int partId = Convert.ToInt32(row["part_id"]);
+                    double qty = Convert.ToDouble(row["quantity"]);
+                    string uom = row["unit_of_measure"]?.ToString();
+                    DateTime date = DateTime.Parse(row["order_date"].ToString());
+
+                    if (partsDict.TryGetValue(partId, out var part))
+                    {
+                        double qtyPacks = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                            qty, uom, part.PartUom, part.StockType, part.PackItemsNumber, part.BigUnit, part.SmallUnit, part.ConversionValue, part.PackSize);
+
+                        movements.Add(new StockMovementItem
+                        {
+                            Date = date,
+                            PartId = partId,
+                            PartName = part.Name,
+                            Type = "Ingredient Sale",
+                            Quantity = qtyPacks * part.PackSize,
+                            Unit = string.IsNullOrEmpty(part.BigUnit) ? "pcs" : part.BigUnit,
+                            PacksChange = -qtyPacks
+                        });
+                    }
+                }
+
+                // POS Recipe Consumptions
+                DataTable dtMovRecipes = DatabaseHelper.ExecuteDataTable(
+                    @"SELECT oi.recipe_id, oi.quantity, o.order_date
+                      FROM order_items oi
+                      JOIN orders o ON oi.order_id = o.order_id
+                      WHERE o.status = 'Completed' AND oi.item_type = 'Recipe' AND o.order_date >= @start AND o.order_date <= @end",
+                    new SqliteParameter("@start", startStr),
+                    new SqliteParameter("@end", endStr));
+
+                foreach (DataRow row in dtMovRecipes.Rows)
+                {
+                    int recipeId = Convert.ToInt32(row["recipe_id"]);
+                    double qty = Convert.ToDouble(row["quantity"]);
+                    DateTime date = DateTime.Parse(row["order_date"].ToString());
+
+                    DataTable dtRP = DatabaseHelper.ExecuteDataTable(
+                        @"SELECT rp.part_id, rp.quantity, rp.unit_of_measure 
+                          FROM recipe_parts rp 
+                          WHERE rp.recipe_id = @rid",
+                        new SqliteParameter("@rid", recipeId));
+
+                    foreach (DataRow rp in dtRP.Rows)
+                    {
+                        int partId = Convert.ToInt32(rp["part_id"]);
+                        double rpQty = Convert.ToDouble(rp["quantity"]);
+                        string rpUom = rp["unit_of_measure"]?.ToString();
+
+                        if (partsDict.TryGetValue(partId, out var part))
+                        {
+                            double rpQtyPacks = Shaheen_InventoryManagement_Android.Data.RecipePartData.GetConvertedQuantityDynamic(
+                                rpQty, rpUom, part.PartUom, part.StockType, part.PackItemsNumber, part.BigUnit, part.SmallUnit, part.ConversionValue, part.PackSize);
+
+                            movements.Add(new StockMovementItem
+                            {
+                                Date = date,
+                                PartId = partId,
+                                PartName = part.Name,
+                                Type = "Recipe Consumption",
+                                Quantity = rpQtyPacks * qty * part.PackSize,
+                                Unit = string.IsNullOrEmpty(part.BigUnit) ? "pcs" : part.BigUnit,
+                                PacksChange = -(rpQtyPacks * qty)
+                            });
+                        }
+                    }
+                }
+
+                // Manual Adjustments from Transactions
+                DataTable dtMovTx = DatabaseHelper.ExecuteDataTable(
+                    @"SELECT action_type, part_name, description, timestamp
+                      FROM transactions
+                      WHERE timestamp >= @start AND timestamp <= @end",
+                    new SqliteParameter("@start", startStr),
+                    new SqliteParameter("@end", endStr));
+
+                foreach (DataRow row in dtMovTx.Rows)
+                {
+                    string actionType = row["action_type"].ToString();
+                    string partName = row["part_name"].ToString().Trim();
+                    string desc = row["description"].ToString();
+                    DateTime date = DateTime.Parse(row["timestamp"].ToString());
+
+                    if (partsByName.TryGetValue(partName, out var part))
+                    {
+                        double changePacks = 0;
+                        var matchAdjust = System.Text.RegularExpressions.Regex.Match(desc, @"by\s+(-?\d+\.?\d*)");
+                        if (matchAdjust.Success)
+                        {
+                            double.TryParse(matchAdjust.Groups[1].Value, out changePacks);
+                        }
+                        else
+                        {
+                            var matchAdd = System.Text.RegularExpressions.Regex.Match(desc, @"Qty:\s*(\d+\.?\d*)");
+                            if (matchAdd.Success)
+                            {
+                                double.TryParse(matchAdd.Groups[1].Value, out changePacks);
+                            }
+                        }
+
+                        if (changePacks != 0)
+                        {
+                            movements.Add(new StockMovementItem
+                            {
+                                Date = date,
+                                PartId = part.Id,
+                                PartName = part.Name,
+                                Type = changePacks > 0 ? "Purchase" : "Manual Stock Adjustment",
+                                Quantity = Math.Abs(changePacks * part.PackSize),
+                                Unit = string.IsNullOrEmpty(part.BigUnit) ? "pcs" : part.BigUnit,
+                                PacksChange = changePacks
+                            });
+                        }
+                    }
+                }
+
+                // Sort movements chronologically
+                movements = movements.OrderBy(m => m.Date).ToList();
+
+                // Compute running stock movement history
+                var runningPartPacks = new Dictionary<int, double>();
+                var stockMovementList = new List<object>();
+
+                foreach (var pi in partsDict.Values)
+                {
+                    double closingStockPacks = pi.CurrentStock - pi.ChangesAfterPeriodPacks;
+                    double usagePacks = pi.UsedInRecipesPacks + pi.SoldDirectlyPacks;
+                    double openingStockPacks = closingStockPacks + usagePacks - pi.PurchasedPacks - pi.AdjustedPacks;
+                    runningPartPacks[pi.Id] = Math.Max(0, openingStockPacks);
+                }
+
+                foreach (var mov in movements)
+                {
+                    double currentPacks = runningPartPacks.ContainsKey(mov.PartId) ? runningPartPacks[mov.PartId] : 0;
+                    currentPacks += mov.PacksChange;
+                    runningPartPacks[mov.PartId] = currentPacks;
+
+                    var part = partsDict[mov.PartId];
+                    stockMovementList.Add(new
+                    {
+                        date = mov.Date.ToString("yyyy-MM-dd HH:mm:ss"),
+                        ingredient = mov.PartName,
+                        type = mov.Type,
+                        quantity = Math.Round(mov.Quantity, 2),
+                        unit = mov.Unit,
+                        remainingStock = Math.Round(Math.Max(0, currentPacks * part.PackSize), 2)
+                    });
+                }
+
+                // --- 6. Charts Data ---
+                var salesByDay = new Dictionary<string, decimal>();
+                DataTable dtDailySales = DatabaseHelper.ExecuteDataTable(
+                    @"SELECT strftime('%Y-%m-%d', order_date) as day, SUM(total_amount) as daily_revenue
+                      FROM orders
+                      WHERE status = 'Completed' AND order_date >= @start AND order_date <= @end
+                      GROUP BY day
+                      ORDER BY day ASC",
+                    new SqliteParameter("@start", startStr),
+                    new SqliteParameter("@end", endStr));
+                foreach (DataRow r in dtDailySales.Rows)
+                {
+                    salesByDay[r["day"].ToString()] = Convert.ToDecimal(r["daily_revenue"]);
+                }
+
+                var bestRecipes = recipeSummaries
+                    .Select(x => (dynamic)x)
+                    .OrderByDescending(x => (double)x.qtySold)
+                    .Take(5)
+                    .Select(x => new { name = x.name, qty = x.qtySold })
+                    .ToList();
+
+                var mostIngredients = ingredientConsumption
+                    .Select(x => (dynamic)x)
+                    .OrderByDescending(x => (double)x.usedInRecipes + (double)x.soldDirectly)
+                    .Take(5)
+                    .Select(x => new { name = x.name, qty = x.usedInRecipes + x.soldDirectly })
+                    .ToList();
+
+                var revenueTrend = new List<object>();
+                for (int i = 5; i >= 0; i--)
+                {
+                    DateTime mStart = targetMonthStart.AddMonths(-i);
+                    DateTime mEnd = new DateTime(mStart.Year, mStart.Month, DateTime.DaysInMonth(mStart.Year, mStart.Month), 23, 59, 59);
+                    decimal mRev = DatabaseHelper.ExecuteScalar<decimal>(
+                        "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'Completed' AND order_date >= @s AND order_date <= @e",
+                        new SqliteParameter("@s", mStart.ToString("yyyy-MM-dd HH:mm:ss")),
+                        new SqliteParameter("@e", mEnd.ToString("yyyy-MM-dd HH:mm:ss")));
+                    revenueTrend.Add(new
+                    {
+                        month = mStart.ToString("MMM yyyy"),
+                        revenue = mRev
+                    });
+                }
+
+                decimal grossProfit = totalRevenue - totalCogs;
+                decimal profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0m;
+
                 return JsonSerializer.Serialize(new
                 {
                     revenue = totalRevenue,
@@ -1416,14 +2093,68 @@ namespace Shaheen_InventoryManagement_Android
                     outOfStock = outOfStock,
                     lowStock = lowStock,
                     categorySales = categorySales,
-                    transactions = recentTransactions
+                    transactions = recentTransactions,
+                    cogs = totalCogs,
+                    grossProfit = grossProfit,
+                    profitMargin = Math.Round(profitMargin, 2),
+                    recipeSummary = recipeSummaries,
+                    ingredientConsumption = ingredientConsumption,
+                    stockMovement = stockMovementList,
+                    financialSummary = new
+                    {
+                        revenue = totalRevenue,
+                        purchaseCost = totalPurchasedCost,
+                        ingredientCost = totalCogs,
+                        grossProfit = grossProfit,
+                        profitMargin = Math.Round(profitMargin, 2),
+                        inventoryValue = totalInventoryValue
+                    },
+                    chartsData = new
+                    {
+                        salesByDay = salesByDay,
+                        bestRecipes = bestRecipes,
+                        mostIngredients = mostIngredients,
+                        revenueTrend = revenueTrend
+                    }
                 });
             }
             catch (Exception ex)
             {
-                ErrorLogger.LogError(ex, "WebAppInterface.GetReportsData");
+                ErrorLogger.LogError(ex, "WebAppInterface.GetMonthlyReportData");
                 return JsonSerializer.Serialize(new { error = ex.Message });
             }
+        }
+
+        private class ReportPartItem
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public double CurrentStock { get; set; }
+            public double PackSize { get; set; }
+            public decimal PackPrice { get; set; }
+            public string BigUnit { get; set; }
+            public string SmallUnit { get; set; }
+            public double ConversionValue { get; set; }
+            public string PartUom { get; set; }
+            public string StockType { get; set; }
+            public int PackItemsNumber { get; set; }
+            public int MinStock { get; set; }
+            public double UsedInRecipesPacks { get; set; }
+            public double SoldDirectlyPacks { get; set; }
+            public double PurchasedPacks { get; set; }
+            public double AdjustedPacks { get; set; }
+            public double ChangesAfterPeriodPacks { get; set; }
+        }
+
+        private class StockMovementItem
+        {
+            public DateTime Date { get; set; }
+            public int PartId { get; set; }
+            public string PartName { get; set; }
+            public string Type { get; set; }
+            public double Quantity { get; set; }
+            public string Unit { get; set; }
+            public double PacksChange { get; set; }
         }
 
         private string ClearReportsData()
@@ -1491,9 +2222,28 @@ namespace Shaheen_InventoryManagement_Android
             }
         }
 
+        private static bool IsImagePath(string val)
+        {
+            if (string.IsNullOrEmpty(val)) return false;
+            if (val.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
+                val.StartsWith("http:", StringComparison.OrdinalIgnoreCase) ||
+                val.StartsWith("https:", StringComparison.OrdinalIgnoreCase) ||
+                val.Contains('/') || val.Contains('\\'))
+            {
+                return true;
+            }
+            string lower = val.ToLower();
+            return lower.Contains(".png") || lower.Contains(".jpg") || lower.Contains(".jpeg") || 
+                   lower.Contains(".gif") || lower.Contains(".svg") || lower.Contains(".webp") || lower.Contains(".ico");
+        }
+
         private static string CleanImagePrefix(string partImage)
         {
             if (string.IsNullOrEmpty(partImage)) return "";
+            if (!IsImagePath(partImage)) return partImage; // Return emoji or short code as-is
+
+            if (partImage.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                return partImage;
             if (partImage.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
                 return "/" + partImage;
             if (!partImage.StartsWith("/") && !partImage.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -1544,6 +2294,7 @@ namespace Shaheen_InventoryManagement_Android
             public string SmallUnit { get; set; }
             public double ConversionValue { get; set; }
             public double PackSize { get; set; }
+            public string Image { get; set; }
         }
 
         private class AdjustStockPayload
@@ -1576,6 +2327,7 @@ namespace Shaheen_InventoryManagement_Android
             public string Description { get; set; }
             public decimal Price { get; set; }
             public string CategoryName { get; set; }
+            public string Image { get; set; }
             public List<RecipeIngredientPayload> Ingredients { get; set; }
         }
 
@@ -1589,6 +2341,28 @@ namespace Shaheen_InventoryManagement_Android
         private class BulkImportPayload
         {
             public List<ImportItemDetail> Items { get; set; }
+        }
+
+        private class BulkImportRecipesPayload
+        {
+            public List<ImportRecipeItem> Recipes { get; set; }
+        }
+
+        private class ImportRecipeItem
+        {
+            public string Name { get; set; }
+            public string CategoryName { get; set; }
+            public decimal Price { get; set; }
+            public string Description { get; set; }
+            public string ItemNo { get; set; }
+            public List<ImportRecipeIngredient> Ingredients { get; set; }
+        }
+
+        private class ImportRecipeIngredient
+        {
+            public string Name { get; set; }
+            public double Qty { get; set; }
+            public string UnitOfMeasure { get; set; }
         }
 
         private class ImportItemDetail

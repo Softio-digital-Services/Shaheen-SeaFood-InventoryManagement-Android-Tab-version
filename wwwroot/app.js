@@ -42,6 +42,11 @@ const TRANSLATIONS = {
         modal_field_stock: 'Initial Stock',
         modal_field_barcode: 'Barcode / SKU',
         modal_field_barcode_ph: 'Scan or type barcode',
+        modal_field_icon: 'Icon / Image',
+        modal_choose_icon_btn: 'Choose Icon / Upload Image',
+        icon_picker_title: 'Choose Icon / Image',
+        icon_picker_device_gallery: 'Choose from Device Gallery',
+        icon_picker_or_select_icon: 'Or select a preset icon',
         // Returns modal
         returns_title: 'Order Returns',
         returns_reason_label: 'Reason for Return',
@@ -93,6 +98,11 @@ const TRANSLATIONS = {
         modal_field_stock: 'الكمية الابتدائية',
         modal_field_barcode: 'الباركود / الرمز',
         modal_field_barcode_ph: 'امسح أو اكتب الباركود',
+        modal_field_icon: 'أيقونة / صورة',
+        modal_choose_icon_btn: 'اختر أيقونة / تحميل صورة',
+        icon_picker_title: 'اختر أيقونة / صورة',
+        icon_picker_device_gallery: 'اختر من معرض الجهاز',
+        icon_picker_or_select_icon: 'أو اختر أيقونة جاهزة',
         // Returns modal
         returns_title: 'مرتجعات الطلبات',
         returns_reason_label: 'سبب الإرجاع',
@@ -212,13 +222,49 @@ if (typeof window !== 'undefined' && !window.AndroidBridge) {
             lowStock: 4,
             categorySales: [
                 { category: 'Seafood', sales: 750.00 },
-                { category: 'Engine', sales: 300.00 },
-                { category: 'Brakes', sales: 200.50 }
+                { category: 'Groceries', sales: 300.00 },
+                { category: 'Vegetables', sales: 200.50 }
             ],
             transactions: [
                 { action: 'SALE', item: 'POS Sale', desc: 'Order #101 -- Total: $24.99', user: 'Admin', time: '2026-07-02 14:15' },
                 { action: 'STOCK_ADD', item: 'Fresh Salmon Fillet', desc: 'Added via Import (Qty: 50)', user: 'Admin', time: '2026-07-02 13:00' }
-            ]
+            ],
+            cogs: 550.00,
+            grossProfit: 700.50,
+            profitMargin: 56.02,
+            recipeSummary: [
+                { name: 'Garlic Butter Salmon', qtySold: 20, revenue: 499.80, cost: 225.00, profit: 274.80 }
+            ],
+            ingredientConsumption: [
+                { name: 'Fresh Salmon Fillet', openingStock: 80.00, purchased: 50.00, usedInRecipes: 20.00, soldDirectly: 10.00, closingStock: 100.00, unit: 'kg' },
+                { name: 'Garlic Butter', openingStock: 20.00, purchased: 10.00, usedInRecipes: 10.00, soldDirectly: 0.00, closingStock: 20.00, unit: 'kg' }
+            ],
+            stockMovement: [
+                { date: '2026-07-02 13:00:00', ingredient: 'Fresh Salmon Fillet', type: 'Purchase', quantity: 50.00, unit: 'kg', remainingStock: 130.00 },
+                { date: '2026-07-02 14:15:00', ingredient: 'Fresh Salmon Fillet', type: 'Recipe Consumption', quantity: 20.00, unit: 'kg', remainingStock: 110.00 },
+                { date: '2026-07-02 14:15:00', ingredient: 'Garlic Butter', type: 'Recipe Consumption', quantity: 10.00, unit: 'kg', remainingStock: 20.00 }
+            ],
+            financialSummary: {
+                revenue: 1250.50,
+                purchaseCost: 150.00,
+                ingredientCost: 550.00,
+                grossProfit: 700.50,
+                profitMargin: 56.02,
+                inventoryValue: 1200.00
+            },
+            chartsData: {
+                salesByDay: { '2026-07-01': 200, '2026-07-02': 350, '2026-07-03': 150, '2026-07-04': 400, '2026-07-05': 150.50 },
+                bestRecipes: [ { name: 'Garlic Butter Salmon', qty: 20 } ],
+                mostIngredients: [ { name: 'Fresh Salmon Fillet', qty: 30 } ],
+                revenueTrend: [
+                    { month: 'Feb 2026', revenue: 800 },
+                    { month: 'Mar 2026', revenue: 950 },
+                    { month: 'Apr 2026', revenue: 1100 },
+                    { month: 'May 2026', revenue: 1050 },
+                    { month: 'Jun 2026', revenue: 1200 },
+                    { month: 'Jul 2026', revenue: 1250.50 }
+                ]
+            }
         }
     };
 
@@ -468,7 +514,7 @@ if (typeof window !== 'undefined' && !window.AndroidBridge) {
             responseData = { success: true, processed, skipped, skippedNames, deductions };
         } else if (path === 'api/export-csv') {
             responseData = { success: true, path: 'Downloads/mock_export.csv' };
-        } else if (path === 'api/reports') {
+        } else if (path.startsWith('api/reports')) {
             responseData = mockDb.reports;
         }
 
@@ -487,6 +533,9 @@ let currentCategory = 'All';
 let currencies = [];
 let currentCurrency = { code: 'USD', symbol: '$', rate: 1 };
 const API_BASE = ''; 
+let selectedProductIcon = '📦';
+let selectedRecipeIcon = '🍲';
+let iconPickerTarget = 'product'; // 'product' or 'recipe'
 
 // CORE INITIALIZATION
 document.addEventListener('DOMContentLoaded', async () => {
@@ -527,6 +576,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('newItemPackSize').value = '';
         document.getElementById('newItemPackPrice').value = '';
         document.getElementById('newItemBarcode').value = '';
+        
+        selectedProductIcon = '📦';
+        updateIconPreview('product', '📦');
+        
         document.getElementById('addItemModal').classList.remove('hidden');
     });
 
@@ -594,6 +647,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     safeListen('lockPass', 'keydown', (e) => {
         if (e.key === 'Enter') handleUnlock();
     });    
+
+    // Handle file input selection
+    safeListen('iconFileInput', 'change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxDimension = 200;
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height) {
+                    if (width > maxDimension) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    }
+                } else {
+                    if (height > maxDimension) {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                if (iconPickerTarget === 'product') {
+                    selectedProductIcon = dataUrl;
+                    updateIconPreview('product', dataUrl);
+                } else {
+                    selectedRecipeIcon = dataUrl;
+                    updateIconPreview('recipe', dataUrl);
+                }
+                closeIconPickerModal();
+                // Reset file input so same file can be chosen again if needed
+                document.getElementById('iconFileInput').value = '';
+            };
+            img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
     // PASSWORD TOGGLE
     const toggle = document.getElementById('togglePassword');
     const passIn = document.getElementById('loginPass');
@@ -787,8 +888,17 @@ function renderProducts() {
             card.className = 'product-card recipe-product-card';
             card.onclick = () => addRecipeToCart(r);
             const subtext = r.categoryName ? `Recipe • ${r.categoryName}` : "Recipe";
+            const recipeImage = r.image;
+            let displayContent = `<span class="emoji-icon">🍲</span>`;
+            if (recipeImage) {
+                if (isImagePath(recipeImage)) {
+                    displayContent = `<img src="${recipeImage}" class="cat-icon-img" alt="${r.name}">`;
+                } else {
+                    displayContent = `<span class="emoji-icon">${recipeImage}</span>`;
+                }
+            }
             card.innerHTML = `
-                <div class="product-img"><span class="emoji-icon">🍲</span></div>
+                <div class="product-img">${displayContent}</div>
                 <div class="product-info">
                     <div class="product-name">${r.name}</div>
                     <div class="product-price">${formatPrice(r.price)}</div>
@@ -814,20 +924,21 @@ function renderProducts() {
         card.className = 'product-card';
         card.onclick = () => addToCart(p);
         
-        // Priority: Item Image -> Category Icon -> Default Box
+        // Priority: Item Image (Path/Data URL) -> Item Emoji -> Category Icon -> Default Box
         let displayContent = '';
         const itemImage = p.image;
         const catImage = p.categoryImage;
 
-        if (itemImage && itemImage.length > 5 && itemImage.includes('/')) {
-            // It's a path to a product image
-            displayContent = `<img src="${itemImage}" class="cat-icon-img" alt="${p.name}">`;
-        } else if (catImage && catImage.length > 5 && catImage.includes('/')) {
-            // It's a path to a category icon
+        if (itemImage) {
+            if (isImagePath(itemImage)) {
+                displayContent = `<img src="${itemImage}" class="cat-icon-img" alt="${p.name}">`;
+            } else {
+                displayContent = `<span class="emoji-icon">${itemImage}</span>`;
+            }
+        } else if (catImage && isImagePath(catImage)) {
             displayContent = `<img src="${catImage}" class="cat-icon-img" alt="${p.category}">`;
         } else {
-            // Fallback to emoji or default box
-            displayContent = `<span class="emoji-icon">${itemImage || '📦'}</span>`;
+            displayContent = `<span class="emoji-icon">📦</span>`;
         }
 
         card.innerHTML = `
@@ -856,8 +967,17 @@ function renderProducts() {
         card.className = 'product-card recipe-product-card';
         card.onclick = () => addRecipeToCart(r);
         const subtext = r.categoryName ? `Recipe • ${r.categoryName}` : "Recipe";
+        const recipeImage = r.image;
+        let displayContent = `<span class="emoji-icon">🍲</span>`;
+        if (recipeImage) {
+            if (isImagePath(recipeImage)) {
+                displayContent = `<img src="${recipeImage}" class="cat-icon-img" alt="${r.name}">`;
+            } else {
+                displayContent = `<span class="emoji-icon">${recipeImage}</span>`;
+            }
+        }
         card.innerHTML = `
-            <div class="product-img"><span class="emoji-icon">🍲</span></div>
+            <div class="product-img">${displayContent}</div>
             <div class="product-info">
                 <div class="product-name">${r.name}</div>
                 <div class="product-price">${formatPrice(r.price)}</div>
@@ -883,6 +1003,10 @@ window.openAddModalDirect = function() {
     document.getElementById('newItemPackSize').value = '';
     document.getElementById('newItemPackPrice').value = '';
     document.getElementById('newItemBarcode').value = '';
+    
+    selectedProductIcon = '📦';
+    updateIconPreview('product', '📦');
+    
     document.getElementById('addItemModal').classList.remove('hidden');
 };
 
@@ -904,6 +1028,9 @@ function openEditModal(id) {
     document.getElementById('newItemConversionValue').value = item.conversionValue || '1';
     document.getElementById('newItemPackSize').value = item.packSize || '';
     document.getElementById('newItemPackPrice').value = item.packPrice || item.price || '';
+
+    selectedProductIcon = item.image || '📦';
+    updateIconPreview('product', selectedProductIcon);
 
     document.getElementById('addItemModal').classList.remove('hidden');
 }
@@ -938,7 +1065,8 @@ async function submitNewItem() {
         bigUnit: bigUnit,
         smallUnit: smallUnit,
         conversionValue: conversionValue,
-        packSize: packSize
+        packSize: packSize,
+        image: selectedProductIcon
     };
 
     if (!itemData.name || isNaN(itemData.price)) {
@@ -1672,17 +1800,21 @@ function loadInventoryTable() {
         const card = document.createElement('div');
         card.className = 'product-card';
         
-        // Priority: Item Image -> Category Icon -> Default Box
+        // Priority: Item Image (Path/Data URL) -> Item Emoji -> Category Icon -> Default Box
         let displayContent = '';
         const itemImage = p.image;
         const catImage = p.categoryImage;
 
-        if (itemImage && itemImage.length > 5 && itemImage.includes('/')) {
-            displayContent = `<img src="${itemImage}" class="cat-icon-img" alt="${p.name}">`;
-        } else if (catImage && catImage.length > 5 && catImage.includes('/')) {
+        if (itemImage) {
+            if (isImagePath(itemImage)) {
+                displayContent = `<img src="${itemImage}" class="cat-icon-img" alt="${p.name}">`;
+            } else {
+                displayContent = `<span class="emoji-icon">${itemImage}</span>`;
+            }
+        } else if (catImage && isImagePath(catImage)) {
             displayContent = `<img src="${catImage}" class="cat-icon-img" alt="${p.category}">`;
         } else {
-            displayContent = `<span class="emoji-icon">${itemImage || '📦'}</span>`;
+            displayContent = `<span class="emoji-icon">📦</span>`;
         }
 
         let stockDetailsHtml = '';
@@ -1793,11 +1925,23 @@ function deleteIngredient(id) {
 // ─── RECIPES MANAGEMENT ───────────────────────────────────────────────
 async function fetchRecipes() {
     try {
-        const res = await fetch(`${API_BASE}/api/recipes`);
+        const res = await fetch(`${API_BASE}/api/recipes?_=${Date.now()}`);
         if (res.ok) {
-            allRecipes = await res.json();
+            const data = await res.json();
+            if (data && data.error) {
+                showToast(`Error loading recipes: ${data.error}`, "error");
+                allRecipes = [];
+            } else {
+                allRecipes = Array.isArray(data) ? data : [];
+            }
+        } else {
+            console.error("Fetch recipes failed with status", res.status);
+            allRecipes = [];
         }
-    } catch (e) { console.error("Fetch recipes failed", e); }
+    } catch (e) { 
+        console.error("Fetch recipes failed", e); 
+        allRecipes = [];
+    }
 }
 
 function loadRecipesTab() {
@@ -1817,7 +1961,17 @@ function loadRecipesTab() {
                 <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
             </div>
             <div class="product-img" style="margin-top: 20px;">
-                <span class="emoji-icon">🍲</span>
+                ${(() => {
+                    const recipeImage = r.image;
+                    if (recipeImage) {
+                        if (isImagePath(recipeImage)) {
+                            return `<img src="${recipeImage}" class="cat-icon-img" alt="${r.name}">`;
+                        } else {
+                            return `<span class="emoji-icon">${recipeImage}</span>`;
+                        }
+                    }
+                    return `<span class="emoji-icon">🍲</span>`;
+                })()}
             </div>
             <div class="product-info" style="text-align: center; padding: 10px;">
                 <div class="product-name">${r.name}</div>
@@ -1847,6 +2001,10 @@ function openNewRecipeModal() {
     document.getElementById('recipeDesc').value = '';
     document.getElementById('recipePrice').value = '';
     document.getElementById('recipeIngredientsList').innerHTML = '';
+    
+    selectedRecipeIcon = '🍲';
+    updateIconPreview('recipe', '🍲');
+    
     addRecipeIngredientRow();
     document.getElementById('recipeModal').classList.remove('hidden');
 }
@@ -2094,7 +2252,7 @@ async function saveRecipe() {
         return;
     }
 
-    const payload = { id: id ? parseInt(id) : null, name, itemNo, categoryName, description: desc, price, ingredients };
+    const payload = { id: id ? parseInt(id) : null, name, itemNo, categoryName, description: desc, price, ingredients, image: selectedRecipeIcon };
 
     try {
         const res = await fetch(`${API_BASE}/api/recipes`, {
@@ -2145,6 +2303,9 @@ function editRecipe(id) {
     document.getElementById('recipeDesc').value = r.description || '';
     document.getElementById('recipePrice').value = r.price;
 
+    selectedRecipeIcon = r.image || '🍲';
+    updateIconPreview('recipe', selectedRecipeIcon);
+
     const list = document.getElementById('recipeIngredientsList');
     list.innerHTML = '';
     if (r.parts && r.parts.length > 0) {
@@ -2157,8 +2318,8 @@ function editRecipe(id) {
     document.getElementById('recipeModal').classList.remove('hidden');
 }
 
-// ─── CSV FILE IMPORT / EXPORT ────────────────────────────────────────
 let pendingImportItems = [];
+let pendingImportType = 'ingredients'; // 'ingredients' or 'recipes'
 
 function handleImportFileSelect(e) {
     const file = e.target.files[0];
@@ -2194,65 +2355,143 @@ function parseImportFile(text, isTsv) {
         return -1;
     };
 
-    const nameIdx = findColIdx(['ingredient name', 'ingredientname', 'ingredient', 'name', 'part name', 'partname']);
-    const catIdx = findColIdx(['category', 'category name', 'categoryname']);
-    const bigUnitIdx = findColIdx(['big unit', 'bigunit', 'big_unit', 'big uom']);
-    const smallUnitIdx = findColIdx(['small unit', 'smallunit', 'small_unit', 'small uom']);
-    const conversionIdx = findColIdx(['conversion value', 'conversionvalue', 'conversion', 'conversion_value', 'conversion factor']);
-    const packQtyIdx = findColIdx(['pack quantity', 'packquantity', 'pack size', 'packsize', 'pack_size']);
-    const packPriceIdx = findColIdx(['pack price', 'packprice', 'pack_price', 'purchase price', 'purchase_price', 'cost', 'pack cost']);
-    const priceIdx = findColIdx(['selling price', 'price', 'unit price', 'sellingprice', 'unitprice']);
-    const stockIdx = findColIdx(['current stock', 'stock', 'quantity', 'qty', 'quantity_in_stock', 'currentstock']);
-    const minStockIdx = findColIdx(['minimum stock', 'min stock', 'minimumstock', 'minstock', 'minimum_stock_level']);
-    const barcodeIdx = findColIdx(['barcode']);
-    const skuIdx = findColIdx(['sku', 'part number', 'partnumber', 'part_number']);
-    const descIdx = findColIdx(['description', 'desc', 'notes', 'note']);
-    const itemNoIdx = findColIdx(['item no', 'itemno', 'no.']);
+    const recipeNameIdx = findColIdx(['recipe name', 'recipe_name', 'recipe']);
 
-    if (nameIdx === -1) {
-        showToast("Invalid file format. 'Name' column is required.", "error");
-        return;
+    if (recipeNameIdx !== -1) {
+        // --- RECIPE CSV IMPORT ---
+        pendingImportType = 'recipes';
+        
+        const catIdx = findColIdx(['category', 'category name', 'categoryname', 'recipe category']);
+        const priceIdx = findColIdx(['selling price', 'price', 'recipe price', 'sellingprice']);
+        const descIdx = findColIdx(['description', 'desc', 'notes', 'note']);
+        const itemNoIdx = findColIdx(['item no', 'itemno', 'no.', 'recipe item no']);
+        const ingNameIdx = findColIdx(['ingredient name', 'ingredientname', 'ingredient', 'part name', 'partname', 'part']);
+        const ingQtyIdx = findColIdx(['ingredient quantity', 'ingredientquantity', 'quantity', 'qty', 'ingredient qty', 'ingredientqty', 'ingredient_quantity']);
+        const ingUomIdx = findColIdx(['measurement unit', 'measurementunit', 'unit of measure', 'unitofmeasure', 'uom', 'unit']);
+
+        const recipesMap = {};
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(separator).map(c => c.replace(/"/g, '').trim());
+            if (cols.length < headers.length) continue;
+
+            const rName = cols[recipeNameIdx];
+            if (!rName) continue;
+
+            if (!recipesMap[rName]) {
+                recipesMap[rName] = {
+                    name: rName,
+                    categoryName: catIdx !== -1 ? cols[catIdx] : 'General',
+                    price: priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0.0 : 0.0,
+                    description: descIdx !== -1 ? cols[descIdx] : '',
+                    itemNo: itemNoIdx !== -1 ? cols[itemNoIdx] : '',
+                    ingredients: []
+                };
+            }
+
+            const ingName = ingNameIdx !== -1 ? cols[ingNameIdx] : '';
+            const ingQty = ingQtyIdx !== -1 ? parseFloat(cols[ingQtyIdx]) || 1.0 : 1.0;
+            const ingUom = ingUomIdx !== -1 ? cols[ingUomIdx] : '';
+
+            if (ingName) {
+                recipesMap[rName].ingredients.push({
+                    name: ingName,
+                    qty: ingQty,
+                    unitOfMeasure: ingUom
+                });
+            }
+        }
+
+        pendingImportItems = Object.values(recipesMap);
+
+        if (pendingImportItems.length === 0) {
+            showToast("No valid recipes found in file", "warn");
+            return;
+        }
+
+        // Show recipe import preview
+        document.getElementById('importPreviewCount').innerText = pendingImportItems.length + " recipes";
+        const previewList = document.getElementById('importPreviewList');
+        previewList.innerHTML = pendingImportItems.map(recipe => {
+            const ingList = recipe.ingredients.map(ing => `${ing.name} (${ing.qty} ${ing.unitOfMeasure || ''})`).join(', ');
+            return `
+                <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <b style="color:var(--text-main);">${recipe.itemNo ? '[' + recipe.itemNo + '] ' : ''}${recipe.name}</b>
+                        <span style="color:var(--accent); font-weight:bold;">$${recipe.price.toFixed(2)}</span>
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Category: ${recipe.categoryName}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px; word-break:break-all;">Ingredients: ${ingList || 'None'}</div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('importPreviewArea').classList.remove('hidden');
+        showToast(`Parsed ${pendingImportItems.length} recipes from file`, "info");
+
+    } else {
+        // --- INGREDIENT/PART CSV IMPORT (Legacy) ---
+        pendingImportType = 'ingredients';
+
+        const nameIdx = findColIdx(['ingredient name', 'ingredientname', 'ingredient', 'name', 'part name', 'partname']);
+        const catIdx = findColIdx(['category', 'category name', 'categoryname']);
+        const bigUnitIdx = findColIdx(['big unit', 'bigunit', 'big_unit', 'big uom']);
+        const smallUnitIdx = findColIdx(['small unit', 'smallunit', 'small_unit', 'small uom']);
+        const conversionIdx = findColIdx(['conversion value', 'conversionvalue', 'conversion', 'conversion_value', 'conversion factor']);
+        const packQtyIdx = findColIdx(['pack quantity', 'packquantity', 'pack size', 'packsize', 'pack_size']);
+        const packPriceIdx = findColIdx(['pack price', 'packprice', 'pack_price', 'purchase price', 'purchase_price', 'cost', 'pack cost']);
+        const priceIdx = findColIdx(['selling price', 'price', 'unit price', 'sellingprice', 'unitprice']);
+        const stockIdx = findColIdx(['current stock', 'stock', 'quantity', 'qty', 'quantity_in_stock', 'currentstock']);
+        const minStockIdx = findColIdx(['minimum stock', 'min stock', 'minimumstock', 'minstock', 'minimum_stock_level']);
+        const barcodeIdx = findColIdx(['barcode']);
+        const skuIdx = findColIdx(['sku', 'part number', 'partnumber', 'part_number']);
+        const descIdx = findColIdx(['description', 'desc', 'notes', 'note']);
+        const itemNoIdx = findColIdx(['item no', 'itemno', 'no.']);
+
+        if (nameIdx === -1) {
+            showToast("Invalid file format. 'Name' or 'Recipe Name' column is required.", "error");
+            return;
+        }
+
+        pendingImportItems = [];
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(separator).map(c => c.replace(/"/g, '').trim());
+            if (cols.length < headers.length) continue;
+
+            const pPrice = packPriceIdx !== -1 ? parseFloat(cols[packPriceIdx]) || 0.00 : (priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0.00 : 0.00);
+
+            pendingImportItems.push({
+                itemNo: itemNoIdx !== -1 ? cols[itemNoIdx] : '',
+                name: cols[nameIdx] || '',
+                category: catIdx !== -1 ? cols[catIdx] : 'General',
+                price: priceIdx !== -1 ? parseFloat(cols[priceIdx]) || pPrice : pPrice,
+                stock: stockIdx !== -1 ? parseFloat(cols[stockIdx]) || 0 : 0,
+                barcode: barcodeIdx !== -1 ? cols[barcodeIdx] : '',
+                sku: skuIdx !== -1 ? cols[skuIdx] : '',
+                description: descIdx !== -1 ? cols[descIdx] : '',
+                bigUnit: bigUnitIdx !== -1 ? cols[bigUnitIdx] : '',
+                smallUnit: smallUnitIdx !== -1 ? cols[smallUnitIdx] : '',
+                conversionValue: conversionIdx !== -1 ? parseFloat(cols[conversionIdx]) || 1.0 : 1.0,
+                packSize: packQtyIdx !== -1 ? parseFloat(cols[packQtyIdx]) || 1.0 : 1.0,
+                packPrice: pPrice,
+                minStock: minStockIdx !== -1 ? parseInt(cols[minStockIdx]) || 5 : 5
+            });
+        }
+
+        // Show preview
+        document.getElementById('importPreviewCount').innerText = pendingImportItems.length + " ingredients";
+        const previewList = document.getElementById('importPreviewList');
+        previewList.innerHTML = pendingImportItems.map(item => `
+            <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:10px;">
+                <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.itemNo ? '[' + item.itemNo + '] ' : ''}${item.name}</b>
+                <span style="color:var(--text-muted);">${item.category}</span>
+                <span style="color:var(--accent); text-align:right;">$${item.price.toFixed(2)}</span>
+                <span style="color:${item.stock === 0 ? 'var(--danger)' : 'var(--text-main)'}; text-align:right;">Qty: ${item.stock}</span>
+            </div>
+        `).join('');
+
+        document.getElementById('importPreviewArea').classList.remove('hidden');
+        showToast(`Parsed ${pendingImportItems.length} items from file`, "info");
     }
-
-    pendingImportItems = [];
-    for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(separator).map(c => c.replace(/"/g, '').trim());
-        if (cols.length < headers.length) continue;
-
-        const pPrice = packPriceIdx !== -1 ? parseFloat(cols[packPriceIdx]) || 0.00 : (priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0.00 : 0.00);
-
-        pendingImportItems.push({
-            itemNo: itemNoIdx !== -1 ? cols[itemNoIdx] : '',
-            name: cols[nameIdx] || '',
-            category: catIdx !== -1 ? cols[catIdx] : 'General',
-            price: priceIdx !== -1 ? parseFloat(cols[priceIdx]) || pPrice : pPrice,
-            stock: stockIdx !== -1 ? parseFloat(cols[stockIdx]) || 0 : 0,
-            barcode: barcodeIdx !== -1 ? cols[barcodeIdx] : '',
-            sku: skuIdx !== -1 ? cols[skuIdx] : '',
-            description: descIdx !== -1 ? cols[descIdx] : '',
-            bigUnit: bigUnitIdx !== -1 ? cols[bigUnitIdx] : '',
-            smallUnit: smallUnitIdx !== -1 ? cols[smallUnitIdx] : '',
-            conversionValue: conversionIdx !== -1 ? parseFloat(cols[conversionIdx]) || 1.0 : 1.0,
-            packSize: packQtyIdx !== -1 ? parseFloat(cols[packQtyIdx]) || 1.0 : 1.0,
-            packPrice: pPrice,
-            minStock: minStockIdx !== -1 ? parseInt(cols[minStockIdx]) || 5 : 5
-        });
-    }
-
-    // Show preview
-    document.getElementById('importPreviewCount').innerText = pendingImportItems.length;
-    const previewList = document.getElementById('importPreviewList');
-    previewList.innerHTML = pendingImportItems.map(item => `
-        <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:10px;">
-            <b style="color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.itemNo ? '[' + item.itemNo + '] ' : ''}${item.name}</b>
-            <span style="color:var(--text-muted);">${item.category}</span>
-            <span style="color:var(--accent); text-align:right;">$${item.price.toFixed(2)}</span>
-            <span style="color:${item.stock === 0 ? 'var(--danger)' : 'var(--text-main)'}; text-align:right;">Qty: ${item.stock}</span>
-        </div>
-    `).join('');
-
-    document.getElementById('importPreviewArea').classList.remove('hidden');
-    showToast(`Parsed ${pendingImportItems.length} items from file`, "info");
 }
 
 function clearImportPreview() {
@@ -2265,16 +2504,23 @@ function clearImportPreview() {
 async function confirmImport() {
     if (pendingImportItems.length === 0) return;
     try {
-        const res = await fetch(`${API_BASE}/api/import-items`, {
+        const endpoint = pendingImportType === 'recipes' ? 'api/import-recipes' : 'api/import-items';
+        const payload = pendingImportType === 'recipes' ? { recipes: pendingImportItems } : { items: pendingImportItems };
+
+        const res = await fetch(`${API_BASE}/${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: pendingImportItems })
+            body: JSON.stringify(payload)
         });
         if (res.ok) {
             const result = await res.json();
-            showToast(`Import Success! Imported: ${result.imported}, Skipped: ${result.skipped}`, "success");
-            clearImportPreview();
-            await initApp();
+            if (result.error) {
+                showToast(`Failed to import: ${result.error}`, "error");
+            } else {
+                showToast(`Import Success! Imported: ${result.imported}, Skipped: ${result.skipped}`, "success");
+                clearImportPreview();
+                await initApp();
+            }
         } else {
             showToast("Failed to process import on server", "error");
         }
@@ -2341,6 +2587,235 @@ function downloadCsvTemplate() {
     })
     .then(res => {
         if (res.ok) showToast("Template downloaded to Downloads folder", "success");
+        else showToast("Failed to download template", "error");
+    })
+    .catch(() => showToast("Connection error", "error"));
+}
+
+// ─── RECIPE IMPORT / EXPORT ──────────────────────────────────────────
+let pendingRecipeImportItems = [];
+
+function handleRecipeImportFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+
+    if (isExcel) {
+        reader.onload = function(evt) {
+            try {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Read sheet to array of arrays
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+                parseRecipeImportRows(rows);
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to parse Excel file: " + err.message, "error");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        reader.onload = function(evt) {
+            const content = evt.target.result;
+            const isTsv = file.name.endsWith('.tsv') || content.includes('\t');
+            const separator = isTsv ? '\t' : ',';
+            
+            // Parse CSV/TSV into an array of arrays
+            const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const rows = lines.map(line => parseCsvLine(line, separator));
+            parseRecipeImportRows(rows);
+        };
+        reader.readAsText(file);
+    }
+}
+
+function parseCsvLine(text, separator) {
+    const result = [];
+    let curVal = "";
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === separator && !inQuotes) {
+            result.push(curVal.trim());
+            curVal = "";
+        } else {
+            curVal += char;
+        }
+    }
+    result.push(curVal.trim());
+    return result;
+}
+
+function parseRecipeImportRows(rows) {
+    if (rows.length <= 1) {
+        showToast("Import file is empty", "warn");
+        return;
+    }
+
+    const headers = rows[0].map(h => (h || '').toString().trim());
+
+    const findColIdx = (synonyms) => {
+        for (const syn of synonyms) {
+            const cleanSyn = syn.toLowerCase().replace(/[\s_-]/g, '');
+            const idx = headers.findIndex(h => {
+                const cleanHeader = h.toLowerCase().replace(/[\s_-]/g, '');
+                return cleanHeader === cleanSyn;
+            });
+            if (idx !== -1) return idx;
+        }
+        return -1;
+    };
+
+    const recipeNameIdx = findColIdx(['recipe name', 'recipe_name', 'recipe']);
+    if (recipeNameIdx === -1) {
+        showToast("Invalid format. 'Recipe Name' column is required.", "error");
+        return;
+    }
+
+    const catIdx = findColIdx(['category', 'category name', 'categoryname', 'recipe category']);
+    const priceIdx = findColIdx(['selling price', 'price', 'recipe price', 'sellingprice']);
+    const descIdx = findColIdx(['description', 'desc', 'notes', 'note']);
+    const itemNoIdx = findColIdx(['item no', 'itemno', 'no.', 'recipe item no']);
+
+    // Find all ingredient / part columns to support duplicate headers
+    let ingredientIndices = [];
+    headers.forEach((h, idx) => {
+        const clean = h.toLowerCase().replace(/[\s_-]/g, '');
+        if (clean === 'ingredient' || clean === 'part') {
+            ingredientIndices.push(idx);
+        }
+    });
+
+    let ingNameIdx = -1;
+    let ingQtyIdx = -1;
+
+    if (ingredientIndices.length >= 2) {
+        ingNameIdx = ingredientIndices[0];
+        ingQtyIdx = ingredientIndices[1];
+    } else if (ingredientIndices.length === 1) {
+        ingNameIdx = ingredientIndices[0];
+    }
+
+    if (ingNameIdx === -1) {
+        ingNameIdx = findColIdx(['ingredient name', 'ingredientname', 'part name', 'partname', 'part', 'ingredient']);
+    }
+    if (ingQtyIdx === -1) {
+        ingQtyIdx = findColIdx(['ingredient quantity', 'ingredientquantity', 'quantity', 'qty', 'ingredient qty', 'ingredientqty', 'ingredient_quantity', 'quantities', 'amount']);
+    }
+
+    const ingUomIdx = findColIdx(['measurement unit', 'measurementunit', 'unit of measure', 'unitofmeasure', 'uom', 'unit']);
+
+    const recipesMap = {};
+    for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i].map(c => (c === undefined || c === null ? "" : c).toString().trim());
+        if (cols.length === 0 || (cols.length === 1 && !cols[0])) continue;
+
+        const rName = cols[recipeNameIdx];
+        if (!rName) continue;
+
+        if (!recipesMap[rName]) {
+            recipesMap[rName] = {
+                name: rName,
+                categoryName: catIdx !== -1 ? cols[catIdx] : 'General',
+                price: priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0.0 : 0.0,
+                description: descIdx !== -1 ? cols[descIdx] : '',
+                itemNo: itemNoIdx !== -1 ? cols[itemNoIdx] : '',
+                ingredients: []
+            };
+        }
+
+        const ingName = ingNameIdx !== -1 ? cols[ingNameIdx] : '';
+        const ingQtyVal = ingQtyIdx !== -1 ? cols[ingQtyIdx] : '';
+        const ingQty = parseFloat(ingQtyVal) || 1.0;
+        const ingUom = ingUomIdx !== -1 ? cols[ingUomIdx] : '';
+
+        if (ingName) {
+            recipesMap[rName].ingredients.push({
+                name: ingName,
+                qty: ingQty,
+                unitOfMeasure: ingUom
+            });
+        }
+    }
+
+    pendingRecipeImportItems = Object.values(recipesMap);
+
+    if (pendingRecipeImportItems.length === 0) {
+        showToast("No valid recipes found in file", "warn");
+        return;
+    }
+
+    // Show recipe import preview
+    document.getElementById('recipeImportPreviewCount').innerText = pendingRecipeImportItems.length;
+    const previewList = document.getElementById('recipeImportPreviewList');
+    previewList.innerHTML = pendingRecipeImportItems.map(recipe => {
+        const ingList = recipe.ingredients.map(ing => `${ing.name} (${ing.qty} ${ing.unitOfMeasure || ''})`).join(', ');
+        return `
+            <div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b style="color:var(--text-main);">${recipe.itemNo ? '[' + recipe.itemNo + '] ' : ''}${recipe.name}</b>
+                    <span style="color:var(--accent); font-weight:bold;">$${recipe.price.toFixed(2)}</span>
+                </div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Category: ${recipe.categoryName}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px; word-break:break-all;">Ingredients: ${ingList || 'None'}</div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('recipeImportPreviewArea').classList.remove('hidden');
+    showToast(`Parsed ${pendingRecipeImportItems.length} recipes from file`, "info");
+}
+
+async function confirmRecipeImport() {
+    if (pendingRecipeImportItems.length === 0) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/import-recipes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipes: pendingRecipeImportItems })
+        });
+        if (res.ok) {
+            const result = await res.json();
+            if (result.error) {
+                showToast(`Failed to import: ${result.error}`, "error");
+            } else {
+                showToast(`Import Success! Imported: ${result.imported}, Skipped: ${result.skipped}`, "success");
+                clearRecipeImportPreview();
+                await initApp();
+            }
+        } else {
+            showToast("Failed to process import on server", "error");
+        }
+    } catch (e) { 
+        console.error(e);
+        showToast("Connection error", "error"); 
+    }
+}
+
+function clearRecipeImportPreview() {
+    pendingRecipeImportItems = [];
+    document.getElementById('recipeImportFile').value = '';
+    document.getElementById('recipeImportPreviewArea').classList.add('hidden');
+    document.getElementById('recipeImportPreviewList').innerHTML = '';
+}
+
+function downloadRecipeCsvTemplate() {
+    const csvContent = "Recipe Name,Category,Price,Description,Item No,Ingredient,Ingredient,Measurement Unit\nFish Sandwich,Sandwiches,4.5,Fish Sandwich,R-101,Fish,1,Piece\nFish Sandwich,Sandwiches,4.5,Fish Sandwich,R-101,Burger Bun,1,Piece\nFish Sandwich,Sandwiches,4.5,Fish Sandwich,R-101,Lettuce,20,g\nFish Sandwich,Sandwiches,4.5,Fish Sandwich,R-101,Tartar Sauce,40,g\nFish Sandwich,Sandwiches,4.5,Fish Sandwich,R-101,Potato Fries,150,g\nChicken Burger,Burgers,5.5,Chicken Burger,R-102,Burger Bun,1,Piece\nChicken Burger,Burgers,5.5,Chicken Burger,R-102,Chicken Breast,180,g\nChicken Burger,Burgers,5.5,Chicken Burger,R-102,Lettuce,20,g\nChicken Burger,Burgers,5.5,Chicken Burger,R-102,Tomato,30,g\nChicken Burger,Burgers,5.5,Chicken Burger,R-102,Mayonnaise,25,g\nBeef Burger,Burgers,6.2,Beef Burger,R-103,Burger Bun,1,Piece\nBeef Burger,Burgers,6.2,Beef Burger,R-103,Beef Patty,200,g\nBeef Burger,Burgers,6.2,Beef Burger,R-103,Cheddar,25,g\nBeef Burger,Burgers,6.2,Beef Burger,R-103,Onion,20,g\nBeef Burger,Burgers,6.2,Beef Burger,R-103,Ketchup,20,g\n";
+    
+    fetch(`${API_BASE}/api/export-csv`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: "Recipes_Template.csv", csvContent })
+    })
+    .then(res => {
+        if (res.ok) showToast("Recipe template downloaded to Downloads folder", "success");
         else showToast("Failed to download template", "error");
     })
     .catch(() => showToast("Connection error", "error"));
@@ -2568,25 +3043,55 @@ async function downloadSalesConsumptionReport() {
 }
 
 // ─── REPORTS & ANALYTICS ──────────────────────────────────────────────
+let reportCharts = {};
+window.currentReportData = null;
+
 async function loadReportsData() {
     try {
-        const res = await fetch(`${API_BASE}/api/reports`);
+        const monthSelect = document.getElementById('reportFilterMonth');
+        const yearSelect = document.getElementById('reportFilterYear');
+        
+        // Auto-initialize month/year selects to current date if not set
+        if (monthSelect && !monthSelect.dataset.initialized) {
+            monthSelect.value = new Date().getMonth() + 1;
+            monthSelect.dataset.initialized = 'true';
+        }
+        if (yearSelect && !yearSelect.dataset.initialized) {
+            yearSelect.value = new Date().getFullYear();
+            yearSelect.dataset.initialized = 'true';
+        }
+
+        const month = monthSelect ? monthSelect.value : (new Date().getMonth() + 1);
+        const year = yearSelect ? yearSelect.value : new Date().getFullYear();
+
+        const res = await fetch(`${API_BASE}/api/reports?month=${month}&year=${year}`);
         if (res.ok) {
             const data = await res.json();
+            window.currentReportData = data;
             
-            // Populate KPIs
+            // 1. Populate KPI Cards
             document.getElementById('kpiRevenue').innerText = formatPrice(data.revenue || 0);
             document.getElementById('kpiOrders').innerText = data.orders || 0;
-            document.getElementById('kpiOutOfStock').innerText = data.outOfStock || 0;
+            document.getElementById('kpiCOGS').innerText = formatPrice(data.cogs || 0);
+            document.getElementById('kpiProfit').innerText = formatPrice(data.grossProfit || 0);
+            document.getElementById('kpiMargin').innerText = (data.profitMargin || 0).toFixed(2) + '%';
+            document.getElementById('kpiInvValue').innerText = formatPrice(data.financialSummary?.inventoryValue || 0);
             document.getElementById('kpiLowStock').innerText = data.lowStock || 0;
+            document.getElementById('kpiOutOfStock').innerText = data.outOfStock || 0;
 
-            // Render category sales list
+            // 2. Populate Financial Statements Summary
+            document.getElementById('finRevenue').innerText = formatPrice(data.revenue || 0);
+            document.getElementById('finPurchaseCost').innerText = formatPrice(data.financialSummary?.purchaseCost || 0);
+            document.getElementById('finIngredientCost').innerText = formatPrice(data.cogs || 0);
+            document.getElementById('finGrossProfit').innerText = formatPrice(data.grossProfit || 0);
+            document.getElementById('finProfitMargin').innerText = (data.profitMargin || 0).toFixed(2) + '%';
+
+            // 3. Render Category Sales List
             const catList = document.getElementById('categorySalesList');
             if (catList) {
                 catList.innerHTML = '';
                 if (data.categorySales && data.categorySales.length > 0) {
                     const maxSales = Math.max(...data.categorySales.map(c => c.sales)) || 1;
-                    
                     data.categorySales.forEach(c => {
                         const pct = (c.sales / maxSales) * 100;
                         const row = document.createElement('div');
@@ -2607,31 +3112,321 @@ async function loadReportsData() {
                 }
             }
 
-            // Render activity logs
-            const logList = document.getElementById('activityLogsList');
-            if (logList) {
-                logList.innerHTML = '';
-                if (data.transactions && data.transactions.length > 0) {
-                    data.transactions.forEach(t => {
-                        const div = document.createElement('div');
-                        div.className = `activity-log-item ${t.action.toLowerCase()}`;
-                        div.innerHTML = `
-                            <div style="display:flex; justify-content:space-between; font-weight:700; color:var(--text-main);">
-                                <span>${t.action}: ${t.item}</span>
-                                <span style="font-size:0.75rem; color:var(--text-muted);">${t.user}</span>
-                            </div>
-                            <div style="color:var(--text-muted); margin-top:4px;">${t.desc}</div>
-                            <div class="activity-time">${t.time}</div>
+            // 4. Render Recipe Sales Summary Table
+            const recipeTbody = document.getElementById('reportsRecipeTableBody');
+            if (recipeTbody) {
+                recipeTbody.innerHTML = '';
+                if (data.recipeSummary && data.recipeSummary.length > 0) {
+                    data.recipeSummary.forEach(r => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="col-rep-name" style="padding:12px; font-weight:600; text-align:left;">${r.name}</td>
+                            <td data-label="Quantity Sold" style="padding:12px; text-align:center;">${r.qtySold}</td>
+                            <td data-label="Revenue" style="padding:12px; text-align:right; font-weight:bold; color:var(--accent);">${formatPrice(r.revenue)}</td>
+                            <td data-label="Cost" style="padding:12px; text-align:right; color:#f87171;">${formatPrice(r.cost)}</td>
+                            <td data-label="Profit" style="padding:12px; text-align:right; font-weight:bold; color:#34d399;">${formatPrice(r.profit)}</td>
                         `;
-                        logList.appendChild(div);
+                        recipeTbody.appendChild(tr);
                     });
                 } else {
-                    logList.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; text-align:center; padding:20px;">No recent activities found.</div>';
+                    recipeTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No recipe sales recorded in this period.</td></tr>';
                 }
+            }
+
+            // 5. Render Ingredient Consumption Table
+            const ingTbody = document.getElementById('reportsIngredientTableBody');
+            if (ingTbody) {
+                ingTbody.innerHTML = '';
+                if (data.ingredientConsumption && data.ingredientConsumption.length > 0) {
+                    data.ingredientConsumption.forEach(i => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="col-rep-name" style="padding:12px; font-weight:600; text-align:left;">${i.name}</td>
+                            <td data-label="Opening Stock" style="padding:12px; text-align:center;">${i.openingStock}</td>
+                            <td data-label="Purchased / Added" style="padding:12px; text-align:center; color:#34d399;">+${i.purchased}</td>
+                            <td data-label="Used in Recipes" style="padding:12px; text-align:center; color:#f87171;">-${i.usedInRecipes}</td>
+                            <td data-label="Sold Directly" style="padding:12px; text-align:center; color:#fbbf24;">-${i.soldDirectly}</td>
+                            <td data-label="Closing Stock" style="padding:12px; text-align:center; font-weight:bold;">${i.closingStock}</td>
+                            <td data-label="Unit" style="padding:12px; text-align:center; color:var(--text-muted); font-size:0.85rem;">${i.unit}</td>
+                        `;
+                        ingTbody.appendChild(tr);
+                    });
+                } else {
+                    ingTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">No ingredient logs found.</td></tr>';
+                }
+            }
+
+            // 6. Render Stock Movement History Table
+            const movTbody = document.getElementById('reportsMovementTableBody');
+            if (movTbody) {
+                movTbody.innerHTML = '';
+                if (data.stockMovement && data.stockMovement.length > 0) {
+                    data.stockMovement.forEach(m => {
+                        let typeColor = 'inherit';
+                        let prefix = '';
+                        if (m.type === 'Purchase') { typeColor = '#34d399'; prefix = '+'; }
+                        else if (m.type === 'Ingredient Sale' || m.type === 'Recipe Consumption') { typeColor = '#f87171'; prefix = '-'; }
+                        else if (m.type.includes('Adjustment')) { typeColor = '#fbbf24'; prefix = m.quantity < 0 ? '-' : '+'; }
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="col-rep-date" style="padding:12px; text-align:left; font-size:0.85rem; color:var(--text-muted);">${m.date}</td>
+                            <td data-label="Ingredient" style="padding:12px; font-weight:600; text-align:left;">${m.ingredient}</td>
+                            <td data-label="Movement Type" style="padding:12px; text-align:center; font-weight:bold; color:${typeColor};">${m.type}</td>
+                            <td data-label="Quantity Change" style="padding:12px; text-align:center; font-weight:bold; color:${typeColor};">${prefix}${Math.abs(m.quantity)}</td>
+                            <td data-label="Unit" style="padding:12px; text-align:center; color:var(--text-muted); font-size:0.85rem;">${m.unit}</td>
+                            <td data-label="Remaining Stock" style="padding:12px; text-align:center; font-weight:bold;">${m.remainingStock}</td>
+                        `;
+                        movTbody.appendChild(tr);
+                    });
+                } else {
+                    movTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No stock movements recorded in this period.</td></tr>';
+                }
+            }
+
+            // 7. Render Charts
+            if (data.chartsData) {
+                renderReportCharts(data.chartsData);
             }
         }
     } catch (e) { console.error("Failed to load reports", e); }
 }
+
+function renderReportCharts(chartsData) {
+    try {
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const themeColorText = isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(30, 41, 59, 0.85)';
+        const themeColorGrid = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
+
+        // Destroy existing charts to prevent overlaps
+        if (reportCharts.salesDay) reportCharts.salesDay.destroy();
+        if (reportCharts.revTrend) reportCharts.revTrend.destroy();
+        if (reportCharts.bestRecipes) reportCharts.bestRecipes.destroy();
+        if (reportCharts.mostIngredients) reportCharts.mostIngredients.destroy();
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: themeColorText, font: { family: 'Inter', weight: 'bold' } } }
+            },
+            scales: {
+                x: { grid: { color: themeColorGrid }, ticks: { color: themeColorText } },
+                y: { grid: { color: themeColorGrid }, ticks: { color: themeColorText } }
+            }
+        };
+
+        // 1. Sales by Day
+        const ctxSales = document.getElementById('chartSalesDay')?.getContext('2d');
+        if (ctxSales) {
+            const labels = Object.keys(chartsData.salesByDay || {});
+            const data = Object.values(chartsData.salesByDay || {});
+            reportCharts.salesDay = new Chart(ctxSales, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Daily Sales ($)',
+                        data: data,
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3
+                    }]
+                },
+                options: commonOptions
+            });
+        }
+
+        // 2. Monthly Revenue Trend
+        const ctxTrend = document.getElementById('chartRevTrend')?.getContext('2d');
+        if (ctxTrend) {
+            const labels = (chartsData.revenueTrend || []).map(x => x.month);
+            const data = (chartsData.revenueTrend || []).map(x => x.revenue);
+            reportCharts.revTrend = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Monthly Revenue Trend ($)',
+                        data: data,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.2,
+                        borderWidth: 3
+                    }]
+                },
+                options: commonOptions
+            });
+        }
+
+        // 3. Best Selling Recipes
+        const ctxRecipes = document.getElementById('chartBestRecipes')?.getContext('2d');
+        if (ctxRecipes) {
+            const labels = (chartsData.bestRecipes || []).map(x => x.name);
+            const data = (chartsData.bestRecipes || []).map(x => x.qty);
+            reportCharts.bestRecipes = new Chart(ctxRecipes, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Portions Sold',
+                        data: data,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
+                    }]
+                },
+                options: commonOptions
+            });
+        }
+
+        // 4. Most Consumed Ingredients
+        const ctxIngredients = document.getElementById('chartMostIngredients')?.getContext('2d');
+        if (ctxIngredients) {
+            const labels = (chartsData.mostIngredients || []).map(x => x.name);
+            const data = (chartsData.mostIngredients || []).map(x => x.qty);
+            reportCharts.mostIngredients = new Chart(ctxIngredients, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#06b6d4', '#10b981', '#3b82f6', '#fbbf24', '#f87171'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: themeColorText } }
+                    }
+                }
+            });
+        }
+    } catch (err) { console.error("Failed to render Chart.js graphs", err); }
+}
+
+window.switchReportSubtab = function(subtabId) {
+    const panels = document.querySelectorAll('.reports-panel');
+    panels.forEach(p => p.classList.add('hidden'));
+
+    const selectedPanel = document.getElementById(`panelReports${subtabId.charAt(0).toUpperCase() + subtabId.slice(1)}`);
+    if (selectedPanel) selectedPanel.classList.remove('hidden');
+
+    const tabButtons = document.querySelectorAll('.btn-subtab');
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+
+    const activeBtn = document.getElementById(`btnSubtab${subtabId.charAt(0).toUpperCase() + subtabId.slice(1)}`);
+    if (activeBtn) activeBtn.classList.add('active');
+};
+
+window.exportReport = async function(format) {
+    const data = window.currentReportData;
+    if (!data) {
+        showToast("No report data available to export.", "error");
+        return;
+    }
+
+    const monthSelect = document.getElementById('reportFilterMonth');
+    const yearSelect = document.getElementById('reportFilterYear');
+    const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+    const yearVal = yearSelect.value;
+
+    if (format === 'pdf') {
+        const periodEl = document.getElementById('printReportPeriod');
+        if (periodEl) periodEl.innerText = `Selected Period: ${monthName} ${yearVal}`;
+        if (window.AndroidBridge && typeof window.AndroidBridge.printPage === 'function') {
+            window.AndroidBridge.printPage(`monthly_report_${monthName.replace(/\s+/g, '_')}_${yearVal}`);
+        } else {
+            window.print();
+        }
+        return;
+    }
+
+    try {
+        const filename = `monthly_report_${monthName.replace(/\s+/g, '_')}_${yearVal}.csv`;
+        let csv = "";
+        
+        // 1. Title
+        csv += `MONTHLY BUSINESS ACTIVITY REPORT - ${monthName.toUpperCase()} ${yearVal}\n\n`;
+
+        // 2. Financial Summary Section
+        csv += "FINANCIAL SUMMARY\n";
+        csv += `Total Sales Revenue,${data.revenue.toFixed(2)}\n`;
+        csv += `Total Sales Count,${data.orders}\n`;
+        csv += `Cost of Goods Sold (COGS),${data.cogs.toFixed(2)}\n`;
+        csv += `Gross Profit,${data.grossProfit.toFixed(2)}\n`;
+        csv += `Profit Margin,${(data.profitMargin || 0).toFixed(2)}%\n`;
+        csv += `Inventory Asset Value,${(data.financialSummary?.inventoryValue || 0).toFixed(2)}\n\n`;
+
+        // 3. Recipe Summary Table
+        csv += "RECIPE SALES SUMMARY\n";
+        csv += "Recipe Name,Quantity Sold,Revenue,Cost of Ingredients,Net Profit\n";
+        if (data.recipeSummary && data.recipeSummary.length > 0) {
+            data.recipeSummary.forEach(r => {
+                csv += `"${r.name}",${r.qtySold},${r.revenue.toFixed(2)},${r.cost.toFixed(2)},${r.profit.toFixed(2)}\n`;
+            });
+        } else {
+            csv += "No records found\n";
+        }
+        csv += "\n";
+
+        // 4. Ingredient Consumption Table
+        csv += "INGREDIENT CONSUMPTION\n";
+        csv += "Ingredient Name,Opening Stock,Purchased Qty,Quantity Used in Recipes,Quantity Sold Directly,Closing Stock,Unit\n";
+        if (data.ingredientConsumption && data.ingredientConsumption.length > 0) {
+            data.ingredientConsumption.forEach(i => {
+                csv += `"${i.name}",${i.openingStock},${i.purchased},${i.usedInRecipes},${i.soldDirectly},${i.closingStock},"${i.unit}"\n`;
+            });
+        } else {
+            csv += "No records found\n";
+        }
+        csv += "\n";
+
+        // 5. Stock Movement History Table
+        csv += "STOCK MOVEMENT HISTORY\n";
+        csv += "Date & Time,Ingredient,Movement Type,Quantity Change,Unit,Remaining Stock\n";
+        if (data.stockMovement && data.stockMovement.length > 0) {
+            data.stockMovement.forEach(m => {
+                csv += `"${m.date}","${m.ingredient}","${m.type}",${m.quantity},"${m.unit}",${m.remainingStock}\n`;
+            });
+        } else {
+            csv += "No records found\n";
+        }
+
+        // Export call (Android WebView or browser download fallback)
+        if (window.AndroidBridge || API_BASE !== '') {
+            const res = await fetch(`${API_BASE}/api/export-csv`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename, csvContent: csv })
+            });
+            if (res.ok) {
+                const resData = await res.json();
+                showToast(`Report exported successfully to ${resData.path}!`, "success");
+            } else {
+                showToast("Failed to export on device.", "error");
+            }
+        } else {
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Report spreadsheet downloaded successfully!", "success");
+        }
+    } catch (e) {
+        showToast("Error exporting report file.", "error");
+        console.error(e);
+    }
+};
 
 window.clearReportsData = function() {
     showDeleteConfirm(
@@ -2967,9 +3762,9 @@ window.loadStockTab = function() {
 };
 
 window.loadStockTabList = function() {
-    const tbody = document.getElementById('stockTabTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    const container = document.getElementById('stockTabCardsContainer');
+    if (!container) return;
+    container.innerHTML = '';
 
     const query = document.getElementById('stockTabSearch')?.value.toLowerCase() || '';
     
@@ -2981,32 +3776,67 @@ window.loadStockTabList = function() {
     });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">No products found</td></tr>`;
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-weight:600; font-size:0.95rem;">No products found.</div>`;
         return;
     }
 
     filtered.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        const card = document.createElement('div');
+        card.className = 'glass-card';
+        card.style.padding = '14px';
+        card.style.display = 'flex';
+        card.style.justifyContent = 'space-between';
+        card.style.alignItems = 'center';
+        card.style.border = '1px solid rgba(255,255,255,0.08)';
+        card.style.background = 'rgba(255,255,255,0.03)';
+        card.style.borderRadius = '10px';
         
         const unitToShow = p.bigUnit || p.unitOfMeasure || 'pcs';
         const stockInBigUnit = (p.bigUnit && p.packSize) ? (p.stock * p.packSize) : p.stock;
         const stockVal = stockInBigUnit.toFixed(2).replace(/\.00$/, '');
 
-        tr.innerHTML = `
-            <td class="col-qa-name" style="padding:12px; font-weight:600; text-align:left;">${p.name}</td>
-            <td class="col-qa-unit" style="padding:12px; text-align:center; color:var(--text-muted); font-size:0.85rem;">${unitToShow}</td>
-            <td class="col-qa-stock" style="padding:12px; text-align:center; font-weight:bold; color:${p.stock === 0 ? 'var(--danger)' : 'var(--accent)'}; font-size:1rem;">${stockVal}</td>
-            <td class="col-qa-adjust" style="padding:12px; text-align:center;">
-                <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
-                    <button onclick="adjustStockItemWithInput(${p.id}, -1)" style="width:30px; height:30px; border-radius:6px; border:none; background:rgba(239, 68, 68, 0.2); color:#ef4444; font-weight:bold; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">-</button>
-                    <input type="number" id="quickAdjustInput_${p.id}" value="1" min="1" step="1" style="width:55px; height:30px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.25); color:white; text-align:center; font-size:0.9rem; font-weight:bold; outline:none;" />
-                    <button onclick="adjustStockItemWithInput(${p.id}, 1)" style="width:30px; height:30px; border-radius:6px; border:none; background:rgba(16, 185, 129, 0.2); color:#10b981; font-weight:bold; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+        const hasSmallUnit = p.smallUnit && p.conversionValue > 0;
+        const unitBadge = hasSmallUnit ? 
+            `<span id="quickAdjustUnit_${p.id}" data-unit-type="big" onclick="toggleQuickAdjustUnit(${p.id}, '${unitToShow}', '${p.smallUnit}')" style="font-size:0.85rem; color:var(--accent); font-weight:700; cursor:pointer; border-bottom:1px dashed var(--accent); max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:all 0.2s;">${unitToShow}</span>` :
+            `<span style="font-size:0.85rem; color:var(--text-muted); font-weight:600; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${unitToShow}</span>`;
+
+        card.innerHTML = `
+            <div>
+                <div style="font-weight:bold; font-size:1rem; color:var(--text-main);">${p.name}</div>
+                <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">
+                    Current Stock: <span style="font-weight:bold; color:${p.stock === 0 ? 'var(--danger)' : 'var(--accent)'};">${stockVal} ${unitToShow}</span>
                 </div>
-            </td>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button onclick="adjustStockItemWithInput(${p.id}, -1)" style="width:36px; height:36px; border-radius:8px; border:none; background:rgba(239, 68, 68, 0.2); color:#ef4444; font-weight:bold; font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">-</button>
+                <div style="display:flex; align-items:center; justify-content:center; gap:4px; background:rgba(0,0,0,0.15); padding:2px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); width:120px; box-sizing:border-box;">
+                    <input type="number" id="quickAdjustInput_${p.id}" value="1" min="0.001" step="any" style="width:40px; border:none; background:transparent; color:white; text-align:center; font-size:0.9rem; font-weight:bold; outline:none;" />
+                    ${unitBadge}
+                </div>
+                <button onclick="adjustStockItemWithInput(${p.id}, 1)" style="width:36px; height:36px; border-radius:8px; border:none; background:rgba(16, 185, 129, 0.2); color:#10b981; font-weight:bold; font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+            </div>
         `;
-        tbody.appendChild(tr);
+        container.appendChild(card);
     });
+};
+
+window.toggleQuickAdjustUnit = function(productId, bigUnit, smallUnit) {
+    if (!smallUnit) return;
+    const badge = document.getElementById(`quickAdjustUnit_${productId}`);
+    if (!badge) return;
+    
+    const current = badge.getAttribute('data-unit-type');
+    if (current === 'big') {
+        badge.setAttribute('data-unit-type', 'small');
+        badge.innerText = smallUnit;
+        badge.style.color = '#f59e0b'; // amber color for small unit
+        badge.style.borderBottomColor = '#f59e0b';
+    } else {
+        badge.setAttribute('data-unit-type', 'big');
+        badge.innerText = bigUnit;
+        badge.style.color = 'var(--accent)';
+        badge.style.borderBottomColor = 'var(--accent)';
+    }
 };
 
 window.filterStockTabList = function() {
@@ -3016,16 +3846,27 @@ window.filterStockTabList = function() {
 window.adjustStockItemWithInput = async function(productId, direction) {
     const input = document.getElementById(`quickAdjustInput_${productId}`);
     if (!input) return;
-    const value = parseInt(input.value, 10);
+    const value = parseFloat(input.value);
     if (isNaN(value) || value <= 0) {
-        showToast("Please enter a valid positive integer", "error");
+        showToast("Please enter a valid positive number", "error");
         return;
     }
-    const delta = direction * value;
+    
+    const p = allProducts.find(x => x.id === productId);
+    if (!p) return;
+
+    const badge = document.getElementById(`quickAdjustUnit_${productId}`);
+    const unitType = badge ? badge.getAttribute('data-unit-type') : 'big';
+
+    let delta = direction * value;
+    
+    // Scale down small unit to big unit base first if selected
+    if (unitType === 'small' && p.conversionValue > 0) {
+        delta = delta / p.conversionValue;
+    }
     
     // Scale delta (Big Unit adjustment) to packs for database update
-    const p = allProducts.find(x => x.id === productId);
-    const dbChange = (p && p.bigUnit && p.packSize) ? (delta / p.packSize) : delta;
+    const dbChange = (p.bigUnit && p.packSize) ? (delta / p.packSize) : delta;
     
     await adjustStockItem(productId, dbChange);
 };
@@ -3052,9 +3893,9 @@ window.adjustStockItem = async function(productId, delta) {
 };
 
 window.loadStockReport = async function() {
-    const tbody = document.getElementById('stockReportTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    const container = document.getElementById('stockReportCardsContainer');
+    if (!container) return;
+    container.innerHTML = '';
 
     const selectedDate = document.getElementById('stockReportDate').value;
     if (!selectedDate) return;
@@ -3064,13 +3905,20 @@ window.loadStockReport = async function() {
         if (res.ok) {
             const list = await res.json();
             if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-muted);">No stock movements recorded on this day</td></tr>`;
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-weight:600; font-size:0.95rem;">No stock movements recorded for this day.</div>`;
                 return;
             }
 
             list.forEach(tx => {
-                const tr = document.createElement('tr');
-                tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                const card = document.createElement('div');
+                card.className = 'glass-card';
+                card.style.padding = '14px';
+                card.style.display = 'flex';
+                card.style.justifyContent = 'space-between';
+                card.style.alignItems = 'center';
+                card.style.border = '1px solid rgba(255,255,255,0.08)';
+                card.style.background = 'rgba(255,255,255,0.03)';
+                card.style.borderRadius = '10px';
                 
                 let timeStr = tx.time;
                 if (tx.time && tx.time.includes(' ')) {
@@ -3079,37 +3927,155 @@ window.loadStockReport = async function() {
                     timeStr = tx.time.split('T')[1].substring(0, 5);
                 }
 
+                // Dynamic unit lookup from allProducts array
+                const p = allProducts.find(x => x.name === tx.item);
+                const unitToShow = p ? (p.bigUnit || p.unitOfMeasure || 'pcs') : 'pcs';
+
+                // Try to extract the quantity change value from description
+                let qty = 0;
+                let hasQty = false;
+                let match = tx.desc.match(/by\s+(-?\d+(\.\d+)?)/i);
+                if (match) {
+                    qty = parseFloat(match[1]);
+                    hasQty = true;
+                } else {
+                    match = tx.desc.match(/(?:New\s+)?Qty:\s*(-?\d+(\.\d+)?)/i);
+                    if (match) {
+                        qty = parseFloat(match[1]);
+                        hasQty = true;
+                    }
+                }
+
                 let badgeBg = 'rgba(255, 255, 255, 0.1)';
                 let badgeColor = '#fff';
-                let actionText = tx.action;
+                let actionText = 'EDIT';
+                
                 if (tx.action === 'ADJUST_IN' || tx.action === 'STOCK_ADD') {
                     badgeBg = 'rgba(16, 185, 129, 0.15)';
                     badgeColor = '#10b981';
-                    actionText = '➕ ADD';
+                    actionText = 'ADDED';
                 } else if (tx.action === 'ADJUST_OUT') {
                     badgeBg = 'rgba(239, 68, 68, 0.15)';
                     badgeColor = '#ef4444';
-                    actionText = '➖ REDUCE';
+                    actionText = 'REMOVED';
                 } else if (tx.action === 'STOCK_EDIT') {
                     badgeBg = 'rgba(59, 130, 246, 0.15)';
                     badgeColor = '#3b82f6';
-                    actionText = '📝 EDIT';
+                    actionText = 'EDIT';
                 }
 
-                tr.innerHTML = `
-                    <td class="col-sr-time" style="padding:10px; font-size:0.85rem; color:var(--text-muted); font-weight:600;">${timeStr}</td>
-                    <td class="col-sr-item" style="padding:10px; font-weight:600; text-align:left;">${tx.item}</td>
-                    <td class="col-sr-details" style="padding:10px; text-align:left; font-size:0.85rem;">
-                        <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700; background:${badgeBg}; color:${badgeColor}; margin-right:8px;">${actionText}</span>
-                        ${tx.desc}
-                    </td>
+                let qtyStr = '';
+                if (hasQty) {
+                    if (actionText === 'REMOVED' && qty > 0) {
+                        qtyStr = `-${qty.toFixed(2).replace(/\.00$/, '')}`;
+                    } else if (actionText === 'ADDED' && qty > 0) {
+                        qtyStr = `+${qty.toFixed(2).replace(/\.00$/, '')}`;
+                    } else {
+                        qtyStr = qty > 0 ? `+${qty.toFixed(2).replace(/\.00$/, '')}` : qty.toFixed(2).replace(/\.00$/, '');
+                    }
+                } else {
+                    qtyStr = '1';
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:600; margin-bottom:4px;">${timeStr}</div>
+                        <div style="font-weight:bold; font-size:0.95rem; color:var(--text-main);">${tx.item}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:1rem; font-weight:bold; color:${badgeColor};">${qtyStr} ${unitToShow}</div>
+                        <span style="display:inline-block; margin-top:4px; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:bold; background:${badgeBg}; color:${badgeColor};">${actionText}</span>
+                    </div>
                 `;
-                tbody.appendChild(tr);
+                container.appendChild(card);
             });
         } else {
-            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--danger);">Failed to load movements</td></tr>`;
+            container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--danger); font-weight:600; font-size:0.95rem;">Failed to load movements.</div>`;
         }
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--danger);">Connection error</td></tr>`;
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--danger); font-weight:600; font-size:0.95rem;">Connection error.</div>`;
     }
 };
+
+// ─── ICON AND IMAGE PICKER LOGIC ──────────────────────────────────────────
+const PRESET_ICONS = [
+    // Seafood
+    '🐟', '🐠', '🐡', '🦈', '🐙', '🐚', '🦀', '🦞', '🦐', '🦑',
+    // Meals
+    '🍲', '🥗', '🍱', '🍛', '🍣', '🍙', '🍘', '🍝', '🍜', '🍢', '🍤', '🍳', '🥞', '🥩', '🍗', '🌭', '🍔', '🍟', '🍕',
+    // Groceries / Vegetables
+    '🥚', '🥛', '🧈', '🧅', '🥔', '🥕', '🌽', '🌶️', '🫑', '🥒', '🥬', '🥦', '🧄', '🍄', '🍋', '🍌', '🍎', '🍐', '🍑', '🍒', '🍓', '🫐', '🍇', '🥑',
+    // Drinks / Sweets
+    '🥤', '🧃', '🧉', '🍵', '☕', '🍺', '🍷', '🍧', '🍨', '🍦', '🍰', '🧁', '🍮', '🍩', '🍪',
+    // General
+    '📦', '🏷️', '🍽️', '🛒', '🛍️', '✨'
+];
+
+window.openIconPickerFor = function(target) {
+    iconPickerTarget = target;
+    
+    // Set title and labels according to page language
+    document.getElementById('iconPickerModal').querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+    });
+
+    const grid = document.getElementById('presetIconsGrid');
+    if (grid && grid.children.length === 0) {
+        PRESET_ICONS.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.style.cssText = 'background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 8px; font-size: 1.8rem; cursor: pointer; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; padding: 5px; transition: all 0.2s;';
+            btn.innerText = emoji;
+            btn.onclick = () => selectPresetIcon(emoji);
+            
+            // Hover effect
+            btn.onmouseover = () => btn.style.background = 'rgba(255,255,255,0.15)';
+            btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,0.05)';
+            
+            grid.appendChild(btn);
+        });
+    }
+
+    document.getElementById('iconPickerModal').classList.remove('hidden');
+};
+
+window.closeIconPickerModal = function() {
+    document.getElementById('iconPickerModal').classList.add('hidden');
+};
+
+window.triggerDeviceGallery = function() {
+    document.getElementById('iconFileInput').click();
+};
+
+function selectPresetIcon(emoji) {
+    if (iconPickerTarget === 'product') {
+        selectedProductIcon = emoji;
+        updateIconPreview('product', emoji);
+    } else {
+        selectedRecipeIcon = emoji;
+        updateIconPreview('recipe', emoji);
+    }
+    closeIconPickerModal();
+}
+
+function isImagePath(val) {
+    if (!val) return false;
+    if (val.startsWith('data:') || val.startsWith('http:') || val.startsWith('https:') || val.includes('/') || val.includes('\\')) {
+        return true;
+    }
+    const lower = val.toLowerCase();
+    return lower.includes('.png') || lower.includes('.jpg') || lower.includes('.jpeg') || 
+           lower.includes('.gif') || lower.includes('.svg') || lower.includes('.webp') || lower.includes('.ico');
+}
+
+function updateIconPreview(type, val) {
+    const previewDiv = document.getElementById(type === 'product' ? 'productIconPreview' : 'recipeIconPreview');
+    if (!previewDiv) return;
+    if (val && isImagePath(val)) {
+        previewDiv.innerHTML = `<img src="${val}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">`;
+    } else {
+        previewDiv.innerHTML = val || (type === 'product' ? '📦' : '🍲');
+    }
+}
+

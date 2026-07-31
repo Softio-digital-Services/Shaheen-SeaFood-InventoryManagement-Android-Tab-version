@@ -220,14 +220,25 @@ namespace Shaheen_InventoryManagement_Android.Services
         private int GetCategoryId(string categoryName)
         {
             if (string.IsNullOrWhiteSpace(categoryName)) return 1;
-            object result = DatabaseHelper.ExecuteScalar<object>("SELECT id FROM categories WHERE category_name = @name",
+            categoryName = categoryName.Trim();
+            object result = DatabaseHelper.ExecuteScalar<object>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@name)",
                 new SqliteParameter("@name", categoryName));
-            if (result != null) return Convert.ToInt32(result);
+            if (result != null && result != DBNull.Value) return Convert.ToInt32(result);
 
-            // Create if not exists, return new id
-            DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name, description) VALUES (@name, '')",
-                new SqliteParameter("@name", categoryName));
-            return (int)DatabaseHelper.ExecuteScalar<long>("SELECT last_insert_rowid()");
+            try
+            {
+                DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name, description) VALUES (@name, '')",
+                    new SqliteParameter("@name", categoryName));
+                return (int)DatabaseHelper.ExecuteScalar<long>("SELECT last_insert_rowid()");
+            }
+            catch
+            {
+                // Fallback check in case of unique constraint failure
+                object fallback = DatabaseHelper.ExecuteScalar<object>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@name)",
+                    new SqliteParameter("@name", categoryName));
+                if (fallback != null && fallback != DBNull.Value) return Convert.ToInt32(fallback);
+                return 1;
+            }
         }
 
         private void LogTransaction(string action, string description, string partName = "N/A")

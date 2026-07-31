@@ -52,12 +52,12 @@ namespace Shaheen_InventoryManagement_Android
         // ==========================================
         
         // Primary Brand Color (Marine Blue #1E5EAF)
-        public static Color PrimaryColor { get; } = Color.FromArgb(30, 94, 175); 
-        public static Color PrimaryHoverColor { get; } = Color.FromArgb(23, 75, 140); 
+        public static Color PrimaryColor { get; } = Color.FromArgb(53, 93, 157); 
+        public static Color PrimaryHoverColor { get; } = Color.FromArgb(39, 73, 125); 
 
         // Gradient Colors for Primary Buttons
         public static Color GradientStart { get; } = Color.FromArgb(59, 130, 246); 
-        public static Color GradientEnd { get; } = Color.FromArgb(30, 94, 175);   
+        public static Color GradientEnd { get; } = Color.FromArgb(53, 93, 157);   
 
         // Secondary / Text Colors
         public static Color SecondaryColor { get; } = Color.FromArgb(100, 116, 139); // Slate Gray
@@ -69,7 +69,7 @@ namespace Shaheen_InventoryManagement_Android
         // Backgrounds
         public static Color BackgroundColor { get; } = Color.FromArgb(240, 244, 248); 
         public static Color SidebarColor { get; } = Color.FromArgb(248, 250, 252);     
-        public static Color HeaderColor { get; } = Color.FromArgb(30, 94, 175);      
+        public static Color HeaderColor { get; } = Color.FromArgb(53, 93, 157); 
         public static Color ActiveBackColor { get; } = Color.FromArgb(239, 246, 255); 
 
         

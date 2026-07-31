@@ -1,9 +1,9 @@
 :root {
     --bg-primary: #f8fafc;
     --bg-secondary: #ffffff;
-    --accent: #1e5eaf; 
-    --accent-hover: #164b8c;
-    --accent-rgb: 30, 94, 175;
+    --accent: #355D9D; 
+    --accent-hover: #27497d;
+    --accent-rgb: 53, 93, 157;
     --secondary-accent: #f4b266;
     --secondary-accent-hover: #e09f53;
     --secondary-accent-rgb: 244, 178, 102;
@@ -11,7 +11,7 @@
     --text-main: #0f172a;
     --text-muted: #64748b;
     --surface-glass: rgba(255, 255, 255, 0.75);
-    --border-color: rgba(30, 94, 175, 0.12);
+    --border-color: rgba(53, 93, 157, 0.12);
     --header-height: 80px;
     --footer-height: 25px;
 }
@@ -279,7 +279,7 @@ body {
     backdrop-filter: blur(10px); 
     position: relative;
 }
-.product-card:hover { transform: translateY(-3px); border-color: var(--accent); background: rgba(30, 94, 175, 0.04); }
+.product-card:hover { transform: translateY(-3px); border-color: var(--accent); background: rgba(53, 93, 157, 0.04); }
 
 .product-img { 
     height: 48px; 
@@ -1272,20 +1272,7 @@ body.is-mobile-layout #tabContentImport > div:nth-child(2) {
     grid-template-columns: 100% !important;
     gap: 16px !important;
 }
-body.is-mobile-layout #tabContentReports > div:nth-child(2) {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
-}
-body.is-mobile-layout #tabContentReports > div:nth-child(2) .glass-card {
-    padding: 12px !important;
-}
-body.is-mobile-layout #tabContentReports > div:nth-child(2) [id^="kpi"] {
-    font-size: 1.4rem !important;
-}
-body.is-mobile-layout #tabContentReports > div:nth-child(3) {
-    grid-template-columns: 100% !important;
-    gap: 16px !important;
-}
+
 
 .btn-primary {
     background: var(--accent) !important;
@@ -1294,7 +1281,7 @@ body.is-mobile-layout #tabContentReports > div:nth-child(3) {
     border-radius: 10px !important;
     font-weight: 600 !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 12px rgba(30, 94, 175, 0.2) !important;
+    box-shadow: 0 4px 12px rgba(53, 93, 157, 0.2) !important;
     transition: all 0.2s !important;
     padding: 10px 24px !important;
     white-space: nowrap !important;
@@ -1302,7 +1289,7 @@ body.is-mobile-layout #tabContentReports > div:nth-child(3) {
 .btn-primary:hover {
     background: var(--accent-hover) !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 6px 15px rgba(30, 94, 175, 0.3) !important;
+    box-shadow: 0 6px 15px rgba(53, 93, 157, 0.3) !important;
 }
 .btn-primary:active {
     transform: translateY(0) !important;
@@ -1314,7 +1301,7 @@ body.is-mobile-layout #tabContentReports > div:nth-child(3) {
     justify-content: center;
     gap: 8px;
     white-space: nowrap;
-    background: rgba(30, 94, 175, 0.08);
+    background: rgba(53, 93, 157, 0.08);
     border: 1px solid var(--accent);
     color: var(--accent);
     border-radius: 8px;
@@ -1351,3 +1338,376 @@ body.is-mobile-layout #tabContentReports > div:nth-child(3) {
     background: var(--danger);
     color: white;
 }
+
+/* ─── REPORTS SUB-TABS & DATA TABLES ────────────────────────────────── */
+.btn-subtab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    height: 38px;
+    padding: 0 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+.btn-subtab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+.btn-subtab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.reports-panel {
+    transition: all 0.2s ease-in-out;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--text-main);
+    font-size: 0.9rem;
+}
+.report-table th {
+    padding: 12px;
+    font-weight: 700;
+    border-bottom: 2px solid rgba(255,255,255,0.1);
+    color: var(--text-muted);
+}
+.report-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.report-table tbody tr:hover {
+    background: rgba(255,255,255,0.02);
+}
+
+/* ─── MEDIA PRINT OVERRIDES ────────────────────────────────────────── */
+.print-only {
+    display: none;
+}
+
+@media print {
+    body, html {
+        background: white !important;
+        color: black !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+    .top-nav, .tablet-footer, .sidebar-nav, .nav-tabs, .top-actions {
+        display: none !important;
+    }
+    .tab-content-panel {
+        display: none !important;
+    }
+    #tabContentReports {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    .print-only {
+        display: block !important;
+    }
+    .reports-panel {
+        display: block !important;
+        margin-bottom: 40px !important;
+        page-break-inside: avoid !important;
+    }
+    .glass-card {
+        background: none !important;
+        border: 1px solid #ddd !important;
+        color: black !important;
+        box-shadow: none !important;
+        margin-bottom: 20px !important;
+        page-break-inside: avoid !important;
+    }
+    .report-table th {
+        background: #eee !important;
+        color: black !important;
+        border-bottom: 2px solid #333 !important;
+    }
+    .report-table td {
+        color: black !important;
+        border-bottom: 1px solid #ddd !important;
+    }
+    .print-grid-4 {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 10px !important;
+    }
+    .print-grid-1 {
+        display: block !important;
+    }
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+}
+
+/* ─── EXPORT BUTTON STYLING ────────────────────────────────────────── */
+.btn-export {
+    background: var(--bg-secondary) !important;
+    border: 2px solid var(--accent) !important;
+    color: var(--accent) !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    height: 36px !important;
+    padding: 0 14px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.2s ease !important;
+}
+.btn-export:hover {
+    background: var(--accent) !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(var(--accent-rgb), 0.2) !important;
+}
+
+/* ─── MOBILE SCROLL / PHONE COMPATIBILITY FOR REPORTS ────────────────── */
+body.is-mobile-layout #tabContentReports {
+    padding: 12px !important;
+}
+
+/* Header section responsive wrapping */
+body.is-mobile-layout #tabContentReports .report-header-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+}
+body.is-mobile-layout #tabContentReports .report-title-filters {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+body.is-mobile-layout #tabContentReports .report-title-filters h2 {
+    font-size: 1.25rem !important;
+    width: 100% !important;
+}
+body.is-mobile-layout #tabContentReports .report-title-filters > div {
+    display: flex !important;
+    width: 100% !important;
+    gap: 6px !important;
+}
+body.is-mobile-layout #tabContentReports .report-title-filters select {
+    flex: 1 !important;
+}
+
+body.is-mobile-layout #tabContentReports .report-actions-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+body.is-mobile-layout #tabContentReports .report-export-buttons {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    width: 100% !important;
+    gap: 6px !important;
+    padding: 2px !important;
+}
+body.is-mobile-layout #tabContentReports .report-export-buttons .btn-export {
+    justify-content: center !important;
+    height: 38px !important;
+    font-size: 0.75rem !important;
+    padding: 0 !important;
+}
+body.is-mobile-layout #tabContentReports .btn-clear-reports {
+    width: 100% !important;
+    height: 38px !important;
+}
+
+/* Subtabs Navigation styling for Mobile */
+body.is-mobile-layout #tabContentReports .reports-subtabs-nav {
+    display: flex !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 16px !important;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.08) !important;
+    height: auto !important;
+    min-height: 48px !important;
+}
+
+body.is-mobile-layout #tabContentReports .btn-subtab {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    border-radius: 20px !important;
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    height: 34px !important;
+    padding: 0 14px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.is-mobile-layout #tabContentReports .btn-subtab.active {
+    background: var(--accent) !important;
+    color: white !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 3px 8px rgba(var(--accent-rgb), 0.25) !important;
+}
+
+/* KPI cards grids on small screens (2 columns) */
+body.is-mobile-layout #panelReportsOverview .print-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+}
+body.is-mobile-layout #panelReportsOverview .print-grid-4 .glass-card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+}
+body.is-mobile-layout #panelReportsOverview .print-grid-4 [id^="kpi"] {
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+}
+
+/* Overview layout double card stacking */
+body.is-mobile-layout #panelReportsOverview .print-grid-1 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+}
+
+/* Financial statement row flexibility */
+body.is-mobile-layout #panelReportsOverview table tr {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 10px 0 !important;
+}
+body.is-mobile-layout #panelReportsOverview table td {
+    padding: 0 !important;
+}
+
+/* Chart panels stacking */
+body.is-mobile-layout #panelReportsCharts .print-grid-1 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+}
+
+/* Card layout conversion for reports dynamic tables */
+body.is-mobile-layout .report-table thead {
+    display: none !important;
+}
+body.is-mobile-layout .report-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+body.is-mobile-layout .report-table tr {
+    display: flex !important;
+    flex-direction: column !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    margin-bottom: 5px !important;
+}
+body.is-mobile-layout .report-table td {
+    display: block !important;
+    padding: 5px 0 !important;
+    border: none !important;
+    text-align: left !important;
+}
+body.is-mobile-layout .report-table td.col-rep-name {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: var(--text-main) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 4px !important;
+}
+body.is-mobile-layout .report-table td.col-rep-date {
+    font-size: 0.8rem !important;
+    color: var(--text-muted) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 4px !important;
+}
+body.is-mobile-layout .report-table td[data-label] {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+body.is-mobile-layout .report-table td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 700 !important;
+    color: var(--text-muted) !important;
+    font-size: 0.8rem !important;
+}
+
+/* ─── PREMIUM CUSTOM SELECT DROPDOWNS ──────────────────────────────── */
+select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-main) !important;
+    border: 2px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 10px 40px 10px 16px !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    outline: none !important;
+    cursor: pointer !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23EBBF76' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: calc(100% - 14px) center !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Light/Dark mode border adaptation for default state */
+body.dark-mode select {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Highlight border on hover & focus */
+select:focus, select:hover {
+    border-color: #EBBF76 !important;
+    box-shadow: 0 4px 15px rgba(235, 191, 118, 0.2) !important;
+}
+
+select option {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-main) !important;
+    padding: 12px !important;
+    font-size: 0.9rem !important;
+}
+
+
+
+

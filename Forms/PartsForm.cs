@@ -1821,7 +1821,20 @@ namespace Shaheen_InventoryManagement_Android.Forms
                             }
                         }
 
+                        double oldStock = 0;
+                        if (p.Id > 0)
+                        {
+                            oldStock = DatabaseHelper.ExecuteScalar<double>($"SELECT COALESCE(quantity_in_stock, 0) FROM parts WHERE id = {p.Id}");
+                        }
+
                         _inventoryService.SaveProductService(p);
+
+                        double delta = p.QuantityInStock - oldStock;
+                        if (delta != 0)
+                        {
+                            string action = delta > 0 ? "ADJUST_IN" : "ADJUST_OUT";
+                            DatabaseHelper.LogTransaction(action, p.PartName, $"Adjusted stock of {p.PartName} by {delta:F4}. Reason: Bulk Import (New Qty: {p.QuantityInStock})");
+                        }
                         imported++;
                     }
                     catch
