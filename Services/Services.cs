@@ -43,7 +43,22 @@ namespace Shaheen_InventoryManagement_Android.Services
             {
                 sql += $" LIMIT {limit} OFFSET {offset}";
             }
-            return DatabaseHelper.ExecuteDataTable(sql);
+            var dt = DatabaseHelper.ExecuteDataTable(sql);
+            if (!Helpers.UserSession.IsAdmin)
+            {
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    if (dt.Columns.Contains("selling_price")) row["selling_price"] = 0m;
+                    if (dt.Columns.Contains("purchase_price")) row["purchase_price"] = 0m;
+                    if (dt.Columns.Contains("pack_price")) row["pack_price"] = 0m;
+                    if (dt.Columns.Contains("item_price")) row["item_price"] = 0m;
+                    if (dt.Columns.Contains("piece_price")) row["piece_price"] = 0m;
+                    if (dt.Columns.Contains("price2")) row["price2"] = 0m;
+                    if (dt.Columns.Contains("price3")) row["price3"] = 0m;
+                    if (dt.Columns.Contains("price4")) row["price4"] = 0m;
+                }
+            }
+            return dt;
         }
 
         public int GetPartsCount(string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null)
@@ -91,6 +106,7 @@ namespace Shaheen_InventoryManagement_Android.Services
                 throw new Exception("Failed to add part. Database operation failed.");
             }
             LogTransaction("ADD", $"Added Part: {name} ({number})", name);
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Added ingredient");
             GlobalEvents.RaiseInventoryUpdated();
         }
 
@@ -122,6 +138,7 @@ namespace Shaheen_InventoryManagement_Android.Services
                 throw new Exception("Failed to update part. Database operation failed.");
 
             LogTransaction("EDIT", $"Updated Part ID: {id}", partName);
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Edited ingredient");
             GlobalEvents.RaiseInventoryUpdated();
         }
 
@@ -131,8 +148,10 @@ namespace Shaheen_InventoryManagement_Android.Services
             if (!string.IsNullOrEmpty(p.BigUnit) && !string.IsNullOrEmpty(p.SmallUnit))
             {
                 p.PackPrice = p.PurchasePrice;
-                p.ItemPrice = Helpers.IngredientCalculationEngine.CalculateCostPerBigUnit(p.PurchasePrice, p.PackSize);
-                p.PiecePrice = Helpers.IngredientCalculationEngine.CalculateCostPerSmallUnit(p.PurchasePrice, p.PackSize, p.ConversionValue);
+                bool isBigPack = p.BigUnit.ToLower().Trim() == "pack" || p.BigUnit.ToLower().Trim() == "package";
+                double effectivePSize = isBigPack ? 1.0 : p.PackSize;
+                p.ItemPrice = Helpers.IngredientCalculationEngine.CalculateCostPerBigUnit(p.PurchasePrice, effectivePSize);
+                p.PiecePrice = Helpers.IngredientCalculationEngine.CalculateCostPerSmallUnit(p.PurchasePrice, effectivePSize, p.ConversionValue);
             }
             else
             {
@@ -214,6 +233,7 @@ namespace Shaheen_InventoryManagement_Android.Services
                 throw new Exception("Failed to save product/service. Database operation failed.");
 
             LogTransaction(isNew ? "ADD" : "EDIT", $"{(isNew ? "Added" : "Updated")} {p.ItemType}: {p.PartName} ({p.PartNumber})", p.PartName);
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, isNew ? "Added ingredient" : "Edited ingredient");
             GlobalEvents.RaiseInventoryUpdated();
         }
 
@@ -259,6 +279,7 @@ namespace Shaheen_InventoryManagement_Android.Services
             string partName = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {partId}") ?? "N/A";
             DatabaseHelper.ExecuteNonQuery($"UPDATE parts SET date_deleted = datetime('now') WHERE id = {partId}");
             LogTransaction("DELETE", $"Deleted Part: {partName} (ID: {partId})", partName);
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Deleted ingredient");
             GlobalEvents.RaiseInventoryUpdated();
         }
 
@@ -312,6 +333,7 @@ namespace Shaheen_InventoryManagement_Android.Services
                     new SqliteParameter("@price", unitPrice),
                     new SqliteParameter("@loc", location ?? ""),
                     new SqliteParameter("@status", status ?? "Active"));
+                DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Imported inventory");
                 GlobalEvents.RaiseInventoryUpdated();
             }
             catch (Exception ex)

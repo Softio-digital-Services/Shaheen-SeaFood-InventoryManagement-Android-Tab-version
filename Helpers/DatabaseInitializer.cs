@@ -11,6 +11,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers
     {
         public static void Initialize()
         {
+            MigratePartsStockType();
             // SQLite creates the file automatically -- no CreateDatabase() needed
             DatabaseHelper.EnsureSchema();
             UpdateSchema();
@@ -35,18 +36,45 @@ namespace Shaheen_InventoryManagement_Android.Helpers
                 );
             }
 
-            // Ensure test admin user exists
-            int testAdminCount = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM users WHERE username = 'test'");
+            // Ensure Admin user exists
+            int testAdminCount = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM users WHERE username = 'Admin'");
             if (testAdminCount == 0)
             {
                 DatabaseHelper.ExecuteNonQuery(
-                    "INSERT INTO users (username, password, full_name, role) VALUES ('test', 'Test.Softio', 'Test Admin', 'Admin');"
+                    "INSERT INTO users (username, password, full_name, role) VALUES ('Admin', 'Admin.Softio', 'Test Admin', 'Admin');"
+                );
+            }
+            // Migrate any existing 'test' user to the new 'Admin' credentials
+            DatabaseHelper.ExecuteNonQuery(
+                "UPDATE users SET username = 'Admin', password = 'Admin.Softio' WHERE username = 'test';"
+            );
+
+            // Ensure test staff user exists
+            int testStaffCount = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM users WHERE username = 'staff'");
+            if (testStaffCount == 0)
+            {
+                DatabaseHelper.ExecuteNonQuery(
+                    "INSERT INTO users (username, password, full_name, role) VALUES ('staff', 'Staff.Softio', 'Test Staff', 'Staff');"
                 );
             }
 
             // Repair: Standardise status values (fix Arabic UI bug)
             DatabaseHelper.ExecuteNonQuery(
                 "UPDATE parts SET status = 'Active' WHERE status NOT IN ('Active', 'Inactive') AND date_deleted IS NULL;"
+            );
+
+            // Migration: Convert existing parts from pack-based to base-unit tracking
+            DatabaseHelper.ExecuteNonQuery(
+                @"UPDATE parts
+                  SET 
+                      quantity_in_stock = quantity_in_stock * pack_size,
+                      minimum_stock_level = minimum_stock_level * pack_size,
+                      purchase_price = purchase_price / pack_size,
+                      pack_price = purchase_price / pack_size,
+                      item_price = purchase_price / pack_size,
+                      piece_price = (purchase_price / pack_size) / conversion_value,
+                      pack_size = 1.0
+                  WHERE pack_size IS NOT NULL AND pack_size != 1.0 AND date_deleted IS NULL;"
             );
         }
 
@@ -98,6 +126,52 @@ namespace Shaheen_InventoryManagement_Android.Helpers
                 INSERT INTO order_items (order_id, part_id, quantity, price)
                 VALUES (1,1,5,12.00),(1,2,2,45.00),(2,3,10,18.00),(2,4,2,8.00),(3,1,3,12.00),(3,5,1,60.00);
             ");
+        }
+
+        private static void MigratePartsStockType()
+        {
+            try
+            {
+                // Check if table exists first
+                int tableExists = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='parts';");
+                if (tableExists == 0) return;
+
+                var dt = DatabaseHelper.ExecuteDataTable("PRAGMA table_info(parts)");
+                bool isInteger = false;
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    if (row["name"].ToString().Equals("quantity_in_stock", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string type = row["type"].ToString();
+                        if (type.Equals("INTEGER", StringComparison.OrdinalIgnoreCase))
+                        {
+                            isInteger = true;
+                        }
+                        break;
+                    }
+                }
+
+                if (isInteger)
+                {
+                    DatabaseHelper.ExecuteNonQuery("ALTER TABLE parts RENAME TO parts_old;");
+                    DatabaseHelper.EnsureSchema();
+
+                    var colsList = new System.Collections.Generic.List<string>();
+                    var dtOld = DatabaseHelper.ExecuteDataTable("PRAGMA table_info(parts_old)");
+                    foreach (System.Data.DataRow row in dtOld.Rows)
+                    {
+                        colsList.Add(row["name"].ToString());
+                    }
+                    string cols = string.Join(", ", colsList);
+
+                    DatabaseHelper.ExecuteNonQuery($"INSERT INTO parts ({cols}) SELECT {cols} FROM parts_old;");
+                    DatabaseHelper.ExecuteNonQuery("DROP TABLE parts_old;");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("MigratePartsStockType error: " + ex.Message);
+            }
         }
     }
 }

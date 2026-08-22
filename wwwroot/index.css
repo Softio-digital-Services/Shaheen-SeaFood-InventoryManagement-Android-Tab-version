@@ -41,6 +41,11 @@ body {
 
 .pos-container.blur { filter: blur(12px) brightness(0.5); pointer-events: none; }
 
+.tab-content-panel {
+    grid-column: 1 / -1;
+    grid-row: 2 / -1;
+}
+
 /* FIXED TOP HEADER */
 .top-nav {
     grid-column: 1 / span 2;
@@ -232,6 +237,47 @@ body {
     color: var(--accent);
 }
 
+
+/* SALES ENTRY – flex bottom dock */
+#tabContentSales {
+    grid-row: 2 / -1 !important;
+}
+
+#tabContentSales.active-panel ~ .tablet-footer {
+    display: none !important;
+}
+
+body.is-mobile-layout #tabContentSales {
+    grid-row: 2 !important;
+}
+
+.sales-bottom-dock {
+    position: relative;
+    background: var(--bg-primary);
+    padding: 15px 20px calc(12px + env(safe-area-inset-bottom, 0px)) 20px;
+    box-sizing: border-box;
+    z-index: 500;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+body.is-mobile-layout .sales-bottom-dock {
+    position: relative;
+    bottom: auto;
+    padding-bottom: 12px;
+}
+
+#tabContentSales .sales-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    padding-bottom: 20px;
+    box-sizing: border-box;
+}
+
+body.is-mobile-layout #tabContentSales .sales-scroll-area {
+    padding-bottom: 20px;
+}
 
 /* FOOTER */
 .tablet-footer {
@@ -789,7 +835,11 @@ body {
 .tab-content-panel.active-panel {
     display: flex !important;
     flex-direction: column !important;
-    animation: fadeIn 0.3s forwards;
+    animation: fadeInOnly 0.3s forwards;
+}
+@keyframes fadeInOnly {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(4px); }
@@ -822,6 +872,14 @@ body {
     gap: 12px;
     margin-left: 20px;
     align-items: center;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+}
+.nav-tabs::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome, Safari, Opera */
 }
 .nav-tab {
     background: none;
@@ -833,6 +891,7 @@ body {
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 .nav-tab:hover {
     color: white;
@@ -902,7 +961,7 @@ body.is-mobile-layout .products-area {
 }
 body.is-mobile-layout .pos-container {
     grid-template-columns: 100% !important;
-    grid-template-rows: var(--header-height) 1fr 70px !important;
+    grid-template-rows: var(--header-height) 1fr calc(70px + env(safe-area-inset-bottom, 0px)) !important;
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
@@ -912,7 +971,8 @@ body.is-mobile-layout .nav-tabs {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 70px;
+    height: calc(70px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     background: rgba(15, 15, 15, 0.98);
     backdrop-filter: blur(20px);
     border-top: 1px solid var(--border-color);
@@ -1706,6 +1766,328 @@ select option {
     color: var(--text-main) !important;
     padding: 12px !important;
     font-size: 0.9rem !important;
+}
+
+/* Align input fields inside the product modal input-grid vertically */
+.input-grid .input-group {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.input-grid .input-group > input,
+.input-grid .input-group > select,
+.input-grid .input-group > div {
+    margin-top: auto;
+}
+
+/* User navigation dropdown */
+.dropdown-item {
+    transition: background 0.15s, color 0.15s;
+}
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: white !important;
+}
+
+/* ─── SALES ENTRY ITEM SELECTOR IMPROVEMENTS ────────────────────────── */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+ 
+.custom-select-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    height: 45px;
+    box-sizing: border-box;
+}
+
+.custom-select-trigger span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 8px;
+    flex: 1;
+    text-align: left;
+}
+ 
+body.dark-mode .custom-select-trigger {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+ 
+.custom-select-trigger:hover, .custom-select-trigger.active {
+    border-color: var(--accent);
+    box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.2);
+}
+
+/* Dimmed backdrop background overlay */
+.custom-select-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(3px);
+    z-index: 199999;
+}
+.custom-select-backdrop.hidden {
+    display: none;
+}
+ 
+.custom-select-dropdown {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: 400px;
+    box-sizing: border-box;
+}
+ 
+.custom-select-dropdown.hidden {
+    display: none;
+}
+ 
+.custom-select-search-wrapper {
+    position: relative;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+}
+ 
+.custom-select-search-wrapper input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px 8px 32px;
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    outline: none;
+    box-sizing: border-box;
+}
+ 
+body.dark-mode .custom-select-search-wrapper input {
+    background: rgba(255, 255, 255, 0.05);
+}
+ 
+.custom-select-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.01);
+}
+ 
+.custom-select-tab {
+    flex: 1;
+    padding: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+ 
+.custom-select-tab:hover {
+    color: var(--text-main);
+}
+ 
+.custom-select-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.04);
+}
+ 
+.custom-select-lists {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 280px;
+}
+ 
+.custom-select-panel {
+    display: flex;
+    flex-direction: column;
+}
+ 
+.custom-select-panel.hidden {
+    display: none;
+}
+ 
+.custom-select-header-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 8px 12px 4px 12px;
+    letter-spacing: 0.05em;
+    background: rgba(0, 0, 0, 0.02);
+}
+ 
+.custom-select-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px 12px;
+}
+ 
+.custom-quick-access-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(var(--accent-rgb), 0.05);
+    border: 1px solid rgba(var(--accent-rgb), 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+    min-height: 42px;
+    box-sizing: border-box;
+    gap: 6px;
+}
+ 
+.custom-quick-access-item:hover {
+    background: rgba(var(--accent-rgb), 0.1);
+    border-color: var(--accent);
+}
+
+.custom-quick-access-item .quick-access-text {
+    flex: 1;
+    text-align: left;
+    word-break: break-word;
+    line-height: 1.25;
+}
+ 
+.custom-quick-access-item .star-btn {
+    padding: 4px;
+    cursor: pointer;
+    color: var(--secondary-accent);
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+}
+ 
+.custom-quick-access-item .star-btn:hover {
+    background: rgba(0,0,0,0.05);
+}
+ 
+.custom-select-list {
+    display: flex;
+    flex-direction: column;
+}
+ 
+.custom-select-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    transition: background 0.15s ease;
+    border-bottom: 1px solid rgba(0,0,0,0.02);
+}
+ 
+.custom-select-item:hover {
+    background: rgba(var(--accent-rgb), 0.04);
+}
+ 
+.custom-select-item .item-details {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-right: 8px;
+    gap: 12px;
+}
+ 
+.custom-select-item .item-name {
+    font-weight: 600;
+    color: var(--text-main);
+    word-break: break-word;
+    text-align: left;
+}
+ 
+.custom-select-item .item-price {
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+}
+ 
+.custom-select-item .star-btn {
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    opacity: 0.5;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+}
+ 
+.custom-select-item .star-btn:hover {
+    color: var(--secondary-accent);
+    opacity: 1;
+}
+ 
+.custom-select-item .star-btn.pinned {
+    color: var(--secondary-accent);
+    opacity: 1;
+}
+
+/* Responsive Select Dropdown Placement */
+@media (max-width: 768px) {
+    .custom-select-dropdown {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 92vw !important;
+        max-width: 420px !important;
+        max-height: 70vh !important;
+        margin: 0 !important;
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4) !important;
+        border: 2px solid var(--border-color) !important;
+        z-index: 200000 !important;
+        border-radius: 16px !important;
+    }
+    
+    .custom-select-backdrop {
+        display: block;
+    }
+}
+
+@media (min-width: 769px) {
+    .custom-select-dropdown {
+        position: absolute !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+        border: 2px solid var(--border-color) !important;
+        border-radius: 12px !important;
+        z-index: 200000 !important;
+    }
+    
+    .custom-select-backdrop {
+        display: none !important;
+    }
 }
 
 

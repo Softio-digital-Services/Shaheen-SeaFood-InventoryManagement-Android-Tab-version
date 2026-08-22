@@ -34,6 +34,7 @@ namespace Shaheen_InventoryManagement_Android.Data
         {
             get
             {
+                if (!Helpers.UserSession.IsAdmin) return 0m;
                 return Helpers.IngredientCalculationEngine.CalculatedUnitCost(
                     UnitCost, UnitOfMeasure, BigUnit, SmallUnit, ConversionValue, PackSize, StockType, PackItemsNumber, PartUom);
             }
@@ -66,7 +67,10 @@ namespace Shaheen_InventoryManagement_Android.Data
 
         private static RecipePartData MapFromReader(SqliteDataReader r)
         {
-            return new RecipePartData
+            decimal purchasePrice = Safe<decimal>(r, "purchase_price", 0);
+            decimal packPrice = Safe<decimal>(r, "pack_price", 0);
+
+            var item = new RecipePartData
             {
                 Id         = r.GetInt32(r.GetOrdinal("id")),
                 RecipeId   = r.GetInt32(r.GetOrdinal("recipe_id")),
@@ -74,13 +78,13 @@ namespace Shaheen_InventoryManagement_Android.Data
                 Quantity   = Safe<double>(r, "quantity", 1),
                 PartName   = Safe<string>(r, "part_name", ""),
                 PartNumber = Safe<string>(r, "part_number", ""),
-                UnitCost   = Safe<decimal>(r, "purchase_price", 0),
+                UnitCost   = packPrice > 0 ? packPrice : purchasePrice,
                 UnitOfMeasure = Safe<string>(r, "unit_of_measure", ""),
                 
                 // Custom unit mappings
                 StockType  = Safe<string>(r, "stock_type", "Piece"),
                 PackItemsNumber = Safe<int>(r, "pack_items_number", 0),
-                PackPrice  = Safe<decimal>(r, "pack_price", 0),
+                PackPrice  = packPrice,
                 ItemPrice  = Safe<decimal>(r, "item_price", 0),
                 PiecePrice = Safe<decimal>(r, "piece_price", 0),
                 BigUnit    = Safe<string>(r, "big_unit", ""),
@@ -89,6 +93,16 @@ namespace Shaheen_InventoryManagement_Android.Data
                 PackSize   = Safe<double>(r, "pack_size", 1.0),
                 PartUom    = Safe<string>(r, "part_uom", "")
             };
+
+            if (!Helpers.UserSession.IsAdmin)
+            {
+                item.UnitCost = 0m;
+                item.PackPrice = 0m;
+                item.ItemPrice = 0m;
+                item.PiecePrice = 0m;
+            }
+
+            return item;
         }
 
         public static double GetConvertedQuantityDynamic(double qty, string recipeUom, string partUom, string stockType, int packItems, string bigUnit, string smallUnit, double convVal, double packSize)
@@ -101,13 +115,22 @@ namespace Shaheen_InventoryManagement_Android.Data
                 string sUnit = smallUnit.ToLower().Trim();
                 string bUnit = bigUnit.ToLower().Trim();
 
+                bool isBigPack = bUnit == "pack" || bUnit == "package";
+                double effectivePSize = isBigPack ? 1.0 : pSize;
+
+                if (bUnit == sUnit)
+                {
+                    if (rUom == "pack") return qty;
+                    return qty / effectivePSize;
+                }
+
                 if (rUom == sUnit)
                 {
-                    return qty / (pSize * conv);
+                    return qty / (effectivePSize * conv);
                 }
                 else if (rUom == bUnit)
                 {
-                    return qty / pSize;
+                    return qty / effectivePSize;
                 }
                 else if (rUom == "pack")
                 {
@@ -115,7 +138,7 @@ namespace Shaheen_InventoryManagement_Android.Data
                 }
                 else
                 {
-                    return qty / (pSize * conv);
+                    return qty / (effectivePSize * conv);
                 }
             }
             return GetConvertedQuantity(qty, recipeUom, partUom, stockType, packItems);

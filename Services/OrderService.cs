@@ -217,6 +217,7 @@ namespace Shaheen_InventoryManagement_Android.Services
             GlobalEvents.RaiseInventoryUpdated(); // Stock reduced
             if (!isPaid && !isWalkIn) GlobalEvents.RaiseCustomersUpdated(); // Balance updated
 
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Added sale");
             return orderId;
         }
 

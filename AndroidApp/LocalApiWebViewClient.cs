@@ -104,6 +104,25 @@ namespace Shaheen_InventoryManagement_Android
         {
             try
             {
+                // Parse optional date parameter from original query string
+                string dateParam = null;
+                if (url.Contains("?"))
+                {
+                    var parts = url.Split('?');
+                    if (parts.Length > 1)
+                    {
+                        var queryParts = parts[1].Split('&');
+                        foreach (var qp in queryParts)
+                        {
+                            var kv = qp.Split('=');
+                            if (kv.Length == 2 && kv[0].Equals("date", StringComparison.OrdinalIgnoreCase))
+                            {
+                                dateParam = kv[1];
+                            }
+                        }
+                    }
+                }
+
                 // Normalize URL to retrieve the endpoint path
                 string endpoint = url;
                 if (endpoint.StartsWith("http://local-api"))
@@ -149,7 +168,35 @@ namespace Shaheen_InventoryManagement_Android
                 }
                 else if (endpoint == "api/sales-items")
                 {
-                    return GetSalesItems();
+                    return GetSalesItems(dateParam);
+                }
+                else if (endpoint == "api/sales-export" && method.Equals("GET", StringComparison.OrdinalIgnoreCase))
+                {
+                    string sql = @"
+                        SELECT 
+                            COALESCE(p.item_no, r.item_no, '') as item_no,
+                            COALESCE(p.part_name, r.recipe_name) as item_name,
+                            SUM(oi.quantity) as qty_sold,
+                            COALESCE(oi.unit_of_measure, p.big_unit, p.unit_of_measure, 'pcs') as unit
+                        FROM orders o
+                        JOIN order_items oi ON o.order_id = oi.order_id
+                        LEFT JOIN parts p ON oi.part_id = p.id AND oi.item_type != 'Recipe'
+                        LEFT JOIN recipes r ON oi.recipe_id = r.id AND oi.item_type = 'Recipe'
+                        WHERE o.status != 'Cancelled'
+                        GROUP BY COALESCE(p.item_no, r.item_no, ''), COALESCE(p.part_name, r.recipe_name), COALESCE(oi.unit_of_measure, p.big_unit, p.unit_of_measure, 'pcs')";
+
+                    using (var dt = DatabaseHelper.ExecuteDataTable(sql))
+                    {
+                        var list = dt.Rows.Cast<DataRow>().Select(row => new
+                        {
+                            itemNo = row["item_no"]?.ToString() ?? "",
+                            itemName = row["item_name"]?.ToString() ?? "",
+                            qtySold = row["qty_sold"] != DBNull.Value ? Convert.ToInt32(row["qty_sold"]) : 0,
+                            unit = row["unit"]?.ToString() ?? "pcs"
+                        }).ToList();
+
+                        return JsonSerializer.Serialize(list);
+                    }
                 }
                 else if (endpoint.StartsWith("api/order-details/"))
                 {
@@ -160,9 +207,92 @@ namespace Shaheen_InventoryManagement_Android
                     }
                     return JsonSerializer.Serialize(new { error = "Invalid order ID" });
                 }
+                else if (endpoint == "api/sync-session" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var payload = JsonSerializer.Deserialize<SyncSessionPayload>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (payload != null)
+                        {
+                            Helpers.UserSession.Username = payload.Username;
+                            Helpers.UserSession.Role = payload.Role;
+                            if (payload.Username == "Softio.Admin")
+                            {
+                                Helpers.UserSession.FullName = "Softio Super Admin";
+                            }
+                            else
+                            {
+                                var name = DatabaseHelper.ExecuteScalar<string>("SELECT full_name FROM users WHERE username = @u", new SqliteParameter("@u", payload.Username));
+                                Helpers.UserSession.FullName = name ?? payload.Username;
+                            }
+                        }
+                    }
+                    catch { }
+                    return JsonSerializer.Serialize(new { success = true });
+                }
                 else if (endpoint == "api/login" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
                 {
                     return ProcessLogin(body);
+                }
+                else if (endpoint == "api/logout" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Logged out");
+                    Helpers.UserSession.Clear();
+                    return JsonSerializer.Serialize(new { success = true });
+                }
+                else if (endpoint == "api/license-info")
+                {
+                    try
+                    {
+                        var license = Helpers.LicenseManager.GetCurrentLicense();
+                        if (license == null)
+                        {
+                            return JsonSerializer.Serialize(new
+                            {
+                                key = "None",
+                                customerName = "None",
+                                licenseType = "None",
+                                activationDate = "N/A",
+                                expirationDate = "N/A",
+                                daysRemaining = 0,
+                                status = "No license stored"
+                            });
+                        }
+
+                        return JsonSerializer.Serialize(new
+                        {
+                            key = license.Key,
+                            customerName = license.CustomerName,
+                            licenseType = license.LicenseType,
+                            activationDate = license.ActivationDate.ToString("yyyy-MM-dd"),
+                            expirationDate = license.ExpirationDate.ToString("yyyy-MM-dd"),
+                            daysRemaining = license.DaysRemaining(),
+                            status = license.IsValid() ? "Active / Valid" : "Expired / Invalid"
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        return JsonSerializer.Serialize(new { error = ex.Message });
+                    }
+                }
+                else if (endpoint == "api/factory-reset" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var bodyObj = JsonSerializer.Deserialize<FactoryResetPayload>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (bodyObj == null || !VerifyAdminCredentials(bodyObj.AdminUsername, bodyObj.AdminPassword))
+                        {
+                            return JsonSerializer.Serialize(new { success = false, message = "Invalid Admin username or password." });
+                        }
+
+                        PerformFactoryReset();
+
+                        return JsonSerializer.Serialize(new { success = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        return JsonSerializer.Serialize(new { success = false, error = ex.Message });
+                    }
                 }
                 else if (endpoint == "api/add-item" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
                 {
@@ -194,6 +324,10 @@ namespace Shaheen_InventoryManagement_Android
                 else if (endpoint == "api/return-item" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
                 {
                     return ProcessReturnItem(body);
+                }
+                else if (endpoint == "api/recipes/sales-frequency" && method.Equals("GET", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GetRecipesSalesFrequency();
                 }
                 else if (endpoint == "api/recipes" && method.Equals("GET", StringComparison.OrdinalIgnoreCase))
                 {
@@ -244,6 +378,7 @@ namespace Shaheen_InventoryManagement_Android
                 {
                     int month = DateTime.Now.Month;
                     int year = DateTime.Now.Year;
+                    int? day = null;
                     int qIdx = url.IndexOf('?');
                     if (qIdx >= 0)
                     {
@@ -253,13 +388,62 @@ namespace Shaheen_InventoryManagement_Android
                         {
                             if (p.StartsWith("month=")) int.TryParse(Uri.UnescapeDataString(p.Substring("month=".Length)), out month);
                             if (p.StartsWith("year=")) int.TryParse(Uri.UnescapeDataString(p.Substring("year=".Length)), out year);
+                            if (p.StartsWith("day="))
+                            {
+                                if (int.TryParse(Uri.UnescapeDataString(p.Substring("day=".Length)), out var d)) day = d;
+                            }
                         }
                     }
-                    return GetMonthlyReportData(month, year);
+                    return GetMonthlyReportData(month, year, day);
                 }
                 else if (endpoint == "api/clear-reports" && method.Equals("POST", StringComparison.OrdinalIgnoreCase))
                 {
                     return ClearReportsData();
+                }
+                else if (endpoint == "api/logs" && method.Equals("GET", StringComparison.OrdinalIgnoreCase))
+                {
+                    string filterUser = null;
+                    int qIdx = url.IndexOf('?');
+                    if (qIdx >= 0)
+                    {
+                        var query = url.Substring(qIdx + 1);
+                        var parts = query.Split('&');
+                        foreach (var p in parts)
+                        {
+                            if (p.StartsWith("username=")) filterUser = Uri.UnescapeDataString(p.Substring("username=".Length));
+                        }
+                    }
+
+                    if (Helpers.UserSession.Role != "Admin")
+                    {
+                        filterUser = Helpers.UserSession.Username;
+                    }
+
+                    string sql = "";
+                    SqliteParameter[] parameters;
+
+                    if (string.IsNullOrEmpty(filterUser) || filterUser.Equals("all", StringComparison.OrdinalIgnoreCase))
+                    {
+                        sql = "SELECT timestamp, username, action FROM user_logs ORDER BY id DESC LIMIT 200";
+                        parameters = new SqliteParameter[0];
+                    }
+                    else
+                    {
+                        sql = "SELECT timestamp, username, action FROM user_logs WHERE username = @u ORDER BY id DESC LIMIT 200";
+                        parameters = new SqliteParameter[] { new SqliteParameter("@u", filterUser) };
+                    }
+
+                    using (var dt = DatabaseHelper.ExecuteDataTable(sql, parameters))
+                    {
+                        var list = dt.Rows.Cast<DataRow>().Select(row => new
+                        {
+                            timestamp = row["timestamp"]?.ToString(),
+                            username = row["username"]?.ToString(),
+                            action = row["action"]?.ToString()
+                        }).ToList();
+
+                        return JsonSerializer.Serialize(list);
+                    }
                 }
 
                 return JsonSerializer.Serialize(new { error = $"Endpoint not found: {endpoint} ({method})" });
@@ -313,10 +497,10 @@ namespace Shaheen_InventoryManagement_Android
                     name = row["part_name"].ToString(),
                     itemNo = row["item_no"].ToString(),
                     price = Convert.ToDecimal(row["selling_price"]),
-                    purchasePrice = Convert.ToDecimal(row["purchase_price"]),
+                    purchasePrice = (!Helpers.UserSession.IsAdmin) ? 0m : Convert.ToDecimal(row["purchase_price"]),
                     unitOfMeasure = row["unit_of_measure"].ToString(),
                     stock = Convert.ToDouble(row["quantity_in_stock"]),
-                    minStock = Convert.ToInt32(row["minimum_stock_level"]),
+                    minStock = Convert.ToDouble(row["minimum_stock_level"]),
                     barcode = row["barcode"].ToString(),
                     sku = row["part_number"].ToString(),
                     category = category,
@@ -325,9 +509,9 @@ namespace Shaheen_InventoryManagement_Android
                     isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase),
                     stockType = row["stock_type"] != DBNull.Value ? row["stock_type"].ToString() : "Piece",
                     packItemsNumber = row["pack_items_number"] != DBNull.Value ? Convert.ToInt32(row["pack_items_number"]) : 0,
-                    packPrice = row["pack_price"] != DBNull.Value ? Convert.ToDecimal(row["pack_price"]) : 0m,
-                    itemPrice = row["item_price"] != DBNull.Value ? Convert.ToDecimal(row["item_price"]) : 0m,
-                    piecePrice = row["piece_price"] != DBNull.Value ? Convert.ToDecimal(row["piece_price"]) : 0m,
+                    packPrice = (!Helpers.UserSession.IsAdmin) ? 0m : (row["pack_price"] != DBNull.Value ? Convert.ToDecimal(row["pack_price"]) : 0m),
+                    itemPrice = (!Helpers.UserSession.IsAdmin) ? 0m : (row["item_price"] != DBNull.Value ? Convert.ToDecimal(row["item_price"]) : 0m),
+                    piecePrice = (!Helpers.UserSession.IsAdmin) ? 0m : (row["piece_price"] != DBNull.Value ? Convert.ToDecimal(row["piece_price"]) : 0m),
                     bigUnit = row["big_unit"] != DBNull.Value ? row["big_unit"].ToString() : "",
                     smallUnit = row["small_unit"] != DBNull.Value ? row["small_unit"].ToString() : "",
                     conversionValue = row["conversion_value"] != DBNull.Value ? Convert.ToDouble(row["conversion_value"]) : 1.0,
@@ -368,7 +552,7 @@ namespace Shaheen_InventoryManagement_Android
         private string GetRecentSales()
         {
             var dt = DatabaseHelper.ExecuteDataTable(
-                @"SELECT o.order_id, o.order_date, o.total_amount, 
+                @"SELECT o.order_id, datetime(o.order_date, 'localtime') as order_date, o.total_amount, 
                          COALESCE(c.full_name, 'Cash Customer') as customer_name
                   FROM orders o
                   LEFT JOIN customers c ON o.customer_id = c.customer_id
@@ -389,15 +573,25 @@ namespace Shaheen_InventoryManagement_Android
             return JsonSerializer.Serialize(list);
         }
 
-        private string GetSalesItems()
+        private string GetSalesItems(string dateParam = null)
         {
-            var dt = DatabaseHelper.ExecuteDataTable(
-                @"SELECT oi.order_item_id, COALESCE(p.part_name, r.recipe_name) as item_name, oi.quantity, oi.price, o.order_date
-                  FROM order_items oi
-                  LEFT JOIN parts p ON oi.part_id = p.id AND oi.item_type != 'Recipe'
-                  LEFT JOIN recipes r ON oi.recipe_id = r.id AND oi.item_type = 'Recipe'
-                  JOIN orders o ON oi.order_id = o.order_id
-                  ORDER BY oi.order_item_id DESC LIMIT 100");
+            string sql = @"SELECT oi.order_item_id, COALESCE(p.part_name, r.recipe_name) as item_name, oi.quantity, oi.price, datetime(o.order_date, 'localtime') as order_date, oi.unit_of_measure
+                           FROM order_items oi
+                           LEFT JOIN parts p ON oi.part_id = p.id AND oi.item_type != 'Recipe'
+                           LEFT JOIN recipes r ON oi.recipe_id = r.id AND oi.item_type = 'Recipe'
+                           JOIN orders o ON oi.order_id = o.order_id ";
+
+            System.Data.DataTable dt;
+            if (!string.IsNullOrEmpty(dateParam))
+            {
+                sql += " WHERE date(datetime(o.order_date, 'localtime')) = @date ORDER BY oi.order_item_id DESC";
+                dt = DatabaseHelper.ExecuteDataTable(sql, new SqliteParameter("@date", dateParam));
+            }
+            else
+            {
+                sql += " ORDER BY oi.order_item_id DESC LIMIT 100";
+                dt = DatabaseHelper.ExecuteDataTable(sql);
+            }
 
             var list = new List<object>();
             foreach (DataRow row in dt.Rows)
@@ -406,10 +600,11 @@ namespace Shaheen_InventoryManagement_Android
                 {
                     id = Convert.ToInt32(row["order_item_id"]),
                     name = row["item_name"].ToString(),
-                    qty = Convert.ToInt32(row["quantity"]),
+                    qty = Convert.ToDouble(row["quantity"]),
                     price = Convert.ToDecimal(row["price"]),
-                    total = Convert.ToInt32(row["quantity"]) * Convert.ToDecimal(row["price"]),
-                    date = Convert.ToDateTime(row["order_date"])
+                    total = Convert.ToDecimal(row["quantity"]) * Convert.ToDecimal(row["price"]),
+                    date = Convert.ToDateTime(row["order_date"]),
+                    unitOfMeasure = row["unit_of_measure"] != DBNull.Value ? row["unit_of_measure"].ToString() : ""
                 });
             }
             return JsonSerializer.Serialize(list);
@@ -445,10 +640,22 @@ namespace Shaheen_InventoryManagement_Android
                 return JsonSerializer.Serialize(new { error = "Missing credentials" });
 
             if (body.Username == "Softio.Admin" && body.Password == "Softio@2026!")
+            {
+                Helpers.UserSession.Username = "Softio.Admin";
+                Helpers.UserSession.Role = "Admin";
+                Helpers.UserSession.FullName = "Softio Super Admin";
+                DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Logged in");
                 return JsonSerializer.Serialize(new { username = "Softio.Admin", role = "Admin", fullName = "Softio Super Admin" });
+            }
 
-            if (body.Username == "test" && body.Password == "Test.Softio")
-                return JsonSerializer.Serialize(new { username = "test", role = "Admin", fullName = "Test Admin" });
+            if (body.Username?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true && body.Password == "Admin.Softio")
+            {
+                Helpers.UserSession.Username = "Admin";
+                Helpers.UserSession.Role = "Admin";
+                Helpers.UserSession.FullName = "Test Admin";
+                DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Logged in");
+                return JsonSerializer.Serialize(new { username = "Admin", role = "Admin", fullName = "Test Admin" });
+            }
 
             var dt = DatabaseHelper.ExecuteDataTable(
                 "SELECT username, role, full_name FROM users WHERE username = @u AND password = @p",
@@ -459,6 +666,11 @@ namespace Shaheen_InventoryManagement_Android
                 return JsonSerializer.Serialize(new { error = "Unauthorized" });
 
             var row = dt.Rows[0];
+            Helpers.UserSession.Username = row["username"].ToString();
+            Helpers.UserSession.Role = row["role"].ToString();
+            Helpers.UserSession.FullName = row["full_name"].ToString();
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Logged in");
+
             return JsonSerializer.Serialize(new
             {
                 username = row["username"].ToString(),
@@ -529,12 +741,36 @@ namespace Shaheen_InventoryManagement_Android
                     "SELECT COALESCE(quantity_in_stock, 0) FROM parts WHERE id = @id",
                     new SqliteParameter("@id", body.Id.Value));
 
+                decimal pPrice = body.Price;
+                decimal sPrice = body.Price;
+                decimal packPrice = body.PackPrice;
+                decimal itemPrice = body.ItemPrice;
+                decimal piecePrice = body.PiecePrice;
+
+                if (!Helpers.UserSession.IsAdmin)
+                {
+                    using (var dtItem = DatabaseHelper.ExecuteDataTable(
+                        "SELECT purchase_price, selling_price, pack_price, item_price, piece_price FROM parts WHERE id = @id",
+                        new SqliteParameter("@id", body.Id.Value)))
+                    {
+                        if (dtItem.Rows.Count > 0)
+                        {
+                            var row = dtItem.Rows[0];
+                            pPrice = row["purchase_price"] != DBNull.Value ? Convert.ToDecimal(row["purchase_price"]) : 0m;
+                            sPrice = row["selling_price"] != DBNull.Value ? Convert.ToDecimal(row["selling_price"]) : 0m;
+                            packPrice = row["pack_price"] != DBNull.Value ? Convert.ToDecimal(row["pack_price"]) : 0m;
+                            itemPrice = row["item_price"] != DBNull.Value ? Convert.ToDecimal(row["item_price"]) : 0m;
+                            piecePrice = row["piece_price"] != DBNull.Value ? Convert.ToDecimal(row["piece_price"]) : 0m;
+                        }
+                    }
+                }
+
                 DatabaseHelper.ExecuteNonQuery(sql,
                     new SqliteParameter("@name", body.Name),
                     new SqliteParameter("@sku", body.Sku ?? ""),
                     new SqliteParameter("@cat", catId),
-                    new SqliteParameter("@p_price", body.Price * 0.7m),
-                    new SqliteParameter("@s_price", body.Price),
+                    new SqliteParameter("@p_price", pPrice),
+                    new SqliteParameter("@s_price", sPrice),
                     new SqliteParameter("@stock", body.Stock),
                     new SqliteParameter("@min_stock", body.MinStock),
                     new SqliteParameter("@barcode", body.Barcode ?? ""),
@@ -542,9 +778,9 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@uom", body.UnitOfMeasure ?? ""),
                     new SqliteParameter("@stock_type", body.StockType ?? "Piece"),
                     new SqliteParameter("@pack_items_number", body.PackItemsNumber),
-                    new SqliteParameter("@pack_price", body.PackPrice),
-                    new SqliteParameter("@item_price", body.ItemPrice),
-                    new SqliteParameter("@piece_price", body.PiecePrice),
+                    new SqliteParameter("@pack_price", packPrice),
+                    new SqliteParameter("@item_price", itemPrice),
+                    new SqliteParameter("@piece_price", piecePrice),
                     new SqliteParameter("@big_unit", body.BigUnit ?? ""),
                     new SqliteParameter("@small_unit", body.SmallUnit ?? ""),
                     new SqliteParameter("@conversion_value", body.ConversionValue),
@@ -562,6 +798,7 @@ namespace Shaheen_InventoryManagement_Android
                 {
                     DatabaseHelper.LogTransaction("STOCK_EDIT", body.Name, $"Edited via Android App (New Qty: {body.Stock})");
                 }
+                DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Edited ingredient");
                 return JsonSerializer.Serialize(new { success = true });
             }
             else
@@ -589,7 +826,7 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@name", body.Name),
                     new SqliteParameter("@sku", body.Sku ?? ""),
                     new SqliteParameter("@cat", catId),
-                    new SqliteParameter("@p_price", body.Price * 0.7m),
+                    new SqliteParameter("@p_price", body.Price),
                     new SqliteParameter("@s_price", body.Price),
                     new SqliteParameter("@stock", body.Stock),
                     new SqliteParameter("@min_stock", body.MinStock),
@@ -608,6 +845,7 @@ namespace Shaheen_InventoryManagement_Android
                     new SqliteParameter("@part_image", body.Image ?? ""));
 
                 DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via Android App (Qty: {body.Stock})");
+                DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Added ingredient");
                 return JsonSerializer.Serialize(new { success = true });
             }
         }
@@ -636,14 +874,14 @@ namespace Shaheen_InventoryManagement_Android
         {
             try
             {
-                string sql = @"SELECT action_type, part_name, description, timestamp, username
+                string sql = @"SELECT action_type, part_name, description, datetime(timestamp, 'localtime') as timestamp, username
                                FROM transactions
-                               WHERE action_type IN ('ADJUST_IN', 'ADJUST_OUT', 'STOCK_EDIT', 'STOCK_ADD')";
+                               WHERE action_type IN ('ADJUST_IN', 'ADJUST_OUT', 'STOCK_EDIT', 'STOCK_ADD', 'STOCK_DEDUCT')";
                 
                 var parameters = new List<SqliteParameter>();
                 if (!string.IsNullOrEmpty(date))
                 {
-                    sql += " AND date(timestamp) = @date";
+                    sql += " AND date(datetime(timestamp, 'localtime')) = @date";
                     parameters.Add(new SqliteParameter("@date", date));
                 }
                 sql += " ORDER BY id DESC";
@@ -752,8 +990,8 @@ namespace Shaheen_InventoryManagement_Android
                             partId = rp.PartId,
                             partName = rp.PartName,
                             qty = rp.Quantity,
-                            unitCost = rp.UnitCost,
-                            totalCost = rp.TotalCost,
+                            unitCost = (!Helpers.UserSession.IsAdmin) ? 0m : rp.UnitCost,
+                            totalCost = (!Helpers.UserSession.IsAdmin) ? 0m : rp.TotalCost,
                             unitOfMeasure = rp.UnitOfMeasure
                         });
                     }
@@ -764,7 +1002,7 @@ namespace Shaheen_InventoryManagement_Android
                         itemNo = r.ItemNo,
                         description = r.Description,
                         price = r.SellingPrice,
-                        totalCost = r.TotalCost,
+                        totalCost = (!Helpers.UserSession.IsAdmin) ? 0m : r.TotalCost,
                         categoryName = r.CategoryName,
                         image = CleanImagePrefix(r.RecipeImage),
                         parts = partsList
@@ -775,6 +1013,35 @@ namespace Shaheen_InventoryManagement_Android
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "WebAppInterface.GetRecipes");
+                return JsonSerializer.Serialize(new { error = ex.Message });
+            }
+        }
+
+        private string GetRecipesSalesFrequency()
+        {
+            try
+            {
+                var dt = DatabaseHelper.ExecuteDataTable(
+                    @"SELECT recipe_id, SUM(quantity) as sales_count
+                      FROM order_items
+                      WHERE item_type = 'Recipe' AND recipe_id IS NOT NULL AND recipe_id > 0
+                      GROUP BY recipe_id");
+
+                var freq = new Dictionary<int, double>();
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    if (row["recipe_id"] != DBNull.Value && row["sales_count"] != DBNull.Value)
+                    {
+                        int rId = Convert.ToInt32(row["recipe_id"]);
+                        double count = Convert.ToDouble(row["sales_count"]);
+                        freq[rId] = count;
+                    }
+                }
+                return JsonSerializer.Serialize(freq);
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "WebAppInterface.GetRecipesSalesFrequency");
                 return JsonSerializer.Serialize(new { error = ex.Message });
             }
         }
@@ -972,6 +1239,10 @@ namespace Shaheen_InventoryManagement_Android
                     imported++;
                 }
 
+                if (imported > 0)
+                {
+                    DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Imported inventory");
+                }
                 return JsonSerializer.Serialize(new { success = true, imported, skipped });
             }
             catch (Exception ex)
@@ -1121,7 +1392,15 @@ namespace Shaheen_InventoryManagement_Android
 
                         foreach (var sale in body.Sales)
                         {
-                            if (string.IsNullOrWhiteSpace(sale.RecipeName) || sale.QtySold <= 0)
+                            string cleanName = (sale.RecipeName ?? "").Replace("\u00A0", " ").Trim();
+                            string cleanItemNo = (sale.ItemNo ?? "").Replace("\u00A0", " ").Trim();
+
+                            if (string.IsNullOrWhiteSpace(cleanName) && string.IsNullOrWhiteSpace(cleanItemNo))
+                            {
+                                recipesSkipped++;
+                                continue;
+                            }
+                            if (sale.QtySold <= 0)
                             {
                                 recipesSkipped++;
                                 continue;
@@ -1132,13 +1411,13 @@ namespace Shaheen_InventoryManagement_Android
                             decimal sellingPrice = 0;
 
                             // 1. Find the recipe ID and selling price by Item No (if provided)
-                            if (!string.IsNullOrWhiteSpace(sale.ItemNo))
+                            if (!string.IsNullOrWhiteSpace(cleanItemNo))
                             {
                                 string sqlRecipeByNo = @"SELECT id, recipe_name, selling_price FROM recipes 
-                                                         WHERE LOWER(item_no) = LOWER(@itemNo) AND date_deleted IS NULL";
+                                                         WHERE TRIM(LOWER(item_no)) = TRIM(LOWER(@itemNo)) AND date_deleted IS NULL";
                                 using (var cmd = new SqliteCommand(sqlRecipeByNo, conn, transaction))
                                 {
-                                    cmd.Parameters.AddWithValue("@itemNo", sale.ItemNo.Trim());
+                                    cmd.Parameters.AddWithValue("@itemNo", cleanItemNo);
                                     using (var reader = cmd.ExecuteReader())
                                     {
                                         if (reader.Read())
@@ -1152,7 +1431,7 @@ namespace Shaheen_InventoryManagement_Android
                             }
 
                             // 2. Find the recipe ID and selling price by name (fallback, case-insensitive and ignoring all whitespace)
-                            if (recipeId == 0 && !string.IsNullOrWhiteSpace(sale.RecipeName))
+                            if (recipeId == 0 && !string.IsNullOrWhiteSpace(cleanName))
                             {
                                 string sqlRecipe = @"SELECT id, recipe_name, selling_price FROM recipes 
                                                      WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(recipe_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
@@ -1160,7 +1439,7 @@ namespace Shaheen_InventoryManagement_Android
                                                        AND date_deleted IS NULL";
                                 using (var cmd = new SqliteCommand(sqlRecipe, conn, transaction))
                                 {
-                                    cmd.Parameters.AddWithValue("@name", sale.RecipeName.Trim());
+                                    cmd.Parameters.AddWithValue("@name", cleanName);
                                     using (var reader = cmd.ExecuteReader())
                                     {
                                         if (reader.Read())
@@ -1179,7 +1458,7 @@ namespace Shaheen_InventoryManagement_Android
                                 string exactPartName = "";
                                 decimal partSellingPrice = 0;
                                 double currentPartStock = 0;
-
+                                
                                 // Unit parameters
                                 string partUom = "";
                                 string stockType = "";
@@ -1191,14 +1470,14 @@ namespace Shaheen_InventoryManagement_Android
                                 decimal packPrice = 0;
 
                                 // Fallback A: Search the parts (inventory) table directly by Item No (if provided)
-                                if (!string.IsNullOrWhiteSpace(sale.ItemNo))
+                                if (!string.IsNullOrWhiteSpace(cleanItemNo))
                                 {
                                     string sqlPartByNo = @"SELECT id, part_name, selling_price, quantity_in_stock, unit_of_measure, stock_type, pack_items_number,
                                                                   big_unit, small_unit, conversion_value, pack_size, purchase_price FROM parts 
-                                                           WHERE LOWER(item_no) = LOWER(@itemNo) AND date_deleted IS NULL";
+                                                           WHERE TRIM(LOWER(item_no)) = TRIM(LOWER(@itemNo)) AND date_deleted IS NULL";
                                     using (var cmd = new SqliteCommand(sqlPartByNo, conn, transaction))
                                     {
-                                        cmd.Parameters.AddWithValue("@itemNo", sale.ItemNo.Trim());
+                                        cmd.Parameters.AddWithValue("@itemNo", cleanItemNo);
                                         using (var reader = cmd.ExecuteReader())
                                         {
                                             if (reader.Read())
@@ -1207,7 +1486,7 @@ namespace Shaheen_InventoryManagement_Android
                                                 exactPartName = reader["part_name"].ToString();
                                                 partSellingPrice = Convert.ToDecimal(reader["selling_price"]);
                                                 currentPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
-
+                                                
                                                 partUom = reader["unit_of_measure"]?.ToString() ?? "";
                                                 stockType = reader["stock_type"]?.ToString() ?? "Piece";
                                                 packItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1;
@@ -1222,7 +1501,7 @@ namespace Shaheen_InventoryManagement_Android
                                 }
 
                                 // Fallback B: Search the parts (inventory) table directly by name (case-insensitive and ignoring all whitespace)
-                                if (partId == 0 && !string.IsNullOrWhiteSpace(sale.RecipeName))
+                                if (partId == 0 && !string.IsNullOrWhiteSpace(cleanName))
                                 {
                                     string sqlPartDirect = @"SELECT id, part_name, selling_price, quantity_in_stock, unit_of_measure, stock_type, pack_items_number,
                                                                     big_unit, small_unit, conversion_value, pack_size, purchase_price FROM parts 
@@ -1231,7 +1510,7 @@ namespace Shaheen_InventoryManagement_Android
                                                                AND date_deleted IS NULL";
                                     using (var cmd = new SqliteCommand(sqlPartDirect, conn, transaction))
                                     {
-                                        cmd.Parameters.AddWithValue("@name", sale.RecipeName.Trim());
+                                        cmd.Parameters.AddWithValue("@name", cleanName);
                                         using (var reader = cmd.ExecuteReader())
                                         {
                                             if (reader.Read())
@@ -1240,7 +1519,7 @@ namespace Shaheen_InventoryManagement_Android
                                                 exactPartName = reader["part_name"].ToString();
                                                 partSellingPrice = Convert.ToDecimal(reader["selling_price"]);
                                                 currentPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
-
+                                                
                                                 partUom = reader["unit_of_measure"]?.ToString() ?? "";
                                                 stockType = reader["stock_type"]?.ToString() ?? "Piece";
                                                 packItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1;
@@ -1257,7 +1536,7 @@ namespace Shaheen_InventoryManagement_Android
                                 if (partId == 0)
                                 {
                                     recipesSkipped++;
-                                    string missingName = !string.IsNullOrWhiteSpace(sale.RecipeName) ? sale.RecipeName.Trim() : (!string.IsNullOrWhiteSpace(sale.ItemNo) ? "Item No " + sale.ItemNo : "Unknown");
+                                    string missingName = !string.IsNullOrWhiteSpace(cleanName) ? cleanName : (!string.IsNullOrWhiteSpace(cleanItemNo) ? "Item No " + cleanItemNo : "Unknown");
                                     if (!skippedRecipes.Contains(missingName))
                                         skippedRecipes.Add(missingName);
                                     continue;
@@ -1268,8 +1547,8 @@ namespace Shaheen_InventoryManagement_Android
                                     sale.QtySold, sale.UnitOfMeasure, partUom, stockType, packItems, bigUnit, smallUnit, convVal, packSize);
 
                                 // Calculate the cost dynamically based on the unit of sale
-                                decimal calculatedCost = IngredientCalculationEngine.CalculatedUnitCost(
-                                    packPrice, sale.UnitOfMeasure, bigUnit, smallUnit, convVal, packSize, stockType, packItems, partUom) * (decimal)sale.QtySold;
+                                decimal unitCost = IngredientCalculationEngine.CalculatedUnitCost(
+                                    packPrice, sale.UnitOfMeasure, bigUnit, smallUnit, convVal, packSize, stockType, packItems, partUom);
 
                                 if (totalDeduct > 0)
                                 {
@@ -1321,7 +1600,7 @@ namespace Shaheen_InventoryManagement_Android
                                 }
 
                                 recipesProcessed++;
-                                itemsForOrder.Add(Tuple.Create(false, partId, (double)sale.QtySold, calculatedCost, sale.UnitOfMeasure));
+                                itemsForOrder.Add(Tuple.Create(false, partId, (double)sale.QtySold, unitCost, sale.UnitOfMeasure));
                                 continue;
                             }
 
@@ -1358,13 +1637,152 @@ namespace Shaheen_InventoryManagement_Android
                                  }
                              }
 
-                             // 3. Deduct ingredients from stock
-                             foreach (var p in partsToDeduct)
+                             if (partsToDeduct.Count == 0)
                              {
-                                 double qtyPerRecipeConverted = RecipePartData.GetConvertedQuantityDynamic(
-                                     p.QtyPerRecipe, p.RecipeUom, p.PartUom, p.StockType, p.PackItems, p.BigUnit, p.SmallUnit, p.ConversionValue, p.PackSize);
-                                 double totalDeduct = qtyPerRecipeConverted * (double)sale.QtySold;
-                                 if (totalDeduct <= 0) continue;
+                                 // Fallback: Check if this recipe name/item_no exists directly as a part (ingredient/product) in parts table
+                                 // and deduct it directly!
+                                 int fallbackPartId = 0;
+                                 string fallbackPartName = "";
+                                 double fallbackPartStock = 0;
+                                 string fallbackPartUom = "";
+                                 string fallbackStockType = "";
+                                 int fallbackPackItems = 1;
+                                 string fallbackBigUnit = "";
+                                 string fallbackSmallUnit = "";
+                                 double fallbackConvVal = 1.0;
+                                 double fallbackPackSize = 1.0;
+                                 decimal fallbackPackPrice = 0;
+
+                                 // Search parts by Item No first
+                                 if (!string.IsNullOrWhiteSpace(cleanItemNo))
+                                 {
+                                     string sqlPartByNo = @"SELECT id, part_name, quantity_in_stock, unit_of_measure, stock_type, pack_items_number,
+                                                                   big_unit, small_unit, conversion_value, pack_size, purchase_price FROM parts 
+                                                            WHERE TRIM(LOWER(item_no)) = TRIM(LOWER(@itemNo)) AND date_deleted IS NULL";
+                                     using (var cmd = new SqliteCommand(sqlPartByNo, conn, transaction))
+                                     {
+                                         cmd.Parameters.AddWithValue("@itemNo", cleanItemNo);
+                                         using (var reader = cmd.ExecuteReader())
+                                         {
+                                             if (reader.Read())
+                                             {
+                                                 fallbackPartId = Convert.ToInt32(reader["id"]);
+                                                 fallbackPartName = reader["part_name"].ToString();
+                                                 fallbackPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
+                                                 fallbackPartUom = reader["unit_of_measure"]?.ToString() ?? "";
+                                                 fallbackStockType = reader["stock_type"]?.ToString() ?? "Piece";
+                                                 fallbackPackItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1;
+                                                 fallbackBigUnit = reader["big_unit"]?.ToString() ?? "";
+                                                 fallbackSmallUnit = reader["small_unit"]?.ToString() ?? "";
+                                                 fallbackConvVal = reader["conversion_value"] != DBNull.Value ? Convert.ToDouble(reader["conversion_value"]) : 1.0;
+                                                 fallbackPackSize = reader["pack_size"] != DBNull.Value ? Convert.ToDouble(reader["pack_size"]) : 1.0;
+                                                 fallbackPackPrice = reader["purchase_price"] != DBNull.Value ? Convert.ToDecimal(reader["purchase_price"]) : 0m;
+                                             }
+                                         }
+                                     }
+                                 }
+
+                                 // Search parts by Name next
+                                 if (fallbackPartId == 0 && !string.IsNullOrWhiteSpace(cleanName))
+                                 {
+                                     string sqlPartDirect = @"SELECT id, part_name, quantity_in_stock, unit_of_measure, stock_type, pack_items_number,
+                                                                     big_unit, small_unit, conversion_value, pack_size, purchase_price FROM parts 
+                                                              WHERE REPLACE(REPLACE(REPLACE(REPLACE(LOWER(part_name), ' ', ''), '\t', ''), '\r', ''), '\n', '') = 
+                                                                    REPLACE(REPLACE(REPLACE(REPLACE(LOWER(@name), ' ', ''), '\t', ''), '\r', ''), '\n', '') 
+                                                                AND date_deleted IS NULL";
+                                     using (var cmd = new SqliteCommand(sqlPartDirect, conn, transaction))
+                                     {
+                                         cmd.Parameters.AddWithValue("@name", cleanName);
+                                         using (var reader = cmd.ExecuteReader())
+                                         {
+                                             if (reader.Read())
+                                             {
+                                                 fallbackPartId = Convert.ToInt32(reader["id"]);
+                                                 fallbackPartName = reader["part_name"].ToString();
+                                                 fallbackPartStock = Convert.ToDouble(reader["quantity_in_stock"]);
+                                                 fallbackPartUom = reader["unit_of_measure"]?.ToString() ?? "";
+                                                 fallbackStockType = reader["stock_type"]?.ToString() ?? "Piece";
+                                                 fallbackPackItems = reader["pack_items_number"] != DBNull.Value ? Convert.ToInt32(reader["pack_items_number"]) : 1;
+                                                 fallbackBigUnit = reader["big_unit"]?.ToString() ?? "";
+                                                 fallbackSmallUnit = reader["small_unit"]?.ToString() ?? "";
+                                                 fallbackConvVal = reader["conversion_value"] != DBNull.Value ? Convert.ToDouble(reader["conversion_value"]) : 1.0;
+                                                 fallbackPackSize = reader["pack_size"] != DBNull.Value ? Convert.ToDouble(reader["pack_size"]) : 1.0;
+                                                 fallbackPackPrice = reader["purchase_price"] != DBNull.Value ? Convert.ToDecimal(reader["purchase_price"]) : 0m;
+                                             }
+                                         }
+                                     }
+                                 }
+
+                                 if (fallbackPartId > 0)
+                                 {
+                                     double totalDeduct = RecipePartData.GetConvertedQuantityDynamic(
+                                         sale.QtySold, sale.UnitOfMeasure, fallbackPartUom, fallbackStockType, fallbackPackItems, fallbackBigUnit, fallbackSmallUnit, fallbackConvVal, fallbackPackSize);
+                                     
+                                     decimal unitCost = IngredientCalculationEngine.CalculatedUnitCost(
+                                         fallbackPackPrice, sale.UnitOfMeasure, fallbackBigUnit, fallbackSmallUnit, fallbackConvVal, fallbackPackSize, fallbackStockType, fallbackPackItems, fallbackPartUom);
+
+                                     if (totalDeduct > 0)
+                                     {
+                                         var existingDeduction = ingredientDeductions.FirstOrDefault(d => d.PartId == fallbackPartId);
+                                         double currentStockInDb = fallbackPartStock;
+                                         if (existingDeduction != null)
+                                         {
+                                             currentStockInDb = existingDeduction.NewStock;
+                                         }
+
+                                         double newStock = Math.Max(0, currentStockInDb - totalDeduct);
+
+                                         // Update parts table
+                                         string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
+                                         using (var cmd = new SqliteCommand(sqlUpdatePart, conn, transaction))
+                                         {
+                                             cmd.Parameters.AddWithValue("@newStock", newStock);
+                                             cmd.Parameters.AddWithValue("@partId", fallbackPartId);
+                                             cmd.ExecuteNonQuery();
+                                         }
+
+                                         // Record transaction
+                                         string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
+                                                               VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
+                                         string txDesc = $"Deducted {totalDeduct:0.##} via sales import ({fallbackPartName} x{sale.QtySold})";
+                                         using (var cmd = new SqliteCommand(sqlInsertTx, conn, transaction))
+                                         {
+                                             cmd.Parameters.AddWithValue("@partName", fallbackPartName);
+                                             cmd.Parameters.AddWithValue("@desc", txDesc);
+                                             cmd.ExecuteNonQuery();
+                                         }
+
+                                         if (existingDeduction != null)
+                                         {
+                                             existingDeduction.QtyDeducted += totalDeduct;
+                                             existingDeduction.NewStock = newStock;
+                                         }
+                                         else
+                                         {
+                                             ingredientDeductions.Add(new IngredientDeductionResult
+                                             {
+                                                 PartId = fallbackPartId,
+                                                 PartName = fallbackPartName,
+                                                 QtyDeducted = totalDeduct,
+                                                 PreviousStock = fallbackPartStock,
+                                                 NewStock = newStock
+                                             });
+                                         }
+                                     }
+                                     
+                                     recipesProcessed++;
+                                     itemsForOrder.Add(Tuple.Create(false, fallbackPartId, (double)sale.QtySold, unitCost, sale.UnitOfMeasure));
+                                     continue;
+                                 }
+                             }
+
+                             // 3. Deduct ingredients from stock
+                              foreach (var p in partsToDeduct)
+                              {
+                                  double qtyPerRecipeConverted = RecipePartData.GetConvertedQuantityDynamic(
+                                      p.QtyPerRecipe, p.RecipeUom, p.PartUom, p.StockType, p.PackItems, p.BigUnit, p.SmallUnit, p.ConversionValue, p.PackSize);
+                                  double totalDeduct = qtyPerRecipeConverted * (double)sale.QtySold;
+                                  if (totalDeduct <= 0) continue;
 
                                  // Check if we already processed this ingredient in a previous loop iteration of this upload
                                  var existingDeduction = ingredientDeductions.FirstOrDefault(d => d.PartId == p.PartId);
@@ -1483,6 +1901,7 @@ namespace Shaheen_InventoryManagement_Android
                     }
                 }
 
+                DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Imported sales");
                 return JsonSerializer.Serialize(new
                 {
                     success = true,
@@ -1504,14 +1923,24 @@ namespace Shaheen_InventoryManagement_Android
             try
             {
                 var body = JsonSerializer.Deserialize<ExportCsvPayload>(bodyJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                if (body == null || string.IsNullOrEmpty(body.CsvContent))
+                if (body == null || (string.IsNullOrEmpty(body.CsvContent) && string.IsNullOrEmpty(body.Base64Content)))
                     return JsonSerializer.Serialize(new { error = "No content to export" });
 
                 string filename = string.IsNullOrEmpty(body.Filename) ? $"inventory_{DateTime.Now:yyyyMMdd_HHmmss}.csv" : body.Filename;
 
                 var values = new Android.Content.ContentValues();
                 values.Put(Android.Provider.MediaStore.MediaColumns.DisplayName, filename);
-                values.Put(Android.Provider.MediaStore.MediaColumns.MimeType, "text/csv");
+                
+                string mimeType = "text/csv";
+                if (filename.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+                {
+                    mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                }
+                else if (filename.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))
+                {
+                    mimeType = "application/vnd.ms-excel";
+                }
+                values.Put(Android.Provider.MediaStore.MediaColumns.MimeType, mimeType);
                 values.Put(Android.Provider.MediaStore.MediaColumns.RelativePath, Android.OS.Environment.DirectoryDownloads);
 
                 var resolver = _context.ContentResolver;
@@ -1519,9 +1948,19 @@ namespace Shaheen_InventoryManagement_Android
                 if (uri != null)
                 {
                     using (var stream = resolver.OpenOutputStream(uri))
-                    using (var writer = new StreamWriter(stream))
                     {
-                        writer.Write(body.CsvContent);
+                        if (!string.IsNullOrEmpty(body.Base64Content))
+                        {
+                            byte[] bytes = Convert.FromBase64String(body.Base64Content);
+                            stream.Write(bytes, 0, bytes.Length);
+                        }
+                        else
+                        {
+                            using (var writer = new StreamWriter(stream))
+                            {
+                                writer.Write(body.CsvContent);
+                            }
+                        }
                     }
                     return JsonSerializer.Serialize(new { success = true, path = $"Downloads/{filename}" });
                 }
@@ -1535,12 +1974,12 @@ namespace Shaheen_InventoryManagement_Android
             }
         }
 
-        private string GetMonthlyReportData(int month, int year)
+        private string GetMonthlyReportData(int month, int year, int? day = null)
         {
             try
             {
-                DateTime targetMonthStart = new DateTime(year, month, 1, 0, 0, 0);
-                DateTime targetMonthEnd = new DateTime(year, month, DateTime.DaysInMonth(year, month), 23, 59, 59);
+                DateTime targetMonthStart = day.HasValue ? new DateTime(year, month, day.Value, 0, 0, 0) : new DateTime(year, month, 1, 0, 0, 0);
+                DateTime targetMonthEnd = day.HasValue ? new DateTime(year, month, day.Value, 23, 59, 59) : new DateTime(year, month, DateTime.DaysInMonth(year, month), 23, 59, 59);
                 string startStr = targetMonthStart.ToString("yyyy-MM-dd HH:mm:ss");
                 string endStr = targetMonthEnd.ToString("yyyy-MM-dd HH:mm:ss");
 
@@ -1620,7 +2059,7 @@ namespace Shaheen_InventoryManagement_Android
 
                 // --- 1. Load active parts details ---
                 DataTable dtParts = DatabaseHelper.ExecuteDataTable(
-                    @"SELECT id, part_name, quantity_in_stock, pack_size, purchase_price, 
+                    @"SELECT id, part_name, quantity_in_stock, pack_size, purchase_price, pack_price, 
                              big_unit, small_unit, conversion_value, unit_of_measure, stock_type,
                              pack_items_number, minimum_stock_level
                       FROM parts WHERE date_deleted IS NULL");
@@ -1636,7 +2075,7 @@ namespace Shaheen_InventoryManagement_Android
                         Name = r["part_name"].ToString(),
                         CurrentStock = Convert.ToDouble(r["quantity_in_stock"]),
                         PackSize = r["pack_size"] != DBNull.Value ? Convert.ToDouble(r["pack_size"]) : 1.0,
-                        PackPrice = r["purchase_price"] != DBNull.Value ? Convert.ToDecimal(r["purchase_price"]) : 0m,
+                        PackPrice = r["pack_price"] != DBNull.Value && Convert.ToDecimal(r["pack_price"]) > 0 ? Convert.ToDecimal(r["pack_price"]) : (r["purchase_price"] != DBNull.Value ? Convert.ToDecimal(r["purchase_price"]) : 0m),
                         BigUnit = r["big_unit"]?.ToString() ?? "",
                         SmallUnit = r["small_unit"]?.ToString() ?? "",
                         ConversionValue = r["conversion_value"] != DBNull.Value ? Convert.ToDouble(r["conversion_value"]) : 1.0,
@@ -1706,8 +2145,8 @@ namespace Shaheen_InventoryManagement_Android
                         name = name,
                         qtySold = qtySold,
                         revenue = revenue,
-                        cost = totalCost,
-                        profit = revenue - totalCost
+                        cost = (!Helpers.UserSession.IsAdmin) ? 0m : totalCost,
+                        profit = (!Helpers.UserSession.IsAdmin) ? 0m : (revenue - totalCost)
                     });
                 }
 
@@ -2083,8 +2522,8 @@ namespace Shaheen_InventoryManagement_Android
                     });
                 }
 
-                decimal grossProfit = totalRevenue - totalCogs;
-                decimal profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0m;
+                decimal grossProfit = (!Helpers.UserSession.IsAdmin) ? 0m : (totalRevenue - totalCogs);
+                decimal profitMargin = (!Helpers.UserSession.IsAdmin) ? 0m : (totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0m);
 
                 return JsonSerializer.Serialize(new
                 {
@@ -2094,7 +2533,7 @@ namespace Shaheen_InventoryManagement_Android
                     lowStock = lowStock,
                     categorySales = categorySales,
                     transactions = recentTransactions,
-                    cogs = totalCogs,
+                    cogs = (!Helpers.UserSession.IsAdmin) ? 0m : totalCogs,
                     grossProfit = grossProfit,
                     profitMargin = Math.Round(profitMargin, 2),
                     recipeSummary = recipeSummaries,
@@ -2103,11 +2542,11 @@ namespace Shaheen_InventoryManagement_Android
                     financialSummary = new
                     {
                         revenue = totalRevenue,
-                        purchaseCost = totalPurchasedCost,
-                        ingredientCost = totalCogs,
+                        purchaseCost = (!Helpers.UserSession.IsAdmin) ? 0m : totalPurchasedCost,
+                        ingredientCost = (!Helpers.UserSession.IsAdmin) ? 0m : totalCogs,
                         grossProfit = grossProfit,
                         profitMargin = Math.Round(profitMargin, 2),
-                        inventoryValue = totalInventoryValue
+                        inventoryValue = (!Helpers.UserSession.IsAdmin) ? 0m : totalInventoryValue
                     },
                     chartsData = new
                     {
@@ -2297,6 +2736,12 @@ namespace Shaheen_InventoryManagement_Android
             public string Image { get; set; }
         }
 
+        private class SyncSessionPayload
+        {
+            public string Username { get; set; }
+            public string Role { get; set; }
+        }
+
         private class AdjustStockPayload
         {
             public int PartId { get; set; }
@@ -2387,6 +2832,7 @@ namespace Shaheen_InventoryManagement_Android
         {
             public string Filename { get; set; }
             public string CsvContent { get; set; }
+            public string Base64Content { get; set; }
         }
 
         private class ReturnPayload
@@ -2438,6 +2884,85 @@ namespace Shaheen_InventoryManagement_Android
             public double QtyDeducted { get; set; }
             public double PreviousStock { get; set; }
             public double NewStock { get; set; }
+        }
+
+        private class FactoryResetPayload
+        {
+            public string AdminUsername { get; set; }
+            public string AdminPassword { get; set; }
+        }
+
+        private bool VerifyAdminCredentials(string username, string password)
+        {
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+                return false;
+
+            if (username == "Softio.Admin" && password == "Softio@2026!")
+                return true;
+
+            if (username.Equals("Admin", StringComparison.OrdinalIgnoreCase) && password == "Admin.Softio")
+                return true;
+
+            try
+            {
+                var dt = DatabaseHelper.ExecuteDataTable(
+                    "SELECT role FROM users WHERE username = @u AND password = @p AND is_active = 1",
+                    new SqliteParameter("@u", username),
+                    new SqliteParameter("@p", password));
+
+                if (dt.Rows.Count > 0)
+                {
+                    string role = dt.Rows[0]["role"].ToString();
+                    return role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch { }
+
+            return false;
+        }
+
+        private void PerformFactoryReset()
+        {
+            var tables = new[]
+            {
+                "parts", "recipes", "recipe_parts", "orders", "order_items",
+                "transactions", "payments", "purchase_orders", "purchase_order_items",
+                "returns", "return_items", "expenses", "expense_categories",
+                "categories", "suppliers", "customers", "user_logs", "users"
+            };
+
+            foreach (var table in tables)
+            {
+                try
+                {
+                    DatabaseHelper.ExecuteNonQuery($"DELETE FROM {table};");
+                }
+                catch (Exception ex)
+                {
+                    ErrorLogger.LogError(ex, $"FactoryReset delete table {table} failed");
+                }
+            }
+
+            try
+            {
+                DatabaseHelper.ExecuteNonQuery("DELETE FROM sqlite_sequence;");
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "FactoryReset sqlite_sequence clear failed");
+            }
+
+            DatabaseHelper.ExecuteNonQuery(
+                "INSERT INTO users (username, password, full_name, role, is_active) VALUES ('Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin', 1);"
+            );
+            DatabaseHelper.ExecuteNonQuery(
+                "INSERT INTO users (username, password, full_name, role, is_active) VALUES ('Admin', 'Admin.Softio', 'Test Admin', 'Admin', 1);"
+            );
+            DatabaseHelper.ExecuteNonQuery(
+                "INSERT INTO users (username, password, full_name, role, is_active) VALUES ('staff', 'Staff.Softio', 'Test Staff', 'Staff', 1);"
+            );
+
+            DatabaseHelper.LogUserAction("System", "Factory Reset", "All application data reset to initial state");
         }
     }
 }

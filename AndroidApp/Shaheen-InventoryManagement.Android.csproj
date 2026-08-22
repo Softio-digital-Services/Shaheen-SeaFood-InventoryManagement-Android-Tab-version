@@ -41,8 +41,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Link the frontend web files and media assets recursively as Android assets -->
-    <AndroidAsset Include="..\wwwroot\**" Link="Assets\wwwroot\%(RecursiveDir)%(FileName)%(Extension)" />
-    <AndroidAsset Include="..\Assets\**" Link="Assets\Assets\%(RecursiveDir)%(FileName)%(Extension)" />
+    <!-- Web UI + media as Android assets (sourced from parent folders) -->
+    <AndroidAsset Include="..\wwwroot\**\*" Link="Assets\wwwroot\%(RecursiveDir)%(Filename)%(Extension)" />
+    <AndroidAsset Include="..\Assets\**\*" Link="Assets\Assets\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
+
+  <!-- VS incremental builds often keep stale linked wwwroot assets in obj\.
+       Wipe the intermediate copy before each build so Run always picks up HTML/CSS/JS edits. -->
+  <Target Name="ForceRefreshWwwrootAssets" BeforeTargets="PrepareForBuild">
+    <RemoveDir Directories="$(IntermediateOutputPath)assets\wwwroot"
+               Condition="Exists('$(IntermediateOutputPath)assets\wwwroot')" />
+  </Target>
 </Project>

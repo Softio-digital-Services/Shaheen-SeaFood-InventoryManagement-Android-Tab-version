@@ -22,6 +22,7 @@ namespace Shaheen_InventoryManagement_Android.Services
 
         public decimal GetTotalInventoryValue()
         {
+            if (!UserSession.IsAdmin) return 0m;
             return DatabaseHelper.ExecuteScalar<decimal>(
                 "SELECT COALESCE(SUM(selling_price * quantity_in_stock), 0) FROM parts WHERE date_deleted IS NULL");
         }

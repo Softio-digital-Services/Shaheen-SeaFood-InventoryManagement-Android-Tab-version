@@ -182,6 +182,24 @@ namespace Shaheen_InventoryManagement_Android
             catch { }
         }
 
+        public static void LogUserAction(string username, string fullName, string action)
+        {
+            try
+            {
+                string sql = "INSERT INTO user_logs (username, full_name, action, timestamp, machine_name) " +
+                             "VALUES (@username, @fullName, @action, datetime('now'), @machine)";
+                ExecuteNonQuery(sql,
+                    new SqliteParameter("@username", username ?? "Guest"),
+                    new SqliteParameter("@fullName", fullName ?? "Guest User"),
+                    new SqliteParameter("@action", action),
+                    new SqliteParameter("@machine", Environment.MachineName));
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "LogUserAction failed");
+            }
+        }
+
         /// <summary>
         /// Ensures all required tables and columns exist (SQLite-compatible).
         /// Uses CREATE TABLE IF NOT EXISTS + PRAGMA table_info for column checks.
@@ -243,8 +261,8 @@ namespace Shaheen_InventoryManagement_Android
                         supplier_id         INTEGER,
                         purchase_price      REAL DEFAULT 0,
                         selling_price       REAL DEFAULT 0,
-                        quantity_in_stock   INTEGER DEFAULT 0,
-                        minimum_stock_level INTEGER DEFAULT 5,
+                        quantity_in_stock   REAL DEFAULT 0,
+                        minimum_stock_level REAL DEFAULT 5,
                         reorder_quantity    INTEGER DEFAULT 10,
                         location            TEXT,
                         shelf               TEXT,
@@ -288,6 +306,15 @@ namespace Shaheen_InventoryManagement_Android
                         role         TEXT DEFAULT 'User',
                         is_active    INTEGER DEFAULT 1,
                         date_created TEXT DEFAULT (datetime('now'))
+                    );
+
+                    CREATE TABLE IF NOT EXISTS user_logs (
+                        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username     TEXT NOT NULL,
+                        full_name    TEXT,
+                        action       TEXT NOT NULL,
+                        timestamp    TEXT DEFAULT (datetime('now')),
+                        machine_name TEXT
                     );
 
                     CREATE TABLE IF NOT EXISTS orders (

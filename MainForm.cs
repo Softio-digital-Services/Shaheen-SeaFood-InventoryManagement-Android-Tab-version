@@ -16,6 +16,10 @@ namespace Shaheen_InventoryManagement_Android
         private Shaheen_InventoryManagement_Android.Forms.DashboardForm dashboardForm;
         private Shaheen_InventoryManagement_Android.Forms.HistoryForm historyForm;
         private Forms.POSForm posForm;
+        private Forms.UserProfileControl userProfileControl;
+
+        private UserControl activeForm = null;
+        private UserControl previousForm = null;
 
         // Header Controls
         private PictureBox pbNotification;
@@ -240,6 +244,7 @@ namespace Shaheen_InventoryManagement_Android
             partsForm = InitializeForm<Forms.PartsForm>();
             posForm = InitializeForm<Forms.POSForm>();
             historyForm = InitializeForm<Forms.HistoryForm>();
+            userProfileControl = InitializeForm<Forms.UserProfileControl>();
 
             // Navigation Buttons
             Dashboard_btn.Height = 50;
@@ -371,7 +376,11 @@ namespace Shaheen_InventoryManagement_Android
 
             pbUserAvatar = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 185, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("user"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbUserAvatar);
-            pbUserAvatar.Click += (s, e) => menuUser.Show(pbUserAvatar, new Point(0, pbUserAvatar.Height));
+            pbUserAvatar.Click += (s, e) =>
+            {
+                ShowForm(userProfileControl);
+                HighlightSelectedButton(null);
+            };
             rightPanel.Controls.Add(pbUserAvatar);
 
             pbNotification = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 235, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("bell"), Color.White) };
@@ -528,10 +537,45 @@ namespace Shaheen_InventoryManagement_Android
 
         private void ShowForm(UserControl form)
         {
+            if (activeForm != form)
+            {
+                previousForm = activeForm;
+                activeForm = form;
+            }
             foreach (Control c in panel3.Controls) if (c is UserControl) c.Visible = false;
             form.Visible = true; form.BringToFront();
             panel3.Focus(); // Focus the main panel to prevent auto-selecting the first control (like search bar) in the UserControl
             if (form is Shaheen_InventoryManagement_Android.Forms.DashboardForm dash) dash.RefreshDashboard();
+            if (form is Forms.UserProfileControl profile) profile.LoadData();
+        }
+
+        public void NavigateBack()
+        {
+            if (previousForm != null)
+            {
+                ShowForm(previousForm);
+                
+                Button btnToHighlight = null;
+                if (previousForm == dashboardForm) btnToHighlight = Dashboard_btn;
+                else if (previousForm == partsForm) btnToHighlight = this.Controls.Find("btnInventory", true).FirstOrDefault() as Button;
+                else if (previousForm == posForm) btnToHighlight = this.Controls.Find("btnPOS", true).FirstOrDefault() as Button;
+                else if (previousForm == historyForm) btnToHighlight = this.Controls.Find("btnHistory", true).FirstOrDefault() as Button;
+                
+                if (btnToHighlight != null) HighlightSelectedButton(btnToHighlight);
+            }
+            else
+            {
+                ShowForm(dashboardForm);
+                HighlightSelectedButton(Dashboard_btn);
+            }
+        }
+
+        public void PerformLogout(bool isSwitchAccount = false)
+        {
+            DatabaseHelper.LogUserAction(UserSession.Username, UserSession.FullName, "Logged out");
+            UserSession.Clear();
+            new LoginForm().Show();
+            this.Hide();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

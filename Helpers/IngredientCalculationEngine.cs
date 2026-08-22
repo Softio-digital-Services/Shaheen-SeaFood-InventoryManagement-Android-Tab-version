@@ -8,14 +8,14 @@ namespace Shaheen_InventoryManagement_Android.Helpers
         public static decimal CalculateCostPerBigUnit(decimal packPrice, double packSize)
         {
             if (packSize <= 0) return packPrice;
-            return Math.Round(packPrice / (decimal)packSize, 4);
+            return packPrice / (decimal)packSize;
         }
 
         public static decimal CalculateCostPerSmallUnit(decimal packPrice, double packSize, double conversionValue)
         {
             if (packSize <= 0) return packPrice;
             double conv = conversionValue > 0 ? conversionValue : 1.0;
-            return Math.Round(packPrice / (decimal)(packSize * conv), 4);
+            return packPrice / (decimal)(packSize * conv);
         }
 
         public static double ConvertStockToBigUnit(double quantityInStockPacks, double packSize)
@@ -41,15 +41,24 @@ namespace Shaheen_InventoryManagement_Android.Helpers
             {
                 double conv = conversionValue > 0 ? conversionValue : 1.0;
                 double pSize = packSize > 0 ? packSize : 1.0;
-                decimal costPerBigUnit = baseCost / (decimal)pSize;
+                string big = (bigUnit ?? "").ToLower().Trim();
+                decimal costPerBigUnit = (big == "pack" || big == "package") ? baseCost : (baseCost / (decimal)pSize);
                 decimal costPerSmallUnit = costPerBigUnit / (decimal)conv;
 
                 string uom = (unitOfMeasure ?? "").ToLower().Trim();
-                if (uom == smallUnit.ToLower().Trim())
+                string small = smallUnit.ToLower().Trim();
+
+                if (big == small)
+                {
+                    if (uom == "pack") return baseCost;
+                    return costPerBigUnit;
+                }
+
+                if (uom == small)
                 {
                     return costPerSmallUnit;
                 }
-                if (uom == bigUnit.ToLower().Trim())
+                if (uom == big)
                 {
                     return costPerBigUnit;
                 }

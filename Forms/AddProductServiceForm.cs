@@ -190,7 +190,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             GroupBox gbStock = new GroupBox { Text = "Stock control", Width = halfW, Height = 120, Margin = new Padding(0, 0, 10, 10) };
             chkTrackStock = new CheckBox { Text = "Control this item", Checked = true, Location = new Point(10, 20), AutoSize = true };
             numStock = new ModernNumericUpDown { LabelText = "Stock", Width = (halfW / 2) - 15, Location = new Point(10, 45) };
-            numLowLevel = new ModernNumericUpDown { LabelText = "Low level", Width = (halfW / 2) - 15, Location = new Point((halfW / 2) + 5, 45) };
+            numLowLevel = new ModernNumericUpDown { LabelText = "Minimum Stock", Width = (halfW / 2) - 15, Location = new Point((halfW / 2) + 5, 45) };
             gbStock.Controls.AddRange(new Control[] { chkTrackStock, numStock, numLowLevel });
 
             GroupBox gbSupp = new GroupBox { Text = "Supplier Cost", Width = halfW, Height = 120, Margin = new Padding(0, 0, 10, 10) };
@@ -202,16 +202,17 @@ namespace Shaheen_InventoryManagement_Android.Forms
             gbUnits = new GroupBox { Text = "Dynamic Unit Setup", Width = fullW, Height = 120, Margin = new Padding(0, 0, 10, 10) };
             chkUseDynamicUnits = new CheckBox { Text = "Use Dynamic Units", Checked = true, Visible = false, Location = new Point(10, 15), AutoSize = true };
             int w = 120;
-            txtBigUnit = new ModernTextBox { LabelText = "Big Unit", Width = w, Location = new Point(10, 45) };
-            txtSmallUnit = new ModernTextBox { LabelText = "Small Unit", Width = w, Location = new Point(140, 45) };
-            numConversionValue = new ModernNumericUpDown { LabelText = "Conversion", Width = w, Location = new Point(270, 45), DecimalPlaces = 2, Maximum = 1000000, Value = 1 };
-            numPackSize = new ModernNumericUpDown { LabelText = "Pack Size", Width = w, Location = new Point(400, 45), DecimalPlaces = 2, Maximum = 1000000, Value = 1 };
-            numPricePerBigUnit = new ModernNumericUpDown { LabelText = "Price/Big Unit", Width = w, Location = new Point(530, 45), DecimalPlaces = 4, Maximum = 1000000, Value = 0, Enabled = false };
+            txtBigUnit = new ModernTextBox { LabelText = "Base Unit", Width = w, Location = new Point(10, 45) };
+            txtSmallUnit = new ModernTextBox { LabelText = "Sub Unit", Width = w, Location = new Point(140, 45) };
+            numConversionValue = new ModernNumericUpDown { LabelText = "Conversion (1 Base = X Sub Units)", Width = 220, Location = new Point(270, 45), DecimalPlaces = 2, Maximum = 1000000, Value = 1 };
+            numPackSize = new ModernNumericUpDown { LabelText = "Pack Size", Width = w, Location = new Point(500, 45), DecimalPlaces = 2, Maximum = 1000000, Value = 1, Visible = false };
+            numPricePerBigUnit = new ModernNumericUpDown { LabelText = "Price/Big Unit", Width = w, Location = new Point(630, 45), DecimalPlaces = 4, Maximum = 1000000, Value = 0, Enabled = false, Visible = false };
             
             txtBigUnit.Enabled = true;
             txtSmallUnit.Enabled = true;
             numConversionValue.Enabled = true;
-            numPackSize.Enabled = true;
+            numPackSize.Enabled = false;
+            numPackSize.Visible = false;
 
             bool isSyncing = false;
             Action syncBigUnitPrice = () =>
@@ -444,7 +445,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 BigUnit = chkUseDynamicUnits.Checked ? txtBigUnit.Text.Trim() : "",
                 SmallUnit = chkUseDynamicUnits.Checked ? txtSmallUnit.Text.Trim() : "",
                 ConversionValue = chkUseDynamicUnits.Checked ? (double)numConversionValue.Value : 1.0,
-                PackSize = chkUseDynamicUnits.Checked ? (double)numPackSize.Value : 1.0
+                PackSize = 1.0
             };
 
             if (cmbSupplier.SelectedValue != null && (int)cmbSupplier.SelectedValue != -1)

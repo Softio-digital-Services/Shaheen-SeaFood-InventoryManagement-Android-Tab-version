@@ -76,7 +76,6 @@ namespace Shaheen_InventoryManagement_Android.Forms
                         {
                             cmbUom.Items.Add(part.BigUnit);
                             cmbUom.Items.Add(part.SmallUnit);
-                            cmbUom.Items.Add("pack");
                             cmbUom.SelectedIndex = 0;
                         }
                         else

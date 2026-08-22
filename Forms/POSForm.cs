@@ -1808,32 +1808,28 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
                 if (!string.IsNullOrEmpty(bigUnit) && !string.IsNullOrEmpty(smallUnit))
                 {
-                    cmbUom.Items.Add("pack");
                     cmbUom.Items.Add(bigUnit);
                     cmbUom.Items.Add(smallUnit);
+                    if (uom == "pack") uom = bigUnit;
                     cmbUom.SelectedItem = uom;
                     cmbUom.Visible = true;
                 }
 
                 cmbUom.SelectedIndexChanged += (s, e) =>
                 {
-                    string selectedUom = cmbUom.SelectedItem?.ToString() ?? "pack";
+                    string selectedUom = cmbUom.SelectedItem?.ToString() ?? bigUnit;
                     if (selectedUom != uom)
                     {
                         row["UnitOfMeasure"] = selectedUom;
                         decimal basePrice = (decimal)row["PrivatePrice"];
                         
-                        if (selectedUom == "pack")
+                        if (selectedUom == bigUnit)
                         {
                             row["SellingPrice"] = basePrice;
                         }
-                        else if (selectedUom == bigUnit)
-                        {
-                            row["SellingPrice"] = basePrice / (decimal)packSz;
-                        }
                         else if (selectedUom == smallUnit)
                         {
-                            row["SellingPrice"] = (basePrice / (decimal)packSz) / (decimal)convVal;
+                            row["SellingPrice"] = basePrice / (decimal)convVal;
                         }
                         RefreshCartDisplay();
                     }
@@ -2217,6 +2213,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             double conv = 1.0;
             double pSize = 1.0;
             string defaultUom = "pack";
+            decimal initialPrice = price;
             try
             {
                 var dt = DatabaseHelper.ExecuteDataTable($"SELECT big_unit, small_unit, conversion_value, pack_size FROM parts WHERE id = {id}");
@@ -2226,6 +2223,12 @@ namespace Shaheen_InventoryManagement_Android.Forms
                     sUnit = dt.Rows[0]["small_unit"]?.ToString() ?? "";
                     conv = dt.Rows[0]["conversion_value"] != DBNull.Value ? Convert.ToDouble(dt.Rows[0]["conversion_value"]) : 1.0;
                     pSize = dt.Rows[0]["pack_size"] != DBNull.Value ? Convert.ToDouble(dt.Rows[0]["pack_size"]) : 1.0;
+
+                    if (!string.IsNullOrEmpty(bUnit) && !string.IsNullOrEmpty(sUnit))
+                    {
+                        defaultUom = sUnit;
+                        initialPrice = price / (decimal)conv;
+                    }
                 }
             }
             catch { }
@@ -2235,7 +2238,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             newRow["PartName"] = name;
             newRow["Quantity"] = qtyToAdd;
             newRow["PrivatePrice"] = price;
-            newRow["SellingPrice"] = price;
+            newRow["SellingPrice"] = initialPrice;
             newRow["UnitOfMeasure"] = defaultUom;
             newRow["BigUnit"] = bUnit;
             newRow["SmallUnit"] = sUnit;

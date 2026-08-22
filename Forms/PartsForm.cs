@@ -1718,8 +1718,8 @@ namespace Shaheen_InventoryManagement_Android.Forms
                 if (nameCol == null) { MessageHelper.ShowError("Invalid file format. Could not find ingredient or name column."); return; }
 
                 string catCol = findCol(new[] { "Category", "category_name", "CategoryName" });
-                string bigCol = findCol(new[] { "Big Unit", "BigUnit", "big_unit" });
-                string smallCol = findCol(new[] { "Small Unit", "SmallUnit", "small_unit" });
+                string bigCol = findCol(new[] { "Big Unit", "BigUnit", "big_unit", "Base Unit", "BaseUnit", "base_unit" });
+                string smallCol = findCol(new[] { "Small Unit", "SmallUnit", "small_unit", "Sub Unit", "SubUnit", "sub_unit" });
                 string convCol = findCol(new[] { "Conversion Value", "ConversionValue", "Conversion", "conversion_value" });
                 string packQtyCol = findCol(new[] { "Pack Quantity", "PackQuantity", "Pack Size", "PackSize", "pack_size" });
                 string packPriceCol = findCol(new[] { "Pack Price", "PackPrice", "pack_price", "purchase_price", "Cost" });
@@ -1782,10 +1782,6 @@ namespace Shaheen_InventoryManagement_Android.Forms
                             convVal = cv;
                         }
                         double packQty = 1.0;
-                        if (packQtyCol != null && double.TryParse(row[packQtyCol]?.ToString() ?? "1", out double pq) && pq > 0)
-                        {
-                            packQty = pq;
-                        }
                         decimal packPrice = 0;
                         if (packPriceCol != null) decimal.TryParse(row[packPriceCol]?.ToString() ?? "0", out packPrice);
 

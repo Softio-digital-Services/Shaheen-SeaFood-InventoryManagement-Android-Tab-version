@@ -134,7 +134,7 @@ namespace Shaheen_InventoryManagement_Android.Data
 
         private static PartData MapFromReader(SqliteDataReader r)
         {
-            return new PartData
+            var p = new PartData
             {
                 Id = r.GetInt32(r.GetOrdinal("id")),
                 PartNumber = Safe<string>(r, "part_number", ""),
@@ -178,6 +178,20 @@ namespace Shaheen_InventoryManagement_Android.Data
                 ConversionValue = Safe<double>(r, "conversion_value", 1.0),
                 PackSize = Safe<double>(r, "pack_size", 1.0)
             };
+
+            if (!Helpers.UserSession.IsAdmin)
+            {
+                p.PurchasePrice = 0m;
+                p.SellingPrice = 0m;
+                p.PackPrice = 0m;
+                p.ItemPrice = 0m;
+                p.PiecePrice = 0m;
+                p.Price2 = 0m;
+                p.Price3 = 0m;
+                p.Price4 = 0m;
+            }
+
+            return p;
         }
     }
 }

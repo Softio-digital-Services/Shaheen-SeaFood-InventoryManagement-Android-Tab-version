@@ -24,6 +24,7 @@ namespace Shaheen_InventoryManagement_Android.Data
         {
             get 
             {
+                if (!Helpers.UserSession.IsAdmin) return 0m;
                 decimal cost = 0;
                 foreach(var part in Parts) cost += part.TotalCost;
                 return cost;
@@ -104,6 +105,7 @@ namespace Shaheen_InventoryManagement_Android.Data
                 );
             }
             
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Created recipe");
             return recipeId;
         }
 
@@ -144,6 +146,7 @@ namespace Shaheen_InventoryManagement_Android.Data
                     new SqliteParameter("@uom", string.IsNullOrEmpty(part.UnitOfMeasure) ? (object)DBNull.Value : part.UnitOfMeasure)
                 );
             }
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Edited recipe");
         }
 
         public static void DeleteRecipe(int id)
@@ -151,6 +154,7 @@ namespace Shaheen_InventoryManagement_Android.Data
             // Soft delete (No inventory restoration)
             string sql = "UPDATE recipes SET date_deleted = datetime('now') WHERE id = @id";
             DatabaseHelper.ExecuteNonQuery(sql, new SqliteParameter("@id", id));
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Deleted recipe");
         }
 
         public static bool RecipeNameExists(string recipeName, int? excludeId = null)
