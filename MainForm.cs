@@ -172,6 +172,13 @@ namespace Shaheen_InventoryManagement_Android
             }
             label2.Visible = false; // Forced hide to prevent clipping
             label2.Location = isAr ? new Point(panel1.Width - label2.Width - 10, (panel1.Height - label2.Height) / 2) : new Point(10, (panel1.Height - label2.Height) / 2);
+
+            var lblFooterVersion = this.Controls.Find("lblFooterVersion", true).FirstOrDefault() as Label;
+            if (lblFooterVersion != null)
+                lblFooterVersion.Text = L("Nav_MainTitle") + " | Version 1.0.2 | (c) 2026 Softio Services";
+            var lblFooterDeveloper = this.Controls.Find("lblFooterDeveloper", true).FirstOrDefault() as Label;
+            if (lblFooterDeveloper != null)
+                lblFooterDeveloper.Text = isAr ? "تطوير سوفتيو" : "Developed by Softio";
         }
 
         private void UpdateNavText(string name, string key)
@@ -350,36 +357,56 @@ namespace Shaheen_InventoryManagement_Android
             {
                 Name = "pnlFooter",
                 Dock = DockStyle.Bottom,
-                Height = 30,
+                Height = 20,
                 BackColor = ThemeConfig.SurfaceColor,
-                Padding = new Padding(15, 0, 15, 0)
+                Padding = new Padding(8, 0, 8, 0)
             };
+
+            TableLayoutPanel tlpFooter = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                Margin = Padding.Empty,
+                Padding = Padding.Empty,
+                BackColor = ThemeConfig.SurfaceColor
+            };
+            tlpFooter.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
+            tlpFooter.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
+            tlpFooter.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
             Label lblVersion = new Label
             {
+                Name = "lblFooterVersion",
                 Text = LocalizationManager.GetString("Nav_MainTitle") + " | Version 1.0.2 | (c) 2026 Softio Services",
-                AutoSize = true,
-                Font = new Font("Segoe UI", 8.5f),
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 7f),
                 ForeColor = ThemeConfig.TextColorDark,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Dock = DockStyle.Left
+                Margin = Padding.Empty,
+                AutoEllipsis = true
             };
-            pnlFooter.Controls.Add(lblVersion);
 
             Label lblDeveloper = new Label
             {
+                Name = "lblFooterDeveloper",
                 Text = LocalizationManager.IsArabic ? "تطوير سوفتيو" : "Developed by Softio",
-                AutoSize = true,
-                Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 7f, FontStyle.Italic),
                 ForeColor = ThemeConfig.PrimaryColor,
                 TextAlign = ContentAlignment.MiddleRight,
-                Dock = DockStyle.Right
+                Margin = Padding.Empty,
+                AutoEllipsis = true
             };
-            pnlFooter.Controls.Add(lblDeveloper);
+
+            tlpFooter.Controls.Add(lblVersion, 0, 0);
+            tlpFooter.Controls.Add(lblDeveloper, 1, 0);
+            pnlFooter.Controls.Add(tlpFooter);
 
             // In WinForms with Dock, controls are laid out in reverse z-order.
             // Add footer BEFORE panel3 so Dock=Bottom is claimed before Dock=Fill.
-            // Correct order: panel1 (Top), panel2 (Left), pnlFooter (Bottom), panel3 (Fill).
             this.Controls.Add(pnlFooter);
             this.Controls.Add(panel3);
             this.Controls.Add(panel2);
