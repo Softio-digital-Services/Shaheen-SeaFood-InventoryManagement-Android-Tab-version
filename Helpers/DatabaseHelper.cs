@@ -182,6 +182,24 @@ namespace Shaheen_InventoryManagement_Android
             catch { }
         }
 
+        public static void LogUserAction(string username, string fullName, string action)
+        {
+            try
+            {
+                string sql = "INSERT INTO user_logs (username, full_name, action, timestamp, machine_name) " +
+                             "VALUES (@username, @fullName, @action, datetime('now'), @machine)";
+                ExecuteNonQuery(sql,
+                    new SqliteParameter("@username", username ?? "Guest"),
+                    new SqliteParameter("@fullName", fullName ?? "Guest User"),
+                    new SqliteParameter("@action", action),
+                    new SqliteParameter("@machine", Environment.MachineName));
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "LogUserAction failed");
+            }
+        }
+
         /// <summary>
         /// Ensures all required tables and columns exist (SQLite-compatible).
         /// Uses CREATE TABLE IF NOT EXISTS + PRAGMA table_info for column checks.
@@ -236,14 +254,15 @@ namespace Shaheen_InventoryManagement_Android
                     CREATE TABLE IF NOT EXISTS parts (
                         id                  INTEGER PRIMARY KEY AUTOINCREMENT,
                         part_number         TEXT,
+                        item_no             TEXT,
                         part_name           TEXT NOT NULL,
                         description         TEXT,
                         category_id         INTEGER,
                         supplier_id         INTEGER,
                         purchase_price      REAL DEFAULT 0,
                         selling_price       REAL DEFAULT 0,
-                        quantity_in_stock   INTEGER DEFAULT 0,
-                        minimum_stock_level INTEGER DEFAULT 5,
+                        quantity_in_stock   REAL DEFAULT 0,
+                        minimum_stock_level REAL DEFAULT 5,
                         reorder_quantity    INTEGER DEFAULT 10,
                         location            TEXT,
                         shelf               TEXT,
@@ -263,7 +282,11 @@ namespace Shaheen_InventoryManagement_Android
                         is_stock_tracked    INTEGER DEFAULT 1,
                         price2              REAL DEFAULT 0,
                         price3              REAL DEFAULT 0,
-                        price4              REAL DEFAULT 0
+                        price4              REAL DEFAULT 0,
+                        big_unit            TEXT,
+                        small_unit          TEXT,
+                        conversion_value    REAL DEFAULT 1,
+                        pack_size           REAL DEFAULT 1
                     );
 
                     CREATE TABLE IF NOT EXISTS transactions (
@@ -285,6 +308,15 @@ namespace Shaheen_InventoryManagement_Android
                         date_created TEXT DEFAULT (datetime('now'))
                     );
 
+                    CREATE TABLE IF NOT EXISTS user_logs (
+                        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username     TEXT NOT NULL,
+                        full_name    TEXT,
+                        action       TEXT NOT NULL,
+                        timestamp    TEXT DEFAULT (datetime('now')),
+                        machine_name TEXT
+                    );
+
                     CREATE TABLE IF NOT EXISTS orders (
                         order_id        INTEGER PRIMARY KEY AUTOINCREMENT,
                         customer_id     INTEGER,
@@ -301,7 +333,29 @@ namespace Shaheen_InventoryManagement_Android
                         order_id        INTEGER,
                         part_id         INTEGER,
                         quantity        INTEGER,
-                        price           REAL
+                        price           REAL,
+                        item_type       TEXT DEFAULT 'Part',
+                        recipe_id       INTEGER
+                    );
+
+                    CREATE TABLE IF NOT EXISTS recipes (
+                        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                        recipe_name     TEXT NOT NULL UNIQUE,
+                        item_no         TEXT,
+                        description     TEXT,
+                        selling_price   REAL DEFAULT 0,
+                        status          TEXT DEFAULT 'Active',
+                        date_added      TEXT DEFAULT (datetime('now')),
+                        date_deleted    TEXT,
+                        recipe_image    TEXT,
+                        category_id     INTEGER
+                    );
+
+                    CREATE TABLE IF NOT EXISTS recipe_parts (
+                        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                        recipe_id       INTEGER NOT NULL,
+                        part_id         INTEGER NOT NULL,
+                        quantity        REAL DEFAULT 1
                     );
 
                     CREATE TABLE IF NOT EXISTS payments (
@@ -390,6 +444,7 @@ namespace Shaheen_InventoryManagement_Android
                 if (!ColumnExists("parts", "price2")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price2 REAL DEFAULT 0;");
                 if (!ColumnExists("parts", "price3")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price3 REAL DEFAULT 0;");
                 if (!ColumnExists("parts", "price4")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price4 REAL DEFAULT 0;");
+                if (!ColumnExists("recipe_parts", "unit_of_measure")) ExecuteNonQuery("ALTER TABLE recipe_parts ADD COLUMN unit_of_measure TEXT;");
 
                 // Add due_date to payments if missing
                 if (!ColumnExists("payments", "due_date"))
@@ -401,6 +456,29 @@ namespace Shaheen_InventoryManagement_Android
                 if (!ColumnExists("orders", "shipping_address")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN shipping_address TEXT;");
                 if (!ColumnExists("orders", "delivery_date")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN delivery_date TEXT;");
                 if (!ColumnExists("orders", "due_date")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN due_date TEXT;");
+
+                // Add recipe fields to order_items if missing
+                if (!ColumnExists("order_items", "item_type")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN item_type TEXT DEFAULT 'Part';");
+                if (!ColumnExists("order_items", "recipe_id")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN recipe_id INTEGER;");
+                if (!ColumnExists("order_items", "unit_of_measure")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN unit_of_measure TEXT;");
+
+                 // Add category_id to recipes if missing
+                if (!ColumnExists("recipes", "category_id")) ExecuteNonQuery("ALTER TABLE recipes ADD COLUMN category_id INTEGER;");
+
+                // Add item_no migrations
+                if (!ColumnExists("parts", "item_no")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN item_no TEXT;");
+                if (!ColumnExists("recipes", "item_no")) ExecuteNonQuery("ALTER TABLE recipes ADD COLUMN item_no TEXT;");
+
+                // Add stock type and pack/piece columns to parts
+                if (!ColumnExists("parts", "stock_type")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN stock_type TEXT DEFAULT 'Piece';");
+                if (!ColumnExists("parts", "pack_items_number")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN pack_items_number INTEGER DEFAULT 0;");
+                if (!ColumnExists("parts", "pack_price")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN pack_price REAL DEFAULT 0;");
+                if (!ColumnExists("parts", "item_price")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN item_price REAL DEFAULT 0;");
+                if (!ColumnExists("parts", "piece_price")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN piece_price REAL DEFAULT 0;");
+                if (!ColumnExists("parts", "big_unit")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN big_unit TEXT;");
+                if (!ColumnExists("parts", "small_unit")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN small_unit TEXT;");
+                if (!ColumnExists("parts", "conversion_value")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN conversion_value REAL DEFAULT 1;");
+                if (!ColumnExists("parts", "pack_size")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN pack_size REAL DEFAULT 1;");
             }
             catch (Exception ex)
             {

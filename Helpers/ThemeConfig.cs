@@ -20,8 +20,8 @@ namespace Shaheen_InventoryManagement_Android
         // ==========================================
         // BRANDING
         // ==========================================
-        public static string CompanyName { get; set; } = "Generic Solutions";
-        public static string AppTitle { get; set; } = "GenericShaheen-InventoryManagement-Android1.1";
+        public static string CompanyName { get; set; } = "Chahine Inventory";
+        public static string AppTitle { get; set; } = "Chahine Inventory";
 
         static ThemeConfig()
         {
@@ -51,13 +51,13 @@ namespace Shaheen_InventoryManagement_Android
         // COLOR PALETTE (Light / Horizon Blue)
         // ==========================================
         
-        // Primary Brand Color (Cyan/Sky)
-        public static Color PrimaryColor { get; } = Color.FromArgb(14, 165, 233); // Sky 500
-        public static Color PrimaryHoverColor { get; } = Color.FromArgb(2, 132, 199); // Sky 600
+        // Primary Brand Color (Marine Blue #1E5EAF)
+        public static Color PrimaryColor { get; } = Color.FromArgb(53, 93, 157); 
+        public static Color PrimaryHoverColor { get; } = Color.FromArgb(39, 73, 125); 
 
         // Gradient Colors for Primary Buttons
-        public static Color GradientStart { get; } = Color.FromArgb(56, 189, 248); // Sky 400
-        public static Color GradientEnd { get; } = Color.FromArgb(14, 165, 233);   // Sky 500
+        public static Color GradientStart { get; } = Color.FromArgb(59, 130, 246); 
+        public static Color GradientEnd { get; } = Color.FromArgb(53, 93, 157);   
 
         // Secondary / Text Colors
         public static Color SecondaryColor { get; } = Color.FromArgb(100, 116, 139); // Slate Gray
@@ -67,17 +67,17 @@ namespace Shaheen_InventoryManagement_Android
         public static Color TextColorWhite { get; } = Color.White;
 
         // Backgrounds
-        public static Color BackgroundColor { get; } = Color.FromArgb(241, 245, 249); 
+        public static Color BackgroundColor { get; } = Color.FromArgb(240, 244, 248); 
         public static Color SidebarColor { get; } = Color.FromArgb(248, 250, 252);     
-        public static Color HeaderColor { get; } = Color.FromArgb(14, 165, 233);      
-        public static Color ActiveBackColor { get; } = Color.FromArgb(240, 249, 255); 
+        public static Color HeaderColor { get; } = Color.FromArgb(53, 93, 157); 
+        public static Color ActiveBackColor { get; } = Color.FromArgb(239, 246, 255); 
 
         
         // Semantic Token Mapping
-        public static Color SelectionBackColor { get; } = Color.FromArgb(237, 242, 247); // Light Gray-Blue selection
-        public static Color BorderColor { get; } = Color.FromArgb(226, 232, 240); // Standard Border Color (Slate-200)
-        public static Color MutedTextColor { get; } = Color.FromArgb(160, 174, 192); // Cool Gray for subtitles/muted text
-        public static Color GridHeaderBgColor { get; } = Color.FromArgb(248, 250, 252); // Light Gray #F8FAFC
+        public static Color SelectionBackColor { get; } = Color.FromArgb(224, 231, 255); // Light Indigo/Blue selection
+        public static Color BorderColor { get; } = Color.FromArgb(219, 228, 242); // Soft blue-gray border
+        public static Color MutedTextColor { get; } = Color.FromArgb(100, 116, 139); // Slate Gray for subtitles/muted text
+        public static Color GridHeaderBgColor { get; } = Color.FromArgb(241, 245, 249); // Light Gray-Blue
 
         // Status Colors
         public static Color SuccessColor { get; } = Color.FromArgb(5, 205, 153); // Green #05CD99

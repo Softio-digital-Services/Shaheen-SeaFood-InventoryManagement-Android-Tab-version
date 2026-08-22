@@ -4,7 +4,8 @@ echo  Shaheen-InventoryManagement-Android - Publish Script
 echo ============================================
 echo.
 
-set PROJECT=c:\Users\Khale\Desktop\Personal\Service Company\Shaheen-InventoryManagement-Android
+set PROJECT=%~dp0
+if "%PROJECT:~-1%"=="\" set PROJECT=%PROJECT:~0,-1%
 set OUTPUT=%PROJECT%\publish-output
 
 echo [1/4] Cleaning previous publish output...

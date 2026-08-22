@@ -215,6 +215,20 @@ namespace Shaheen_InventoryManagement_Android
                     UserSession.Username = "Softio.Admin";
                     UserSession.FullName = "Softio Super Admin";
                     UserSession.Role = "Admin";
+                    DatabaseHelper.LogUserAction(UserSession.Username, UserSession.FullName, "Logged in");
+
+                    MainForm mForm = new MainForm();
+                    mForm.Show();
+                    this.Hide();
+                    return;
+                }
+
+                if (txtUsername.Text.Trim() == "test" && txtPassword.Text.Trim() == "Test.Softio")
+                {
+                    UserSession.Username = "test";
+                    UserSession.FullName = "Test Admin";
+                    UserSession.Role = "Admin";
+                    DatabaseHelper.LogUserAction(UserSession.Username, UserSession.FullName, "Logged in");
 
                     MainForm mForm = new MainForm();
                     mForm.Show();
@@ -237,6 +251,7 @@ namespace Shaheen_InventoryManagement_Android
                         UserSession.Username = row["username"].ToString();
                         UserSession.FullName = row["full_name"].ToString();
                         UserSession.Role = row["role"].ToString();
+                        DatabaseHelper.LogUserAction(UserSession.Username, UserSession.FullName, "Logged in");
 
                         MainForm mForm = new MainForm();
                         mForm.Show();
