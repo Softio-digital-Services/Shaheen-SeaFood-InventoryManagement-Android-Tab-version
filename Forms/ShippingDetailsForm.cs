@@ -123,13 +123,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
         private void BtnAddCustomer_Click(object sender, EventArgs e)
         {
-            using (var frm = new AddCustomerForm())
-            {
-                if (frm.ShowDialog() == DialogResult.OK)
-                {
-                    LoadCustomers();
-                }
-            }
+            MessageBox.Show("Customer management is disabled in this version.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void BtnSave_Click(object sender, EventArgs e)

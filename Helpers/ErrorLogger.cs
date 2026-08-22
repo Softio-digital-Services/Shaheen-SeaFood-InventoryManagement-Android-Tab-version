@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+#if !ANDROID
 using System.Windows.Forms;
+#endif
 
 namespace Shaheen_InventoryManagement_Android
 {
@@ -14,7 +16,11 @@ namespace Shaheen_InventoryManagement_Android
         {
             get
             {
+#if ANDROID
+                string logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Logs");
+#else
                 string logDir = Path.Combine(Application.StartupPath, "Logs");
+#endif
                 if (!Directory.Exists(logDir))
                 {
                     Directory.CreateDirectory(logDir);

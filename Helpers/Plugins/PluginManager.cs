@@ -92,17 +92,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers.Plugins
         /// <summary>Register plugins that ship inside the core assembly.</summary>
         private static void LoadInternalPlugins()
         {
-            // Free built-in plugins -- always visible
-            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.CalculatorPlugin());
-            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.BackupPlugin());
-
-            // Paid internal plugins (visibility toggled via license)
-            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.CustomersPlugin());
-            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.SuppliersPlugin());
-            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.QuotationsPlugin());
-            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.PurchaseOrdersPlugin());
-            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.MonthlyExpensesPlugin());
-            TryRegister(new Shaheen_InventoryManagement_Android.Plugins.BarcodeLabelsPlugin());
+            // Register only the Recipes plugin
             TryRegister(new Shaheen_InventoryManagement_Android.Plugins.RecipesPlugin());
         }
 

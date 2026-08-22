@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+#if !ANDROID
 using System.Windows.Forms;
+#endif
 using Shaheen_InventoryManagement_Android;
 
 namespace Shaheen_InventoryManagement_Android.Services

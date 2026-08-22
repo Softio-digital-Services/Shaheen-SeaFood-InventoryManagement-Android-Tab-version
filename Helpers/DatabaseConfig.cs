@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+#if !ANDROID
 using System.Windows.Forms;
+#endif
 using System.Text.Json;
 
 namespace Shaheen_InventoryManagement_Android
@@ -36,8 +38,12 @@ namespace Shaheen_InventoryManagement_Android
         {
             get
             {
+#if ANDROID
+                string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Data");
+#else
                 string appPath = Application.StartupPath;
                 string dir = Path.Combine(appPath, "Data");
+#endif
                 if (!Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
                 return Path.Combine(dir, "inventory.db");
@@ -51,7 +57,11 @@ namespace Shaheen_InventoryManagement_Android
         {
             get
             {
+#if ANDROID
+                string imagesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Parts_Images");
+#else
                 string imagesPath = Path.Combine(Application.StartupPath, "Parts_Images");
+#endif
                 if (!Directory.Exists(imagesPath))
                     Directory.CreateDirectory(imagesPath);
                 return imagesPath;
@@ -59,3 +69,4 @@ namespace Shaheen_InventoryManagement_Android
         }
     }
 }
+

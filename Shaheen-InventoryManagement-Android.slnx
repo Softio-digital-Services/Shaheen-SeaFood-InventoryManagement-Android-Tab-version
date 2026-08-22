@@ -1,3 +1,6 @@
 <Solution>
-  <Project Path="Shaheen_InventoryManagement_Android.csproj" />
+  <Project Path="AndroidApp/Shaheen-InventoryManagement.Android.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
+  <Project Path="Shaheen-InventoryManagement-Android.csproj" />
 </Solution>

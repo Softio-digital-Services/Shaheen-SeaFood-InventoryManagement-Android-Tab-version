@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <AssemblyName>Shaheen_InventoryManagement_Android</AssemblyName>
+    <RootNamespace>Shaheen_InventoryManagement_Android</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -15,6 +17,9 @@
 
   <ItemGroup>
     <Compile Remove="scratch\**" />
+    <Compile Remove="AndroidApp\**" />
+    <EmbeddedResource Remove="AndroidApp\**" />
+    <None Remove="AndroidApp\**" />
   </ItemGroup>
 
   <!-- Enable ASP.NET Core Web API inside WinForms -->
@@ -34,7 +39,7 @@
 
   <ItemGroup>
     <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="wwwroot\**" CopyToOutputDirectory="Always" />
     <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Plugins\**" CopyToOutputDirectory="PreserveNewest" Exclude="Plugins\**\*.cs" />
   </ItemGroup>

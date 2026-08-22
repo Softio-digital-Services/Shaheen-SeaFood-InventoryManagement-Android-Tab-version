@@ -6,8 +6,10 @@ using System.IO;
 using System.Reflection;
 using System.Resources;
 using System.Threading;
+#if !ANDROID
 using System.Windows.Forms;
 using System.Drawing;
+#endif
 using System.Runtime.CompilerServices;
 
 namespace Shaheen_InventoryManagement_Android.Helpers
@@ -78,7 +80,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers
                 }
 
                 // Fallback: Try loading from file path
-                string exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string exeDir = AppContext.BaseDirectory;
                 string resxPath = Path.Combine(exeDir, "Properties", "Resources.ar.resx");
                 if (!File.Exists(resxPath))
                 {
@@ -127,7 +129,11 @@ namespace Shaheen_InventoryManagement_Android.Helpers
 
             try
             {
+#if ANDROID
+                return key;
+#else
                 return Properties.Resources.ResourceManager.GetString(key) ?? key;
+#endif
             }
             catch
             {
@@ -147,8 +153,12 @@ namespace Shaheen_InventoryManagement_Android.Helpers
 
             try
             {
+#if ANDROID
+                return fallback;
+#else
                 string res = Properties.Resources.ResourceManager.GetString(key);
                 return string.IsNullOrEmpty(res) ? fallback : res;
+#endif
             }
             catch
             {
@@ -156,6 +166,7 @@ namespace Shaheen_InventoryManagement_Android.Helpers
             }
         }
 
+#if !ANDROID
         public static void TranslateControl(Control parent)
         {
             if (parent == null) return;
@@ -408,6 +419,10 @@ namespace Shaheen_InventoryManagement_Android.Helpers
         {
             return parent.ClientSize.Width - control.Location.X - control.Width;
         }
+#else
+        public static string CurrentLanguage => _currentLanguage;
+        public static bool IsArabic => CurrentLanguage == "ar";
+#endif
     }
 }
 

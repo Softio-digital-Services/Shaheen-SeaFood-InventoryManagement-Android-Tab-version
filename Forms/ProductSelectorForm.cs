@@ -66,13 +66,14 @@ namespace Shaheen_InventoryManagement_Android.Forms
             try
             {
                 string search = txtSearch.Text.Trim();
-                string sql = "SELECT id, part_name as Name, part_number as SKU, barcode as Barcode, selling_price as Price, quantity_in_stock as Stock FROM parts WHERE date_deleted IS NULL";
+                string sql = "SELECT id, item_no as [Item No], part_name as Name, part_number as SKU, barcode as Barcode, selling_price as Price, quantity_in_stock as Stock FROM parts WHERE date_deleted IS NULL";
                 if (!string.IsNullOrEmpty(search))
                 {
-                    sql += $" AND (part_name LIKE '%{search}%' OR part_number LIKE '%{search}%' OR barcode LIKE '%{search}%')";
+                    sql += $" AND (part_name LIKE '%{search}%' OR part_number LIKE '%{search}%' OR barcode LIKE '%{search}%' OR item_no LIKE '%{search}%')";
                 }
                 dgvProducts.DataSource = DatabaseHelper.ExecuteDataTable(sql);
                 if (dgvProducts.Columns["id"] != null) dgvProducts.Columns["id"].Visible = false;
+                if (dgvProducts.Columns["Item No"] != null) dgvProducts.Columns["Item No"].HeaderText = LocalizationManager.GetString("Prod_GridItemNo", "Item No.");
 
                 if (LocalizationManager.IsArabic)
                 {

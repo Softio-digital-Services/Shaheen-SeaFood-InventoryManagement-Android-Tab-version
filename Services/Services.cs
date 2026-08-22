@@ -17,7 +17,8 @@ namespace Shaheen_InventoryManagement_Android.Services
                            p.minimum_stock_level, p.reorder_quantity, p.location, p.barcode, p.shelf,
                            p.item_type, p.unit_of_measure, p.batch_number, p.expiry_date,
                            p.is_sales_item, p.is_purchase_item, p.is_inactive, p.tax_rate,
-                           p.is_stock_tracked, p.price2, p.price3, p.price4
+                           p.is_stock_tracked, p.price2, p.price3, p.price4, p.item_no,
+                           p.big_unit, p.small_unit, p.conversion_value, p.pack_size, p.pack_price, p.piece_price, p.item_price
                            FROM parts p
                            LEFT JOIN categories c ON p.category_id = c.id
                            LEFT JOIN suppliers s ON p.supplier_id = s.id
@@ -42,7 +43,22 @@ namespace Shaheen_InventoryManagement_Android.Services
             {
                 sql += $" LIMIT {limit} OFFSET {offset}";
             }
-            return DatabaseHelper.ExecuteDataTable(sql);
+            var dt = DatabaseHelper.ExecuteDataTable(sql);
+            if (!Helpers.UserSession.IsAdmin)
+            {
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    if (dt.Columns.Contains("selling_price")) row["selling_price"] = 0m;
+                    if (dt.Columns.Contains("purchase_price")) row["purchase_price"] = 0m;
+                    if (dt.Columns.Contains("pack_price")) row["pack_price"] = 0m;
+                    if (dt.Columns.Contains("item_price")) row["item_price"] = 0m;
+                    if (dt.Columns.Contains("piece_price")) row["piece_price"] = 0m;
+                    if (dt.Columns.Contains("price2")) row["price2"] = 0m;
+                    if (dt.Columns.Contains("price3")) row["price3"] = 0m;
+                    if (dt.Columns.Contains("price4")) row["price4"] = 0m;
+                }
+            }
+            return dt;
         }
 
         public int GetPartsCount(string search = "", bool lowStockOnly = false, bool activeOnly = false, string category = null)
@@ -90,6 +106,7 @@ namespace Shaheen_InventoryManagement_Android.Services
                 throw new Exception("Failed to add part. Database operation failed.");
             }
             LogTransaction("ADD", $"Added Part: {name} ({number})", name);
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Added ingredient");
             GlobalEvents.RaiseInventoryUpdated();
         }
 
@@ -121,11 +138,28 @@ namespace Shaheen_InventoryManagement_Android.Services
                 throw new Exception("Failed to update part. Database operation failed.");
 
             LogTransaction("EDIT", $"Updated Part ID: {id}", partName);
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Edited ingredient");
             GlobalEvents.RaiseInventoryUpdated();
         }
 
         public void SaveProductService(Shaheen_InventoryManagement_Android.Data.PartData p)
         {
+            // Auto-calculate unit costs
+            if (!string.IsNullOrEmpty(p.BigUnit) && !string.IsNullOrEmpty(p.SmallUnit))
+            {
+                p.PackPrice = p.PurchasePrice;
+                bool isBigPack = p.BigUnit.ToLower().Trim() == "pack" || p.BigUnit.ToLower().Trim() == "package";
+                double effectivePSize = isBigPack ? 1.0 : p.PackSize;
+                p.ItemPrice = Helpers.IngredientCalculationEngine.CalculateCostPerBigUnit(p.PurchasePrice, effectivePSize);
+                p.PiecePrice = Helpers.IngredientCalculationEngine.CalculateCostPerSmallUnit(p.PurchasePrice, effectivePSize, p.ConversionValue);
+            }
+            else
+            {
+                p.PackPrice = p.PurchasePrice;
+                p.ItemPrice = p.PurchasePrice;
+                p.PiecePrice = p.PurchasePrice;
+            }
+
             int categoryId = GetCategoryId(p.CategoryName);
             bool isNew = p.Id == 0;
 
@@ -133,16 +167,22 @@ namespace Shaheen_InventoryManagement_Android.Services
             if (isNew)
             {
                 sql = @"INSERT INTO parts (part_name, part_number, description, category_id, supplier_id, purchase_price, selling_price, quantity_in_stock, minimum_stock_level, reorder_quantity, location, shelf, part_image, barcode, status, date_added,
-                                          item_type, unit_of_measure, batch_number, expiry_date, is_sales_item, is_purchase_item, is_inactive, tax_rate, is_stock_tracked, price2, price3, price4) 
+                                          item_type, unit_of_measure, batch_number, expiry_date, is_sales_item, is_purchase_item, is_inactive, tax_rate, is_stock_tracked, price2, price3, price4, item_no,
+                                          stock_type, pack_items_number, pack_price, item_price, piece_price,
+                                          big_unit, small_unit, conversion_value, pack_size) 
                         VALUES (@name, @num, @desc, @cat, @sup, @cost, @price1, @stock, @min, @reorder, @loc, @shelf, @img, @barcode, @status, datetime('now'),
-                                @type, @uom, @batch, @expiry, @sales, @purchase, @inactive, @tax, @tracked, @price2, @price3, @price4)";
+                                @type, @uom, @batch, @expiry, @sales, @purchase, @inactive, @tax, @tracked, @price2, @price3, @price4, @item_no,
+                                @stock_type, @pack_items_number, @pack_price, @item_price, @piece_price,
+                                @big_unit, @small_unit, @conversion_value, @pack_size)";
             }
             else
             {
                 sql = @"UPDATE parts SET part_name=@name, part_number=@num, description=@desc, category_id=@cat, supplier_id=@sup, purchase_price=@cost, selling_price=@price1, 
                                          quantity_in_stock=@stock, minimum_stock_level=@min, reorder_quantity=@reorder, location=@loc, shelf=@shelf, barcode=@barcode, status=@status,
                                          item_type=@type, unit_of_measure=@uom, batch_number=@batch, expiry_date=@expiry, is_sales_item=@sales, is_purchase_item=@purchase, 
-                                         is_inactive=@inactive, tax_rate=@tax, is_stock_tracked=@tracked, price2=@price2, price3=@price3, price4=@price4";
+                                         is_inactive=@inactive, tax_rate=@tax, is_stock_tracked=@tracked, price2=@price2, price3=@price3, price4=@price4, item_no=@item_no,
+                                         stock_type=@stock_type, pack_items_number=@pack_items_number, pack_price=@pack_price, item_price=@item_price, piece_price=@piece_price,
+                                         big_unit=@big_unit, small_unit=@small_unit, conversion_value=@conversion_value, pack_size=@pack_size";
                 if (p.PartImage != null) sql += ", part_image=@img";
                 sql += " WHERE id=@id";
             }
@@ -174,7 +214,17 @@ namespace Shaheen_InventoryManagement_Android.Services
                 new SqliteParameter("@tracked",  p.IsStockTracked ? 1 : 0),
                 new SqliteParameter("@price2",   p.Price2),
                 new SqliteParameter("@price3",   p.Price3),
-                new SqliteParameter("@price4",   p.Price4)
+                new SqliteParameter("@price4",   p.Price4),
+                new SqliteParameter("@item_no",  p.ItemNo ?? ""),
+                new SqliteParameter("@stock_type", p.StockType ?? "Piece"),
+                new SqliteParameter("@pack_items_number", p.PackItemsNumber),
+                new SqliteParameter("@pack_price", p.PackPrice),
+                new SqliteParameter("@item_price", p.ItemPrice),
+                new SqliteParameter("@piece_price", p.PiecePrice),
+                new SqliteParameter("@big_unit", p.BigUnit ?? ""),
+                new SqliteParameter("@small_unit", p.SmallUnit ?? ""),
+                new SqliteParameter("@conversion_value", p.ConversionValue),
+                new SqliteParameter("@pack_size", p.PackSize)
             };
             if (isNew || p.PartImage != null) parms.Add(new SqliteParameter("@img", p.PartImage ?? (object)DBNull.Value));
             if (!isNew) parms.Add(new SqliteParameter("@id", p.Id));
@@ -183,20 +233,32 @@ namespace Shaheen_InventoryManagement_Android.Services
                 throw new Exception("Failed to save product/service. Database operation failed.");
 
             LogTransaction(isNew ? "ADD" : "EDIT", $"{(isNew ? "Added" : "Updated")} {p.ItemType}: {p.PartName} ({p.PartNumber})", p.PartName);
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, isNew ? "Added ingredient" : "Edited ingredient");
             GlobalEvents.RaiseInventoryUpdated();
         }
 
         private int GetCategoryId(string categoryName)
         {
             if (string.IsNullOrWhiteSpace(categoryName)) return 1;
-            object result = DatabaseHelper.ExecuteScalar<object>("SELECT id FROM categories WHERE category_name = @name",
+            categoryName = categoryName.Trim();
+            object result = DatabaseHelper.ExecuteScalar<object>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@name)",
                 new SqliteParameter("@name", categoryName));
-            if (result != null) return Convert.ToInt32(result);
+            if (result != null && result != DBNull.Value) return Convert.ToInt32(result);
 
-            // Create if not exists, return new id
-            DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name, description) VALUES (@name, '')",
-                new SqliteParameter("@name", categoryName));
-            return (int)DatabaseHelper.ExecuteScalar<long>("SELECT last_insert_rowid()");
+            try
+            {
+                DatabaseHelper.ExecuteNonQuery("INSERT INTO categories (category_name, description) VALUES (@name, '')",
+                    new SqliteParameter("@name", categoryName));
+                return (int)DatabaseHelper.ExecuteScalar<long>("SELECT last_insert_rowid()");
+            }
+            catch
+            {
+                // Fallback check in case of unique constraint failure
+                object fallback = DatabaseHelper.ExecuteScalar<object>("SELECT id FROM categories WHERE LOWER(category_name) = LOWER(@name)",
+                    new SqliteParameter("@name", categoryName));
+                if (fallback != null && fallback != DBNull.Value) return Convert.ToInt32(fallback);
+                return 1;
+            }
         }
 
         private void LogTransaction(string action, string description, string partName = "N/A")
@@ -217,6 +279,7 @@ namespace Shaheen_InventoryManagement_Android.Services
             string partName = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {partId}") ?? "N/A";
             DatabaseHelper.ExecuteNonQuery($"UPDATE parts SET date_deleted = datetime('now') WHERE id = {partId}");
             LogTransaction("DELETE", $"Deleted Part: {partName} (ID: {partId})", partName);
+            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Deleted ingredient");
             GlobalEvents.RaiseInventoryUpdated();
         }
 
@@ -270,6 +333,7 @@ namespace Shaheen_InventoryManagement_Android.Services
                     new SqliteParameter("@price", unitPrice),
                     new SqliteParameter("@loc", location ?? ""),
                     new SqliteParameter("@status", status ?? "Active"));
+                DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Imported inventory");
                 GlobalEvents.RaiseInventoryUpdated();
             }
             catch (Exception ex)
@@ -279,18 +343,18 @@ namespace Shaheen_InventoryManagement_Android.Services
             }
         }
 
-        public void AdjustStock(int partId, int change, string reason)
+        public void AdjustStock(int partId, double change, string reason)
         {
             try
             {
                 DatabaseHelper.ExecuteNonQuery(
-                    "UPDATE parts SET quantity_in_stock = quantity_in_stock + @change WHERE id = @id",
+                    "UPDATE parts SET quantity_in_stock = CASE WHEN quantity_in_stock + @change < 0 THEN 0 ELSE quantity_in_stock + @change END WHERE id = @id",
                     new SqliteParameter("@change", change),
                     new SqliteParameter("@id", partId));
 
                 string partNameResult = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {partId}") ?? "Unknown";
                 string action = change > 0 ? "ADJUST_IN" : "ADJUST_OUT";
-                LogTransaction(action, $"Adjusted stock of {partNameResult} by {change}. Reason: {reason}", partNameResult);
+                LogTransaction(action, $"Adjusted stock of {partNameResult} by {change:F4}. Reason: {reason}", partNameResult);
                 GlobalEvents.RaiseInventoryUpdated();
             }
             catch (Exception ex)

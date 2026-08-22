@@ -4,6 +4,9 @@ obj/
 publish/
 build_output.txt
 
+# Synced web assets (copied from /wwwroot on every Android build)
+AndroidApp/Assets/wwwroot/
+
 # Visual Studio
 .vs/
 *.user
