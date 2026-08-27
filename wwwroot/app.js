@@ -3371,9 +3371,14 @@ function parseSalesImportRows(rows) {
 
 function clearSalesImportPreview() {
     pendingSalesItems = [];
-    document.getElementById('salesImportFile').value = '';
-    document.getElementById('salesImportPreviewArea').classList.add('hidden');
-    document.getElementById('salesImportPreviewList').innerHTML = '';
+    const fileEl = document.getElementById('salesImportFile');
+    if (fileEl) fileEl.value = '';
+    
+    const previewArea = document.getElementById('salesImportPreviewArea');
+    if (previewArea) previewArea.classList.add('hidden');
+    
+    const previewList = document.getElementById('salesImportPreviewList');
+    if (previewList) previewList.innerHTML = '';
 }
 
 async function confirmSalesImport() {
@@ -3403,7 +3408,8 @@ async function confirmSalesImport() {
             const skippedContainer = document.getElementById('salesResultSkippedListContainer');
             if (skippedContainer) {
                 if (result.skipped > 0 && result.skippedNames && result.skippedNames.length > 0) {
-                    document.getElementById('salesResultSkippedList').innerText = result.skippedNames.join(', ');
+                    const listEl = document.getElementById('salesResultSkippedList');
+                    if (listEl) listEl.innerText = result.skippedNames.join(', ');
                     skippedContainer.classList.remove('hidden');
                 } else {
                     skippedContainer.classList.add('hidden');
