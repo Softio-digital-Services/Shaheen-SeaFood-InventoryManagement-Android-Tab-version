@@ -638,6 +638,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Call checkLoginState immediately to lock/login screen quickly without flicker
     checkLoginState();
 
+    // --- AUTO LOCK ON APP MINIMIZE / BACKGROUND ---
+    let isFilePickerActive = false;
+    ['importFile', 'recipeImportFile', 'salesImportFile', 'iconFileInput'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('click', () => {
+                isFilePickerActive = true;
+            });
+        }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            if (isFilePickerActive) {
+                isFilePickerActive = false;
+            } else {
+                if (sessionStorage.getItem('pos_loggedIn') === 'true') {
+                    if (typeof handleLogout === 'function') {
+                        handleLogout();
+                    }
+                }
+            }
+        }
+    });
+
     // 0. Fetch backend language config immediately to sync web portal language with desktop app natively before UI renders
     await fetchLanguageConfig();
     applyLanguage(); 
