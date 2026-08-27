@@ -29,3 +29,6 @@ packages/
 # Publish and Installer output
 publish-output/
 InstallerOutput/
+
+# APK packages
+*.apk

@@ -158,6 +158,14 @@ namespace Shaheen_InventoryManagement_Android
 
                 app.UseCors();
 
+                app.Use(async (context, next) =>
+                {
+                    context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0";
+                    context.Response.Headers["Pragma"] = "no-cache";
+                    context.Response.Headers["Expires"] = "0";
+                    await next();
+                });
+
                 // Camera requires HTTPS OR the Chrome Flag (chrome://flags/#unsafely-treat-insecure-origin-as-secure)
                 // We'll allow both HTTP and HTTPS to co-exist for easier access
                 // if (!builder.Environment.IsDevelopment()) { app.UseHsts(); }
@@ -1009,6 +1017,19 @@ namespace Shaheen_InventoryManagement_Android
                             Helpers.UserSession.FullName = "Test Admin";
                             DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Logged in");
                             return Microsoft.AspNetCore.Http.Results.Ok(new { username = "Admin", role = "Admin", fullName = "Test Admin" });
+                        }
+
+                        string cleanUsername = body.Username?.Trim() ?? "";
+                        string cleanPassword = body.Password?.Trim() ?? "";
+
+                        if (cleanUsername.Equals("production", StringComparison.OrdinalIgnoreCase) && 
+                            (cleanPassword == "Productio@2026!" || cleanPassword == "Production@2026!"))
+                        {
+                            Helpers.UserSession.Username = "production";
+                            Helpers.UserSession.Role = "Production";
+                            Helpers.UserSession.FullName = "Production User";
+                            DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Logged in");
+                            return Microsoft.AspNetCore.Http.Results.Ok(new { username = "production", role = "Production", fullName = "Production User" });
                         }
 
                         var dt = DatabaseHelper.ExecuteDataTable(
@@ -1895,26 +1916,6 @@ namespace Shaheen_InventoryManagement_Android
 
                                              double newStock = Math.Max(0, currentStockInDb - totalDeduct);
 
-                                             // Update parts table
-                                             string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
-                                             using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlUpdatePart, conn, transaction))
-                                             {
-                                                 cmd.Parameters.AddWithValue("@newStock", newStock);
-                                                 cmd.Parameters.AddWithValue("@partId", partId);
-                                                 cmd.ExecuteNonQuery();
-                                             }
-
-                                             // Record transaction
-                                             string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
-                                                                   VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
-                                             string txDesc = $"Deducted {totalDeduct:0.##} via sales import ({exactPartName} x{sale.QtySold})";
-                                             using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlInsertTx, conn, transaction))
-                                             {
-                                                 cmd.Parameters.AddWithValue("@partName", exactPartName);
-                                                 cmd.Parameters.AddWithValue("@desc", txDesc);
-                                                 cmd.ExecuteNonQuery();
-                                             }
-
                                              if (existingDeduction != null)
                                              {
                                                  existingDeduction.QtyDeducted += totalDeduct;
@@ -2066,26 +2067,6 @@ namespace Shaheen_InventoryManagement_Android
 
                                                  double newStock = Math.Max(0, currentStockInDb - totalDeduct);
 
-                                                 // Update parts table
-                                                 string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
-                                                 using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlUpdatePart, conn, transaction))
-                                                 {
-                                                     cmd.Parameters.AddWithValue("@newStock", newStock);
-                                                     cmd.Parameters.AddWithValue("@partId", fallbackPartId);
-                                                     cmd.ExecuteNonQuery();
-                                                 }
-
-                                                 // Record transaction
-                                                 string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
-                                                                       VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
-                                                 string txDesc = $"Deducted {totalDeduct:0.##} via sales import ({fallbackPartName} x{sale.QtySold})";
-                                                 using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlInsertTx, conn, transaction))
-                                                 {
-                                                     cmd.Parameters.AddWithValue("@partName", fallbackPartName);
-                                                     cmd.Parameters.AddWithValue("@desc", txDesc);
-                                                     cmd.ExecuteNonQuery();
-                                                 }
-
                                                  if (existingDeduction != null)
                                                  {
                                                      existingDeduction.QtyDeducted += totalDeduct;
@@ -2126,26 +2107,6 @@ namespace Shaheen_InventoryManagement_Android
                                          }
 
                                          double newStock = Math.Max(0, currentStockInDb - totalDeduct);
-
-                                         // Update database
-                                         string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
-                                         using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlUpdatePart, conn, transaction))
-                                         {
-                                             cmd.Parameters.AddWithValue("@newStock", newStock);
-                                             cmd.Parameters.AddWithValue("@partId", p.PartId);
-                                             cmd.ExecuteNonQuery();
-                                         }
-
-                                         // Record transaction
-                                         string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
-                                                               VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
-                                         string txDesc = $"Deducted {totalDeduct:0.##} via sales import ({exactRecipeName} x{sale.QtySold})";
-                                         using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlInsertTx, conn, transaction))
-                                         {
-                                             cmd.Parameters.AddWithValue("@partName", p.PartName);
-                                             cmd.Parameters.AddWithValue("@desc", txDesc);
-                                             cmd.ExecuteNonQuery();
-                                         }
 
                                          if (existingDeduction != null)
                                          {
@@ -2229,12 +2190,36 @@ namespace Shaheen_InventoryManagement_Android
                                          cmd.ExecuteNonQuery();
                                      }
                                  }
-                                             transaction.Commit();
+
+                                 // Apply aggregated database updates and record transactions
+                                 foreach (var d in ingredientDeductions)
+                                 {
+                                     string sqlUpdatePart = "UPDATE parts SET quantity_in_stock = @newStock WHERE id = @partId";
+                                     using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlUpdatePart, conn, transaction))
+                                     {
+                                         cmd.Parameters.AddWithValue("@newStock", d.NewStock);
+                                         cmd.Parameters.AddWithValue("@partId", d.PartId);
+                                         cmd.ExecuteNonQuery();
+                                     }
+
+                                     string sqlInsertTx = @"INSERT INTO transactions (action_type, part_name, description, username) 
+                                                           VALUES ('STOCK_DEDUCT', @partName, @desc, 'Admin')";
+                                     string txDesc = $"Deducted {d.QtyDeducted:0.##} via sales import -- Stock: {d.PreviousStock:0.##} -> {d.NewStock:0.##} (ID: {d.PartId})";
+                                     using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(sqlInsertTx, conn, transaction))
+                                     {
+                                         cmd.Parameters.AddWithValue("@partName", d.PartName);
+                                         cmd.Parameters.AddWithValue("@desc", txDesc);
+                                         cmd.ExecuteNonQuery();
+                                     }
+                                 }
+
+                                 transaction.Commit();
                             }
                         }
 
-                        // Broadcast inventory update
+                        // Broadcast inventory update and raise global events
                         _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Daily sales imported ({recipesProcessed} processed)");
+                        GlobalEvents.RaiseInventoryUpdated();
 
                         DatabaseHelper.LogUserAction(Helpers.UserSession.Username, Helpers.UserSession.FullName, "Imported sales");
                         return Microsoft.AspNetCore.Http.Results.Ok(new
@@ -2374,6 +2359,28 @@ namespace Shaheen_InventoryManagement_Android
                         {
                             total += item.Price * item.Qty;
                             bool isRecipe = item.ItemType == "Recipe" || (item.RecipeId.HasValue && item.RecipeId.Value > 0);
+                            
+                            string uom = item.UnitOfMeasure;
+                            if (isRecipe)
+                            {
+                                uom = "";
+                            }
+                            else if (string.IsNullOrEmpty(uom) || uom == "pack")
+                            {
+                                var dt = DatabaseHelper.ExecuteDataTable("SELECT small_unit, unit_of_measure FROM parts WHERE id = @id", new SqliteParameter("@id", item.Id));
+                                if (dt != null && dt.Rows.Count > 0)
+                                {
+                                    var row = dt.Rows[0];
+                                    string smallUnit = row["small_unit"] != DBNull.Value ? row["small_unit"].ToString() : "";
+                                    string unitOfMeasure = row["unit_of_measure"] != DBNull.Value ? row["unit_of_measure"].ToString() : "";
+                                    uom = !string.IsNullOrEmpty(smallUnit) ? smallUnit : unitOfMeasure;
+                                }
+                            }
+                            if (string.IsNullOrEmpty(uom))
+                            {
+                                uom = isRecipe ? "" : "pcs";
+                            }
+
                             orderItems.Add(new OrderItem
                             {
                                 PartId = isRecipe ? 0 : item.Id,
@@ -2381,7 +2388,7 @@ namespace Shaheen_InventoryManagement_Android
                                 ItemType = isRecipe ? "Recipe" : "Part",
                                 Quantity = item.Qty,
                                 UnitPrice = item.Price,
-                                UnitOfMeasure = item.UnitOfMeasure ?? "pack"
+                                UnitOfMeasure = uom
                             });
                         }
 
@@ -2461,7 +2468,9 @@ namespace Shaheen_InventoryManagement_Android
                                  totalCost = (!Helpers.UserSession.IsAdmin) ? 0m : r.TotalCost,
                                  categoryName = r.CategoryName,
                                  image = recipeImage,
-                                 parts = partsList
+                                 parts = partsList,
+                                 yieldQuantity = r.YieldQuantity,
+                                 yieldUnit = r.YieldUnit
                              });
                          }
                          return Microsoft.AspNetCore.Http.Results.Ok(result);
@@ -2520,6 +2529,8 @@ namespace Shaheen_InventoryManagement_Android
                              SellingPrice = body.Price,
                              CategoryName = body.CategoryName ?? "",
                              RecipeImage = body.Image ?? "",
+                             YieldQuantity = body.YieldQuantity ?? 1m,
+                             YieldUnit = body.YieldUnit ?? "",
                              Status = "Active"
                          };
 
@@ -2938,6 +2949,8 @@ namespace Shaheen_InventoryManagement_Android
             public decimal Price { get; set; }
             public string CategoryName { get; set; }
             public string Image { get; set; }
+            public decimal? YieldQuantity { get; set; }
+            public string YieldUnit { get; set; }
             public System.Collections.Generic.List<RecipeIngredientPayload> Ingredients { get; set; }
         }
 
@@ -3190,6 +3203,9 @@ namespace Shaheen_InventoryManagement_Android
             );
             DatabaseHelper.ExecuteNonQuery(
                 "INSERT INTO users (username, password, full_name, role, is_active) VALUES ('staff', 'Staff.Softio', 'Test Staff', 'Staff', 1);"
+            );
+            DatabaseHelper.ExecuteNonQuery(
+                "INSERT INTO users (username, password, full_name, role, is_active) VALUES ('production', 'Productio@2026!', 'Production User', 'Production', 1);"
             );
 
             DatabaseHelper.LogUserAction("System", "Factory Reset", "All application data reset to initial state");

@@ -58,6 +58,22 @@ namespace Shaheen_InventoryManagement_Android.Helpers
                 );
             }
 
+            // Ensure production user exists
+            int prodUserCount = DatabaseHelper.ExecuteScalar<int>("SELECT COUNT(*) FROM users WHERE LOWER(username) = 'production'");
+            if (prodUserCount == 0)
+            {
+                DatabaseHelper.ExecuteNonQuery(
+                    "INSERT INTO users (username, password, full_name, role) VALUES ('production', 'Productio@2026!', 'Production User', 'Production');"
+                );
+            }
+            else
+            {
+                // Update password for production user in case they already exist with any other password
+                DatabaseHelper.ExecuteNonQuery(
+                    "UPDATE users SET password = 'Productio@2026!' WHERE LOWER(username) = 'production';"
+                );
+            }
+
             // Repair: Standardise status values (fix Arabic UI bug)
             DatabaseHelper.ExecuteNonQuery(
                 "UPDATE parts SET status = 'Active' WHERE status NOT IN ('Active', 'Inactive') AND date_deleted IS NULL;"

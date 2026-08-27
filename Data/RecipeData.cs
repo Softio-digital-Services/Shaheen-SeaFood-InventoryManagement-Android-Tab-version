@@ -19,6 +19,8 @@ namespace Shaheen_InventoryManagement_Android.Data
         public string CategoryName { get; set; }
 
         public List<RecipePartData> Parts { get; set; } = new List<RecipePartData>();
+        public decimal YieldQuantity { get; set; }
+        public string YieldUnit { get; set; }
 
         public decimal TotalCost 
         {
@@ -76,8 +78,8 @@ namespace Shaheen_InventoryManagement_Android.Data
         public static int AddRecipe(RecipeData recipe)
         {
             int catId = GetOrCreateCategoryId(recipe.CategoryName);
-            string sql = @"INSERT INTO recipes (recipe_name, description, selling_price, status, date_added, recipe_image, category_id, item_no)
-                           VALUES (@name, @desc, @price, @status, datetime('now'), @img, @catId, @item_no);
+            string sql = @"INSERT INTO recipes (recipe_name, description, selling_price, status, date_added, recipe_image, category_id, item_no, yield_quantity, yield_unit)
+                           VALUES (@name, @desc, @price, @status, datetime('now'), @img, @catId, @item_no, @yieldQty, @yieldUnit);
                            SELECT last_insert_rowid();";
             
             var idObj = DatabaseHelper.ExecuteScalar<long>(sql,
@@ -87,7 +89,9 @@ namespace Shaheen_InventoryManagement_Android.Data
                 new SqliteParameter("@status", recipe.Status ?? "Active"),
                 new SqliteParameter("@img", recipe.RecipeImage ?? ""),
                 new SqliteParameter("@catId", catId),
-                new SqliteParameter("@item_no", recipe.ItemNo ?? "")
+                new SqliteParameter("@item_no", recipe.ItemNo ?? ""),
+                new SqliteParameter("@yieldQty", recipe.YieldQuantity),
+                new SqliteParameter("@yieldUnit", recipe.YieldUnit ?? "")
             );
             
             int recipeId = (int)idObj;
@@ -119,7 +123,9 @@ namespace Shaheen_InventoryManagement_Android.Data
                             status = @status,
                             recipe_image = @img,
                             category_id = @catId,
-                            item_no = @item_no
+                            item_no = @item_no,
+                            yield_quantity = @yieldQty,
+                            yield_unit = @yieldUnit
                            WHERE id = @id";
             DatabaseHelper.ExecuteNonQuery(sql,
                 new SqliteParameter("@name", recipe.RecipeName),
@@ -129,6 +135,8 @@ namespace Shaheen_InventoryManagement_Android.Data
                 new SqliteParameter("@img", recipe.RecipeImage ?? ""),
                 new SqliteParameter("@catId", catId),
                 new SqliteParameter("@item_no", recipe.ItemNo ?? ""),
+                new SqliteParameter("@yieldQty", recipe.YieldQuantity),
+                new SqliteParameter("@yieldUnit", recipe.YieldUnit ?? ""),
                 new SqliteParameter("@id", recipe.Id)
             );
             
@@ -195,6 +203,8 @@ namespace Shaheen_InventoryManagement_Android.Data
                 RecipeImage  = Safe<string>(r, "recipe_image", ""),
                 CategoryId   = Safe<int>(r, "category_id", 0),
                 CategoryName = Safe<string>(r, "category_name", ""),
+                YieldQuantity = Safe<decimal>(r, "yield_quantity", 1),
+                YieldUnit    = Safe<string>(r, "yield_unit", ""),
                 DateAdded    = DateTime.TryParse(Safe<string>(r, "date_added", ""), out DateTime da) ? da : DateTime.Now
             };
         }

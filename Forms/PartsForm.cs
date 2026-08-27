@@ -71,10 +71,24 @@ namespace Shaheen_InventoryManagement_Android.Forms
 
             EventHandler langHandler = (s, e) => ApplyLocalization();
             EventHandler currHandler = (s, e) => { if (_isCardView) LoadCards(); else dgvParts?.Invalidate(); };
-            EventHandler invHandler = (s, e) => { if (this.Visible) RefreshAll(); };
+            Action invUpdateAction = () =>
+            {
+                if (!this.IsDisposed)
+                {
+                    if (this.InvokeRequired)
+                    {
+                        this.BeginInvoke(new Action(RefreshAll));
+                    }
+                    else
+                    {
+                        RefreshAll();
+                    }
+                }
+            };
 
             Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.LanguageChanged += langHandler;
             Shaheen_InventoryManagement_Android.Services.CurrencyService.CurrencyChanged += currHandler;
+            Shaheen_InventoryManagement_Android.Helpers.GlobalEvents.OnInventoryUpdated += invUpdateAction;
 
             ApplyLocalization();
             ApplyPermissions();
@@ -84,6 +98,7 @@ namespace Shaheen_InventoryManagement_Android.Forms
             {
                 Shaheen_InventoryManagement_Android.Helpers.LocalizationManager.LanguageChanged -= langHandler;
                 Shaheen_InventoryManagement_Android.Services.CurrencyService.CurrencyChanged -= currHandler;
+                Shaheen_InventoryManagement_Android.Helpers.GlobalEvents.OnInventoryUpdated -= invUpdateAction;
             };
         }
 

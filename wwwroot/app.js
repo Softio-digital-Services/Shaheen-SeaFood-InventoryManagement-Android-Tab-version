@@ -198,7 +198,8 @@ if (typeof window !== 'undefined' && !window.AndroidBridge) {
         users: [
             { id: 1, username: 'Softio.Admin', password: 'Softio@2026!', fullName: 'Softio Super Admin', role: 'Admin', isActive: 1, dateCreated: '2026-07-02 12:00:00' },
             { id: 2, username: 'Admin', password: 'Admin.Softio', fullName: 'Test Admin', role: 'Admin', isActive: 1, dateCreated: '2026-07-02 12:00:00' },
-            { id: 3, username: 'staff', password: 'Staff.Softio', fullName: 'Test Staff', role: 'Staff', isActive: 1, dateCreated: '2026-07-02 12:00:00' }
+            { id: 3, username: 'staff', password: 'Staff.Softio', fullName: 'Test Staff', role: 'Staff', isActive: 1, dateCreated: '2026-07-02 12:00:00' },
+            { id: 4, username: 'production', password: 'Productio@2026!', fullName: 'Production User', role: 'Production', isActive: 1, dateCreated: '2026-07-02 12:00:00' }
         ],
         products: [
             { id: 1, name: 'Fresh Salmon Fillet', price: 18.50, stock: 40, category: 'Seafood', image: '🐟' },
@@ -331,6 +332,8 @@ if (typeof window !== 'undefined' && !window.AndroidBridge) {
                     responseData = { username: 'Admin', role: 'Admin', fullName: 'Test Admin' };
                 } else if (body.username === 'staff' && body.password === 'Staff.Softio') {
                     responseData = { username: 'staff', role: 'Staff', fullName: 'Test Staff' };
+                } else if (body.username?.toLowerCase() === 'production' && body.password === 'Productio@2026!') {
+                    responseData = { username: 'production', role: 'Production', fullName: 'Production User' };
                 } else {
                     status = 401;
                     responseData = { error: 'Unauthorized' };
@@ -822,7 +825,7 @@ function safeListen(id, event, callback) {
 
 async function fetchLanguageConfig() {
     try {
-        const res = await fetch(`${API_BASE}/api/config`);
+        const res = await fetch(`${API_BASE}/api/config?_=${Date.now()}`);
         if (res.ok) {
             const data = await res.json();
             if (data.language && data.language !== currentLang) {
@@ -871,7 +874,7 @@ async function initApp() {
 
 async function fetchCurrencies() {
     try {
-        const res = await fetch(`${API_BASE}/api/currencies`);
+        const res = await fetch(`${API_BASE}/api/currencies?_=${Date.now()}`);
         if (res.ok) {
             currencies = await res.json();
             const select = document.getElementById('currencySelect');
@@ -905,7 +908,7 @@ function formatPrice(usdPrice, decimals = 2) {
 
 async function fetchInventory() {
     try {
-        const res = await fetch(`${API_BASE}/api/products`);
+        const res = await fetch(`${API_BASE}/api/products?_=${Date.now()}`);
         if (res.ok) {
             allProducts = await res.json();
         } else {
@@ -920,7 +923,7 @@ async function fetchInventory() {
 
 async function fetchCategories() {
     try {
-        const res = await fetch(`${API_BASE}/api/categories`);
+        const res = await fetch(`${API_BASE}/api/categories?_=${Date.now()}`);
         if (res.ok) {
             const cats = await res.json();
             renderCategories(cats);
@@ -1347,7 +1350,7 @@ async function processCheckout() {
             price: i.price,
             itemType: i.itemType || 'Part',
             recipeId: i.itemType === 'Recipe' ? i.id : null,
-            unitOfMeasure: i.selectedUom || 'pack'
+            unitOfMeasure: i.itemType === 'Recipe' ? '' : (i.selectedUom || '')
         }));
 
         const res = await fetch(`${API_BASE}/api/checkout`, {
@@ -1737,7 +1740,7 @@ async function openReturnsModal() {
 
 async function fetchRecentSales() {
     try {
-        const res = await fetch(`${API_BASE}/api/recent-sales`);
+        const res = await fetch(`${API_BASE}/api/recent-sales?_=${Date.now()}`);
         if (res.ok) {
             const sales = await res.json();
             const container = document.getElementById('returnsOrderList');
@@ -1759,7 +1762,7 @@ async function fetchRecentSales() {
 
 async function selectOrderForReturn(orderId) {
     try {
-        const res = await fetch(`${API_BASE}/api/order-details/${orderId}`);
+        const res = await fetch(`${API_BASE}/api/order-details/${orderId}?_=${Date.now()}`);
         if (res.ok) {
             selectedReturnOrder = { id: orderId, items: await res.json() };
             document.getElementById('returnsOrderList').classList.add('hidden');
@@ -1834,6 +1837,20 @@ async function processReturn() {
 
 // ─── TAB ROUTING SYSTEM ───────────────────────────────────────────────
 function switchTab(tabId) {
+    const username = (sessionStorage.getItem('pos_username') || '').toLowerCase().trim();
+    const role = (sessionStorage.getItem('pos_role') || '').toLowerCase().trim();
+    const isSuperAdmin = (username === 'softio.admin');
+    const isProductionUser = (username === 'production' || role === 'production');
+
+    if (isProductionUser && (tabId === 'sales' || tabId === 'stock' || tabId === 'reports')) {
+        showToast("Access Denied: Production role restricted.", "error");
+        return;
+    }
+    if (!isSuperAdmin && !isProductionUser && tabId === 'production') {
+        showToast("Access Denied: Production Page is restricted.", "error");
+        return;
+    }
+
     const searchBar = document.getElementById('topSearchBar');
     const btnOpenAdd = document.getElementById('btnOpenAddModal');
 
@@ -1863,8 +1880,9 @@ function switchTab(tabId) {
     let btnId = 'tabBtnInventory';
 
     if (tabId === 'inventory') { panelId = 'tabContentInventory'; btnId = 'tabBtnInventory'; loadInventoryTable(); }
-    else if (tabId === 'stock') { panelId = 'tabContentStock'; btnId = 'tabBtnStock'; loadStockTab(); }
     else if (tabId === 'recipes') { panelId = 'tabContentRecipes'; btnId = 'tabBtnRecipes'; loadRecipesTab(); }
+    else if (tabId === 'production') { panelId = 'tabContentProduction'; btnId = 'tabBtnProduction'; loadProductionTab(); }
+    else if (tabId === 'stock') { panelId = 'tabContentStock'; btnId = 'tabBtnStock'; loadStockTab(); }
     else if (tabId === 'sales') { panelId = 'tabContentSales'; btnId = 'tabBtnSales'; loadSalesTab(); }
     else if (tabId === 'reports') { panelId = 'tabContentReports'; btnId = 'tabBtnReports'; loadReportsData(); }
     else if (tabId === 'users') { panelId = 'tabContentUsers'; btnId = 'tabBtnUsers'; loadUsersTab(); }
@@ -2159,6 +2177,8 @@ function openNewRecipeModal() {
     document.getElementById('recipeCategory').value = '';
     document.getElementById('recipeDesc').value = '';
     document.getElementById('recipePrice').value = '';
+    document.getElementById('recipeYieldQty').value = '';
+    document.getElementById('recipeYieldUnit').value = '';
     document.getElementById('recipeIngredientsList').innerHTML = '';
     
     selectedRecipeIcon = '🍲';
@@ -2405,6 +2425,8 @@ async function saveRecipe() {
     const categoryName = document.getElementById('recipeCategory').value;
     const desc = document.getElementById('recipeDesc').value;
     const price = parseFloat(document.getElementById('recipePrice').value);
+    const yieldQty = parseFloat(document.getElementById('recipeYieldQty').value) || 1.0;
+    const yieldUnit = document.getElementById('recipeYieldUnit').value || '';
 
     if (!name || isNaN(price)) {
         showToast("Please fill Recipe Name and Selling Price", "error");
@@ -2428,7 +2450,7 @@ async function saveRecipe() {
         return;
     }
 
-    const payload = { id: id ? parseInt(id) : null, name, itemNo, categoryName, description: desc, price, ingredients, image: selectedRecipeIcon };
+    const payload = { id: id ? parseInt(id) : null, name, itemNo, categoryName, description: desc, price, yieldQuantity: yieldQty, yieldUnit, ingredients, image: selectedRecipeIcon };
 
     try {
         const res = await fetch(`${API_BASE}/api/recipes`, {
@@ -2478,6 +2500,8 @@ function editRecipe(id) {
     document.getElementById('recipeCategory').value = r.categoryName || '';
     document.getElementById('recipeDesc').value = r.description || '';
     document.getElementById('recipePrice').value = r.price;
+    document.getElementById('recipeYieldQty').value = r.yieldQuantity || '';
+    document.getElementById('recipeYieldUnit').value = r.yieldUnit || '';
 
     selectedRecipeIcon = r.image || '🍲';
     updateIconPreview('recipe', selectedRecipeIcon);
@@ -3354,6 +3378,8 @@ function clearSalesImportPreview() {
 
 async function confirmSalesImport() {
     if (pendingSalesItems.length === 0) return;
+    const loader = document.getElementById('loadingOverlay');
+    if (loader) loader.classList.remove('hidden');
     try {
         const res = await fetch(`${API_BASE}/api/import-sales`, {
             method: 'POST',
@@ -3429,10 +3455,14 @@ async function confirmSalesImport() {
             await loadSalesTab();
             loadInventoryTable();
         } else {
-            showToast("Failed to process sales deduction on server", "error");
+            const errText = await res.text();
+            showToast("Server error: " + errText, "error");
         }
     } catch (e) {
         console.error(e);
+        showToast("Error: " + e.message, "error");
+    } finally {
+        if (loader) loader.classList.add('hidden');
     }
 }
 
@@ -4226,9 +4256,9 @@ window.loadSalesHistoryList = async function() {
     const dateFilter = document.getElementById('salesHistoryDateFilter');
     const dateVal = dateFilter ? dateFilter.value : '';
     
-    let url = `${API_BASE}/api/sales-items`;
+    let url = `${API_BASE}/api/sales-items?_=${Date.now()}`;
     if (dateVal) {
-        url += `?date=${dateVal}`;
+        url += `&date=${dateVal}`;
     }
     
     try {
@@ -4306,7 +4336,8 @@ window.submitSalesEntry = async function() {
             price: price,
             qty: qty,
             itemType: "Recipe",
-            recipeId: itemId
+            recipeId: itemId,
+            unitOfMeasure: ""
         };
     }
 
@@ -4520,7 +4551,7 @@ window.loadStockReport = async function() {
     if (!selectedDate) return;
 
     try {
-        const res = await fetch(`${API_BASE}/api/stock-transactions?date=${selectedDate}`);
+        const res = await fetch(`${API_BASE}/api/stock-transactions?date=${selectedDate}&_=${Date.now()}`);
         if (res.ok) {
             const list = await res.json();
             if (list.length === 0) {
@@ -4770,8 +4801,55 @@ window.updateUIForRole = function() {
         userMenu.style.display = loggedIn ? 'block' : 'none';
     }
     const navUsername = document.getElementById('navBarUsername');
+    const username = (sessionStorage.getItem('pos_username') || '').toLowerCase().trim();
+    const role = (sessionStorage.getItem('pos_role') || '').toLowerCase().trim();
+
     if (navUsername) {
         navUsername.innerText = sessionStorage.getItem('pos_username') || 'User';
+    }
+
+    // Tab buttons references
+    const btnInventory = document.getElementById('tabBtnInventory');
+    const btnRecipes = document.getElementById('tabBtnRecipes');
+    const btnProduction = document.getElementById('tabBtnProduction');
+    const btnStock = document.getElementById('tabBtnStock');
+    const btnSales = document.getElementById('tabBtnSales');
+    const btnReports = document.getElementById('tabBtnReports');
+    const btnInfo = document.getElementById('tabBtnInfo');
+
+    if (loggedIn) {
+        const isSuperAdmin = (username === 'softio.admin');
+        const isProductionUser = (username === 'production' || role === 'production');
+
+        // Production page: only visible to it and to the super admin
+        if (btnProduction) {
+            btnProduction.style.display = (isSuperAdmin || isProductionUser) ? 'inline-block' : 'none';
+        }
+
+        // For "this user" (ProductionUser), it will not show sales entry page or stock menu page or reports. Rest are visible.
+        if (isProductionUser) {
+            if (btnSales) btnSales.style.display = 'none';
+            if (btnStock) btnStock.style.display = 'none';
+            if (btnReports) btnReports.style.display = 'none';
+            
+            if (btnInventory) btnInventory.style.display = 'inline-block';
+            if (btnRecipes) btnRecipes.style.display = 'inline-block';
+            if (btnInfo) btnInfo.style.display = 'inline-block';
+        } else {
+            // Restore standard visibility for other users
+            if (btnSales) btnSales.style.display = 'inline-block';
+            if (btnStock) btnStock.style.display = 'inline-block';
+            if (btnReports) btnReports.style.display = 'inline-block';
+            
+            if (btnInventory) btnInventory.style.display = 'inline-block';
+            if (btnRecipes) btnRecipes.style.display = 'inline-block';
+            if (btnInfo) btnInfo.style.display = 'inline-block';
+        }
+    } else {
+        // Not logged in (hide everything)
+        [btnInventory, btnRecipes, btnProduction, btnStock, btnSales, btnReports, btnInfo].forEach(btn => {
+            if (btn) btn.style.display = 'none';
+        });
     }
 };
 
@@ -4781,7 +4859,7 @@ window.loadUsersTab = async function() {
     tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Loading users...</td></tr>';
     
     try {
-        const res = await fetch(`${API_BASE}/api/users`);
+        const res = await fetch(`${API_BASE}/api/users?_=${Date.now()}`);
         if (res.status === 403) {
             tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--danger);">Unauthorized. Only administrators can view this page.</td></tr>';
             return;
@@ -4981,7 +5059,7 @@ window.loadWebUserProfile = async function() {
     const statusBadge = document.getElementById('profileStatusBadge');
     let isActive = 1;
     try {
-        const res = await fetch(`${API_BASE}/api/users`);
+        const res = await fetch(`${API_BASE}/api/users?_=${Date.now()}`);
         if (res.ok) {
             const users = await res.json();
             const curr = users.find(u => u.username.toLowerCase() === username.toLowerCase());
@@ -5023,7 +5101,7 @@ async function populateWebLogUserFilter() {
     select.innerHTML = '<option value="all">All Users</option>';
     
     try {
-        const res = await fetch(`${API_BASE}/api/users`);
+        const res = await fetch(`${API_BASE}/api/users?_=${Date.now()}`);
         if (res.ok) {
             const users = await res.json();
             users.forEach(u => {
@@ -5049,10 +5127,10 @@ window.loadWebActivityLogs = async function() {
     const role = sessionStorage.getItem('pos_role') || 'User';
     const isAdmin = role.toLowerCase() === 'admin';
     
-    let url = `${API_BASE}/api/logs`;
+    let url = `${API_BASE}/api/logs?_=${Date.now()}`;
     if (isAdmin) {
         const filterVal = document.getElementById('webLogUserFilter').value;
-        url += `?username=${encodeURIComponent(filterVal)}`;
+        url += `&username=${encodeURIComponent(filterVal)}`;
     }
     
     try {
@@ -5142,7 +5220,7 @@ window.exportRecipes = async function(format) {
 
 window.exportSales = async function(format) {
     try {
-        const resSales = await fetch(`${API_BASE}/api/sales-export`);
+        const resSales = await fetch(`${API_BASE}/api/sales-export?_=${Date.now()}`);
         if (!resSales.ok) {
             let errorText = "Failed to fetch sales data";
             try {
@@ -5390,7 +5468,7 @@ window.refreshCustomSalesDropdown = async function(fetchFreq = true) {
     
     if (fetchFreq) {
         try {
-            const res = await fetch(`${API_BASE}/api/recipes/sales-frequency`);
+            const res = await fetch(`${API_BASE}/api/recipes/sales-frequency?_=${Date.now()}`);
             if (res.ok) {
                 window.customSalesFrequencies = await res.json();
             }
@@ -5561,7 +5639,7 @@ window.loadInfoTab = async function() {
     container.innerHTML = '<div style="color:var(--text-muted);">Loading license details...</div>';
     
     try {
-        const res = await fetch(`${API_BASE}/api/license-info`);
+        const res = await fetch(`${API_BASE}/api/license-info?_=${Date.now()}`);
         if (res.ok) {
             const data = await res.json();
             container.innerHTML = `
@@ -5876,4 +5954,403 @@ window.showOutOfStockDetails = function() {
 window.closeStockDetailsModal = function() {
     document.getElementById('stockDetailsModal').classList.add('hidden');
 };
+
+// ─── PRODUCTION TAB FUNCTIONALITY ────────────────────────────────────────
+
+window.loadProductionTab = function() {
+    console.log("Loading Production Tab...");
+    
+    // 1. Populate Material Select
+    const matSelect = document.getElementById('prodMaterialSelect');
+    if (!matSelect) return;
+    matSelect.innerHTML = '<option value="">-- Choose Material --</option>';
+    
+    // Only active items with stock or tracked
+    const materials = allProducts.filter(p => p.status !== 'Inactive');
+    materials.sort((a, b) => a.name.localeCompare(b.name));
+    
+    materials.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        matSelect.appendChild(opt);
+    });
+    
+    // Reset inputs and outputs
+    document.getElementById('prodMaterialStockDisplay').style.display = 'none';
+    document.getElementById('prodRecipeDetailsDisplay').style.display = 'none';
+    
+    const recipeSelect = document.getElementById('prodRecipeSelect');
+    recipeSelect.innerHTML = '<option value="">-- Choose Recipe (Select Material First) --</option>';
+    recipeSelect.disabled = true;
+    
+    const materialUnitSelect = document.getElementById('prodMaterialUnitSelect');
+    materialUnitSelect.innerHTML = '';
+    
+    // Populate base/sub units dropdowns with standard system units
+    const baseUnitSelect = document.getElementById('prodBaseUnitSelect');
+    const subUnitSelect = document.getElementById('prodSubUnitSelect');
+    
+    const standardUnits = [
+        { val: "gallon", text: "Gallon" },
+        { val: "kg", text: "Kilogram (kg)" },
+        { val: "l", text: "Liter (l)" },
+        { val: "box", text: "Box" },
+        { val: "bottle", text: "Bottle" },
+        { val: "cup", text: "Cup" },
+        { val: "g", text: "Gram (g)" },
+        { val: "ml", text: "Milliliter (ml)" },
+        { val: "pcs", text: "Piece (pcs)" }
+    ];
+    
+    baseUnitSelect.innerHTML = '<option value="">-- Select Base Unit --</option>';
+    subUnitSelect.innerHTML = '<option value="">-- Select Sub Unit --</option>';
+    
+    standardUnits.forEach(u => {
+        const opt1 = document.createElement('option');
+        opt1.value = u.val;
+        opt1.textContent = u.text;
+        baseUnitSelect.appendChild(opt1);
+        
+        const opt2 = document.createElement('option');
+        opt2.value = u.val;
+        opt2.textContent = u.text;
+        subUnitSelect.appendChild(opt2);
+    });
+    
+    // Set some defaults
+    baseUnitSelect.value = "gallon";
+    subUnitSelect.value = "cup";
+    
+    // Reset displays
+    document.getElementById('prodEstBaseDisplay').textContent = '-';
+    document.getElementById('prodEstSubDisplay').textContent = '-';
+    document.getElementById('prodDeviationDisplay').textContent = '-';
+    
+    const valBox = document.getElementById('prodValidationBox');
+    valBox.classList.add('hidden');
+    valBox.textContent = '';
+};
+
+window.onProductionMaterialChange = function() {
+    const matSelect = document.getElementById('prodMaterialSelect');
+    const materialId = parseInt(matSelect.value);
+    
+    const stockDisplay = document.getElementById('prodMaterialStockDisplay');
+    const stockQtySpan = document.getElementById('prodMaterialStockQty');
+    const stockUnitSpan = document.getElementById('prodMaterialStockUnit');
+    const recipeSelect = document.getElementById('prodRecipeSelect');
+    const materialUnitSelect = document.getElementById('prodMaterialUnitSelect');
+    
+    // Clear outputs
+    document.getElementById('prodEstBaseDisplay').textContent = '-';
+    document.getElementById('prodEstSubDisplay').textContent = '-';
+    document.getElementById('prodDeviationDisplay').textContent = '-';
+    
+    if (isNaN(materialId)) {
+        stockDisplay.style.display = 'none';
+        recipeSelect.innerHTML = '<option value="">-- Choose Recipe (Select Material First) --</option>';
+        recipeSelect.disabled = true;
+        materialUnitSelect.innerHTML = '';
+        return;
+    }
+    
+    const product = allProducts.find(p => p.id === materialId);
+    if (!product) return;
+    
+    // Show available stock
+    const primaryUnit = product.bigUnit || product.unitOfMeasure || 'pcs';
+    stockQtySpan.textContent = formatDynamicNumber(product.stock || 0);
+    stockUnitSpan.textContent = primaryUnit;
+    stockDisplay.style.display = 'block';
+    
+    // Populate material unit options (e.g. big/small units)
+    materialUnitSelect.innerHTML = '';
+    if (product.bigUnit && product.smallUnit) {
+        const optBig = document.createElement('option');
+        optBig.value = product.bigUnit.toLowerCase();
+        optBig.textContent = product.bigUnit;
+        materialUnitSelect.appendChild(optBig);
+        
+        const optSmall = document.createElement('option');
+        optSmall.value = product.smallUnit.toLowerCase();
+        optSmall.textContent = product.smallUnit;
+        materialUnitSelect.appendChild(optSmall);
+    } else {
+        const opt = document.createElement('option');
+        const u = (product.unitOfMeasure || 'pcs').toLowerCase();
+        opt.value = u;
+        opt.textContent = product.unitOfMeasure || 'pcs';
+        materialUnitSelect.appendChild(opt);
+    }
+    
+    // Auto-select Base and Sub units based on the selected material's units in inventory
+    const baseUnitSelect = document.getElementById('prodBaseUnitSelect');
+    const subUnitSelect = document.getElementById('prodSubUnitSelect');
+
+    const materialBaseUnit = product.bigUnit || product.unitOfMeasure || 'pcs';
+    const materialSubUnit = product.smallUnit || product.unitOfMeasure || 'pcs';
+
+    // Helper function to find or add and select unit in select dropdown
+    const selectUnitInDropdown = (selectEl, unitText) => {
+        if (!unitText) return;
+        const targetVal = unitText.toLowerCase().trim();
+        let found = false;
+        
+        // Search options
+        for (let i = 0; i < selectEl.options.length; i++) {
+            if (selectEl.options[i].value === targetVal) {
+                selectEl.value = targetVal;
+                found = true;
+                break;
+            }
+        }
+        
+        // If not found, add it
+        if (!found) {
+            const opt = document.createElement('option');
+            opt.value = targetVal;
+            opt.textContent = unitText;
+            selectEl.appendChild(opt);
+            selectEl.value = targetVal;
+        }
+    };
+
+    selectUnitInDropdown(baseUnitSelect, materialBaseUnit);
+    selectUnitInDropdown(subUnitSelect, materialSubUnit);
+
+    // Find recipes that use this material
+    const matchingRecipes = allRecipes.filter(r => 
+        r.parts && r.parts.some(p => Number(p.partId) === Number(materialId))
+    );
+    
+    if (matchingRecipes.length === 0) {
+        recipeSelect.innerHTML = '<option value="">No recipes found using this material</option>';
+        recipeSelect.disabled = true;
+    } else {
+        recipeSelect.disabled = false;
+        recipeSelect.innerHTML = '<option value="">-- Choose Recipe --</option>';
+        matchingRecipes.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.id;
+            opt.textContent = r.name;
+            recipeSelect.appendChild(opt);
+        });
+    }
+    
+    document.getElementById('prodRecipeDetailsDisplay').style.display = 'none';
+    
+    // Try to auto-select recipe if there is only one
+    if (matchingRecipes.length === 1) {
+        recipeSelect.value = matchingRecipes[0].id;
+        window.onProductionRecipeChange();
+    }
+};
+
+window.onProductionRecipeChange = function() {
+    const recipeSelect = document.getElementById('prodRecipeSelect');
+    const recipeId = parseInt(recipeSelect.value);
+    
+    const recipeDetailsDisplay = document.getElementById('prodRecipeDetailsDisplay');
+    const recipeYieldSpan = document.getElementById('prodRecipeYieldDisplay');
+    
+    // Clear outputs
+    document.getElementById('prodEstBaseDisplay').textContent = '-';
+    document.getElementById('prodEstSubDisplay').textContent = '-';
+    document.getElementById('prodDeviationDisplay').textContent = '-';
+    
+    if (isNaN(recipeId)) {
+        recipeDetailsDisplay.style.display = 'none';
+        return;
+    }
+    
+    const recipe = allRecipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+    
+    const yieldQty = recipe.yieldQuantity || 1;
+    const yieldUnit = recipe.yieldUnit || 'pcs';
+    recipeYieldSpan.textContent = `${yieldQty} ${yieldUnit}`;
+    recipeDetailsDisplay.style.display = 'block';
+    
+    // Base and sub units are kept as defaulted from the selected material (ingredient)
+    window.triggerProductionCalculation();
+};
+
+window.triggerProductionCalculation = function() {
+    window.calculateProduction();
+};
+
+window.calculateProduction = function() {
+    const valBox = document.getElementById('prodValidationBox');
+    valBox.classList.add('hidden');
+    valBox.textContent = '';
+    
+    const matSelect = document.getElementById('prodMaterialSelect');
+    const recipeSelect = document.getElementById('prodRecipeSelect');
+    const matQtyInput = document.getElementById('prodMaterialQty');
+    const matUnitSelect = document.getElementById('prodMaterialUnitSelect');
+    const baseUnitSelect = document.getElementById('prodBaseUnitSelect');
+    const subUnitSelect = document.getElementById('prodSubUnitSelect');
+    
+    const matId = parseInt(matSelect.value);
+    const recId = parseInt(recipeSelect.value);
+    const matQty = parseFloat(matQtyInput.value);
+    const matUnit = matUnitSelect.value;
+    const baseUnit = baseUnitSelect.value;
+    const subUnit = subUnitSelect.value;
+    
+    // Reset output text
+    const baseDisplay = document.getElementById('prodEstBaseDisplay');
+    const subDisplay = document.getElementById('prodEstSubDisplay');
+    const devDisplay = document.getElementById('prodDeviationDisplay');
+    
+    baseDisplay.textContent = '-';
+    subDisplay.textContent = '-';
+    devDisplay.textContent = '-';
+    
+    // 12. Validation
+    if (isNaN(matId)) {
+        showValidation("Please select an Inventory Material.");
+        return;
+    }
+    if (isNaN(recId)) {
+        showValidation("Please select a Recipe.");
+        return;
+    }
+    if (isNaN(matQty) || matQty <= 0) {
+        showValidation("Material quantity must be greater than zero.");
+        return;
+    }
+    if (!matUnit) {
+        showValidation("Please select the material unit.");
+        return;
+    }
+    if (!baseUnit) {
+        showValidation("Please select the output Base Unit.");
+        return;
+    }
+    if (!subUnit) {
+        showValidation("Please select the output Sub Unit.");
+        return;
+    }
+    
+    const product = allProducts.find(p => p.id === matId);
+    const recipe = allRecipes.find(r => r.id === recId);
+    
+    if (!product || !recipe) {
+        showValidation("Required inventory/recipe data was not found.");
+        return;
+    }
+    
+    // Find the ingredient required by the recipe
+    const ingredient = recipe.parts.find(p => Number(p.partId) === Number(matId));
+    if (!ingredient) {
+        showValidation(`Selected recipe does not use ${product.name} as an ingredient.`);
+        return;
+    }
+    
+    const reqQty = parseFloat(ingredient.qty);
+    const reqUnit = ingredient.unitOfMeasure || 'pcs';
+    
+    if (reqQty <= 0) {
+        showValidation("Required recipe ingredient quantity is invalid.");
+        return;
+    }
+    
+    // Convert entered material quantity to the recipe ingredient required unit
+    const convertedInputQty = convertUnits(matQty, matUnit, reqUnit, product);
+    
+    // Calculate recipe-based output in the recipe's yield unit
+    const yieldQty = parseFloat(recipe.yieldQuantity) || 1.0;
+    const yieldUnit = recipe.yieldUnit || 'pcs';
+    
+    // Formula: Production Quantity = Available Material Quantity ÷ Material Required Per Recipe × Recipe Output Quantity
+    const recipeProductionOutput = (convertedInputQty / reqQty) * yieldQty;
+    
+    // Convert actual production output to selected Sub Unit
+    const actualSubUnitProduction = convertUnits(recipeProductionOutput, yieldUnit, subUnit);
+    
+    // Convert actual production output to selected Base Unit
+    const actualBaseUnitProduction = convertUnits(actualSubUnitProduction, subUnit, baseUnit);
+    
+    // Display actual production yield
+    const expectedBaseUnitProduction = convertUnits(matQty, matUnit, baseUnit, product);
+    const conversionFactor = convertUnits(1.0, baseUnit, subUnit);
+    const expectedSubUnitProduction = expectedBaseUnitProduction * conversionFactor;
+    
+    // Deviation = Expected Sub Unit Production - Actual Sub Unit Production
+    const deviation = expectedSubUnitProduction - actualSubUnitProduction;
+    
+    // Render outputs nicely
+    baseDisplay.innerHTML = `${formatDynamicNumber(expectedBaseUnitProduction)} <span style="font-size:0.8rem; font-weight:normal;">${baseUnit}</span>`;
+    subDisplay.innerHTML = `${formatDynamicNumber(actualSubUnitProduction)} <span style="font-size:0.8rem; font-weight:normal;">${subUnit}</span>`;
+    
+    if (Math.abs(deviation) < 0.001) {
+        devDisplay.textContent = "No Deviation";
+        devDisplay.style.color = "#10b981"; // green
+    } else {
+        devDisplay.innerHTML = `${formatDynamicNumber(deviation)} <span style="font-size:0.8rem; font-weight:normal;">${subUnit}</span>`;
+        devDisplay.style.color = "var(--danger)"; // red
+    }
+    
+    function showValidation(msg) {
+        valBox.textContent = msg;
+        valBox.classList.remove('hidden');
+    }
+};
+
+// Robust helper function for unit conversion
+function convertUnits(qty, fromUnit, toUnit, product = null) {
+    if (!fromUnit || !toUnit) return qty;
+    fromUnit = fromUnit.toLowerCase().trim();
+    toUnit = toUnit.toLowerCase().trim();
+    if (fromUnit === toUnit) return qty;
+
+    // 1. If it's a specific product (like the selected material) and the units match its big/small units
+    if (product && product.bigUnit && product.smallUnit) {
+        const big = product.bigUnit.toLowerCase().trim();
+        const small = product.smallUnit.toLowerCase().trim();
+        const conv = parseFloat(product.conversionValue) || 1.0;
+        if (fromUnit === big && toUnit === small) {
+            return qty * conv;
+        }
+        if (fromUnit === small && toUnit === big) {
+            return qty / conv;
+        }
+    }
+
+    // 2. Also check if there is ANY product in inventory that has these big/small units and use its conversion factor
+    if (allProducts && allProducts.length > 0) {
+        const matchingProd = allProducts.find(p => 
+            p.bigUnit && p.smallUnit && 
+            p.bigUnit.toLowerCase().trim() === fromUnit && 
+            p.smallUnit.toLowerCase().trim() === toUnit
+        );
+        if (matchingProd) {
+            return qty * (parseFloat(matchingProd.conversionValue) || 1.0);
+        }
+        const matchingProdRev = allProducts.find(p => 
+            p.bigUnit && p.smallUnit && 
+            p.smallUnit.toLowerCase().trim() === fromUnit && 
+            p.bigUnit.toLowerCase().trim() === toUnit
+        );
+        if (matchingProdRev) {
+            return qty / (parseFloat(matchingProdRev.conversionValue) || 1.0);
+        }
+    }
+
+    // 3. Fallback to standard conversions
+    // Weight
+    if ((fromUnit === "kg" || fromUnit === "kilogram" || fromUnit === "kilograms") && (toUnit === "g" || toUnit === "gram" || toUnit === "grams")) return qty * 1000.0;
+    if ((fromUnit === "g" || fromUnit === "gram" || fromUnit === "grams") && (toUnit === "kg" || toUnit === "kilogram" || toUnit === "kilograms")) return qty / 1000.0;
+    // Volume
+    if ((fromUnit === "l" || fromUnit === "liter" || fromUnit === "liters") && (toUnit === "ml" || toUnit === "milliliter" || toUnit === "milliliters")) return qty * 1000.0;
+    if ((fromUnit === "ml" || fromUnit === "milliliter" || fromUnit === "milliliters") && (toUnit === "l" || toUnit === "liter" || toUnit === "liters")) return qty / 1000.0;
+    // Gallon to Cup (from the example: 1 Gallon = 16 Cups)
+    if ((fromUnit === "gallon" || fromUnit === "gal" || fromUnit === "gallons") && (toUnit === "cup" || toUnit === "cups")) return qty * 16.0;
+    if ((fromUnit === "cup" || fromUnit === "cups") && (toUnit === "gallon" || toUnit === "gal" || toUnit === "gallons")) return qty / 16.0;
+
+    return qty; // If no conversion rule matches, return original qty
+}
+
 

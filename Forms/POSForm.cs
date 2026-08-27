@@ -59,7 +59,36 @@ namespace Shaheen_InventoryManagement_Android.Forms
         {
             InitializeComponent();
             _dashboardService = new DashboardService();
+            
+            Action invUpdateAction = () =>
+            {
+                if (!this.IsDisposed)
+                {
+                    if (this.InvokeRequired)
+                    {
+                        this.BeginInvoke(new Action(() => {
+                            LoadProducts(_activeCategory);
+                            RefreshCartDisplay();
+                            RefreshStats();
+                        }));
+                    }
+                    else
+                    {
+                        LoadProducts(_activeCategory);
+                        RefreshCartDisplay();
+                        RefreshStats();
+                    }
+                }
+            };
+
             LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            Shaheen_InventoryManagement_Android.Helpers.GlobalEvents.OnInventoryUpdated += invUpdateAction;
+
+            this.Disposed += (s, e) =>
+            {
+                Shaheen_InventoryManagement_Android.Helpers.GlobalEvents.OnInventoryUpdated -= invUpdateAction;
+            };
+
             ApplyLocalization();
             ApplyPermissions();
         }

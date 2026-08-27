@@ -96,6 +96,7 @@
                 </div>
                 <button class="nav-tab active" id="tabBtnInventory" onclick="switchTab('inventory')">Inventory</button>
                 <button class="nav-tab" id="tabBtnRecipes" onclick="switchTab('recipes')">Recipes</button>
+                <button class="nav-tab" id="tabBtnProduction" onclick="switchTab('production')">Production</button>
                 <button class="nav-tab" id="tabBtnStock" onclick="switchTab('stock')">Stock Menu</button>
                 <button class="nav-tab" id="tabBtnSales" onclick="switchTab('sales')">Sales Entry</button>
                 <button class="nav-tab" id="tabBtnReports" onclick="switchTab('reports')">Reports</button>
@@ -205,6 +206,116 @@
             </div>
             <div class="product-grid" id="recipesGrid" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));">
                 <!-- Recipe Cards will load dynamically here -->
+            </div>
+        </div>
+
+        <!-- PRODUCTION TAB CONTENT -->
+        <div id="tabContentProduction" class="tab-content-panel hidden" style="flex:1; overflow-y:auto; padding:20px; text-align:left;">
+            <div style="display:flex; flex-direction:column; gap:25px;">
+                <div class="glass-card" style="padding:25px; display:flex; flex-direction:column; gap:20px;">
+                    <div style="border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:10px;">
+                        <h2 style="margin:0; font-size:1.4rem; font-weight:bold; color:var(--text-main); display:flex; align-items:center; gap:10px;">
+                            ⚙️ Production Yield Estimator
+                        </h2>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin:5px 0 0 0;">Calculate estimated recipe output from raw inventory materials with automatic unit conversions.</p>
+                    </div>
+
+                    <!-- Layout: Left Column Inputs, Right Column Output -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:30px; align-items:stretch;" class="print-grid-1">
+                        <!-- Inputs Card -->
+                        <div style="display:flex; flex-direction:column; gap:15px;">
+                            <!-- Material Selection -->
+                            <div class="input-group">
+                                <label style="font-weight:600; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">1. Select Inventory Material</label>
+                                <select id="prodMaterialSelect" onchange="onProductionMaterialChange()" style="width:100%;">
+                                    <option value="">-- Choose Material --</option>
+                                </select>
+                                <div id="prodMaterialStockDisplay" style="font-size:0.75rem; color:var(--accent); margin-top:5px; font-weight:600; display:none;">
+                                    Available Stock: <span id="prodMaterialStockQty">0</span> <span id="prodMaterialStockUnit"></span>
+                                </div>
+                            </div>
+
+                            <!-- Recipe Selection -->
+                            <div class="input-group">
+                                <label style="font-weight:600; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">2. Select Recipe</label>
+                                <select id="prodRecipeSelect" onchange="onProductionRecipeChange()" style="width:100%;">
+                                    <option value="">-- Choose Recipe (Select Material First) --</option>
+                                </select>
+                                <div id="prodRecipeDetailsDisplay" style="font-size:0.75rem; color:var(--text-muted); margin-top:5px; display:none;">
+                                    Recipe Yield Output: <span id="prodRecipeYieldDisplay" style="color:var(--text-main); font-weight:600;"></span>
+                                </div>
+                            </div>
+
+                            <!-- Material Quantity to Use -->
+                            <div class="input-group">
+                                <label style="font-weight:600; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">3. Material Quantity to Use</label>
+                                <div style="display:flex; gap:10px; width:100%;">
+                                    <input type="number" id="prodMaterialQty" value="1" min="0.001" step="any" oninput="triggerProductionCalculation()" style="flex:2; padding:10px; background:var(--bg-card); border:2px solid var(--accent); border-radius:6px; color:var(--text);">
+                                    <select id="prodMaterialUnitSelect" onchange="triggerProductionCalculation()" style="flex:1; min-width:90px;">
+                                        <!-- Will populate with material's big and small units -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Target Production Output Units -->
+                            <div class="input-group">
+                                <label style="font-weight:600; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">4. Output Production Units</label>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                    <div>
+                                        <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:4px;">Base Unit (Large)</div>
+                                        <select id="prodBaseUnitSelect" onchange="triggerProductionCalculation()" style="width:100%;">
+                                            <!-- List of base units -->
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:4px;">Sub Unit (Small)</div>
+                                        <select id="prodSubUnitSelect" onchange="triggerProductionCalculation()" style="width:100%;">
+                                            <!-- List of sub units -->
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Outputs Display Card -->
+                        <div class="glass-card" style="background:rgba(0,0,0,0.15); border:1px solid var(--border); padding:20px; display:flex; flex-direction:column; justify-content:space-between; gap:15px; border-radius:8px;">
+                            <h3 style="margin:0; font-size:1.05rem; font-weight:bold; color:var(--text-muted); text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px;">
+                                📊 Calculation Results
+                            </h3>
+
+                            <!-- Estimated Production Area -->
+                            <div style="display:flex; flex-direction:column; gap:15px;">
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:bold; text-transform:uppercase;">Estimated Production — Base Unit</span>
+                                    <div style="background:rgba(14, 165, 233, 0.1); border:1px solid var(--accent); padding:12px; border-radius:6px; font-size:1.25rem; font-weight:800; color:var(--accent); text-align:center;" id="prodEstBaseDisplay">
+                                        -
+                                    </div>
+                                </div>
+
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:bold; text-transform:uppercase;">Estimated Production — Sub Unit</span>
+                                    <div style="background:rgba(16, 185, 129, 0.1); border:1px solid #10b981; padding:12px; border-radius:6px; font-size:1.25rem; font-weight:800; color:#10b981; text-align:center;" id="prodEstSubDisplay">
+                                        -
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Deviation Area -->
+                            <div style="display:flex; flex-direction:column; gap:5px;">
+                                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:bold; text-transform:uppercase;">Production Deviation</span>
+                                <div style="background:rgba(239, 68, 68, 0.1); border:1px solid var(--danger); padding:12px; border-radius:6px; font-size:1.25rem; font-weight:800; color:var(--danger); text-align:center;" id="prodDeviationDisplay">
+                                    -
+                                </div>
+                            </div>
+
+                            <!-- Manual Trigger / Action -->
+                            <button class="btn-primary-large" onclick="triggerProductionCalculation()" style="margin:0; width:100%; height:45px;">Calculate Production</button>
+                        </div>
+                    </div>
+
+                    <!-- Validation Box -->
+                    <div id="prodValidationBox" class="error-box hidden" style="margin-top:10px;"></div>
+                </div>
             </div>
         </div>
 
@@ -790,6 +901,14 @@
                     <label>Selling Price ($)</label>
                     <input type="number" id="recipePrice" placeholder="0.00" step="0.01">
                 </div>
+                <div class="input-group">
+                    <label>Recipe Yield / Output Quantity</label>
+                    <input type="number" id="recipeYieldQty" placeholder="e.g. 10" step="any" style="border: 2px solid var(--accent);">
+                </div>
+                <div class="input-group">
+                    <label>Recipe Yield / Output Unit</label>
+                    <input type="text" id="recipeYieldUnit" placeholder="e.g. Cups" style="border: 2px solid var(--accent);">
+                </div>
             </div>
             
             <div style="text-align:left; margin-bottom:20px;">
@@ -1059,6 +1178,20 @@
                 </div>
             </div>
             <button class="btn-primary-large" onclick="saveUser()">Save User</button>
+        </div>
+    </div>
+
+    <!-- LOADING MODAL OVERLAY -->
+    <style>
+        @keyframes custom-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <div id="loadingOverlay" class="overlay hidden" style="z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.75);">
+        <div style="background: rgba(20, 20, 20, 0.95); border: 1px solid var(--border-color); padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; gap: 15px;">
+            <div style="width: 50px; height: 50px; border: 5px solid rgba(255, 255, 255, 0.1); border-top: 5px solid var(--accent); border-radius: 50%; animation: custom-spin 1s linear infinite;"></div>
+            <div style="color: white; font-weight: bold; font-size: 1.1rem;">Importing sales and updating stock...</div>
         </div>
     </div>
 
