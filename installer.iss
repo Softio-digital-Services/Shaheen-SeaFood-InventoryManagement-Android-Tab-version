@@ -23,7 +23,7 @@ SolidCompression=yes
 PrivilegesRequired=admin
 
 ; Setup Icon (Optional - will use default if not specified)
-SetupIconFile=Assets\icon.ico
+;SetupIconFile=Assets\icon.ico
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
@@ -48,9 +48,9 @@ Name: "{app}\Plugins"; Permissions: users-modify
 
 [Icons]
 ; Start Menu Icon
-Name: "{group}\Shaheen-InventoryManagement-Android"; Filename: "{app}\Shaheen_InventoryManagement_Android.exe"; IconFilename: "{app}\Assets\icon.ico"
+Name: "{group}\Shaheen-InventoryManagement-Android"; Filename: "{app}\Shaheen_InventoryManagement_Android.exe"
 ; Desktop Icon
-Name: "{autodesktop}\Shaheen-InventoryManagement-Android"; Filename: "{app}\Shaheen_InventoryManagement_Android.exe"; IconFilename: "{app}\Assets\icon.ico"; Tasks: desktopicon
+Name: "{autodesktop}\Shaheen-InventoryManagement-Android"; Filename: "{app}\Shaheen_InventoryManagement_Android.exe"; Tasks: desktopicon
 
 [Run]
 ; Launch application after installation
