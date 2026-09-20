@@ -621,8 +621,256 @@ let selectedProductIcon = '📦';
 let selectedRecipeIcon = '🍲';
 let iconPickerTarget = 'product'; // 'product' or 'recipe'
 
+// ─── REUSABLE GLOBAL MODERN ROUNDED DROPDOWN COMPONENT ─────────────────────────────
+window.ModernDropdown = {
+    activeSelect: null,
+    onSelectCallback: null,
+
+    init: function() {
+        this.createDOM();
+        this.enhanceAllSelects();
+        this.enhanceCategoryInputs();
+        this.observeDOM();
+    },
+
+    createDOM: function() {
+        if (document.getElementById('modernDropdownModal')) return;
+        const backdrop = document.createElement('div');
+        backdrop.id = 'modernDropdownModal';
+        backdrop.className = 'modern-dropdown-backdrop';
+        backdrop.onclick = (e) => this.close(e);
+        
+        backdrop.innerHTML = `
+            <div class="modern-dropdown-card" onclick="event.stopPropagation()">
+                <div id="modernDropdownTitle" class="modern-dropdown-header">Select Option</div>
+                <div id="modernDropdownList" class="modern-dropdown-list"></div>
+            </div>
+        `;
+        document.body.appendChild(backdrop);
+    },
+
+    open: function(config) {
+        this.createDOM();
+        const backdrop = document.getElementById('modernDropdownModal');
+        const titleElem = document.getElementById('modernDropdownTitle');
+        const listElem = document.getElementById('modernDropdownList');
+        if (!backdrop || !titleElem || !listElem) return;
+
+        this.activeSelect = config.targetElement || null;
+        this.onSelectCallback = config.onSelect || null;
+
+        // Title
+        if (config.title) {
+            titleElem.textContent = config.title;
+            titleElem.style.display = 'block';
+        } else {
+            titleElem.style.display = 'none';
+        }
+
+        // Options rendering
+        listElem.innerHTML = '';
+        const options = config.options || [];
+        const currentVal = config.selectedValue !== undefined ? String(config.selectedValue) : '';
+
+        if (options.length === 0) {
+            listElem.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">No options available</div>';
+        } else {
+            options.forEach(opt => {
+                const optVal = opt.value !== undefined ? String(opt.value) : String(opt);
+                const optText = opt.label !== undefined ? opt.label : (opt.text || optVal);
+                const isSelected = optVal === currentVal || (currentVal === '' && opt.selected);
+                const isDisabled = !!opt.disabled;
+
+                const row = document.createElement('div');
+                row.className = `modern-dropdown-option ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`;
+                
+                row.innerHTML = `
+                    <span>${optText}</span>
+                    ${isSelected ? `
+                        <div class="modern-dropdown-checkmark">
+                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                    ` : ''}
+                `;
+
+                if (!isDisabled) {
+                    row.onclick = (e) => {
+                        e.stopPropagation();
+                        this.selectValue(optVal, optText);
+                    };
+                }
+
+                listElem.appendChild(row);
+            });
+        }
+
+        // Show modal with animation
+        backdrop.classList.add('active');
+        
+        // Scroll selected option into view if needed
+        setTimeout(() => {
+            const selectedElem = listElem.querySelector('.modern-dropdown-option.selected');
+            if (selectedElem) {
+                selectedElem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }, 30);
+    },
+
+    openForSelect: function(selectElem) {
+        if (!selectElem || selectElem.disabled) return;
+        
+        // Infer title from label, placeholder, data-title, or id
+        let title = selectElem.getAttribute('data-title') || selectElem.getAttribute('placeholder');
+        if (!title && selectElem.id) {
+            const labelElem = document.querySelector(`label[for="${selectElem.id}"]`);
+            if (labelElem) {
+                title = labelElem.textContent.trim();
+            } else {
+                const parentGroup = selectElem.closest('.input-group, .input-container, div');
+                if (parentGroup) {
+                    const l = parentGroup.querySelector('label');
+                    if (l) title = l.textContent.trim();
+                }
+            }
+        }
+        if (!title || title.length > 40) {
+            title = 'Select Option';
+        }
+
+        const options = Array.from(selectElem.options).map(opt => ({
+            value: opt.value,
+            label: opt.text,
+            disabled: opt.disabled,
+            selected: opt.selected
+        }));
+
+        this.open({
+            title: title,
+            options: options,
+            selectedValue: selectElem.value,
+            targetElement: selectElem,
+            onSelect: (val) => {
+                selectElem.value = val;
+                selectElem.dispatchEvent(new Event('change', { bubbles: true }));
+                selectElem.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+    },
+
+    selectValue: function(val, label) {
+        if (this.onSelectCallback) {
+            this.onSelectCallback(val, label);
+        }
+        this.close();
+    },
+
+    close: function(e) {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const backdrop = document.getElementById('modernDropdownModal');
+        if (backdrop) {
+            backdrop.classList.remove('active');
+        }
+        this.activeSelect = null;
+        this.onSelectCallback = null;
+    },
+
+    attachToSelect: function(selectElem) {
+        if (!selectElem || selectElem._modernDropdownAttached || selectElem.getAttribute('data-no-modern') === 'true') return;
+        selectElem._modernDropdownAttached = true;
+
+        const handler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            selectElem.blur();
+            this.openForSelect(selectElem);
+            return false;
+        };
+
+        selectElem.addEventListener('mousedown', handler, true);
+        selectElem.addEventListener('touchstart', handler, { passive: false, capture: true });
+        selectElem.addEventListener('click', handler, true);
+        selectElem.addEventListener('focus', (e) => {
+            selectElem.blur();
+        }, true);
+    },
+
+    enhanceAllSelects: function() {
+        document.querySelectorAll('select').forEach(select => {
+            this.attachToSelect(select);
+        });
+    },
+
+    enhanceCategoryInputs: function() {
+        ['newItemCategory', 'recipeCategory'].forEach(id => {
+            const input = document.getElementById(id);
+            if (!input || input._modernDropdownAttached) return;
+            input._modernDropdownAttached = true;
+
+            const handler = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                input.blur();
+                
+                // Collect unique categories
+                const categories = ['General', 'Seafood', 'Fish', 'Shellfish', 'Frozen', 'Fresh', 'Sauces', 'Beverages', 'Packaging'];
+                if (typeof allProducts !== 'undefined' && Array.isArray(allProducts)) {
+                    allProducts.forEach(p => {
+                        if (p.category && !categories.includes(p.category)) categories.push(p.category);
+                    });
+                }
+                if (typeof allRecipes !== 'undefined' && Array.isArray(allRecipes)) {
+                    allRecipes.forEach(r => {
+                        if (r.category && !categories.includes(r.category)) categories.push(r.category);
+                    });
+                }
+                
+                const options = categories.sort().map(c => ({ value: c, label: c }));
+
+                this.open({
+                    title: 'Category',
+                    options: options,
+                    selectedValue: input.value,
+                    onSelect: (val) => {
+                        input.value = val;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                });
+                return false;
+            };
+
+            input.addEventListener('click', handler, true);
+            input.addEventListener('touchstart', handler, { passive: false, capture: true });
+        });
+    },
+
+    observeDOM: function() {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach(m => {
+                if (m.addedNodes && m.addedNodes.length > 0) {
+                    m.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                            if (node.tagName === 'SELECT') {
+                                this.attachToSelect(node);
+                            } else if (node.querySelectorAll) {
+                                node.querySelectorAll('select').forEach(s => this.attachToSelect(s));
+                            }
+                        }
+                    });
+                }
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+};
+
 // CORE INITIALIZATION
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize ModernDropdown global component
+    window.ModernDropdown.init();
+
     // Layout Mode Detection for Mobile & Android devices
     const checkLayoutMode = () => {
         const isMobile = window.innerWidth <= 1024 || !!window.AndroidBridge;
