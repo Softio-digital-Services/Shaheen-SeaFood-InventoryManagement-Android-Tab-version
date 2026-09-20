@@ -138,25 +138,50 @@
 
         <!-- POS TAB CONTENT -->
         <!-- INVENTORY TAB CONTENT -->
-        <div id="tabContentInventory" class="tab-content-panel active-panel" style="flex:1; overflow-y:auto; padding:20px; text-align:left;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:16px;">
-                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                    <button class="btn-primary" onclick="openAddModalDirect()" style="width:auto; padding:8px 16px; font-size:0.85rem;">+ Add Ingredient</button>
-                    <button class="btn-primary" onclick="document.getElementById('importFile').click()" title="Import ingredients from Excel (.xlsx/.xls) or CSV/TSV" style="width:auto; padding:8px 16px; font-size:0.85rem; background:var(--secondary-accent) !important; box-shadow: 0 4px 12px rgba(var(--secondary-accent-rgb), 0.2) !important; color:white !important; display:inline-flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="white" stroke-width="2.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Import Excel/CSV</button>
-                    <button class="btn-primary" onclick="showExportFormatModal(exportInventory)" title="Export ingredients" style="width:auto; padding:8px 16px; font-size:0.85rem; background:#10b981 !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important; color:white !important; display:inline-flex; align-items:center; gap:6px;">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 8 12 3 17 8"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        Export Excel/CSV
+        <div id="tabContentInventory" class="tab-content-panel active-panel" style="flex:1; overflow-y:auto; padding:24px; text-align:left;">
+            <!-- Page Header -->
+            <div class="inventory-page-header">
+                <div>
+                    <h1 class="inventory-title-text">Inventory</h1>
+                    <p class="inventory-subtitle-text">Manage ingredients, stock levels, units and inventory costs.</p>
+                </div>
+            </div>
+
+            <!-- KPI Summary Bar -->
+            <div class="inventory-kpi-grid" id="inventoryKpiGrid">
+                <!-- Dynamically populated KPI cards -->
+            </div>
+
+            <!-- Action & Filter Bar -->
+            <div class="inventory-action-bar">
+                <div class="inventory-action-buttons">
+                    <button class="inventory-btn-primary" onclick="openAddModalDirect()">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Add Ingredient
                     </button>
+                    <div class="inventory-btn-secondary-group">
+                        <button class="inventory-btn-secondary" onclick="document.getElementById('importFile').click()" title="Import ingredients from Excel or CSV">
+                            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Import
+                        </button>
+                        <button class="inventory-btn-secondary" onclick="showExportFormatModal(exportInventory)" title="Export ingredients">
+                            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 8 12 3 17 8"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Export
+                        </button>
+                    </div>
                     <input type="file" id="importFile" accept="*/*" style="display:none;" onchange="handleImportFileSelect(event)">
                 </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <label for="inventoryCategoryFilter" style="font-weight:600; font-size:0.9rem; color:var(--text-muted);">Category:</label>
-                    <select id="inventoryCategoryFilter" onchange="filterInventoryByCategory()" style="width:auto; height:38px; padding:0 32px 0 14px !important;">
+
+                <div class="inventory-filter-group">
+                    <label for="inventoryCategoryFilter" class="inventory-filter-label">Category</label>
+                    <select id="inventoryCategoryFilter" onchange="filterInventoryByCategory()" class="inventory-category-select">
                         <option value="All">All Categories</option>
                     </select>
                 </div>
             </div>
-            <div class="product-grid" id="inventoryGrid">
+
+            <!-- Product Cards Grid -->
+            <div class="inventory-grid" id="inventoryGrid">
                 <!-- Populated dynamically -->
             </div>
         </div>

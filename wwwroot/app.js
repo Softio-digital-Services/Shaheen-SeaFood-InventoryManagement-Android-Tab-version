@@ -2220,11 +2220,65 @@ window.filterInventoryByCategory = function() {
     loadInventoryTable();
 };
 
+function renderInventoryKpiSummary() {
+    const kpiContainer = document.getElementById('inventoryKpiGrid');
+    if (!kpiContainer) return;
+
+    const totalItems = allProducts.length;
+    let lowStockCount = 0;
+    let outOfStockCount = 0;
+    const categoriesSet = new Set();
+
+    allProducts.forEach(p => {
+        const stock = parseFloat(p.stock || 0);
+        const minStock = parseFloat(p.minStock || 5);
+        if (p.category) categoriesSet.add(p.category);
+
+        if (stock <= 0) {
+            outOfStockCount++;
+        } else if (stock <= minStock) {
+            lowStockCount++;
+        }
+    });
+
+    kpiContainer.innerHTML = `
+        <div class="kpi-card">
+            <div class="kpi-card-icon kpi-info">📦</div>
+            <div class="kpi-card-info">
+                <div class="kpi-card-val">${totalItems}</div>
+                <div class="kpi-card-label">Total Items</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-card-icon kpi-warning">⚠️</div>
+            <div class="kpi-card-info">
+                <div class="kpi-card-val">${lowStockCount}</div>
+                <div class="kpi-card-label">Low Stock</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-card-icon kpi-danger">🚫</div>
+            <div class="kpi-card-info">
+                <div class="kpi-card-val">${outOfStockCount}</div>
+                <div class="kpi-card-label">Out of Stock</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-card-icon">🏷️</div>
+            <div class="kpi-card-info">
+                <div class="kpi-card-val">${categoriesSet.size}</div>
+                <div class="kpi-card-label">Categories</div>
+            </div>
+        </div>
+    `;
+}
+
 function loadInventoryTable() {
     const grid = document.getElementById('inventoryGrid');
     if (!grid) return;
 
     populateInventoryCategoryFilter();
+    renderInventoryKpiSummary();
 
     const filterSelect = document.getElementById('inventoryCategoryFilter');
     const selectedCategory = filterSelect ? filterSelect.value : 'All';
@@ -2235,34 +2289,29 @@ function loadInventoryTable() {
         ? allProducts 
         : allProducts.filter(p => p.category === selectedCategory);
 
+    if (filteredProducts.length === 0) {
+        grid.innerHTML = `
+            <div class="inventory-empty-state">
+                <div class="inventory-empty-icon">📦</div>
+                <div class="inventory-empty-title">No inventory items</div>
+                <div class="inventory-empty-desc">Add your first ingredient to start managing your inventory costs and stock levels.</div>
+                <button class="inventory-btn-primary" onclick="openAddModalDirect()">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Add Ingredient
+                </button>
+            </div>
+        `;
+        return;
+    }
+
     filteredProducts.forEach(p => {
         const card = document.createElement('div');
-        card.className = 'product-card';
+        card.className = 'inventory-card';
         
         // Priority: Item Image (Path/Data URL) -> Item Emoji -> Category Icon -> Default Box
         let displayContent = '';
         const itemImage = p.image;
         const catImage = p.categoryImage;
-
-        let stockDetailsHtml = '';
-        if (shouldShowCost()) {
-            if (p.bigUnit && p.smallUnit) {
-                stockDetailsHtml = `
-                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; line-height: 1.25;">
-                        <span style="font-weight: 600; color: var(--text-main);">Cost</span><br/>
-                        Base: <span style="color: var(--accent); font-weight: 600;">${formatPrice(p.price)}/${p.bigUnit}</span><br/>
-                        Sub: <span style="color: var(--accent); font-weight: 600;">${formatPrice(p.piecePrice || 0, 'auto')}/${p.smallUnit}</span>
-                    </div>
-                `;
-            } else {
-                stockDetailsHtml = `
-                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; line-height: 1.25;">
-                        <span style="font-weight: 600; color: var(--text-main);">Cost</span><br/>
-                        Base: <span style="color: var(--accent); font-weight: 600;">${formatPrice(p.price)}</span>
-                    </div>
-                `;
-            }
-        }
 
         if (itemImage) {
             if (isImagePath(itemImage)) {
@@ -2276,29 +2325,97 @@ function loadInventoryTable() {
             displayContent = `<span class="emoji-icon">📦</span>`;
         }
 
-        const currentStockVal = parseFloat(p.stock || 0).toFixed(2);
-        const currentStockUom = p.bigUnit || 'pcs';
-        const minStockVal = parseFloat(p.minStock || 0).toFixed(2);
+        // Cost Section (Permission Restricted)
+        let costSectionHtml = '';
+        if (shouldShowCost()) {
+            if (p.bigUnit && p.smallUnit) {
+                costSectionHtml = `
+                    <div class="card-cost-box">
+                        <div class="card-cost-title">Cost</div>
+                        <div class="card-cost-row">
+                            <span class="card-cost-label">Base</span>
+                            <span class="card-cost-val">${formatPrice(p.price)} / ${p.bigUnit}</span>
+                        </div>
+                        <div class="card-cost-row">
+                            <span class="card-cost-label">Sub</span>
+                            <span class="card-cost-val">${formatPrice(p.piecePrice || 0, 'auto')} / ${p.smallUnit}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                costSectionHtml = `
+                    <div class="card-cost-box">
+                        <div class="card-cost-title">Cost</div>
+                        <div class="card-cost-row">
+                            <span class="card-cost-label">Base</span>
+                            <span class="card-cost-val">${formatPrice(p.price)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Stock Calculation & Graphical Progress
+        const stockVal = parseFloat(p.stock || 0);
+        const minStockVal = parseFloat(p.minStock || 5);
+        const currentStockStr = stockVal.toFixed(2);
+        const minStockStr = minStockVal.toFixed(2);
+        const uom = p.bigUnit || 'pcs';
+
+        // Calculate progress percentage (target double minStock or min 100%)
+        const maxThreshold = Math.max(minStockVal * 2, 10);
+        const progressPct = Math.min(100, Math.max(0, (stockVal / maxThreshold) * 100));
+
+        let statusClass = 'in-stock';
+        let statusLabel = 'In Stock';
+        let fillClass = '';
+
+        if (stockVal <= 0) {
+            statusClass = 'out-of-stock';
+            statusLabel = 'Out of Stock';
+            fillClass = 'status-out';
+        } else if (stockVal <= minStockVal) {
+            statusClass = 'low-stock';
+            statusLabel = 'Low Stock';
+            fillClass = 'status-low';
+        }
 
         card.innerHTML = `
-            <div class="card-edit-btn" onclick="event.stopPropagation(); openEditModal(${p.id})" title="Edit" style="position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.2s; z-index: 5; cursor: pointer;">
-                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path></svg>
+            <div class="card-header-actions">
+                <button class="card-action-btn delete-btn" onclick="event.stopPropagation(); deleteIngredient(${p.id})" title="Delete Item">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+                <button class="card-action-btn edit-btn" onclick="event.stopPropagation(); openEditModal(${p.id})" title="Edit Item">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M11 4H4a2 2 0 0 1-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path></svg>
+                </button>
             </div>
-            <div class="card-delete-btn" onclick="event.stopPropagation(); deleteIngredient(${p.id})" title="Delete" style="position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; background: rgba(239, 68, 68, 0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--danger); transition: all 0.2s; z-index: 5; cursor: pointer;">
-                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+
+            <div class="card-icon-container">
+                ${displayContent}
             </div>
-            <div class="product-img" style="margin-top: 20px;">${displayContent}</div>
-            <div class="product-info" style="text-align: center;">
-                <div class="product-name" style="font-weight: 700; margin-bottom: 4px;">${p.name}</div>
-                <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">Item No: <span style="color: var(--text-main); font-weight: 600;">${p.itemNo || 'N/A'}</span></div>
-                ${stockDetailsHtml}
-                <div class="product-stock ${p.stock < (p.minStock || 5) ? 'low' : ''}" style="font-size: 0.75rem; font-weight: 700; margin-top: 6px; line-height: 1.25;">
-                    <span style="font-weight: 600; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Stock</span><br/>
-                    <span style="font-size: 0.85rem; color: var(--text-main); font-weight: 700;">${currentStockVal} ${currentStockUom}</span><br/>
-                    <span style="font-weight: 400; color: var(--text-muted); font-size: 0.7rem;">Min: ${minStockVal} ${currentStockUom}</span>
+
+            <div class="card-identity">
+                <div class="card-item-name">${p.name}</div>
+                <div class="card-item-no">Item No: ${p.itemNo || 'N/A'}</div>
+            </div>
+
+            ${costSectionHtml}
+
+            <div class="card-stock-box">
+                <div class="card-stock-header">
+                    <span class="card-stock-label">Stock Level</span>
+                    <span class="card-stock-qty">${currentStockStr} ${uom}</span>
+                </div>
+                <div class="stock-progress-track">
+                    <div class="stock-progress-fill ${fillClass}" style="width: ${progressPct}%;"></div>
+                </div>
+                <div class="card-stock-min">
+                    <span>Min: ${minStockStr} ${uom}</span>
+                    <span class="stock-status-badge ${statusClass}">${statusLabel}</span>
                 </div>
             </div>
         `;
+
         grid.appendChild(card);
     });
 }
